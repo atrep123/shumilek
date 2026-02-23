@@ -103,6 +103,23 @@ describe('botEval deterministic fallback helpers', () => {
     assert.ok(/fs\.existsSync\(/.test(out));
   });
 
+  it('injects crypto require when store uses crypto.randomUUID without binding', () => {
+    const src = [
+      'declare const require: any;',
+      'declare const process: any;',
+      '',
+      'export class TaskStore {',
+      '  add(title: string) {',
+      '    return { id: crypto.randomUUID(), title, done: false, createdAt: new Date().toISOString() };',
+      '  }',
+      '}',
+      ''
+    ].join('\n');
+    const out = normalizeTsTodoStorePathHandling(src);
+    assert.ok(out.includes('const crypto = require("node:crypto");'));
+    assert.ok(/crypto\.randomUUID\(/.test(out));
+  });
+
   it('normalizes ts catch blocks to avoid unknown catch type failures', () => {
     const src = [
       'try {',
@@ -162,6 +179,29 @@ describe('botEval deterministic fallback helpers', () => {
     const out = normalizeTsTodoCliContract(src);
     assert.ok(out.includes('let currentOption: string | null = null;'));
     assert.ok(out.includes("if (cmd === '--help' || process.argv.slice(2).includes('--help')) {"));
+  });
+
+  it('normalizes ts cli to not require existing --data file', () => {
+    const src = [
+      'declare const process: any;',
+      'const fs = require("node:fs");',
+      'const cmd = process.argv[2];',
+      'let dataPath: string | undefined;',
+      '',
+      'if (!dataPath || !fs.existsSync(dataPath)) {',
+      "  console.error('Error: --data <path> is required and must point to an existing file.');",
+      '  process.exit(1);',
+      '}',
+      '',
+      "if (cmd === '--help') {",
+      '  process.exit(0);',
+      '}',
+      ''
+    ].join('\n');
+    const out = normalizeTsTodoCliContract(src);
+    assert.ok(out.includes('if (!dataPath) {'));
+    assert.ok(!out.includes('!fs.existsSync(dataPath)'));
+    assert.ok(out.includes('--data <path> is required.'));
   });
 
   it('replaces ts cli parser/output shape mismatch with canonical fallback cli', () => {

@@ -279,6 +279,7 @@ const SCENARIOS: Scenario[] = [
       '- Pouzij `const fs = require("node:fs")` (ne `declare const fs = ...`).',
       '- CLI parser: `argv = process.argv.slice(2)`; `cmd = argv[0]`; `--help` musi vratit exit 0 bez kontroly `--data`.',
       '- Pro `add <title>`, `done <id>`, `remove <id>` ber prvni pozicni argument jako title/id; `--data <path>` parsuj z argv.',
+      '- `--data <path>` je povinne pro list/add/done/remove, ale soubor na ceste muze na zacatku neexistovat (list vrati prazdne pole; add ho vytvori).',
       '- V `catch` pouzij `catch (error: any)` nebo `const err = error as any` (kvuli strict TS).',
       '- Musi existovat `tsconfig.json` a kompilace do `dist/` (CommonJS) pres `tsc -p tsconfig.json`.',
       '- `src/store.ts` musi exportovat `TaskStore` s metodami:',
@@ -717,6 +718,21 @@ export function normalizeTsTodoStorePathHandling(content: string): string {
   );
   next = next.replace(/\bcrypto\.v4\s*\(/g, 'crypto.randomUUID(');
 
+  const hasCryptoBinding =
+    /\b(?:const|let|var)\s+crypto\s*=/.test(next) ||
+    /\bimport\s+\*\s+as\s+crypto\s+from\s+['"](?:node:)?crypto['"]/.test(next) ||
+    /\bimport\s+crypto\s+from\s+['"](?:node:)?crypto['"]/.test(next);
+  if (/\bcrypto\.randomUUID\s*\(/.test(next) && !hasCryptoBinding) {
+    const cryptoRequire = 'const crypto = require("node:crypto");';
+    if (/^\s*declare const process:\s*any;\s*$/m.test(next)) {
+      next = next.replace(/^\s*declare const process:\s*any;\s*$/m, m => `${m}\n${cryptoRequire}`);
+    } else if (/^\s*declare const require:\s*any;\s*$/m.test(next)) {
+      next = next.replace(/^\s*declare const require:\s*any;\s*$/m, m => `${m}\n${cryptoRequire}`);
+    } else {
+      next = `${cryptoRequire}\n${next}`;
+    }
+  }
+
   const hasFsObjectBinding =
     /\b(?:const|let|var)\s+fs\s*=/.test(next) ||
     /\bimport\s+fs\s+from\s+['"](?:node:)?fs['"]/.test(next) ||
@@ -783,6 +799,27 @@ export function normalizeTsTodoCliContract(content: string): string {
   next = next.replace(
     /if\s*\(\s*cmd\s*===\s*['"]--help['"]\s*\)\s*\{/g,
     "if (cmd === '--help' || process.argv.slice(2).includes('--help')) {"
+  );
+
+  next = next.replace(
+    /if\s*\(\s*!dataPath\s*\|\|\s*!fs\.existsSync\(\s*dataPath\s*\)\s*\)\s*\{/g,
+    'if (!dataPath) {'
+  );
+  next = next.replace(
+    /if\s*\(\s*!fs\.existsSync\(\s*dataPath\s*\)\s*\|\|\s*!dataPath\s*\)\s*\{/g,
+    'if (!dataPath) {'
+  );
+  next = next.replace(
+    /if\s*\(\s*!dataPath\s*\|\|\s*!existsSync\(\s*dataPath\s*\)\s*\)\s*\{/g,
+    'if (!dataPath) {'
+  );
+  next = next.replace(
+    /if\s*\(\s*!existsSync\(\s*dataPath\s*\)\s*\|\|\s*!dataPath\s*\)\s*\{/g,
+    'if (!dataPath) {'
+  );
+  next = next.replace(
+    /--data <path> is required and must point to an existing file\./g,
+    '--data <path> is required.'
   );
 
   const hasParserShapeMismatch =
@@ -3094,6 +3131,7 @@ function buildDeterministicPlannerFallback(scenarioId: string): string {
       '- Export TaskStore as named export and include list/add/done/remove methods.',
       '- In src/cli.ts, parse process.argv manually and return JSON objects with ok=true/false.',
       '- Ensure --help exits 0 without requiring --data.',
+      '- For list/add/done/remove, require --data path but do NOT require the file to already exist.',
       '- Keep package.json without dependencies/devDependencies and avoid type=module.',
       '- Verify with tsc build, oracle tests, and cli --help.'
     ].join('\n');
@@ -3160,6 +3198,7 @@ function buildFirstIterationContractHint(scenarioId: string): string {
       '- src/store.ts must define and named-export TaskStore with list/add/done/remove.',
       '- In TaskStore constructor keep `this.filePath = filePath`; never join/resolve with __dirname because tests pass absolute data paths.',
       '- src/cli.ts must parse process.argv manually and emit JSON { ok: ... }.',
+      '- For list/add/done/remove, `--data` is required but the file may not exist yet.',
       '- No external dependencies in package.json.'
     ].join('\n');
   }
@@ -3410,6 +3449,7 @@ async function buildRepairPrompt(
     lines.push('- Zadny externi balicek v package.json (dependencies/devDependencies prazdne nebo chybi).');
     lines.push('- `src/store.ts` obsahuje class TaskStore s list/add/done/remove.');
     lines.push('- `src/cli.ts`: `--help` MUSI fungovat bez `--data`; pro ostatni prikazy vyzaduj `--data`.');
+    lines.push('- `--data` musi byt argument, ale soubor na ceste muze byt pri prvnim volani neexistujici.');
     lines.push('- `tsconfig.json` musi kompilovat do dist/ (commonjs). Nezahrnuj dist/ ve vystupu.');
   }
 
