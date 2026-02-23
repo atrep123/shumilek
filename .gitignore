@@ -1,2 +1,4 @@
 node_modules
 out
+.github-runner/
+_r/
