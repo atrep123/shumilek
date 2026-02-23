@@ -43,6 +43,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            package.json
+            package-lock.json
+            tsconfig.json
+            tsconfig.test.json
+            scripts
+            src
+            test
+            projects/bot_eval_run/release_baseline.txt
+          sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -112,6 +124,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            package.json
+            package-lock.json
+            tsconfig.json
+            tsconfig.test.json
+            scripts
+            src
+            test
+            projects/bot_eval_run/release_baseline.txt
+          sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
