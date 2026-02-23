@@ -79,28 +79,8 @@ jobs:
         id: baseline
         shell: cmd
         run: |
-          setlocal enabledelayedexpansion
-          set "candidate=%BOT_EVAL_BASELINE_DIR%"
-          if "!candidate!"=="" (
-            if exist "projects\bot_eval_run\release_baseline.txt" (
-              for /f "usebackq tokens=* delims=" %%i in ("projects\bot_eval_run\release_baseline.txt") do (
-                set "candidate=%%i"
-                goto :candidate_found_pr
-              )
-            )
-          )
-          :candidate_found_pr
-          if "!candidate!"=="" (
-            echo Release-gate baseline missing. Set repo variable BOT_EVAL_BASELINE_DIR or update projects/bot_eval_run/release_baseline.txt.
-            exit /b 1
-          )
-          for %%I in ("!candidate!") do set "resolved=%%~fI"
-          if not exist "!resolved!\results.json" (
-            echo Baseline directory is invalid (results.json missing): !resolved!\results.json
-            exit /b 1
-          )
-          echo baseline_dir=!resolved!>>"%GITHUB_OUTPUT%"
-          echo Using baseline: !resolved!
+          powershell -NoProfile -ExecutionPolicy Bypass -Command "$candidate = $env:BOT_EVAL_BASELINE_DIR; if ($null -eq $candidate) { $candidate = '' }; $candidate = $candidate.Trim(); if ([string]::IsNullOrWhiteSpace($candidate)) { $pointerPath = Join-Path $PWD 'projects\bot_eval_run\release_baseline.txt'; if (Test-Path $pointerPath) { $candidate = (Get-Content -Raw $pointerPath).Trim() } }; if ([string]::IsNullOrWhiteSpace($candidate)) { throw 'Release-gate baseline missing. Set repo variable BOT_EVAL_BASELINE_DIR or update projects/bot_eval_run/release_baseline.txt.' }; $resolved = [System.IO.Path]::GetFullPath($candidate); $resultsPath = Join-Path $resolved 'results.json'; if (-not (Test-Path $resultsPath)) { throw ('Baseline directory is invalid (results.json missing): ' + $resultsPath) }; ('baseline_dir=' + $resolved) | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append; Write-Host ('Using baseline: ' + $resolved)"
+          if errorlevel 1 exit /b 1
 
       - name: Run release gate (3x3)
         id: gate
@@ -166,28 +146,8 @@ jobs:
         id: baseline
         shell: cmd
         run: |
-          setlocal enabledelayedexpansion
-          set "candidate=%BOT_EVAL_BASELINE_DIR%"
-          if "!candidate!"=="" (
-            if exist "projects\bot_eval_run\release_baseline.txt" (
-              for /f "usebackq tokens=* delims=" %%i in ("projects\bot_eval_run\release_baseline.txt") do (
-                set "candidate=%%i"
-                goto :candidate_found_nightly
-              )
-            )
-          )
-          :candidate_found_nightly
-          if "!candidate!"=="" (
-            echo Release-gate baseline missing. Set repo variable BOT_EVAL_BASELINE_DIR or update projects/bot_eval_run/release_baseline.txt.
-            exit /b 1
-          )
-          for %%I in ("!candidate!") do set "resolved=%%~fI"
-          if not exist "!resolved!\results.json" (
-            echo Baseline directory is invalid (results.json missing): !resolved!\results.json
-            exit /b 1
-          )
-          echo baseline_dir=!resolved!>>"%GITHUB_OUTPUT%"
-          echo Using baseline: !resolved!
+          powershell -NoProfile -ExecutionPolicy Bypass -Command "$candidate = $env:BOT_EVAL_BASELINE_DIR; if ($null -eq $candidate) { $candidate = '' }; $candidate = $candidate.Trim(); if ([string]::IsNullOrWhiteSpace($candidate)) { $pointerPath = Join-Path $PWD 'projects\bot_eval_run\release_baseline.txt'; if (Test-Path $pointerPath) { $candidate = (Get-Content -Raw $pointerPath).Trim() } }; if ([string]::IsNullOrWhiteSpace($candidate)) { throw 'Release-gate baseline missing. Set repo variable BOT_EVAL_BASELINE_DIR or update projects/bot_eval_run/release_baseline.txt.' }; $resolved = [System.IO.Path]::GetFullPath($candidate); $resultsPath = Join-Path $resolved 'results.json'; if (-not (Test-Path $resultsPath)) { throw ('Baseline directory is invalid (results.json missing): ' + $resultsPath) }; ('baseline_dir=' + $resolved) | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append; Write-Host ('Using baseline: ' + $resolved)"
+          if errorlevel 1 exit /b 1
 
       - name: Run release gate (10x3)
         id: gate
