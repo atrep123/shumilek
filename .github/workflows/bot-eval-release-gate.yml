@@ -61,7 +61,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: npm
 
       - name: Install dependencies
         shell: cmd
@@ -90,19 +89,18 @@ jobs:
           set "outDir=projects/bot_eval_run/release_gate_ci_pr_%GITHUB_RUN_ID%_%GITHUB_RUN_ATTEMPT%"
           npm run bot:eval:release-gate:ci -- --runs 3 --baseline "${{ steps.baseline.outputs.baseline_dir }}" --outDir "%outDir%"
           if errorlevel 1 exit /b 1
-          echo out_dir=%outDir%>>"%GITHUB_OUTPUT%"
 
       - name: Upload gate artifacts
-        if: always()
+        if: always() && steps.gate.conclusion == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: bot-eval-release-gate-pr-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: warn
           path: |
-            ${{ steps.gate.outputs.out_dir }}/results.json
-            ${{ steps.gate.outputs.out_dir }}/summary.json
-            ${{ steps.gate.outputs.out_dir }}/compare.json
-            ${{ steps.gate.outputs.out_dir }}/compare_report.txt
+            projects/bot_eval_run/release_gate_ci_pr_${{ github.run_id }}_${{ github.run_attempt }}/results.json
+            projects/bot_eval_run/release_gate_ci_pr_${{ github.run_id }}_${{ github.run_attempt }}/summary.json
+            projects/bot_eval_run/release_gate_ci_pr_${{ github.run_id }}_${{ github.run_attempt }}/compare.json
+            projects/bot_eval_run/release_gate_ci_pr_${{ github.run_id }}_${{ github.run_attempt }}/compare_report.txt
 
   gate-nightly:
     if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.profile == 'nightly')
@@ -128,7 +126,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: npm
 
       - name: Install dependencies
         shell: cmd
@@ -157,17 +154,16 @@ jobs:
           set "outDir=projects/bot_eval_run/release_gate_ci_nightly_%GITHUB_RUN_ID%_%GITHUB_RUN_ATTEMPT%"
           npm run bot:eval:release-gate:ci -- --runs 10 --baseline "${{ steps.baseline.outputs.baseline_dir }}" --outDir "%outDir%"
           if errorlevel 1 exit /b 1
-          echo out_dir=%outDir%>>"%GITHUB_OUTPUT%"
 
       - name: Upload gate artifacts
-        if: always()
+        if: always() && steps.gate.conclusion == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: bot-eval-release-gate-nightly-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: warn
           path: |
-            ${{ steps.gate.outputs.out_dir }}/results.json
-            ${{ steps.gate.outputs.out_dir }}/summary.json
-            ${{ steps.gate.outputs.out_dir }}/compare.json
-            ${{ steps.gate.outputs.out_dir }}/compare_report.txt
+            projects/bot_eval_run/release_gate_ci_nightly_${{ github.run_id }}_${{ github.run_attempt }}/results.json
+            projects/bot_eval_run/release_gate_ci_nightly_${{ github.run_id }}_${{ github.run_attempt }}/summary.json
+            projects/bot_eval_run/release_gate_ci_nightly_${{ github.run_id }}_${{ github.run_attempt }}/compare.json
+            projects/bot_eval_run/release_gate_ci_nightly_${{ github.run_id }}_${{ github.run_attempt }}/compare_report.txt
 
