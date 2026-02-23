@@ -1,0 +1,8 @@
+{
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1770590485725",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1770590485725\\workspace",
+  "ok": false,
+  "diagnostics": [
+    "Parse/write failed: Unterminated string in JSON at position 3279 (line 1 column 3280)"
+  ]
+}

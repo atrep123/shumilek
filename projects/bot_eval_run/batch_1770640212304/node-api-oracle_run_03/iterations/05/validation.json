@@ -1,0 +1,18 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770640212304\\node-api-oracle_run_03\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 120,
+      "stdout": "Server running at http://localhost:3000\nServer running at http://localhost:3000\n✖ GET /health + GET /openapi.json (6.744ms)\n✖ Todo CRUD + persistence (0.7244ms)\nℹ Error: Test \"GET /health + GET /openapi.json\" at tests\\oracle.test.js:39:1 generated asynchronous activity after the test ended. This activity created the error \"Error: listen EADDRINUSE: address already in use :::3000\" and would have caused the test to fail, but instead triggered an uncaughtException event.\nℹ Error: Test \"Todo CRUD + persistence\" at tests\\oracle.test.js:59:1 generated asynchronous activity after the test ended. This activity created the error \"Error: listen EADDRINUSE: address already in use :::3000\" and would have caused the test to fail, but instead triggered an uncaughtException event.\nℹ tests 2\nℹ suites 0\nℹ pass 0\nℹ fail 2\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 60.8815\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:39:1\n✖ GET /health + GET /openapi.json (6.744ms)\n  TypeError: Cannot read properties of undefined (reading 'listen')\n      at startServer (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770640212304\\node-api-oracle_run_03\\workspace\\tests\\oracle.test.js:16:30)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770640212304\\node-api-oracle_run_03\\workspace\\tests\\oracle.test.js:42:37)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.start (node:internal/test_runner/test:1003:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17)\n\ntest at tests\\oracle.test.js:59:1\n✖ Todo CRUD + persistence (0.7244ms)\n  TypeError: Cannot read properties of undefined (reading 'listen')\n      at startServer (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770640212304\\node-api-oracle_run_03\\workspace\\tests\\oracle.test.js:16:30)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770640212304\\node-api-oracle_run_03\\workspace\\tests\\oracle.test.js:62:37)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3)\n",
+      "stderr": ""
+    }
+  ]
+}

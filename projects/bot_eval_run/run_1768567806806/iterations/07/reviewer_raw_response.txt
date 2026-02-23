@@ -1,0 +1,43 @@
+{
+  "taskStore": {
+    "helpMessage": "Usage:\n  node dist/cli.js --help\n  node dist/cli.js list --data <path>\n  node dist/cli.js add <title> --data <path>\n  node dist/cli.js done <id> --data <path>\n  node dist/cli.js remove <id> --data <path>",
+    "addTaskSuccess": {
+      "message": "ok: true, task: { id: 'string', title: 'Buy milk', done: false }",
+      "expectedOutput": "node dist/cli.js add <title> --data path/to/tasks.json"
+    },
+    "listTasks": {
+      "message": "ok: true, tasks: [ { id: string, title: 'Buy milk', done: false }, ... ]",
+      "expectedOutput": "node dist/cli.js list --data path/to/tasks.json"
+    },
+    "doneTaskSuccess": {
+      "message": "ok: true, task: { id: 'string', done: true }",
+      "expectedOutput": "node dist/cli.js done <id> --data path/to/tasks.json"
+    },
+    "removeTaskSuccess": {
+      "message": "ok: true, task: { id: 'string' }",
+      "expectedOutput": "node dist/cli.js remove <id> --data path/to/tasks.json"
+    }
+  },
+  "cli": {
+    "addTaskFlow": [
+      "Missing task title",
+      "node dist/cli.js add <title> --data path/to/tasks.json",
+      "<title> must be provided when adding a new task."
+    ],
+    "listTasksFlow": [
+      "Missing --data option",
+      "node dist/cli.js list --data path/to/tasks.json",
+      "--data option is required for the tasks file location."
+    ],
+    "doneTaskFlow": [
+      "Missing task ID",
+      "node dist/cli.js done <id> --data path/to/tasks.json",
+      "<id> must be provided to mark a task as done."
+    ],
+    "removeTaskFlow": [
+      "Missing task ID",
+      "node dist/cli.js remove <id> --data path/to/tasks.json",
+      "<id> must be provided to remove a task."
+    ]
+  }
+}

@@ -1,0 +1,68 @@
+declare const require: any;
+declare const process: any;
+const fs = require('node:fs');
+
+interface Task {
+  id: string;
+  title: string;
+  done: boolean;
+  createdAt: string;
+  doneAt?: string;
+}
+
+class TaskStore {
+  private filePath: string;
+
+  constructor(filePath: string) {
+    this.filePath = filePath;
+  }
+
+  list(): Task[] {
+    try {
+      const data = fs.readFileSync(this.filePath, 'utf8');
+      return JSON.parse(data).tasks || [];
+    } catch (error: any) {
+      if (error.code === 'ENOENT') {
+        return [];
+      }
+      throw error;
+    }
+  }
+
+  add(title: string): Task {
+    const task: Task = {
+      id: crypto.randomUUID(),
+      title,
+      done: false,
+      createdAt: new Date().toISOString()
+    };
+    const tasks = this.list();
+    tasks.push(task);
+    fs.writeFileSync(this.filePath, JSON.stringify({ tasks }, null, 2));
+    return task;
+  }
+
+  done(id: string): Task {
+    let tasks = this.list();
+    const task = tasks.find(t => t.id === id);
+    if (task) {
+      task.done = true;
+      task.doneAt = new Date().toISOString();
+      fs.writeFileSync(this.filePath, JSON.stringify({ tasks }, null, 2));
+    }
+    return task || { id, title: '', done: false, createdAt: '' };
+  }
+
+  remove(id: string): Task {
+    let tasks = this.list();
+    const taskIndex = tasks.findIndex(t => t.id === id);
+    if (taskIndex !== -1) {
+      const removedTask = tasks.splice(taskIndex, 1)[0];
+      fs.writeFileSync(this.filePath, JSON.stringify({ tasks }, null, 2));
+      return removedTask;
+    }
+    return { id, title: '', done: false, createdAt: '' };
+  }
+}
+
+export default TaskStore;

@@ -1,0 +1,9 @@
+{
+  "name": "todo-cli",
+  "version": "1.0.0",
+  "description": "Simple ToDo CLI in TypeScript",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  }
+}

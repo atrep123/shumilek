@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Mini AI Project\n\nThis is a simple character-level Markov chain generator implemented in Python without using any external libraries like numpy, pandas, sklearn, torch, tensorflow, or requests.\n\n## Features\n\n- Implements a character-level Markov chain model for text generation.\n- Includes a CLI for training the model and generating text from it.\n- Contains unit tests to ensure the functionality of the code.\n\n## Installation\n\n1. Clone the repository:\n   ```bash\n   git clone https://github.com/yourusername/mini_ai.git\n   ```\n2. Navigate to the project directory:\n   ```bash\n   cd mini_ai\n   ```\n\n## Usage\n\n### Training the Model\n```bash\npython -m mini_ai.cli train --input your_text_file.txt\n```\n\n### Generating Text\n```bash\npython -m mini_ai.cli generate --model trained_model.pkl --length 100\n```\n\n## Tests\nTo run the tests, use:\n```bash\npytest\n```\n\nThis will execute all unit tests located in the `tests/` directory.\n\n"
+    },
+    {
+      "path": "mini_ai/__init__.py",
+      "content": "from .markov import MarkovChain, train_model, generate_text\n"
+    },
+    {
+      "path": "mini_ai/markov.py",
+      "content": "import random\n\nclass MarkovChain:\n    def __init__(self):\n        self.chain = {}\n\n    def add_sentence(self, sentence):\n        for i in range(len(sentence) - 1):\n            if sentence[i] not in self.chain:\n                self.chain[sentence[i]] = []\n            self.chain[sentence[i]].append(sentence[i + 1])\n\n    def generate_text(self, length):\n        seed = random.choice(list(self.chain.keys()))\n        text = seed\n        while len(text) < length:\n            if seed in self.chain:\n                next_char = random.choice(self.chain[seed])\n                text += next_char\n                seed = next_char\n            else:\n                break\n        return text\n\n\ndef train_model(input_text):\n    model = MarkovChain()\n    sentences = input_text.split('\\n') if '\\n' in input_text else input_text.split('. ')\n    for sentence in sentences:\n        model.add_sentence(sentence + '.')\n    return model\n\n\ndef generate_text(model, length):\n    return model.generate_text(length)\n"
+    },
+    {
+      "path": "tests/test_markov.py",
+      "content": "import unittest\nfrom mini_ai.markov import MarkovChain, train_model, generate_text\n\nclass TestMarkovChain(unittest.TestCase):\n    def test_add_sentence(self):\n        model = MarkovChain()\n        model.add_sentence('hello')\n        self.assertEqual(model.chain, {'h': ['e'], 'e': ['l'], 'l': ['l', 'o'], 'o': [None]})\n\n    def test_generate_text(self):\n        model = train_model('he')\n        text = generate_text(model, 5)\n        self.assertTrue(len(text) == 5)\n\nif __name__ == '__main__':\n    unittest.main()"
+    }
+  ],
+  "notes": "This JSON object represents the structure of a Python project implementing a simple character-level Markov chain generator for text generation."
+}

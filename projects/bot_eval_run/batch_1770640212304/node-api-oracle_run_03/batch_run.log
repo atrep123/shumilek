@@ -1,0 +1,6 @@
+botEval failed: [Error: EBUSY: resource busy or locked, rmdir 'C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1770640212304\node-api-oracle_run_03\workspace'] {
+  errno: -4082,
+  code: 'EBUSY',
+  syscall: 'rmdir',
+  path: 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770640212304\\node-api-oracle_run_03\\workspace'
+}

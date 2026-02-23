@@ -1,0 +1,10 @@
+{
+  "name": "task-manager",
+  "version": "1.0.0",
+  "description": "A simple task manager CLI built using TypeScript.",
+  "main": "dist/cli.js",
+  "scripts": {
+    "start": "tsc && node dist/cli.js"
+  },
+  "type": "commonjs"
+}

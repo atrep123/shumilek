@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "diagnostics": [],
+  "commands": [
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\debug_schema_first_node_batch3\\node-api-oracle_run_03\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 195,
+      "stdout": "✔ GET /health + GET /openapi.json (46.7019ms)\n✔ Todo CRUD + persistence (30.0211ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 132.2275\n",
+      "stderr": ""
+    }
+  ]
+}

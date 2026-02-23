@@ -1,0 +1,19 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Mini AI\n\nA simple Markov Chain generator for text generation.\n"
+    },
+    {
+      "path": "mini_ai/__init__.py",
+      "content": "from .markov import MarkovChain\n"
+    },
+    {
+      "path": "mini_ai/markov.py",
+      "content": "import random\n\n\nclass MarkovChain:\n    def __init__(self, order: int):\n        self.order = order\n        self.transitions = {}\n\n    def train(self, text: str) -> None:\n        for i in range(len(text) - self.order):\n            context = text[i:i + self.order]\n            next_char = text[i + self.order]\n            if context not in self.transitions:\n                self.transitions[context] = {}\n            if next_char not in self.transitions[context]:\n                self.transitions[context][next_char] = 0\n            self.transitions[context][next_char] += 1\n\n    def generate(self, length: int, seed: str | None = None, random_seed: int | None = None) -> str:\n        if random_seed is not None:\n            random.seed(random_seed)\n        if seed is None or len(seed) != self.order:\n            raise ValueError(f"
+    }
+  ],
+  "order": 1,
+  "transitions": {}
+}

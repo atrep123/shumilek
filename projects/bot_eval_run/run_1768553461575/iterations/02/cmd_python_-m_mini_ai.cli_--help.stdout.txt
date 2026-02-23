@@ -1,0 +1,11 @@
+usage: cli.py [-h] {train,generate} ...
+
+Train or generate text using a Markov chain.
+
+positional arguments:
+  {train,generate}
+    train           Train the model on a given text file.
+    generate        Generate text using a trained model.
+
+options:
+  -h, --help        show this help message and exit

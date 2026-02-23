@@ -1,0 +1,12 @@
+{
+  "name": "todo-cli",
+  "version": "1.0.0",
+  "description": "Simple CLI for managing todo tasks",
+  "main": "dist/cli.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {}
+}

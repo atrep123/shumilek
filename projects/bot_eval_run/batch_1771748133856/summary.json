@@ -1,0 +1,38 @@
+[
+  {
+    "scenario": "ts-todo-oracle",
+    "pass": 3,
+    "total": 3,
+    "passRate": 1,
+    "avgMs": 81679,
+    "runsWithPlannerError": 0,
+    "runsWithJsonRepairError": 0,
+    "jsonRepairErrorFiles": 0,
+    "runsWithSchemaFailure": 0,
+    "schemaFailures": 0
+  },
+  {
+    "scenario": "node-api-oracle",
+    "pass": 3,
+    "total": 3,
+    "passRate": 1,
+    "avgMs": 145633,
+    "runsWithPlannerError": 0,
+    "runsWithJsonRepairError": 0,
+    "jsonRepairErrorFiles": 0,
+    "runsWithSchemaFailure": 0,
+    "schemaFailures": 0
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "pass": 3,
+    "total": 3,
+    "passRate": 1,
+    "avgMs": 75698,
+    "runsWithPlannerError": 0,
+    "runsWithJsonRepairError": 0,
+    "jsonRepairErrorFiles": 0,
+    "runsWithSchemaFailure": 0,
+    "schemaFailures": 0
+  }
+]

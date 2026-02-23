@@ -1,0 +1,24 @@
+{  
+  "response": {  
+    "message": "The error is likely due to the incorrect handling of JSON in your `requestJson` function. Specifically, it seems that you are not properly parsing the response body as a JSON object before checking for its existence and attempting to parse it again. This can lead to issues where the response text might be empty or improperly formatted."
+  },
+  "suggested_fix": {  
+    "code_changes": [  
+      {  
+        "file_path": "./src/server.js",  
+        "changes": [  
+          {  
+            "type": "replace",  
+            "path": "tests/oracle.test.js",  
+            "content": "\nconst requestJson = async (url, init) => {\n  const res = await fetch(url, init);\n  const text = await res.text();\n  let json = null;\n  if (text.trim()) {\n    try {\n      json = JSON.parse(text); // Ensure you are parsing the response body as a JSON object\n    } catch (err) {\n      throw new Error(`Expected JSON response, got: ${text.slice(0, 200)}`);\n    }\n  }\n  return { res, json, text }; // Return all three components for consistency\n};\n"  
+          },  
+          {  
+            "type": "replace",  
+            "path": "./src/server.js",  
+            "content": "\nconst requestJson = async (url, init) => {\n  const res = await fetch(url, init);\n  const text = await res.text();\n  let json = null;\n  if (text.trim()) {\n    try {\n      json = JSON.parse(text); // Ensure you are parsing the response body as a JSON object\n    } catch (err) {\n      throw new Error(`Expected JSON response, got: ${text.slice(0, 200)}`);\n    }\n  }\n  return { res, json, text }; // Return all three components for consistency\n};\n"  
+          }  
+        ]  
+      }  
+    ]  
+  }  
+}

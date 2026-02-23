@@ -1,0 +1,4 @@
+{
+ "review": "Add missing 'd' property in the JSON object for file persistence check after done. Ensure it is correctly set to true.",
+ "priorityFiles": ["tests/oracle.test.js"]
+}

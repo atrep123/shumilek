@@ -1,0 +1,19 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "package.json must set \"type\": \"commonjs\"",
+    "No dependencies allowed (dependencies/devDependencies must be empty or missing)"
+  ],
+  "commands": [
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "projects\\bot_eval_run\\run_1770632941843\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 183,
+      "stdout": "✔ GET /health + GET /openapi.json (45.6027ms)\n✔ Todo CRUD + persistence (23.0011ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 122.7526\n",
+      "stderr": ""
+    }
+  ]
+}

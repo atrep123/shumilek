@@ -1,0 +1,94 @@
+{
+  "name": "Complex",
+  "version": "1.0",
+  "env": {
+    "projectRoot": "."
+  },
+  "settings": {
+    "maxConcurrency": 2,
+    "failFast": true
+  },
+  "tasks": [
+    {
+      "id": "readme",
+      "type": "file.read",
+      "with": {
+        "path": "{{env.projectRoot}}/README.md",
+        "maxBytes": 5000
+      }
+    },
+    {
+      "id": "build",
+      "type": "npm.run",
+      "with": {
+        "script": "build",
+        "cwd": "{{env.projectRoot}}"
+      }
+    },
+    {
+      "id": "tests",
+      "type": "npm.run",
+      "dependsOn": ["build"],
+      "with": {
+        "script": "test",
+        "cwd": "{{env.projectRoot}}"
+      }
+    },
+    {
+      "id": "shell",
+      "type": "shell.exec",
+      "with": {
+        "command": "node",
+        "args": ["-e", "console.log('node=' + process.version)"]
+      }
+    },
+    {
+      "id": "summary",
+      "type": "transform",
+      "dependsOn": ["readme", "tests", "shell"],
+      "with": {
+        "template": "Readme bytes={{tasks.readme.bytes}} lines={{tasks.readme.lines}} node={{tasks.shell.stdout}}"
+      }
+    },
+    {
+      "id": "write-summary",
+      "type": "file.write",
+      "dependsOn": ["summary"],
+      "with": {
+        "path": "reports/complex-summary.txt",
+        "content": "{{tasks.summary.result}}"
+      }
+    },
+    {
+      "id": "write-json",
+      "type": "file.write",
+      "dependsOn": ["summary"],
+      "with": {
+        "path": "reports/info.json",
+        "content": "{\"runId\":\"{{meta.runId}}\",\"readmeBytes\":\"{{tasks.readme.bytes}}\"}"
+      }
+    },
+    {
+      "id": "merge",
+      "type": "json.merge",
+      "dependsOn": ["write-json"],
+      "with": {
+        "sources": [
+          "reports/info.json",
+          { "status": "ok", "summary": "{{tasks.summary.result}}" }
+        ],
+        "destination": "reports/merged.json"
+      }
+    },
+    {
+      "id": "zip",
+      "type": "zip.create",
+      "dependsOn": ["write-summary", "merge"],
+      "with": {
+        "target": "reports/complex.zip",
+        "sources": ["reports/complex-summary.txt", "reports/merged.json"],
+        "overwrite": true
+      }
+    }
+  ]
+}

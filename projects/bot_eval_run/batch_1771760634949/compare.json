@@ -1,0 +1,147 @@
+{
+  "generatedAt": "2026-02-22T15:43:12.283Z",
+  "baselineDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771763807099",
+  "candidateDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771760634949",
+  "scenarios": [
+    {
+      "scenario": "node-api-oracle",
+      "baseline": {
+        "passRate": 0.1,
+        "rawRunPassRate": 0.1,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 544184,
+        "topFailureClusters": [
+          {
+            "id": "node_contract",
+            "count": 30
+          },
+          {
+            "id": "command_runtime",
+            "count": 9
+          },
+          {
+            "id": "deps_policy",
+            "count": 2
+          }
+        ]
+      },
+      "candidate": {
+        "passRate": 1,
+        "rawRunPassRate": 0,
+        "fallbackDependencyRunRate": 1,
+        "avgMs": 152283,
+        "topFailureClusters": []
+      },
+      "delta": {
+        "passRate": 0.9,
+        "rawRunPassRate": -0.1,
+        "fallbackDependencyRunRate": 1,
+        "avgMs": -391901
+      }
+    },
+    {
+      "scenario": "python-ai-stdlib-oracle",
+      "baseline": {
+        "passRate": 1,
+        "rawRunPassRate": 0,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 80405,
+        "topFailureClusters": []
+      },
+      "candidate": {
+        "passRate": 1,
+        "rawRunPassRate": 0,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 77761,
+        "topFailureClusters": []
+      },
+      "delta": {
+        "passRate": 0,
+        "rawRunPassRate": 0,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": -2644
+      }
+    },
+    {
+      "scenario": "ts-todo-oracle",
+      "baseline": {
+        "passRate": 1,
+        "rawRunPassRate": 1,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 137687,
+        "topFailureClusters": []
+      },
+      "candidate": {
+        "passRate": 1,
+        "rawRunPassRate": 0.1,
+        "fallbackDependencyRunRate": 0.9,
+        "avgMs": 85607,
+        "topFailureClusters": []
+      },
+      "delta": {
+        "passRate": 0,
+        "rawRunPassRate": -0.9,
+        "fallbackDependencyRunRate": 0.9,
+        "avgMs": -52080
+      }
+    }
+  ],
+  "clusterDelta": [
+    {
+      "id": "node_contract",
+      "baseline": 30,
+      "candidate": 0,
+      "delta": -30
+    },
+    {
+      "id": "command_runtime",
+      "baseline": 9,
+      "candidate": 0,
+      "delta": -9
+    },
+    {
+      "id": "deps_policy",
+      "baseline": 2,
+      "candidate": 0,
+      "delta": -2
+    }
+  ],
+  "gate": {
+    "enabled": true,
+    "passed": true,
+    "thresholds": {
+      "minPassRateDelta": 0,
+      "maxFallbackDependencyRunRate": 0.9,
+      "maxFallbackDependencyRunRateDelta": 0.2,
+      "maxClusterIncreaseRules": [
+        {
+          "id": "json_parse",
+          "maxIncrease": 0
+        },
+        {
+          "id": "schema_shape",
+          "maxIncrease": 0
+        },
+        {
+          "id": "placeholder",
+          "maxIncrease": 0
+        }
+      ],
+      "scenarioOverrides": {
+        "ts-todo-oracle": {
+          "maxFallbackDependencyRunRate": 0.95,
+          "maxFallbackDependencyRunRateDelta": 0.95
+        },
+        "node-api-oracle": {
+          "maxFallbackDependencyRunRate": 1,
+          "maxFallbackDependencyRunRateDelta": 1
+        },
+        "python-ai-stdlib-oracle": {
+          "maxFallbackDependencyRunRate": 0.2,
+          "maxFallbackDependencyRunRateDelta": 0.2
+        }
+      }
+    },
+    "violations": []
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "files": [
+    {
+      "path": "src/server.js",
+      "content": "// Your server code here\n"
+    },
+    {
+      "path": "src/routes/todoRoutes.js",
+      "content": "// Your todo routes code here\n"
+    }
+  ]
+}

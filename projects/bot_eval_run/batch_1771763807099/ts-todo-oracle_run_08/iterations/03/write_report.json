@@ -1,0 +1,8 @@
+{
+  "count": 1,
+  "files": [
+    "package.json"
+  ],
+  "appliedAsPatch": true,
+  "forcePatchFromIncompleteFull": true
+}

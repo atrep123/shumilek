@@ -1,0 +1,21 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "src/server.js must define createServer({ dataPath })",
+    "src/server.js must export createServer (e.g. module.exports = { createServer })",
+    "openapi.json missing \"/openapi.json\" path",
+    "Command failed: node --test tests/oracle.test.js (exit=null, timedOut=true)"
+  ],
+  "commands": [
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771703728306\\node-api-oracle_run_01\\workspace",
+      "ok": false,
+      "exitCode": null,
+      "timedOut": true,
+      "durationMs": 600010,
+      "stdout": "Server is running on port 3000\n✖ GET /health + GET /openapi.json (8.1244ms)\n✖ Todo CRUD + persistence (0.6263ms)\n",
+      "stderr": ""
+    }
+  ]
+}

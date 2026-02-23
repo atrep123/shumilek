@@ -1,0 +1,22 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md",
+      "content": ""
+    },
+    {
+      "path": "mini_ai/__init__.py",
+      "content": "from .markov import MarkovChain\nfrom .cli import main"
+    },
+    {
+      "path": "mini_ai/markov.py",
+      "content": "class MarkovChain:\n  def __init__(self, order: int = 1):\n    self.order = order\n    self.transitions = {}\n\n  @classmethod\n  def from_dict(cls, d: dict) -> 'MarkovChain':\n    return cls(order=d['order'], transitions=d['transitions'])\n\n  def train(self, text: str) -> None:\n    for i in range(len(text) - self.order):\n      context = text[i:i+self.order]\n      next_char = text[i+self.order]\n      if context not in self.transitions:\n        self.transitions[context] = {}\n      if next_char not in self.transitions[context]:\n        self.transitions[context][next_char] = 0\n      self.transitions[context][next_char] += 1\n\n  def generate(self, length: int, seed: str | None = None, random_seed: int | None = None) -> str:\n    if seed is not None and random_seed is not None:\n      raise ValueError('Cannot specify both seed and random_seed')\n    elif seed is not None:\n      random.seed(seed)\n    elif random_seed is not None:\n      random.seed(random_seed)\n\n    context = text[:self.order]\n    result = [context]\n    for _ in range(length - self.order):\n      next_char_options = list(self.transitions[context].keys())\n      if seed is not None or random_seed is not None:\n        next_char = random.choice(next_char_options)\n      else:\n        next_char, _ = max(self.transitions[context].items(), key=lambda x: x[1])\n      result.append(next_char)\n      context = ''.join(result[-self.order:])\n    return ''.join(result)\n\n  def to_dict(self) -> dict:\n    return {\n      'order': self.order,\n      'transitions': self.transitions\n    }\n"
+    },
+    {
+      "path": "mini_ai/cli.py",
+      "content": "import argparse\nfrom .markov import MarkovChain\n\ndef generate(args):\n  with open(args.model, 'r', encoding='utf-8') as file:\n    model = MarkovChain.from_dict(json.load(file))\n  generated_text = model.generate(length=args.length, seed=args.seed, random_seed=args.random_seed)\n  print(generated_text)\n\nif __name__ == '__main__':\n  parser = argparse.ArgumentParser()\n  parser.add_argument('--input', type=str, required=True, help='Input text file path')\n  parser.add_argument('--model-out', type=str, required=True, help='Output model file path')\n  parser.add_argument('--order', type=int, default=1, help='Order of Markov chain')\n  subparsers = parser.add_subparsers(dest='command')\n\n  train_parser = subparsers.add_parser('train', help='Train a Markov chain from input text and save the model to output file path')\n  train_parser.add_argument('--input', type=str, required=True, help='Input text file path')\n  train_parser.add_argument('--model-out', type=str, required=True, help='Output model file path')\n  train_parser.add_argument('--order', type=int, default=1, help='Order of Markov chain')\n\n  generate_parser = subparsers.add_parser('generate', help='Generate text using the trained Markov chain model')\n  generate_parser.add_argument('--model', type=str, required=True, help='Model file path')\n  generate_parser.add_argument('--length', type=int, required=True, help='Length of generated text')\n  generate_parser.add_argument('--seed', type=str)\n  generate_parser.add_argument('--random-seed', type=int)\n\n  args = parser.parse_args()\n  if args.command == 'train':\n    main(args.input, args.model_out, args.order)\n  elif args.command == 'generate':\n    generate(args)"
+    }
+  ],
+  "notes": "Correct indentation issues in cli.py and markov.py. Ensure that the MarkovChain class is properly initialized with order parameter."
+}

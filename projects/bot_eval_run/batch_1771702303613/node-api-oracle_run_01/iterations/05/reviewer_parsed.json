@@ -1,0 +1,3 @@
+{
+  "error": "src/server.js is missing the `openapi.json` file or its content is incorrect. The server expects an OpenAPI specification in this JSON file to generate the correct API documentation."
+}

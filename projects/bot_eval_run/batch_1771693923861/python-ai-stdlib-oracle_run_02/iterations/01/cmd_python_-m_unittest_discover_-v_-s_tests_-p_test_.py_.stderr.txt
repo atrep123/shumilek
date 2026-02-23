@@ -1,0 +1,23 @@
+test_oracle (unittest.loader._FailedTest.test_oracle) ... ERROR
+
+======================================================================
+ERROR: test_oracle (unittest.loader._FailedTest.test_oracle)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_oracle
+Traceback (most recent call last):
+  File "C:\Users\atrep\AppData\Local\Programs\Python\Python312\Lib\unittest\loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\AppData\Local\Programs\Python\Python312\Lib\unittest\loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1771693923861\python-ai-stdlib-oracle_run_02\workspace\tests\test_oracle.py", line 8, in <module>
+    from mini_ai.markov import MarkovChain
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1771693923861\python-ai-stdlib-oracle_run_02\workspace\mini_ai\markov.py", line 47
+    def from_dict(cls, d: dict) -> "MarkovChain":
+IndentationError: unexpected unindent
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

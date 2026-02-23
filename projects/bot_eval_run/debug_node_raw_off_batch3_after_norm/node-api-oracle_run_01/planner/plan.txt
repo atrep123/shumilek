@@ -1,0 +1,83 @@
+We are creating a Node.js project with the following structure:
+
+- mode: "full"
+- files: [
+    {"path": "package.json", "content": "{\"type\": \"commonjs\"}"},
+    {"path": "src/server.js", "content": "const { createServer } = require('http'); const fs = require('fs'); const path = require('path'); const crypto = require('crypto'); function createServer({ dataPath }) {
+  let todos = []; try {
+    const data = fs.readFileSync(dataPath);
+    todos = JSON.parse(data);
+  } catch (err) {
+    // If the file doesn't exist, we'll create it later (empty array)
+  }
+
+  const server = createServer((req, res) => {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', () => {
+      // Parse the body
+      if (method === 'GET' && path === '/health') {
+        sendResponse(res, 200, { message: 'OK' });
+      } else if (method === 'GET' && path === '/openapi.json') {
+        sendResponse(res, 200, { openapi: '3.0.1', info: { title: 'TODO API', version: '1.0.0' }, paths: { '/todos': { get: { responses: { '200': { description: 'OK', content: { 'application/json': { schema: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, title: { type: 'string' }, done: { type: 'boolean' } } } } } } } } } } } });
+      } else if (method === 'GET' && path.startsWith('/todos/')) {
+        const id = path.split('/').pop();
+        const todo = todos.find(todo => todo.id === id);
+        if (todo) sendResponse(res, 200, todo); else sendResponse(res, 404, { message: 'Not Found' });
+      } else if (method === 'GET' && path === '/todos') {
+        sendResponse(res, 200, todos);
+      } else if (method === 'POST' && path === '/todos') {
+        const parsedBody = JSON.parse(body);
+        if (!parsedBody.title) return sendResponse(res, 400, { message: 'Bad Request', errors: ['title is required'] });
+        const id = crypto.randomUUID();
+        todos.push({ id, title: parsedBody.title, done: false });
+        fs.writeFileSync(dataPath, JSON.stringify(todos));
+        sendResponse(res, 201, { message: 'Created', id });
+      } else if (method === 'PATCH' && path.startsWith('/todos/')) {
+        const id = path.split('/').pop();
+        const todoIndex = todos.findIndex(todo => todo.id === id);
+        if (todoIndex === -1) return sendResponse(res, 404, { message: 'Not Found' });
+        const parsedBody = JSON.parse(body);
+        if (!parsedBody.done) return sendResponse(res, 400, { message: 'Bad Request', errors: ['done is required'] });
+        todos[todoIndex].done = parsedBody.done;
+        fs.writeFileSync(dataPath, JSON.stringify(todos));
+        sendResponse(res, 200, { message: 'Updated' });
+      } else if (method === 'DELETE' && path.startsWith('/todos/')) {
+        const id = path.split('/').pop();
+        todos = todos.filter(todo => todo.id !== id);
+        fs.writeFileSync(dataPath, JSON.stringify(todos));
+        sendResponse(res, 204, { message: 'Deleted' });
+      }
+    });
+  }); return server;
+}
+function sendResponse(res, status, data) {
+  res.statusCode = status;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(data));
+}")},
+    {"path": "openapi.json", "content": "{\"openapi\": \"3.0.1\", \"info\": {\"title\": \"TODO API\", \"version\": \"1.0.0\"}, \"paths\": {\"/todos\": {\"get\": {\"responses\": {\"200\": {\"description\": \"OK\", \"content\": {\"application/json\": {\"schema\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\"}, \"title\": {\"type\": \"string\"}, \"done\": {\"type\": \"boolean\"}}}}}}}}}}}}}"},
+    {"path": "README.md", "content": "# TODO API
+This is a simple Node.js project that implements a RESTful API for managing TODO items.
+
+## Endpoints
+- GET /health: Returns a health check response.
+- GET /openapi.json: Returns the OpenAPI specification of the API.
+- GET /todos: Returns all TODO items.
+- GET /todos/:id: Returns a specific TODO item by ID.
+- POST /todos: Creates a new TODO item.
+- PATCH /todos/:id: Updates a specific TODO item by ID.
+- DELETE /todos/:id: Deletes a specific TODO item by ID.
+
+## Running the Project
+1. Clone this repository.
+2. Navigate to the project directory.
+3. Run `npm install` to install dependencies.
+4. Create an empty file named `data.json` in the `src` directory as the data storage.
+5. Start the server with `node src/server.js`.
+6. Use a tool like Postman or curl to test the API endpoints.
+
+## Example Usage
+- To create a new TODO item: `curl -X POST http://localhost:3000/todos -H 'Content-Type: application/json' -d '{

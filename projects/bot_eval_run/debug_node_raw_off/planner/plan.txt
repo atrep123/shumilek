@@ -1,0 +1,6 @@
+We are creating a Node.js project with the following structure: We are given the output format. We must return a JSON object with:
+   - mode: "full"
+   - files: an array of objects with "path" and "content"
+   - notes: optional
+
+We are to create a project that meets the specified requirements and passes the provided Oracle tests.

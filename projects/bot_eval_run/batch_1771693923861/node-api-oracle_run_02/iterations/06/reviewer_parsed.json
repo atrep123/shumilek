@@ -1,0 +1,9 @@
+{
+  "errors": [
+    {
+      "message": "AssertionError: expected undefined to be a function",
+      "location": "tests/oracle.test.js:247:13",
+      "name": "AssertionError"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "mode": "patch",
+  "files": [
+    {
+      "path": "./dist/cli.js",
+      "content": "\"use strict\";\nObject.defineProperty(exports, \"__esModule\", { value: true });\nObject.defineProperty(exports, \"__esModule\", { value: true });\nconst store_1 = require(\"./store\");\nconst commander_1 = require(\"commander\");\nconst program = new commander_1.Command();\nprogram\n    .option('--data <path>', 'specify the data file path')\n    .parse(process.argv);\nconst options = program.opts();\nif (!options.data) {\n    console.error('Error: --data option is required');\n    process.exit(1);\n}\nconst store = new store_1.TaskStore(options.data);\nprogram\n    .command('list')\n    .description('List all tasks')\n    .action(() => {\n    console.log(JSON.stringify({ ok: true, tasks: store.list() }));\n});\nprogram\n    .command('add <title>')\n    .description('Add a new task')\n    .action((title) => {\n    const task = store.add(title);\n    console.log(JSON.stringify({ ok: true, task }));\n});\nprogram\n    .command('done <id>')\n    .description('Mark a task as done')\n    .action((id) => {\n    const task = store.done(id);\n    console.log(JSON.stringify({ ok: true, task }));\n});\nprogram\n    .command('remove <id>')\n    .description('Remove a task')\n    .action((id) => {\n    const task = store.remove(id);\n    console.log(JSON.stringify({ ok: true, task }));\n});\nprogram.parse();\n"
+    },
+    {
+      "path": "./src/cli.ts",
+      "content": "\"use strict\";\nObject.defineProperty(exports, \"__esModule\", { value: true });\nconst store_1 = require(\"./store\");\nimport fs from 'node:fs';\nimport path from 'node:path';\nimport { Command } from 'commander';\n\nconst program = new Command();\n\nprogram\n  .option('--data <path>', 'specify the data file path')\n  .parse(process.argv);\n\nconst options = program.opts();\n\nif (!options.data) {\n  console.error('Error: --data option is required');\n  process.exit(1);\n}\n\nconst store = new store_1.TaskStore(options.data);\n\nprogram\n  .command('list')\n  .description('List all tasks')\n  .action(() => {\n    console.log(JSON.stringify({ ok: true, tasks: store.list() }));\n  });\n\nprogram\n  .command('add <title>')\n  .description('Add a new task')\n  .action((title) => {\n    const task = store.add(title);\n    console.log(JSON.stringify({ ok: true, task }));\n  });\n\nprogram\n  .command('done <id>')\n  .description('Mark a task as done')\n  .action((id) => {\n    const task = store.done(id);\n    console.log(JSON.stringify({ ok: true, task }));\n  });\n\nprogram\n  .command('remove <id>')\n  .description('Remove a task')\n  .action((id) => {\n    const task = store.remove(id);\n    console.log(JSON.stringify({ ok: true, task }));\n  });\n\nprogram.parse();\n"
+    }
+  ],
+  "notes": "optional"
+}

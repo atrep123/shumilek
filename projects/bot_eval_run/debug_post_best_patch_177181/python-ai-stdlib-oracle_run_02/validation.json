@@ -1,0 +1,88 @@
+{
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\debug_post_best_patch_177181\\python-ai-stdlib-oracle_run_02",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\debug_post_best_patch_177181\\python-ai-stdlib-oracle_run_02\\workspace",
+  "deterministicFallback": {
+    "mode": "on-fail",
+    "tsTodo": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "nodeApi": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "totalActivations": 0,
+    "totalRecoveries": 0,
+    "totalTargetedActivations": 0,
+    "totalTargetedRecoveries": 0,
+    "totalCanonicalActivations": 0,
+    "totalCanonicalRecoveries": 0,
+    "totalRawPasses": 0,
+    "totalRawFailures": 0,
+    "totalRecoveredByFallback": 0,
+    "fallbackDependencyRate": 0
+  },
+  "reliability": {
+    "rawPasses": 0,
+    "rawFailures": 0,
+    "recoveredByFallback": 0,
+    "fallbackDependencyRate": 0
+  },
+  "parseStats": {
+    "plannerFailures": 0,
+    "schemaFailures": 0,
+    "jsonRepairFailures": 0,
+    "parseFailures": 0,
+    "jsonParseFailures": 0,
+    "placeholderFailures": 0,
+    "otherFailures": 0
+  },
+  "ok": true,
+  "diagnostics": [],
+  "commands": [
+    {
+      "command": "python -m compileall -q mini_ai tests",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\debug_post_best_patch_177181\\python-ai-stdlib-oracle_run_02\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 73,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "python -m unittest discover -v -s tests -p \"test*.py\"",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\debug_post_best_patch_177181\\python-ai-stdlib-oracle_run_02\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 85,
+      "stdout": "",
+      "stderr": "test_train_and_generate_smoke (test_oracle.TestCliOracle.test_train_and_generate_smoke) ... ok\r\ntest_generate_deterministic (test_oracle.TestMarkovOracle.test_generate_deterministic) ... ok\r\ntest_order_validation (test_oracle.TestMarkovOracle.test_order_validation) ... ok\r\ntest_round_trip_serialization (test_oracle.TestMarkovOracle.test_round_trip_serialization) ... ok\r\ntest_train_and_to_dict (test_oracle.TestMarkovOracle.test_train_and_to_dict) ... ok\r\n\r\n----------------------------------------------------------------------\r\nRan 5 tests in 0.005s\r\n\r\nOK\r\n"
+    },
+    {
+      "command": "python -m mini_ai.cli --help",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\debug_post_best_patch_177181\\python-ai-stdlib-oracle_run_02\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 63,
+      "stdout": "usage: cli.py [-h] {train,generate} ...\r\n\r\nCharacter-level Markov chain generator.\r\n\r\npositional arguments:\r\n  {train,generate}\r\n\r\noptions:\r\n  -h, --help        show this help message and exit\r\n",
+      "stderr": ""
+    }
+  ]
+}

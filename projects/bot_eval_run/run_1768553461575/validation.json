@@ -1,0 +1,42 @@
+{
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1768553461575",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1768553461575\\workspace",
+  "ok": false,
+  "diagnostics": [
+    "Missing required file: mini_ai/cli.py",
+    "Command failed: python -m unittest -v (exit=5, timedOut=false)",
+    "Command failed: python -m mini_ai.cli --help (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "python -m compileall -q mini_ai tests",
+      "cwd": "projects\\bot_eval_run\\run_1768553461575\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 71,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "python -m unittest -v",
+      "cwd": "projects\\bot_eval_run\\run_1768553461575\\workspace",
+      "ok": false,
+      "exitCode": 5,
+      "timedOut": false,
+      "durationMs": 58,
+      "stdout": "",
+      "stderr": "\r\n----------------------------------------------------------------------\r\nRan 0 tests in 0.000s\r\n\r\nNO TESTS RAN\r\n"
+    },
+    {
+      "command": "python -m mini_ai.cli --help",
+      "cwd": "projects\\bot_eval_run\\run_1768553461575\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 32,
+      "stdout": "",
+      "stderr": "C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\python.exe: No module named mini_ai.cli\r\n"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "<--- Add this line if you want to skip type checking for your libraries (like crypto module in this case) which might cause issues with the `crypto` import. This is optional and depends on your project setup. Remove it if not needed or replace with appropriate configuration for your use case. ": "forceConsistentCasingInFileNames"
+  }
+}

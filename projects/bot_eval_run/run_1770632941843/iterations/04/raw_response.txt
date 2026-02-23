@@ -1,0 +1,10 @@
+{
+  "mode": "patch",
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"todo-api\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple Node.js application that provides a REST API for managing TODO items.\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"test\": \"node --test tests/oracle.test.js\"\n  },\n  \"type\": \"commonjs\"\n}\n"
+    }
+  ],
+  "notes": "Removed the 'http' dependency and added 'type': 'commonjs' to package.json."
+}

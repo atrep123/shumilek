@@ -1,0 +1,14 @@
+{
+  "mode": "patch",
+  "files": [
+    {
+      "path": "dist/cli.js",
+      "content": "\"use strict\";\nObject.defineProperty(exports, \"__esModule\", { value: true });\nexports.program = void 0;\nconst Command = require('commander');\nObject.defineProperty(exports, \"__esModule\", { value: true });\nexports.program = new Command();\nexports.program\n    .name('todo')\n    .description('A simple command-line todo list manager');\n\n// ... (remaining part of the file remains unchanged) \n"
+    },
+    {
+      "path": "src/store.ts",
+      "content": "import crypto from 'node:crypto';\nexport interface Task {\nid: string;\ntitle: string;\ndone: boolean;\ncreatedAt: string;\noptional doneAt?: string;\n}\nexport interface TaskStore {\nlist(): Task[];\nadd(title: string): Task;\ndon(id: string): Task;\nremove(id: string): Task;\n}\nexport class InMemoryTaskStore implements TaskStore {\ntasks: Task[] = [];\nconstructor(private filePath: string) {}\n// ... (remaining part of the file remains unchanged)\n"
+    }
+  ],
+  "notes": "optional"
+}

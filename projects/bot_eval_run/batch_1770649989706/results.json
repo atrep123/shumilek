@@ -1,0 +1,12 @@
+[
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 1,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 494725,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770649989706\\ts-todo-oracle_run_01",
+    "diagnostics": [],
+    "timedOut": false
+  }
+]

@@ -1,0 +1,16 @@
+{
+  "runId": 1770644613816,
+  "scenario": "node-api-oracle",
+  "model": "deepseek-coder-v2:16b",
+  "plannerModel": "deepseek-r1:8b",
+  "reviewerModel": "qwen2.5:3b",
+  "jsonRepairModel": "qwen2.5:7b",
+  "baseUrl": "http://localhost:11434",
+  "ollamaOptions": {
+    "temperature": 0.2,
+    "num_predict": 2400,
+    "seed": 42
+  },
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770643297744\\node-api-oracle_run_03\\workspace",
+  "startedAt": "2026-02-09T13:43:33.818Z"
+}

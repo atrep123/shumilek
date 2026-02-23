@@ -1,0 +1,461 @@
+Jsi code reviewer (mini-validator). Tvuj ukol: navrhnout MINIMALNI opravy, ktere povedou k tomu, ze validace projde.
+Odpovez JEN JSON bez markdownu: { "review": "text", "priorityFiles": ["path1","path2"] }
+
+SPEC (zkraceno):
+Vytvor realisticky TypeScript projekt (bez externich zavislosti), ktery se zkompiluje do `dist/` a projde oracle testy.
+
+POZADAVKY / KONTRAKT:
+- Zadne externi npm balicky (zadne yargs/commander/uuid/etc). Pouze Node.js builtin.
+- VYSLOVNE ZAKAZANO: commander, yargs, minimist, uuid, fs-extra, axios (a jine externi balicky).
+- Pokud potrebujes ID, pouzij `node:crypto` a `crypto.randomUUID()` (builtin).
+- README.md je povinny a musi obsahovat kratke pouziti prikazu add/list/done/remove.
+- Nevytvarej `dist/` ve vystupu (generuje ho `tsc`).
+- Musi existovat `tsconfig.json` a kompilace do `dist/` (CommonJS) pres `tsc -p tsconfig.json`.
+- `src/store.ts` musi exportovat `TaskStore` s metodami:
+  - constructor(filePath: string)
+  - list(): Task[]
+  - add(title: string): Task
+  - done(id: string): Task
+  - remove(id: string): Task
+- `Task` a `TaskStore` definuj primo v `src/store.ts` (nesmi byt import z `./store`).
+- Task ma pole: id (string), title (string), done (boolean), createdAt (ISO string), doneAt? (ISO string).
+- `src/cli.ts` musi po kompilaci vytvorit spustitelny CLI v `dist/cli.js` a podporovat:
+  - `--help` (exit code 0)
+  - `list --data <path>` -> vypise JSON { ok: true, tasks: [...] }
+  - `add <title> --data <path>` -> vypise JSON { ok: true, task: {...} }
+  - `done <id> --data <path>` -> JSON { ok: true, task: {...done:true...} }
+  - `remove <id> --data <path>` -> JSON { ok: true, task: {...} }
+
+Technicka poznamka: abys nemusel resit @types/node, v TS nepouzivej `import fs from ...`.
+Pouzij `declare const require: any; declare const process: any;` a nacti builtin pres `const fs = require("node:fs")` atd.
+
+Poznamka: testy budeme pouzivat tyto (musis projit):
+--- BEGIN ORACLE TESTS (tests/oracle.test.js) ---
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+const { spawnSync } = require('node:child_process');
+
+function makeTempDir() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-ts-todo-'));
+}
+
+function parseJsonFromStdout(stdout) {
+  const text = String(stdout || '').trim();
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start >= 0 && end > start) return JSON.parse(text.slice(start, end + 1));
+  throw new Error(`Expected JSON object on stdout, got: ${text.slice(0, 200)}`);
+}
+
+function runCli(workspaceDir, args) {
+  const cliPath = path.join(workspaceDir, 'dist', 'cli.js');
+  const res = spawnSync(process.execPath, [cliPath, ...args], { cwd: workspaceDir, encoding: 'utf8' });
+  return { code: res.status ?? 1, stdout: res.stdout || '', stderr: res.stderr || '' };
+}
+
+test('TaskStore: CRUD persists to JSON file', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { TaskStore } = require('../dist/store.js');
+  assert.equal(typeof TaskStore, 'function');
+
+  const dir = makeTempDir();
+  const dataPath = path.join(dir, 'tasks.json');
+
+  const store = new TaskStore(dataPath);
+  assert.deepEqual(store.list(), []);
+
+  const t1 = store.add('Buy milk');
+  assert.equal(typeof t1.id, 'string');
+  assert.ok(t1.id.length > 0);
+  assert.equal(t1.title, 'Buy milk');
+  assert.equal(t1.done, false);
+  assert.equal(typeof t1.createdAt, 'string');
+  assert.ok(fs.existsSync(dataPath));
+
+  const listed = store.list();
+  assert.equal(listed.length, 1);
+  assert.equal(listed[0].id, t1.id);
+
+  const done = store.done(t1.id);
+  assert.equal(done.done, true);
+  assert.equal(typeof done.doneAt, 'string');
+
+  const removed = store.remove(t1.id);
+  assert.equal(removed.id, t1.id);
+  assert.deepEqual(store.list(), []);
+
+  const persisted = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+  assert.ok(persisted && typeof persisted === 'object');
+  assert.ok(Array.isArray(persisted.tasks));
+});
+
+test('CLI: end-to-end flow', () => {
+  const workspaceDir = path.join(__dirname, '..');
+  const dir = makeTempDir();
+  const dataPath = path.join(dir, 'tasks.json');
+
+  // help
+  const help = runCli(workspaceDir, ['--help']);
+  assert.equal(help.code, 0, help.stderr || help.stdout);
+  assert.ok((help.stdout + help.stderr).toLowerCase().includes('add'));
+
+  // list empty
+  const list0 = runCli(workspaceDir, ['list', '--data', dataPath]);
+  assert.equal(list0.code, 0, list0.stderr || list0.stdout);
+  const list0Json = parseJsonFromStdout(list0.stdout);
+  assert.equal(list0Json.ok, true);
+  assert.ok(Array.isArray(list0Json.tasks));
+  assert.equal(list0Json.tasks.length, 0);
+
+  // add
+  const add = runCli(workspaceDir, ['add', 'Buy milk', '--data', dataPath]);
+  assert.equal(add.code, 0, add.stderr || add.stdout);
+  const addJson = parseJsonFromStdout(add.stdout);
+  assert.equal(addJson.ok, true);
+  assert.equal(addJson.task.title, 'Buy milk');
+  assert.equal(addJson.task.done, false);
+  assert.ok(fs.existsSync(dataPath));
+
+  // list 1
+  const list1 = runCli(workspaceDir, ['list', '--data', dataPath]);
+  assert.equal(list1.code, 0, list1.stderr || list1.stdout);
+  const list1Json = parseJsonFromStdout(list1.stdout);
+  assert.equal(list1Json.ok, true);
+  assert.equal(list1Json.tasks.length, 1);
+  const id = String(list1Json.tasks[0].id);
+
+  // done
+  const done = runCli(workspaceDir, ['done', id, '--data', dataPath]);
+  assert.equal(done.code, 0, done.stderr || done.stdout);
+  const doneJson = parseJsonFromStdout(done.stdout);
+  assert.equal(doneJson.ok, true);
+  assert.equal(doneJson.task.done, true);
+
+  // remove
+  const rm = runCli(workspaceDir, ['remove', id, '--data', dataPath]);
+  assert.equal(rm.code, 0, rm.stderr || rm.stdout);
+  const rmJson = parseJsonFromStdout(rm.stdout);
+  assert.equal(rmJson.ok, true);
+  assert.equal(String(rmJson.task.id), id);
+
+  const list2 = runCli(workspaceDir, ['list', '--data', dataPath]);
+  const list2Json = parseJsonFromStdout(list2.stdout);
+  assert.equal(list2Json.ok, true);
+  assert.equal(list2Json.tasks.length, 0);
+});
+--- END ORACLE TESTS ---
+
+VYSTUPNI FORMAT (STRICT): vrat JEN JSON objekt toh
+...<snip>...
+
+
+CHYBY:
+- Do not include dist/ in model output (generated by tsc)
+- Command failed: node "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\node_modules\typescript\bin\tsc" -p tsconfig.json (exit=2, timedOut=false)
+- Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)
+- Command failed: node dist/cli.js --help (exit=1, timedOut=false)
+
+LOGY (zkraceno):
+- node "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\node_modules\typescript\bin\tsc" -p tsconfig.json
+  stdout: "src/cli.ts(17,33): error TS7006: Parameter 'arg' implicitly has an 'any' type.\r\nsrc/store.ts(2,20): error TS1254: A 'const' initializer in an ambient context must be a string or numeric literal or literal enum reference.\r\nsrc/store.ts(3,28): error TS1254: A 'const' initializer in an ambient context must be a string or numeric literal or literal enum reference.\r\n"
+- node --test tests/oracle.test.js
+  stdout: "/bot_eval_run/batch_1770635317539/ts-todo-oracle_run_03/workspace/tests/oracle.test.js:1\nconst test = require('node:test');\n             ^\n\nReferenceError: require is not defined in ES module scope, you can use import instead\nThis file is being treated as an ES module because it has a '.js' file extension and 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770635317539\\ts-todo-oracle_run_03\\workspace\\package.json' contains \"type\": \"module\". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.\n    at file:///C:/Users/atrep/Desktop/Test_AI_Code/shumilek/projects/bot_eval_run/batch_1770635317539/ts-todo-oracle_run_03/workspace/tests/oracle.test.js:1:14\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)\n\nNode.js v24.12.0\n✖ tests\\oracle.test.js (40.1447ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 45.3598\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:1:1\n✖ tests\\oracle.test.js (40.1447ms)\n  'test failed'\n"
+- node dist/cli.js --help
+  stderr: "file:///C:/Users/atrep/Desktop/Test_AI_Code/shumilek/projects/bot_eval_run/batch_1770635317539/ts-todo-oracle_run_03/workspace/dist/cli.js:2\r\nObject.defineProperty(exports, \"__esModule\", { value: true });\r\n                      ^\r\n\r\nReferenceError: exports is not defined in ES module scope\r\nThis file is being treated as an ES module because it has a '.js' file extension and 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770635317539\\ts-todo-oracle_run_03\\workspace\\package.json' contains \"type\": \"module\". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.\r\n    at file:///C:/Users/atrep/Desktop/Test_AI_Code/shumilek/projects/bot_eval_run/batch_1770635317539/ts-todo-oracle_run_03/workspace/dist/cli.js:2:23\r\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\r\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\r\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)\r\n\r\nNode.js v24.12.0\r\n"
+
+SOUBORY (zkraceno):
+- README.md
+- dist/cli.js
+- dist/store.js
+- package.json
+- src/cli.ts
+- src/store.ts
+- tests/oracle.test.js
+- tsconfig.json
+
+KONTEXT SOUBORU (zkraceno):
+--- FILE: src/cli.ts ---
+declare const require: any;
+declare const process: any;
+const fs = require('node:fs');
+const path = require('node:path');
+import { TaskStore } from './store';
+
+function help() {
+  console.log(`Usage:
+  node dist/cli.js list --data <path>
+  node dist/cli.js add "Task title" --data <path>
+  node dist/cli.js done <id> --data <path>
+  node dist/cli.js remove <id> --data <path>`);
+}
+
+function parseArgs() {
+  const args: { [key: string]: any } = {};
+  process.argv.slice(2).forEach(arg => {
+    if (arg.startsWith('--')) {
+      const [key, value] = arg.slice(2).split('=');
+      args[key] = value || '';
+    }
+  });
+  return args;
+}
+
+function main() {
+  const args = parseArgs();
+  if (args['help'] || process.argv.length < 3) {
+    help();
+    process.exit(0);
+  }
+
+  const command = process.argv[2];
+  const dataPath = args['data'];
+
+  if (!dataPath) {
+    console.error('Missing --data option');
+    process.exit(1);
+  }
+
+  const store = new TaskStore(dataPath);
+
+  switch (command) {
+    case 'list':
+      console.log(JSON.stringify({ ok: true, tasks: store.list() }));
+      break;
+    case 'add':
+      if (!args['_'][0]) {
+        console.error('Missing task title');
+        process.exit(1);
+      }
+      const newTask = store.add(args['_'][0]);
+      console.log(JSON.stringify({ ok: true, task: newTask }));
+      break;
+    case 'done':
+      if (!args['_'][0]) {
+        console.error('Missing task id');
+        process.exit(1);
+      }
+      const doneTask = store.done(args['_'][0]);
+      if (doneTask) {
+        console.log(JSON.stringify({ ok: true, task: doneTask }));
+      } else {
+        console.error('Task not found');
+        process.exit(1);
+      }
+      break;
+    case 'remove':
+      if (!args['_'][0]) {
+        console.error('Missing task id');
+        process.exit(1);
+      }
+      const removedTask = store.remove(args['_'][0]);
+      if (removedTask) {
+        console.log(JSON.stringify({ ok: true, task: removedTask }));
+      } else {
+        console.error('Task not found');
+        process.exit(1);
+      }
+      break;
+    default:
+      help();
+      process.exit(1);
+  }
+}
+
+main();
+--- FILE: src/store.ts ---
+declare const require: any;
+declare const fs = require('node:fs');
+declare const randomUUID = require('node:crypto').randomUUID;
+
+declare interface Task {
+  id: string;
+  title: string;
+  done: boolean;
+  createdAt: string;
+  doneAt?: string;
+}
+
+class TaskStore {
+  private filePath: string;
+  private tasks: Task[] = [];
+
+  constructor(filePath: string) {
+    this.filePath = filePath;
+    if (fs.existsSync(this.filePath)) {
+      const data = fs.readFileSync(this.filePath, 'utf8');
+      this.tasks = JSON.parse(data).tasks || [];
+    }
+  }
+
+  list(): Task[] {
+    return this.tasks;
+  }
+
+  add(title: string): Task {
+    const task: Task = {
+      id: randomUUID(),
+      title,
+      done: false,
+      createdAt: new Date().toISOString()
+    };
+    this.tasks.push(task);
+    this.save();
+    return task;
+  }
+
+  done(id: string): Task | undefined {
+    const task = this.tasks.find(t => t.id === id);
+    if (task) {
+      task.done = true;
+      task.doneAt = new Date().toISOString();
+      this.save();
+    }
+    return task;
+  }
+
+  remove(id: string): Task | undefined {
+    const index = this.tasks.findIndex(t => t.id === id);
+    if (index !== -1) {
+      const removedTask = this.tasks.splice(index, 1)[0];
+      this.save();
+      return removedTask;
+    }
+    return undefined;
+  }
+
+  private save() {
+    fs.writeFileSync(this.filePath, JSON.stringify({ tasks: this.tasks }, null, 2));
+  }
+}
+
+export { TaskStore };
+--- FILE: tests/oracle.test.js ---
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+const { spawnSync } = require('node:child_process');
+
+function makeTempDir() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-ts-todo-'));
+}
+
+function parseJsonFromStdout(stdout) {
+  const text = String(stdout || '').trim();
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start >= 0 && end > start) return JSON.parse(text.slice(start, end + 1));
+  throw new Error(`Expected JSON object on stdout, got: ${text.slice(0, 200)}`);
+}
+
+function runCli(workspaceDir, args) {
+  const cliPath = path.join(workspaceDir, 'dist', 'cli.js');
+  const res = spawnSync(process.execPath, [cliPath, ...args], { cwd: workspaceDir, encoding: 'utf8' });
+  return { code: res.status ?? 1, stdout: res.stdout || '', stderr: res.stderr || '' };
+}
+
+test('TaskStore: CRUD persists to JSON file', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { TaskStore } = require('../dist/store.js');
+  assert.equal(typeof TaskStore, 'function');
+
+  const dir = makeTempDir();
+  const dataPath = path.join(dir, 'tasks.json');
+
+  const store = new TaskStore(dataPath);
+  assert.deepEqual(store.list(), []);
+
+  const t1 = store.add('Buy milk');
+  assert.equal(typeof t1.id, 'string');
+  assert.ok(t1.id.length > 0);
+  assert.equal(t1.title, 'Buy milk');
+  assert.equal(t1.done, false);
+  assert.equal(typeof t1.createdAt, 'string');
+  assert.ok(fs.existsSync(dataPath));
+
+  const listed = store.list();
+  assert.equal(listed.length, 1);
+  assert.equal(listed[0].id, t1.id);
+
+  const done = store.done(t1.id);
+  assert.equal(done.done, true);
+  assert.equal(typeof done.doneAt, 'string');
+
+  const removed = store.remove(t1.id);
+  assert.equal(removed.id, t1.id);
+  assert.deepEqual(store.list(), []);
+
+  const persisted = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+  assert.ok(persisted && typeof persisted === 'object');
+  assert.ok(Array.isArray(persisted.tasks));
+});
+
+test('CLI: end-to-end flow', () => {
+  const workspaceDir = path.join(__dirname, '..');
+  const dir = makeTempDir();
+  const dataPath = path.join(dir, 'tasks.json');
+
+  // help
+  const help = runCli(workspaceDir, ['--help']);
+  assert.equal(help.code, 0, help.stderr || help.stdout);
+  assert.ok((help.stdout + help.stderr).toLowerCase().includes('add'));
+
+  // list empty
+  const list0 = runCli(workspaceDir, ['list', '--data', dataPath]);
+  assert.equal(list0.code, 0, list0.stderr || list0.stdout);
+  const list0Json = parseJsonFromStdout(list0.stdout);
+  assert.equal(list0Json.ok, true);
+  assert.ok(Array.isArray(list0Json.tasks));
+  assert.equal(list0Json.tasks.length, 0);
+
+  // add
+  const add = runCli(workspaceDir, ['add', 'Buy milk', '--data', dataPath]);
+  assert.equal(add.code, 0, add.stderr || add.stdout);
+  const addJson = parseJsonFromStdout(add.stdout);
+  assert.equal(addJson.ok, true);
+  assert.equal(addJson.task.title, 'Buy milk');
+  assert.equal(addJson.task.done, false);
+  assert.ok(fs.existsSync(dataPath));
+
+  // list 1
+  const list1 = runCli(workspaceDir, ['list', '--data', dataPath]);
+  assert.equal(list1.code, 0, list1.stderr || list1.stdout);
+  const list1Json = parseJsonFromStdout(list1.stdout);
+  assert.equal(list1Json.ok, true);
+  assert.equal(list1Json.tasks.length, 1);
+  const id = String(list1Json.tasks[0].id);
+
+  // done
+  const done = runCli(workspaceDir, ['done', id, '--data', dataPath]);
+  assert.equal(done.code, 0, done.stderr || done.stdout);
+  const doneJson = parseJsonFromStdout(done.stdout);
+  assert.equal(doneJson.ok, true);
+  assert.equal(doneJson.task.done, true);
+
+  // remove
+  const rm = runCli(workspaceDir, ['remove', id, '--data', dataPath]);
+  assert.equal(rm.code, 0, rm.stderr || rm.stdout);
+  const rmJson = parseJsonFromStdout(rm.stdout);
+  assert.equal(rmJson.ok, true);
+  assert.equal(String(rmJson.task.id), id);
+
+  const list2 = runCli(
+...<snip>...
+
+--- FILE: tsconfig.json ---
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true
+  },
+  "include": [
+    "src/**/*"
+  ]
+}

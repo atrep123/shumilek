@@ -1,0 +1,70 @@
+import { readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
+import { randomUUID } from 'crypto';
+
+interface Task {
+  id: string;
+  title: string;
+  done: boolean;
+  createdAt: string;
+  doneAt?: string;
+}
+
+class TaskStore {
+  private filePath: string;
+
+  constructor(filePath: string) {
+    this.filePath = join(__dirname, '..', filePath);
+  }
+
+  list(): Task[] {
+    try {
+      const data = readFileSync(this.filePath, 'utf-8');
+      return JSON.parse(data).tasks || [];
+    } catch (error: any) {
+      if (error.code === 'ENOENT') {
+        writeFileSync(this.filePath, JSON.stringify({ tasks: [] }, null, 2));
+        return [];
+      }
+      throw error;
+    }
+  }
+
+  add(title: string): Task {
+    const task: Task = {
+      id: randomUUID(),
+      title,
+      done: false,
+      createdAt: new Date().toISOString()
+    };
+    const tasks = this.list();
+    tasks.push(task);
+    writeFileSync(this.filePath, JSON.stringify({ tasks }, null, 2));
+    return task;
+  }
+
+  done(id: string): Task {
+    let tasks = this.list();
+    const taskIndex = tasks.findIndex(t => t.id === id);
+    if (taskIndex !== -1) {
+      tasks[taskIndex].done = true;
+      tasks[taskIndex].doneAt = new Date().toISOString();
+      writeFileSync(this.filePath, JSON.stringify({ tasks }, null, 2));
+      return tasks[taskIndex];
+    }
+    throw new Error('Task not found');
+  }
+
+  remove(id: string): Task {
+    let tasks = this.list();
+    const taskIndex = tasks.findIndex(t => t.id === id);
+    if (taskIndex !== -1) {
+      const removedTask = tasks.splice(taskIndex, 1)[0];
+      writeFileSync(this.filePath, JSON.stringify({ tasks }, null, 2));
+      return removedTask;
+    }
+    throw new Error('Task not found');
+  }
+}
+
+export { TaskStore };

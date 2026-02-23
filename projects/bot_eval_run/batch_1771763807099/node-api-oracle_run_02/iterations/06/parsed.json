@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/server.js",
+      "content": "// Your server code here\n"
+    }
+  ],
+  "notes": "This is a placeholder for the actual patch content."
+}

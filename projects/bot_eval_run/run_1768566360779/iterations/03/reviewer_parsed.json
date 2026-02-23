@@ -1,0 +1,26 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md",
+      "content": "...\n"
+    },
+    {
+      "path": "package.json",
+      "content": "...\n"
+    },
+    {
+      "path": "tsconfig.json",
+      "content": "...\n"
+    },
+    {
+      "path": "src/store.ts",
+      "content": "...\n"
+    },
+    {
+      "path": "src/cli.ts",
+      "content": "...\n"
+    }
+  ],
+  "notes": "Fix CLI help message and add data path argument validation in main function"
+}

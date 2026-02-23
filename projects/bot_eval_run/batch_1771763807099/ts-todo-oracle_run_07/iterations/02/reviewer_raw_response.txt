@@ -1,0 +1,4 @@
+{
+ "review": "dependencies: [], devDependencies: []",
+ "priorityFiles": ["src/cli.ts", "src/store.ts"]
+}

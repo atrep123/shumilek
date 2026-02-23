@@ -1,0 +1,14 @@
+{
+  "system": [
+    "The provided solution includes the necessary files and context to create a simple API for managing todos. The `openapi.json` file defines the API endpoints, while `README.md`, `package.json`, and `src/server.js` are essential for setting up the server and handling requests.",
+    "Key points covered in the solution include:",
+    "- Setting up an environment with necessary files (`README.md`, `package.json`, `src/server.js`, and `openapi.json`).",
+    "- Implementing a simple API using Node.js and Express, ensuring all required endpoints are defined and implemented correctly.",
+    "- Handling CRUD operations for todos (create, read, update, delete) as per the OpenAPI specification.",
+    "- Ensuring that the server starts on a random port and listens to requests from `127.0.0.1`.",
+    "- Storing todo data in a file (`db.json`) and persisting it between API calls.",
+    "- Using the `fs` module for reading and writing JSON files, ensuring todos are saved and retrieved correctly.",
+    "- Implementing error handling to manage HTTP status codes appropriately.",
+    "- Ensuring that all required properties (like ID, description, completed) are handled in a way consistent with the OpenAPI specification."
+  ]
+}

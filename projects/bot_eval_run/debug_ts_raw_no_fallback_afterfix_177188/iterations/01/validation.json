@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "diagnostics": [],
+  "commands": [
+    {
+      "command": "node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json",
+      "cwd": "projects\\bot_eval_run\\debug_ts_raw_no_fallback_afterfix_177188\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 1217,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "projects\\bot_eval_run\\debug_ts_raw_no_fallback_afterfix_177188\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 400,
+      "stdout": "✔ TaskStore: CRUD persists to JSON file (6.8567ms)\n✔ CLI: end-to-end flow (275.457ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 335.3549\n",
+      "stderr": ""
+    },
+    {
+      "command": "node dist/cli.js --help",
+      "cwd": "projects\\bot_eval_run\\debug_ts_raw_no_fallback_afterfix_177188\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 59,
+      "stdout": "Usage:\n  list --data <path>\n  add <title> --data <path>\n  done <id> --data <path>\n  remove <id> --data <path>\n  --help\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "count": 3,
+  "files": [
+    "src/cli.ts",
+    "src/store.ts",
+    "README.md"
+  ]
+}

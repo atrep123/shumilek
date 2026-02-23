@@ -1,0 +1,4 @@
+src/store.ts(7,1): error TS1131: Property or signature expected.
+src/store.ts(7,17): error TS1109: Expression expected.
+src/store.ts(8,1): error TS1128: Declaration or statement expected.
+src/store.ts(19,1): error TS1005: '}' expected.

@@ -1,0 +1,16 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "deepseek-r1:8b",
+      "ok": false,
+      "error": "Planner output must contain non-empty \"plan\" string",
+      "errorKind": "other"
+    }
+  ],
+  "finalOk": false,
+  "primaryError": "Planner output must contain non-empty \"plan\" string",
+  "primaryErrorKind": "other",
+  "finalError": "Planner output must contain non-empty \"plan\" string",
+  "finalErrorKind": "other"
+}

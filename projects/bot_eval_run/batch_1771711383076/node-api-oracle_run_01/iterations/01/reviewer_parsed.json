@@ -1,0 +1,3 @@
+{
+  "error": "Missing 'dataPath' parameter in createServer function. This is required for reading and writing to the data file."
+}

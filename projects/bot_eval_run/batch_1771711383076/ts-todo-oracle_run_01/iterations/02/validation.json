@@ -1,0 +1,40 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "src/cli.ts outputs should include \"ok\" field in JSON responses",
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)",
+    "CLI commands must print valid JSON object to stdout"
+  ],
+  "commands": [
+    {
+      "command": "node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771711383076\\ts-todo-oracle_run_01\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 1175,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771711383076\\ts-todo-oracle_run_01\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 207,
+      "stdout": "✔ TaskStore: CRUD persists to JSON file (6.6185ms)\n✖ CLI: end-to-end flow (80.7387ms)\nℹ tests 2\nℹ suites 0\nℹ pass 1\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 143.2157\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:62:1\n✖ CLI: end-to-end flow (80.7387ms)\n  Error: Expected JSON object on stdout, got: []\n      at parseJsonFromStdout (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771711383076\\ts-todo-oracle_run_01\\workspace\\tests\\oracle.test.js:17:9)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771711383076\\ts-todo-oracle_run_01\\workspace\\tests\\oracle.test.js:75:21)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3)\n",
+      "stderr": ""
+    },
+    {
+      "command": "node dist/cli.js --help",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771711383076\\ts-todo-oracle_run_01\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 62,
+      "stdout": "\nUsage:\n  add <title> --data <path>\n  list --data <path>\n  done <id> --data <path>\n  remove <id> --data <path>\n\n",
+      "stderr": ""
+    }
+  ]
+}

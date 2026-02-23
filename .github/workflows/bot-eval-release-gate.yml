@@ -1,0 +1,175 @@
+name: Bot Eval Release Gate
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    - cron: '30 2 * * *'
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Which gate profile to run
+        required: true
+        default: pr
+        type: choice
+        options:
+          - pr
+          - nightly
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bot-eval-release-gate-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  OLLAMA_BASE_URL: ${{ vars.OLLAMA_BASE_URL || 'http://127.0.0.1:11434' }}
+  BOT_EVAL_MODEL: ${{ vars.BOT_EVAL_MODEL || 'qwen2.5-coder:14b' }}
+  BOT_EVAL_PLANNER_MODEL: ${{ vars.BOT_EVAL_PLANNER_MODEL || 'deepseek-r1:8b' }}
+  BOT_EVAL_REVIEWER_MODEL: ${{ vars.BOT_EVAL_REVIEWER_MODEL || 'qwen2.5:3b' }}
+  BOT_EVAL_JSON_REPAIR_MODEL: ${{ vars.BOT_EVAL_JSON_REPAIR_MODEL || 'qwen2.5:7b' }}
+  BOT_EVAL_DETERMINISTIC_FALLBACK: ${{ vars.BOT_EVAL_DETERMINISTIC_FALLBACK || 'on-fail' }}
+  BOT_EVAL_TIMEOUT_SEC: ${{ vars.BOT_EVAL_TIMEOUT_SEC || '1200' }}
+  BOT_EVAL_MAX_ITERATIONS: ${{ vars.BOT_EVAL_MAX_ITERATIONS || '6' }}
+  BOT_EVAL_HARD_TIMEOUT_SEC: ${{ vars.BOT_EVAL_HARD_TIMEOUT_SEC || '1200' }}
+  BOT_EVAL_BASELINE_DIR: ${{ vars.BOT_EVAL_BASELINE_DIR || '' }}
+
+jobs:
+  gate-pr:
+    if: (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) || (github.event_name == 'workflow_dispatch' && inputs.profile == 'pr')
+    runs-on: ${{ vars.BOT_EVAL_RUNNER || 'self-hosted' }}
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Ollama connectivity
+        shell: pwsh
+        run: |
+          $baseUrl = if ($env:OLLAMA_BASE_URL) { $env:OLLAMA_BASE_URL } else { 'http://127.0.0.1:11434' }
+          $null = Invoke-RestMethod -Uri "$baseUrl/api/tags" -TimeoutSec 10
+          Write-Host "Ollama reachable at $baseUrl"
+
+      - name: Resolve baseline directory
+        id: baseline
+        shell: pwsh
+        run: |
+          $candidate = "$env:BOT_EVAL_BASELINE_DIR".Trim()
+          if ([string]::IsNullOrWhiteSpace($candidate)) {
+            $pointerPath = Join-Path $PWD "projects\bot_eval_run\release_baseline.txt"
+            if (Test-Path $pointerPath) {
+              $candidate = (Get-Content -Raw $pointerPath).Trim()
+            }
+          }
+
+          if ([string]::IsNullOrWhiteSpace($candidate)) {
+            throw "Release-gate baseline missing. Set repo variable BOT_EVAL_BASELINE_DIR or update projects/bot_eval_run/release_baseline.txt."
+          }
+
+          $resolved = [System.IO.Path]::GetFullPath($candidate)
+          $resultsPath = Join-Path $resolved "results.json"
+          if (-not (Test-Path $resultsPath)) {
+            throw "Baseline directory is invalid (results.json missing): $resultsPath"
+          }
+
+          "baseline_dir=$resolved" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          Write-Host "Using baseline: $resolved"
+
+      - name: Run release gate (3x3)
+        id: gate
+        shell: pwsh
+        run: |
+          $outDir = "projects/bot_eval_run/release_gate_ci_pr_${env:GITHUB_RUN_ID}_${env:GITHUB_RUN_ATTEMPT}"
+          npm run bot:eval:release-gate:ci -- --runs 3 --baseline "${{ steps.baseline.outputs.baseline_dir }}" --outDir $outDir
+          "out_dir=$outDir" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Upload gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bot-eval-release-gate-pr-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: warn
+          path: |
+            ${{ steps.gate.outputs.out_dir }}/results.json
+            ${{ steps.gate.outputs.out_dir }}/summary.json
+            ${{ steps.gate.outputs.out_dir }}/compare.json
+            ${{ steps.gate.outputs.out_dir }}/compare_report.txt
+
+  gate-nightly:
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.profile == 'nightly')
+    runs-on: ${{ vars.BOT_EVAL_RUNNER || 'self-hosted' }}
+    timeout-minutes: 360
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Ollama connectivity
+        shell: pwsh
+        run: |
+          $baseUrl = if ($env:OLLAMA_BASE_URL) { $env:OLLAMA_BASE_URL } else { 'http://127.0.0.1:11434' }
+          $null = Invoke-RestMethod -Uri "$baseUrl/api/tags" -TimeoutSec 10
+          Write-Host "Ollama reachable at $baseUrl"
+
+      - name: Resolve baseline directory
+        id: baseline
+        shell: pwsh
+        run: |
+          $candidate = "$env:BOT_EVAL_BASELINE_DIR".Trim()
+          if ([string]::IsNullOrWhiteSpace($candidate)) {
+            $pointerPath = Join-Path $PWD "projects\bot_eval_run\release_baseline.txt"
+            if (Test-Path $pointerPath) {
+              $candidate = (Get-Content -Raw $pointerPath).Trim()
+            }
+          }
+
+          if ([string]::IsNullOrWhiteSpace($candidate)) {
+            throw "Release-gate baseline missing. Set repo variable BOT_EVAL_BASELINE_DIR or update projects/bot_eval_run/release_baseline.txt."
+          }
+
+          $resolved = [System.IO.Path]::GetFullPath($candidate)
+          $resultsPath = Join-Path $resolved "results.json"
+          if (-not (Test-Path $resultsPath)) {
+            throw "Baseline directory is invalid (results.json missing): $resultsPath"
+          }
+
+          "baseline_dir=$resolved" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          Write-Host "Using baseline: $resolved"
+
+      - name: Run release gate (10x3)
+        id: gate
+        shell: pwsh
+        run: |
+          $outDir = "projects/bot_eval_run/release_gate_ci_nightly_${env:GITHUB_RUN_ID}_${env:GITHUB_RUN_ATTEMPT}"
+          npm run bot:eval:release-gate:ci -- --runs 10 --baseline "${{ steps.baseline.outputs.baseline_dir }}" --outDir $outDir
+          "out_dir=$outDir" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Upload gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bot-eval-release-gate-nightly-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: warn
+          path: |
+            ${{ steps.gate.outputs.out_dir }}/results.json
+            ${{ steps.gate.outputs.out_dir }}/summary.json
+            ${{ steps.gate.outputs.out_dir }}/compare.json
+            ${{ steps.gate.outputs.out_dir }}/compare_report.txt

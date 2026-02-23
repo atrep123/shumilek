@@ -1,0 +1,7 @@
+{  
+  "README.md": "",
+  "package.json": "",
+  "tests/oracle.test.js": "",
+  "tsconfig.json": "",
+  "dist/cli.js": ""
+}

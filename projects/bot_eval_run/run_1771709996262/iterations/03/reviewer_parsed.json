@@ -1,0 +1,7 @@
+{
+  "review": "text",
+  "priorityFiles": [
+    "src/cli.ts",
+    "dist/store.js"
+  ]
+}

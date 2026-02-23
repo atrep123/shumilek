@@ -1,0 +1,12 @@
+{
+  "name": "todo-api",
+  "version": "1.0.0",
+  "description": "Simple TODO API",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "author": "Your Name",
+  "license": "MIT"
+}

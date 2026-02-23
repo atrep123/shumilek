@@ -1,0 +1,18 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md"
+    },
+    {
+      "path": "mini_ai/__init__.py"
+    },
+    {
+      "path": "mini_ai/markov.py"
+    },
+    {
+      "path": "mini_ai/cli.py"
+    }
+  ],
+  "notes": "Added basic structure and initial implementation of MarkovChain class with train, generate methods, and to_dict/from_dict methods. Missing load_model and save_model functions as per the provided context."
+}

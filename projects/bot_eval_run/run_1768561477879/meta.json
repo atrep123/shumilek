@@ -1,0 +1,8 @@
+{
+  "runId": 1768561477879,
+  "scenario": "python-ai-stdlib",
+  "model": "deepseek-coder-v2:16b",
+  "baseUrl": "http://localhost:11434",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1768561477879\\workspace",
+  "startedAt": "2026-01-16T11:04:37.881Z"
+}

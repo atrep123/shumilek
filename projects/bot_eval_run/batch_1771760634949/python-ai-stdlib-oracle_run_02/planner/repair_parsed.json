@@ -1,0 +1,3 @@
+{
+  "plan": "We are creating a project with the following structure:\n\n- README.md: \n  - A short description of the project, installation, and usage.\n\n- mini_ai/__init__.py:\n  - Empty or with __all__ if needed.\n\n- mini_ai/markov.py:\n  - Class MarkovChain with the required methods and attributes.\n\n- mini_ai/cli.py:\n  - Main function with argparse for command line interface."
+}

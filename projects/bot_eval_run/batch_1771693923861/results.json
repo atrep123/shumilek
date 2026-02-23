@@ -1,0 +1,198 @@
+[
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 1,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 289994,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\ts-todo-oracle_run_01",
+    "diagnostics": [
+      "Missing required file: package.json",
+      "Missing required file: tsconfig.json",
+      "Invalid package.json: ENOENT: no such file or directory, open 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\ts-todo-oracle_run_01\\workspace\\package.json'",
+      "Command failed: node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json (exit=1, timedOut=false)",
+      "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)",
+      "Command failed: node dist/cli.js --help (exit=1, timedOut=false)"
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1
+    }
+  },
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 2,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 226700,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\ts-todo-oracle_run_02",
+    "diagnostics": [
+      "Missing required file: README.md",
+      "Missing required file: package.json",
+      "Missing required file: tsconfig.json",
+      "Invalid package.json: ENOENT: no such file or directory, open 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\ts-todo-oracle_run_02\\workspace\\package.json'",
+      "CLI must parse process.argv manually; do not use commander/yargs/minimist",
+      "Non-builtin import \"commander\" in src/cli.ts",
+      "Command failed: node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json (exit=1, timedOut=false)",
+      "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)",
+      "Command failed: node dist/cli.js --help (exit=1, timedOut=false)"
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1
+    }
+  },
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 3,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 91897,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\ts-todo-oracle_run_03",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1
+    }
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 1,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 861978,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_01",
+    "diagnostics": [
+      "Missing required file: README.md",
+      "Missing required file: package.json",
+      "Invalid package.json: ENOENT: no such file or directory, open 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_01\\workspace\\package.json'",
+      "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)"
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 1,
+      "jsonRepairFailures": 1,
+      "parseFailures": 9
+    }
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 2,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 533406,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_02",
+    "diagnostics": [
+      "Missing required file: README.md",
+      "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)"
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 3
+    }
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 3,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 1018052,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_03",
+    "diagnostics": [
+      "Missing required file: openapi.json",
+      "package.json must set \"type\": \"commonjs\"",
+      "No dependencies allowed (dependencies/devDependencies must be empty or missing)",
+      "Invalid openapi.json: ENOENT: no such file or directory, open 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_03\\workspace\\openapi.json'",
+      "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)"
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 1,
+      "parseFailures": 6
+    }
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 1,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 365707,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\python-ai-stdlib-oracle_run_01",
+    "diagnostics": [
+      "Missing required file: README.md",
+      "Missing required file: mini_ai/__init__.py",
+      "Command failed: python -m compileall -q mini_ai tests (exit=1, timedOut=false)",
+      "Command failed: python -m unittest discover -v -s tests -p \"test*.py\" (exit=1, timedOut=false)",
+      "Command failed: python -m mini_ai.cli --help (exit=1, timedOut=false)",
+      "Too few tests ran: 1 (expected >= 5)"
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1
+    }
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 2,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 335820,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\python-ai-stdlib-oracle_run_02",
+    "diagnostics": [
+      "Missing required file: README.md",
+      "Missing required file: mini_ai/__init__.py",
+      "Command failed: python -m compileall -q mini_ai tests (exit=1, timedOut=false)",
+      "Command failed: python -m unittest discover -v -s tests -p \"test*.py\" (exit=1, timedOut=false)",
+      "Command failed: python -m mini_ai.cli --help (exit=1, timedOut=false)",
+      "Too few tests ran: 1 (expected >= 5)"
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1
+    }
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 3,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 362314,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\python-ai-stdlib-oracle_run_03",
+    "diagnostics": [
+      "Missing required file: README.md",
+      "Missing required file: mini_ai/__init__.py",
+      "Command failed: python -m compileall -q mini_ai tests (exit=1, timedOut=false)",
+      "Command failed: python -m unittest discover -v -s tests -p \"test*.py\" (exit=1, timedOut=false)",
+      "Command failed: python -m mini_ai.cli --help (exit=1, timedOut=false)",
+      "Too few tests ran: 1 (expected >= 5)"
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1
+    }
+  }
+]

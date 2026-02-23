@@ -1,0 +1,3 @@
+{ "errors": [], "changes": [ { "filePath": "src/store.ts", "changes": [ { "line": 19, "oldValue": "", "newValue": "      const tasks = this.readTasks();" }, { "line": 20, "oldValue": "", "newValue": "      const task = tasks.find(t => t.id === id);" }, { "line": 21, "oldValue": "", "newValue": "      if (task) {" }, { "line": 22, "oldValue": "", "newValue": "        task.done = true;" }, { "line": 23, "oldValue": "", "newValue": "        task.doneAt = new Date().toISOString();" }, { "line": 24, "oldValue": "", "newValue": "        this.writeTasks(tasks);" }, { "line": 25, "oldValue": "", "newValue": "      }" } ] } 
+
+  ],"filesChanged": [ "src/store.ts" ], "summary": { "totalChanges": 7, "filesChanged": 1 } }

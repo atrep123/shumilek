@@ -1,0 +1,1 @@
+{"mode": "patch", "files": [ {"path": "tests/test_oracle.py", "content": "    def test_order_validation(self):\n        with self.assertRaises(ValueError):\n            MarkovChain(order=0)\n"}], "notes": "optional"}

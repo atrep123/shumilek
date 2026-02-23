@@ -1,0 +1,1 @@
+{ "error": "Object.assign is deprecated in ES2018 and later." }

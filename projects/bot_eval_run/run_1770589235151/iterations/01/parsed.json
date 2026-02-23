@@ -1,0 +1,21 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"outDir\": \"./dist\",\n    \"module\": \"CommonJS\",\n    \"target\": \"ES6\",\n    \"strict\": true,\n    \"esModuleInterop\": true,\n    \"skipLibCheck\": true,\n    \"forceConsistentCasingInFileNames\": true\n  },\n  \"include\": [\"src/**/*\"]\n}\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"todo-cli\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple CLI todo app\",\n  \"main\": \"./dist/cli.js\",\n  \"scripts\": {\n    \"build\": \"tsc -p .\",\n    \"start\": \"node dist/cli.js\"\n  },\n  \"dependencies\": {},\n  \"devDependencies\": {\n    \"typescript\": \"^4.7.4\"\n  }\n}\n"
+    },
+    {
+      "path": "src/store.ts",
+      "content": "import fs from 'node:fs';\nimport path from 'node:path';\nimport { v4 as uuidv4 } from 'uuid';\n\ntype Task = {\n  id: string;\n  title: string;\n  done: boolean;\n  createdAt: string;\n  doneAt?: string;\n};\n\nexport class TaskStore {\n  private filePath: string;\n  private tasks: Task[];\n\n  constructor(filePath: string) {\n    this.filePath = filePath;\n    this.tasks = [];\n    if (fs.existsSync(this.filePath)) {\n      const data = fs.readFileSync(this.filePath, 'utf8');\n      this.tasks = JSON.parse(data).tasks || [];\n    }\n  }\n\n  list(): Task[] {\n    return this.tasks;\n  }\n\n  add(title: string): Task {\n    const task: Task = {\n      id: uuidv4(),\n      title,\n      done: false,\n      createdAt: new Date().toISOString()\n    };\n    this.tasks.push(task);\n    this.save();\n    return task;\n  }\n\n  done(id: string): Task {\n    const task = this.tasks.find(t => t.id === id);\n    if (task) {\n      task.done = true;\n      task.doneAt = new Date().toISOString();\n      this.save();\n    }\n    return task!;\n  }\n\n  remove(id: string): Task {\n    const index = this.tasks.findIndex(t => t.id === id);\n    if (index !== -1) {\n      const removedTask = this.tasks[index];\n      this.tasks.splice(index, 1);\n      this.save();\n      return removedTask;\n    }\n    throw new Error('Task not found');\n  }\n\n  private save() {\n    fs.writeFileSync(this.filePath, JSON.stringify({ tasks: this.tasks }, null, 2));\n  }\n}\n"
+    },
+    {
+      "path": "src/cli.ts",
+      "content": "import { TaskStore } from './store';\nimport fs from 'node:fs';\nimport path from 'node:path';\nimport { Command } from 'commander';\n\nconst program = new Command();\n\nprogram\n  .option('--data <path>', 'specify the data file path')\n  .parse(process.argv);\n\nconst options = program.opts();\n\nif (!options.data) {\n  console.error('Error: --data option is required');\n  process.exit(1);\n}\n\nconst store = new TaskStore(options.data);\n\nprogram\n  .command('list')\n  .description('List all tasks')\n  .action(() => {\n    console.log(JSON.stringify({ ok: true, tasks: store.list() }));\n  });\n\nprogram\n  .command('add <title>')\n  .description('Add a new task')\n  .action((title) => {\n    const task = store.add(title);\n    console.log(JSON.stringify({ ok: true, task }));\n  });\n\nprogram\n  .command('done <id>')\n  .description('Mark a task as done')\n  .action((id) => {\n    const task = store.done(id);\n    console.log(JSON.stringify({ ok: true, task }));\n  });\n\nprogram\n  .command('remove <id>')\n  .description('Remove a task')\n  .action((id) => {\n    const task = store.remove(id);\n    console.log(JSON.stringify({ ok: true, task }));\n  });\n\nprogram.parse();\n"
+    }
+  ]
+}

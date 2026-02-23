@@ -1,0 +1,28 @@
+We are to create a TypeScript project that compiles to `dist/` and passes the provided Oracle tests.
+We cannot use any external npm packages except Node.js builtins.
+We must use `node:crypto` for generating IDs if needed, but note that the tests use `TaskStore` which expects a string path for the data file.
+Steps:
+1. We'll create the following files:
+- `README.md`
+- `package.json`
+- `tsconfig.json`
+- `src/store.ts`
+- `src/cli.ts`
+2. We must not use any external packages (like commander, yargs, etc.). We'll use built-in modules.
+3. The `TaskStore` must be defined in `src/store.ts` and export the `TaskStore` class.
+4. The `Task` type must have: id (string), title (string), done (boolean), createdAt (string), and optionally doneAt (string).
+5. The `TaskStore` constructor takes a `filePath` and uses it to read and write a JSON file.
+6. The CLI must be built in `src/cli.ts` and must support the commands: add, list, done, remove, and the `--help` flag.
+7. We must use `require` for built-in modules because we cannot use ES modules (commonjs). We'll use `const fs = require('node:fs')` etc.
+8. The Oracle tests are provided and must be passed.
+Implementation:
+Let's break down:
+a. `package.json`:
+- We'll have a minimal package.json with the necessary fields for TypeScript and the test script.
+b. `tsconfig.json`:
+- We'll set the compiler options to output CommonJS and target ES2015 (or similar) and set the module to commonjs.
+c. `src/store.ts`:
+- We'll define the `Task` type and the `TaskStore` class.
+d. `src/cli.ts`:
+- We'll parse the command line arguments and call the appropriate method on the `TaskStore`.
+e. `README.md`:

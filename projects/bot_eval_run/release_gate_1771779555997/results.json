@@ -1,0 +1,1664 @@
+[
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 1,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 92660,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\ts-todo-oracle_run_01",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 1,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 1,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 2,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 89485,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\ts-todo-oracle_run_02",
+    "diagnostics": [
+      "Deterministic fallback activated (ts-todo-oracle, mode=on-fail, tier=targeted) but validation still failed.",
+      "Deterministic fallback activated (ts-todo-oracle, mode=on-fail, tier=canonical) and recovered validation."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 2,
+        "recoveries": 1,
+        "targetedActivations": 1,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 1,
+        "canonicalRecoveries": 1,
+        "rawPasses": 0,
+        "rawFailures": 1,
+        "recoveredByFallback": 1
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 2,
+      "totalRecoveries": 1,
+      "totalTargetedActivations": 1,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 1,
+      "totalCanonicalRecoveries": 1,
+      "totalRawPasses": 0,
+      "totalRawFailures": 1,
+      "totalRecoveredByFallback": 1,
+      "fallbackDependencyRate": 1
+    }
+  },
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 3,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 92646,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\ts-todo-oracle_run_03",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 1,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 1,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 4,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 94003,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\ts-todo-oracle_run_04",
+    "diagnostics": [
+      "Deterministic fallback activated (ts-todo-oracle, mode=on-fail, tier=targeted) but validation still failed.",
+      "Deterministic fallback activated (ts-todo-oracle, mode=on-fail, tier=canonical) and recovered validation."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 2,
+        "recoveries": 1,
+        "targetedActivations": 1,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 1,
+        "canonicalRecoveries": 1,
+        "rawPasses": 0,
+        "rawFailures": 1,
+        "recoveredByFallback": 1
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 2,
+      "totalRecoveries": 1,
+      "totalTargetedActivations": 1,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 1,
+      "totalCanonicalRecoveries": 1,
+      "totalRawPasses": 0,
+      "totalRawFailures": 1,
+      "totalRecoveredByFallback": 1,
+      "fallbackDependencyRate": 1
+    }
+  },
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 5,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 94532,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\ts-todo-oracle_run_05",
+    "diagnostics": [
+      "Deterministic fallback activated (ts-todo-oracle, mode=on-fail, tier=targeted) but validation still failed.",
+      "Deterministic fallback activated (ts-todo-oracle, mode=on-fail, tier=canonical) and recovered validation."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 2,
+        "recoveries": 1,
+        "targetedActivations": 1,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 1,
+        "canonicalRecoveries": 1,
+        "rawPasses": 0,
+        "rawFailures": 1,
+        "recoveredByFallback": 1
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 2,
+      "totalRecoveries": 1,
+      "totalTargetedActivations": 1,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 1,
+      "totalCanonicalRecoveries": 1,
+      "totalRawPasses": 0,
+      "totalRawFailures": 1,
+      "totalRecoveredByFallback": 1,
+      "fallbackDependencyRate": 1
+    }
+  },
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 6,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 91467,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\ts-todo-oracle_run_06",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 1,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 1,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 7,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 87893,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\ts-todo-oracle_run_07",
+    "diagnostics": [
+      "Deterministic fallback activated (ts-todo-oracle, mode=on-fail, tier=targeted) but validation still failed.",
+      "Deterministic fallback activated (ts-todo-oracle, mode=on-fail, tier=canonical) and recovered validation."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 2,
+        "recoveries": 1,
+        "targetedActivations": 1,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 1,
+        "canonicalRecoveries": 1,
+        "rawPasses": 0,
+        "rawFailures": 1,
+        "recoveredByFallback": 1
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 2,
+      "totalRecoveries": 1,
+      "totalTargetedActivations": 1,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 1,
+      "totalCanonicalRecoveries": 1,
+      "totalRawPasses": 0,
+      "totalRawFailures": 1,
+      "totalRecoveredByFallback": 1,
+      "fallbackDependencyRate": 1
+    }
+  },
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 8,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 93114,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\ts-todo-oracle_run_08",
+    "diagnostics": [
+      "Deterministic fallback activated (ts-todo-oracle, mode=on-fail, tier=targeted) but validation still failed.",
+      "Deterministic fallback activated (ts-todo-oracle, mode=on-fail, tier=canonical) and recovered validation."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 2,
+        "recoveries": 1,
+        "targetedActivations": 1,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 1,
+        "canonicalRecoveries": 1,
+        "rawPasses": 0,
+        "rawFailures": 1,
+        "recoveredByFallback": 1
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 2,
+      "totalRecoveries": 1,
+      "totalTargetedActivations": 1,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 1,
+      "totalCanonicalRecoveries": 1,
+      "totalRawPasses": 0,
+      "totalRawFailures": 1,
+      "totalRecoveredByFallback": 1,
+      "fallbackDependencyRate": 1
+    }
+  },
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 9,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 93591,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\ts-todo-oracle_run_09",
+    "diagnostics": [
+      "Deterministic fallback activated (ts-todo-oracle, mode=on-fail, tier=targeted) but validation still failed.",
+      "Deterministic fallback activated (ts-todo-oracle, mode=on-fail, tier=canonical) and recovered validation."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 2,
+        "recoveries": 1,
+        "targetedActivations": 1,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 1,
+        "canonicalRecoveries": 1,
+        "rawPasses": 0,
+        "rawFailures": 1,
+        "recoveredByFallback": 1
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 2,
+      "totalRecoveries": 1,
+      "totalTargetedActivations": 1,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 1,
+      "totalCanonicalRecoveries": 1,
+      "totalRawPasses": 0,
+      "totalRawFailures": 1,
+      "totalRecoveredByFallback": 1,
+      "fallbackDependencyRate": 1
+    }
+  },
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 10,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 93211,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\ts-todo-oracle_run_10",
+    "diagnostics": [
+      "Deterministic fallback activated (ts-todo-oracle, mode=on-fail, tier=targeted) but validation still failed.",
+      "Deterministic fallback activated (ts-todo-oracle, mode=on-fail, tier=canonical) and recovered validation."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 2,
+        "recoveries": 1,
+        "targetedActivations": 1,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 1,
+        "canonicalRecoveries": 1,
+        "rawPasses": 0,
+        "rawFailures": 1,
+        "recoveredByFallback": 1
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 2,
+      "totalRecoveries": 1,
+      "totalTargetedActivations": 1,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 1,
+      "totalCanonicalRecoveries": 1,
+      "totalRawPasses": 0,
+      "totalRawFailures": 1,
+      "totalRecoveredByFallback": 1,
+      "fallbackDependencyRate": 1
+    }
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 1,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 173375,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\node-api-oracle_run_01",
+    "diagnostics": [
+      "Deterministic fallback activated (node-api-oracle, mode=on-fail, tier=targeted) but validation still failed.",
+      "Deterministic fallback activated (node-api-oracle, mode=on-fail, tier=canonical) and recovered validation."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 2,
+        "recoveries": 1,
+        "targetedActivations": 1,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 1,
+        "canonicalRecoveries": 1,
+        "rawPasses": 0,
+        "rawFailures": 1,
+        "recoveredByFallback": 1
+      },
+      "totalActivations": 2,
+      "totalRecoveries": 1,
+      "totalTargetedActivations": 1,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 1,
+      "totalCanonicalRecoveries": 1,
+      "totalRawPasses": 0,
+      "totalRawFailures": 1,
+      "totalRecoveredByFallback": 1,
+      "fallbackDependencyRate": 1
+    }
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 2,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 146261,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\node-api-oracle_run_02",
+    "diagnostics": [
+      "Deterministic fallback activated (node-api-oracle, mode=on-fail, tier=canonical) and recovered validation."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 1,
+        "recoveries": 1,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 1,
+        "canonicalRecoveries": 1,
+        "rawPasses": 0,
+        "rawFailures": 1,
+        "recoveredByFallback": 1
+      },
+      "totalActivations": 1,
+      "totalRecoveries": 1,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 1,
+      "totalCanonicalRecoveries": 1,
+      "totalRawPasses": 0,
+      "totalRawFailures": 1,
+      "totalRecoveredByFallback": 1,
+      "fallbackDependencyRate": 1
+    }
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 3,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 138051,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\node-api-oracle_run_03",
+    "diagnostics": [
+      "Deterministic fallback activated (node-api-oracle, mode=on-fail, tier=canonical) and recovered validation."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 1,
+        "recoveries": 1,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 1,
+        "canonicalRecoveries": 1,
+        "rawPasses": 0,
+        "rawFailures": 1,
+        "recoveredByFallback": 1
+      },
+      "totalActivations": 1,
+      "totalRecoveries": 1,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 1,
+      "totalCanonicalRecoveries": 1,
+      "totalRawPasses": 0,
+      "totalRawFailures": 1,
+      "totalRecoveredByFallback": 1,
+      "fallbackDependencyRate": 1
+    }
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 4,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 148196,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\node-api-oracle_run_04",
+    "diagnostics": [
+      "Deterministic fallback activated (node-api-oracle, mode=on-fail, tier=canonical) and recovered validation."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 1,
+        "recoveries": 1,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 1,
+        "canonicalRecoveries": 1,
+        "rawPasses": 0,
+        "rawFailures": 1,
+        "recoveredByFallback": 1
+      },
+      "totalActivations": 1,
+      "totalRecoveries": 1,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 1,
+      "totalCanonicalRecoveries": 1,
+      "totalRawPasses": 0,
+      "totalRawFailures": 1,
+      "totalRecoveredByFallback": 1,
+      "fallbackDependencyRate": 1
+    }
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 5,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 149055,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\node-api-oracle_run_05",
+    "diagnostics": [
+      "Deterministic fallback activated (node-api-oracle, mode=on-fail, tier=canonical) and recovered validation."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 1,
+        "recoveries": 1,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 1,
+        "canonicalRecoveries": 1,
+        "rawPasses": 0,
+        "rawFailures": 1,
+        "recoveredByFallback": 1
+      },
+      "totalActivations": 1,
+      "totalRecoveries": 1,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 1,
+      "totalCanonicalRecoveries": 1,
+      "totalRawPasses": 0,
+      "totalRawFailures": 1,
+      "totalRecoveredByFallback": 1,
+      "fallbackDependencyRate": 1
+    }
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 6,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 148919,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\node-api-oracle_run_06",
+    "diagnostics": [
+      "Deterministic fallback activated (node-api-oracle, mode=on-fail, tier=canonical) and recovered validation."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 1,
+        "recoveries": 1,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 1,
+        "canonicalRecoveries": 1,
+        "rawPasses": 0,
+        "rawFailures": 1,
+        "recoveredByFallback": 1
+      },
+      "totalActivations": 1,
+      "totalRecoveries": 1,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 1,
+      "totalCanonicalRecoveries": 1,
+      "totalRawPasses": 0,
+      "totalRawFailures": 1,
+      "totalRecoveredByFallback": 1,
+      "fallbackDependencyRate": 1
+    }
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 7,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 142818,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\node-api-oracle_run_07",
+    "diagnostics": [
+      "Deterministic fallback activated (node-api-oracle, mode=on-fail, tier=canonical) and recovered validation."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 1,
+        "recoveries": 1,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 1,
+        "canonicalRecoveries": 1,
+        "rawPasses": 0,
+        "rawFailures": 1,
+        "recoveredByFallback": 1
+      },
+      "totalActivations": 1,
+      "totalRecoveries": 1,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 1,
+      "totalCanonicalRecoveries": 1,
+      "totalRawPasses": 0,
+      "totalRawFailures": 1,
+      "totalRecoveredByFallback": 1,
+      "fallbackDependencyRate": 1
+    }
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 8,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 149567,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\node-api-oracle_run_08",
+    "diagnostics": [
+      "Deterministic fallback activated (node-api-oracle, mode=on-fail, tier=canonical) and recovered validation."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 1,
+        "recoveries": 1,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 1,
+        "canonicalRecoveries": 1,
+        "rawPasses": 0,
+        "rawFailures": 1,
+        "recoveredByFallback": 1
+      },
+      "totalActivations": 1,
+      "totalRecoveries": 1,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 1,
+      "totalCanonicalRecoveries": 1,
+      "totalRawPasses": 0,
+      "totalRawFailures": 1,
+      "totalRecoveredByFallback": 1,
+      "fallbackDependencyRate": 1
+    }
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 9,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 149347,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\node-api-oracle_run_09",
+    "diagnostics": [
+      "Deterministic fallback activated (node-api-oracle, mode=on-fail, tier=canonical) and recovered validation."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 1,
+        "recoveries": 1,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 1,
+        "canonicalRecoveries": 1,
+        "rawPasses": 0,
+        "rawFailures": 1,
+        "recoveredByFallback": 1
+      },
+      "totalActivations": 1,
+      "totalRecoveries": 1,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 1,
+      "totalCanonicalRecoveries": 1,
+      "totalRawPasses": 0,
+      "totalRawFailures": 1,
+      "totalRecoveredByFallback": 1,
+      "fallbackDependencyRate": 1
+    }
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 10,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 150506,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\node-api-oracle_run_10",
+    "diagnostics": [
+      "Deterministic fallback activated (node-api-oracle, mode=on-fail, tier=canonical) and recovered validation."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 1,
+        "recoveries": 1,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 1,
+        "canonicalRecoveries": 1,
+        "rawPasses": 0,
+        "rawFailures": 1,
+        "recoveredByFallback": 1
+      },
+      "totalActivations": 1,
+      "totalRecoveries": 1,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 1,
+      "totalCanonicalRecoveries": 1,
+      "totalRawPasses": 0,
+      "totalRawFailures": 1,
+      "totalRecoveredByFallback": 1,
+      "fallbackDependencyRate": 1
+    }
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 1,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 78119,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\python-ai-stdlib-oracle_run_01",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 2,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 80788,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\python-ai-stdlib-oracle_run_02",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 3,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 80604,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\python-ai-stdlib-oracle_run_03",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 4,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 79212,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\python-ai-stdlib-oracle_run_04",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 5,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 81617,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\python-ai-stdlib-oracle_run_05",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 6,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 80587,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\python-ai-stdlib-oracle_run_06",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 7,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 81632,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\python-ai-stdlib-oracle_run_07",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 8,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 76960,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\python-ai-stdlib-oracle_run_08",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 9,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 80879,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\python-ai-stdlib-oracle_run_09",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 10,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 81114,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\python-ai-stdlib-oracle_run_10",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 1,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  }
+]

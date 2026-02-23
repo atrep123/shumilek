@@ -1,0 +1,38 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Command failed: python -m unittest discover -v -s tests -p \"test*.py\" (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "python -m compileall -q mini_ai tests",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770643297744\\python-ai-stdlib-oracle_run_03\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 67,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "python -m unittest discover -v -s tests -p \"test*.py\"",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770643297744\\python-ai-stdlib-oracle_run_03\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 85,
+      "stdout": "",
+      "stderr": "test_train_and_generate_smoke (test_oracle.TestCliOracle.test_train_and_generate_smoke) ... ERROR\r\ntest_generate_deterministic (test_oracle.TestMarkovOracle.test_generate_deterministic) ... ERROR\r\ntest_order_validation (test_oracle.TestMarkovOracle.test_order_validation) ... ok\r\ntest_round_trip_serialization (test_oracle.TestMarkovOracle.test_round_trip_serialization) ... ok\r\ntest_train_and_to_dict (test_oracle.TestMarkovOracle.test_train_and_to_dict) ... ok\r\n\r\n======================================================================\r\nERROR: test_train_and_generate_smoke (test_oracle.TestCliOracle.test_train_and_generate_smoke)\r\n----------------------------------------------------------------------\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770643297744\\python-ai-stdlib-oracle_run_03\\workspace\\tests\\test_oracle.py\", line 64, in test_train_and_generate_smoke\r\n    rc2 = main([\"generate\", \"--model\", model_path, \"--length\", \"12\", \"--seed\", \"a\", \"--random-seed\", \"0\"])\r\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770643297744\\python-ai-stdlib-oracle_run_03\\workspace\\mini_ai\\cli.py\", line 24, in main\r\n    return args.func(args)\r\n           ^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770643297744\\python-ai-stdlib-oracle_run_03\\workspace\\mini_ai\\cli.py\", line 38, in generate\r\n    generated_text = model.generate(length=args.length, seed=args.seed, random_seed=args.random_seed)\r\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770643297744\\python-ai-stdlib-oracle_run_03\\workspace\\mini_ai\\markov.py\", line 36, in generate\r\n    if context not in self.transitions or len(self.transitions[context]) == 0:\r\n       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\nTypeError: unhashable type: 'list'\r\n\r\n======================================================================\r\nERROR: test_generate_deterministic (test_oracle.TestMarkovOracle.test_generate_deterministic)\r\n----------------------------------------------------------------------\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770643297744\\python-ai-stdlib-oracle_run_03\\workspace\\tests\\test_oracle.py\", line 39, in test_generate_deterministic\r\n    out = mc.generate(length=10, seed=\"a\", random_seed=0)\r\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770643297744\\python-ai-stdlib-oracle_run_03\\workspace\\mini_ai\\markov.py\", line 36, in generate\r\n    if context not in self.transitions or len(self.transitions[context]) == 0:\r\n       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\nTypeError: unhashable type: 'list'\r\n\r\n----------------------------------------------------------------------\r\nRan 5 tests in 0.005s\r\n\r\nFAILED (errors=2)\r\n"
+    },
+    {
+      "command": "python -m mini_ai.cli --help",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770643297744\\python-ai-stdlib-oracle_run_03\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 54,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

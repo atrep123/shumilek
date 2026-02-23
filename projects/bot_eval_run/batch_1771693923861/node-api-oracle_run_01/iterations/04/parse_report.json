@@ -1,0 +1,42 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "qwen2.5-coder:14b",
+      "ok": false,
+      "error": "Unterminated string in JSON at position 9143 (line 13 column 3592)",
+      "errorKind": "json_parse",
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    },
+    {
+      "stage": "repair_syntax",
+      "model": "qwen2.5:7b",
+      "ok": false,
+      "error": "Unterminated string in JSON at position 9289 (line 14 column 3725)",
+      "errorKind": "json_parse",
+      "transport": "generate",
+      "formatKind": "json",
+      "schemaUsed": false,
+      "fallbackUsed": false
+    },
+    {
+      "stage": "repair_schema",
+      "model": "qwen2.5:7b",
+      "ok": false,
+      "error": "Unterminated string in JSON at position 9291 (line 13 column 3730)",
+      "errorKind": "json_parse",
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    }
+  ],
+  "finalOk": false,
+  "primaryError": "Unterminated string in JSON at position 9143 (line 13 column 3592)",
+  "primaryErrorKind": "json_parse",
+  "finalError": "Unterminated string in JSON at position 9291 (line 13 column 3730)",
+  "finalErrorKind": "json_parse"
+}

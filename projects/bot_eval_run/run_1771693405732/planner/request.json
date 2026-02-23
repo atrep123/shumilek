@@ -1,0 +1,9 @@
+{
+  "model": "deepseek-r1:8b",
+  "baseUrl": "http://localhost:11434",
+  "transport": "chat",
+  "formatKind": "schema",
+  "schemaUsed": true,
+  "fallbackUsed": false,
+  "usedFormatJson": false
+}

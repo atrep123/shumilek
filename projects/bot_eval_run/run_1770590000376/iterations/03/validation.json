@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Parse/write failed: Expected ',' or ']' after array element in JSON at position 3032 (line 1 column 3033)"
+  ]
+}

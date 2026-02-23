@@ -1,0 +1,7 @@
+
+Usage:
+  node dist/cli.js add <title> --data <path>
+  node dist/cli.js list --data <path>
+  node dist/cli.js done <id> --data <path>
+  node dist/cli.js remove <id> --data <path>
+

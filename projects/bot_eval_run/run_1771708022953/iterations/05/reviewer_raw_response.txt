@@ -1,0 +1,1 @@
+{ "errors": [ { "message": "Expected JSON object on stdout, got: []", "line": 2, "column": 3 } ] }

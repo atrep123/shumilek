@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5:7b",
+  "created_at": "2026-02-22T19:13:00.6448036Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"plan\": \"Create a TypeScript project that compiles to `dist/` and passes the provided Oracle tests. The project must use Node.js built-in modules only, with `node:crypto` for generating IDs if needed. The `TaskStore` class will be defined in `src/store.ts`, and the CLI commands (add, list, done, remove) will be implemented in `src/cli.ts`. The Oracle tests are provided and must be passed.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 6092212300,
+  "load_duration": 2672661600,
+  "prompt_eval_count": 2964,
+  "prompt_eval_duration": 366082100,
+  "eval_count": 97,
+  "eval_duration": 622093000
+}

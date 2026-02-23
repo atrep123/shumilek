@@ -1,0 +1,18 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md"
+    },
+    {
+      "path": "mini_ai/__init__.py"
+    },
+    {
+      "path": "mini_ai/markov.py"
+    },
+    {
+      "path": "mini_ai/cli.py"
+    }
+  ],
+  "notes": "Indentation errors fixed in markov.py and cli.py. MarkovChain class methods adjusted for correct indentation."
+}

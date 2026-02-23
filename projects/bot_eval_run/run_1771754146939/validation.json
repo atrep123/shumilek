@@ -1,0 +1,57 @@
+{
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1771754146939",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1771754146939\\workspace",
+  "deterministicFallback": {
+    "mode": "always",
+    "tsTodo": {
+      "activations": 1,
+      "recoveries": 1
+    },
+    "nodeApi": {
+      "activations": 0,
+      "recoveries": 0
+    },
+    "totalActivations": 1,
+    "totalRecoveries": 1
+  },
+  "parseStats": {
+    "plannerFailures": 0,
+    "schemaFailures": 0,
+    "jsonRepairFailures": 0,
+    "parseFailures": 1
+  },
+  "ok": true,
+  "diagnostics": [],
+  "commands": [
+    {
+      "command": "node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json",
+      "cwd": "projects\\bot_eval_run\\run_1771754146939\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 576,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "projects\\bot_eval_run\\run_1771754146939\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 408,
+      "stdout": "✔ TaskStore: CRUD persists to JSON file (6.6215ms)\n✔ CLI: end-to-end flow (280.3855ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 341.5787\n",
+      "stderr": ""
+    },
+    {
+      "command": "node dist/cli.js --help",
+      "cwd": "projects\\bot_eval_run\\run_1771754146939\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 62,
+      "stdout": "Usage:\n  list --data <path>\n  add <title> --data <path>\n  done <id> --data <path>\n  remove <id> --data <path>\n  --help\n",
+      "stderr": ""
+    }
+  ]
+}

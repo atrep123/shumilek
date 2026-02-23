@@ -1,0 +1,1 @@
+创建一个TypeScript项目，编译为CommonJS，并通过提供的Oracle测试。不使用任何外部npm包（除了Node.js内置模块），使用`node:crypto`生成ID（如果需要）。

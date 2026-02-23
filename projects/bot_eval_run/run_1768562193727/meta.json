@@ -1,0 +1,8 @@
+{
+  "runId": 1768562193727,
+  "scenario": "python-ai-stdlib-oracle",
+  "model": "qwen2.5-coder:32b",
+  "baseUrl": "http://localhost:11434",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1768562193727\\workspace",
+  "startedAt": "2026-01-16T11:16:33.739Z"
+}

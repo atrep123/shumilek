@@ -1,0 +1,14 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "deepseek-r1:8b",
+      "ok": true,
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    }
+  ],
+  "finalOk": true
+}

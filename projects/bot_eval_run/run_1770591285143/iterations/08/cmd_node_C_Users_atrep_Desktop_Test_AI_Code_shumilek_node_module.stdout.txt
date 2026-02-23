@@ -1,0 +1,17 @@
+src/cli.ts(3,25): error TS2307: Cannot find module 'commander' or its corresponding type declarations.
+src/cli.ts(7,21): error TS2459: Module '"./store"' declares 'Task' locally, but it is not exported.
+src/cli.ts(16,12): error TS7006: Parameter 'opts' implicitly has an 'any' type.
+src/cli.ts(24,12): error TS7006: Parameter 'title' implicitly has an 'any' type.
+src/cli.ts(24,19): error TS7006: Parameter 'opts' implicitly has an 'any' type.
+src/cli.ts(33,12): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/cli.ts(33,16): error TS7006: Parameter 'opts' implicitly has an 'any' type.
+src/cli.ts(42,12): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/cli.ts(42,16): error TS7006: Parameter 'opts' implicitly has an 'any' type.
+src/store.ts(1,10): error TS2303: Circular definition of import alias 'Task'.
+src/store.ts(1,10): error TS2459: Module '"./store"' declares 'Task' locally, but it is not exported.
+src/store.ts(1,16): error TS2395: Individual declarations in merged declaration 'TaskStore' must be all exported or all local.
+src/store.ts(1,16): error TS2440: Import declaration conflicts with local declaration of 'TaskStore'.
+src/store.ts(3,14): error TS2395: Individual declarations in merged declaration 'TaskStore' must be all exported or all local.
+src/store.ts(13,10): error TS2304: Cannot find name 'fs'.
+src/store.ts(14,18): error TS2304: Cannot find name 'fs'.
+src/store.ts(50,5): error TS2304: Cannot find name 'fs'.

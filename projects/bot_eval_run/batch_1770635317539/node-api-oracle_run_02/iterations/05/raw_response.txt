@@ -1,0 +1,10 @@
+{
+  "mode": "patch",
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"todo-api\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple Todo API\",\n  \"main\": \"index.js\",\n  \"scripts\": {\n    \"start\": \"node index.js\"\n  },\n  \"type\": \"commonjs\"\n}\n"
+    }
+  ],
+  "notes": "Removed the 'crypto' dependency and set 'type': 'commonjs' in package.json."
+}

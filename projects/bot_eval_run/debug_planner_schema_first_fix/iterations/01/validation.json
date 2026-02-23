@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "diagnostics": [],
+  "commands": [
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "projects\\bot_eval_run\\debug_planner_schema_first_fix\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 220,
+      "stdout": "✔ GET /health + GET /openapi.json (60.0278ms)\n✔ Todo CRUD + persistence (29.6774ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 148.7276\n",
+      "stderr": ""
+    }
+  ]
+}

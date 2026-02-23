@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-02-21T22:06:48.3738817Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/cli.ts\",\n      \"content\": \"// src/cli.ts\\n\\ndeclare const require: any;\\ndeclare const process: any;\\n\\nconst fs = require('node:fs');\\nconst path = require('node:path');\\nconst { TaskStore } = require('./store');\\n\\nfunction parseArgs(argv) {\\n  const args = {};\\n  for (let i = 0; i < argv.length; i++) {\\n    if (argv[i].startsWith('--')) {\\n      const [key, value] = argv[i].slice(2).split('=');\\n      args[key] = value || true;\\n    }\\n  }\\n  return args;\\n}\\n\\nfunction help() {\\n  console.log(`Usage:\\n  list --data <path>\\n  add <title> --data <path>\\n  done <id> --data <path>\\n  remove <id> --data <path>`);\\n  process.exit(0);\\n}\\n\\nasync function main() {\\n  const argv = process.argv.slice(2);\\n  if (argv.includes('--help')) help();\\n\\n  const args = parseArgs(argv);\\n  const cmd = argv[0];\\n  const dataPath = args.data;\\n\\n  if (!dataPath) {\\n    console.error('Missing --data argument');\\n    process.exit(1);\\n  }\\n\\n  const store = new TaskStore(dataPath);\\n\\n  try {\\n    switch (cmd) {\\n      case 'list':\\n        const tasks = store.list();\\n        console.log(JSON.stringify({ ok: true, tasks }));\\n        break;\\n      case 'add':\\n        if (!argv[1]) throw new Error('Missing title');\\n        const task = store.add(argv[1]);\\n        console.log(JSON.stringify({ ok: true, task }));\\n        break;\\n      case 'done':\\n        if (!argv[1]) throw new Error('Missing id');\\n        const doneTask = store.done(argv[1]);\\n        console.log(JSON.stringify({ ok: true, task: doneTask }));\\n        break;\\n      case 'remove':\\n        if (!argv[1]) throw new Error('Missing id');\\n        const removedTask = store.remove(argv[1]);\\n        console.log(JSON.stringify({ ok: true, task: removedTask }));\\n        break;\\n      default:\\n        help();\\n    }\\n  } catch (error) {\\n    console.error(error.message);\\n    process.exit(1);\\n  }\\n}\\n\\nmain();\"\n    }\n  ],\n  \"notes\": \"Fixed the issue in CLI parsing to correctly handle the title and id arguments.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 19473544600,
+  "load_duration": 63986600,
+  "prompt_eval_count": 3108,
+  "prompt_eval_duration": 216817500,
+  "eval_count": 614,
+  "eval_duration": 7395400100
+}

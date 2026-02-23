@@ -1,0 +1,38 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Command failed: python -m unittest -v (exit=5, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "python -m compileall -q mini_ai tests",
+      "cwd": "projects\\bot_eval_run\\run_1768553461575\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 81,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "python -m unittest -v",
+      "cwd": "projects\\bot_eval_run\\run_1768553461575\\workspace",
+      "ok": false,
+      "exitCode": 5,
+      "timedOut": false,
+      "durationMs": 60,
+      "stdout": "",
+      "stderr": "\r\n----------------------------------------------------------------------\r\nRan 0 tests in 0.000s\r\n\r\nNO TESTS RAN\r\n"
+    },
+    {
+      "command": "python -m mini_ai.cli --help",
+      "cwd": "projects\\bot_eval_run\\run_1768553461575\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 45,
+      "stdout": "usage: cli.py [-h] {train,generate} ...\r\n\r\nTrain or generate text using a Markov chain.\r\n\r\npositional arguments:\r\n  {train,generate}\r\n    train           Train the model on a given text file.\r\n    generate        Generate text using a trained model.\r\n\r\noptions:\r\n  -h, --help        show this help message and exit\r\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "message": "src/server.js:103 - 107\n  98 | }\n  99 | else if (req.method === 'PATCH' && req.url.startsWith('/todos/')) {\n> 100 |   const url = new URL(req.url, `http://${req.headers.host}`);\n    |\n  101 |   const id = url.pathname.split('/')[2];\n  102 |   let todos = [];\n  103 |   if (fs.existsSync(dataPath)) {\n  104 |     todos = JSON.parse(fs.readFileSync(dataPath, 'utf8')).todos || [];\n  105 |   }\n  106 | \n  107 |   const todoIndex = todos.findIndex(t => t.id === id);\n\n",
+  "line": 103,
+  "column": 9
+}

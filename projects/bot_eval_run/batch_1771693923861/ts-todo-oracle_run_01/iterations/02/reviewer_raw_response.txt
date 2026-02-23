@@ -1,0 +1,4 @@
+{
+ "review": "text",
+ "priorityFiles": ["README.md", "package.json", "tsconfig.json", "src/store.ts", "tests/oracle.test.js"]
+}

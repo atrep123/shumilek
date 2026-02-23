@@ -1,0 +1,90 @@
+{
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_after_schema_first_177179\\ts-todo-oracle_run_01",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_after_schema_first_177179\\ts-todo-oracle_run_01\\workspace",
+  "deterministicFallback": {
+    "mode": "on-fail",
+    "tsTodo": {
+      "activations": 1,
+      "recoveries": 1,
+      "targetedActivations": 1,
+      "targetedRecoveries": 1,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 1,
+      "recoveredByFallback": 1
+    },
+    "nodeApi": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "totalActivations": 1,
+    "totalRecoveries": 1,
+    "totalTargetedActivations": 1,
+    "totalTargetedRecoveries": 1,
+    "totalCanonicalActivations": 0,
+    "totalCanonicalRecoveries": 0,
+    "totalRawPasses": 0,
+    "totalRawFailures": 1,
+    "totalRecoveredByFallback": 1,
+    "fallbackDependencyRate": 1
+  },
+  "reliability": {
+    "rawPasses": 0,
+    "rawFailures": 1,
+    "recoveredByFallback": 1,
+    "fallbackDependencyRate": 1
+  },
+  "parseStats": {
+    "plannerFailures": 0,
+    "schemaFailures": 0,
+    "jsonRepairFailures": 0,
+    "parseFailures": 0,
+    "jsonParseFailures": 0,
+    "placeholderFailures": 0,
+    "otherFailures": 0
+  },
+  "ok": true,
+  "diagnostics": [
+    "Deterministic fallback activated (ts-todo-oracle, mode=on-fail, tier=targeted) and recovered validation."
+  ],
+  "commands": [
+    {
+      "command": "node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_after_schema_first_177179\\ts-todo-oracle_run_01\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 547,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_after_schema_first_177179\\ts-todo-oracle_run_01\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 392,
+      "stdout": "✔ TaskStore: CRUD persists to JSON file (6.5267ms)\n✔ CLI: end-to-end flow (277.3194ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 336.953\n",
+      "stderr": ""
+    },
+    {
+      "command": "node dist/cli.js --help",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_after_schema_first_177179\\ts-todo-oracle_run_01\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 59,
+      "stdout": "Usage:\n  list --data <path>\n  add <title> --data <path>\n  done <id> --data <path>\n  remove <id> --data <path>\n  --help\n",
+      "stderr": ""
+    }
+  ]
+}

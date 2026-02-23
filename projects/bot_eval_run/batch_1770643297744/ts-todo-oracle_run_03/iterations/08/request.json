@@ -1,0 +1,10 @@
+{
+  "model": "deepseek-coder-v2:16b",
+  "baseUrl": "http://localhost:11434",
+  "usedFormatJson": true,
+  "options": {
+    "temperature": 0.2,
+    "num_predict": 2400,
+    "seed": 42
+  }
+}

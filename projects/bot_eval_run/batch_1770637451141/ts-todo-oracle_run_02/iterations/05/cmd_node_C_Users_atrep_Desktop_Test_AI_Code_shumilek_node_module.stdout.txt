@@ -1,0 +1,9 @@
+../../../../../node_modules/@types/node/globals.d.ts(3,13): error TS2451: Cannot redeclare block-scoped variable 'process'.
+../../../../../node_modules/@types/node/module.d.ts(525,13): error TS2451: Cannot redeclare block-scoped variable 'require'.
+../../../../../node_modules/@types/node/process.d.ts(122,13): error TS2451: Cannot redeclare block-scoped variable 'process'.
+src/cli.ts(3,15): error TS2451: Cannot redeclare block-scoped variable 'require'.
+src/cli.ts(5,7): error TS2451: Cannot redeclare block-scoped variable 'process'.
+src/cli.ts(45,56): error TS18046: 'error' is of type 'unknown'.
+src/cli.ts(59,56): error TS18046: 'error' is of type 'unknown'.
+src/cli.ts(73,56): error TS18046: 'error' is of type 'unknown'.
+src/cli.ts(87,56): error TS18046: 'error' is of type 'unknown'.

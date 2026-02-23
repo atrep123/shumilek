@@ -1,0 +1,10 @@
+{
+  "name": "todo-cli",
+  "version": "1.0.0",
+  "main": "dist/cli.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "author": "",
+  "license": "ISC"
+}

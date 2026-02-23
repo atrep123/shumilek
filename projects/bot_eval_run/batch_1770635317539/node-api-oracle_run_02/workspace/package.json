@@ -1,0 +1,10 @@
+{
+  "name": "todo-api",
+  "version": "1.0.0",
+  "description": "A simple Todo API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "type": "commonjs"
+}

@@ -1,0 +1,278 @@
+Jsi code reviewer (mini-validator). Tvuj ukol: navrhnout MINIMALNI opravy, ktere povedou k tomu, ze validace projde.
+Odpovez JEN JSON bez markdownu: { "review": "text", "priorityFiles": ["path1","path2"] }
+
+SPEC (zkraceno):
+Vytvor realisticky TypeScript projekt (bez externich zavislosti), ktery se zkompiluje do `dist/` a projde oracle testy.
+
+POZADAVKY / KONTRAKT:
+- Zadne externi npm balicky (zadne yargs/commander/uuid/etc). Pouze Node.js builtin.
+- VYSLOVNE ZAKAZANO: commander, yargs, minimist, uuid, fs-extra, axios (a jine externi balicky).
+- Pokud potrebujes ID, pouzij `node:crypto` a `crypto.randomUUID()` (builtin).
+- README.md je povinny a musi obsahovat kratke pouziti prikazu add/list/done/remove.
+- Nevytvarej `dist/` ve vystupu (generuje ho `tsc`).
+- `package.json` nesmi mit `"type": "module"` (pouzij `commonjs` nebo vynech).
+- V TS nepouzivej externi helper knihovny pro CLI parser. Pro kompatibilitu muzes pouzit `declare const require: any; declare const process: any;`.
+- Pouzij `const fs = require("node:fs")` (ne `declare const fs = ...`).
+- CLI parser: `argv = process.argv.slice(2)`; `cmd = argv[0]`; `--help` musi vratit exit 0 bez kontroly `--data`.
+- Pro `add <title>`, `done <id>`, `remove <id>` ber prvni pozicni argument jako title/id; `--data <path>` parsuj z argv.
+- V `catch` pouzij `catch (error: any)` nebo `const err = error as any` (kvuli strict TS).
+- Musi existovat `tsconfig.json` a kompilace do `dist/` (CommonJS) pres `tsc -p tsconfig.json`.
+- `src/store.ts` musi exportovat `TaskStore` s metodami:
+  - constructor(filePath: string)
+  - list(): Task[]
+  - add(title: string): Task
+  - done(id: string): Task
+  - remove(id: string): Task
+- `Task` a `TaskStore` definuj primo v `src/store.ts` (nesmi byt import z `./store`).
+- Task ma pole: id (string), title (string), done (boolean), createdAt (ISO string), doneAt? (ISO string).
+- `src/cli.ts` musi po kompilaci vytvorit spustitelny CLI v `dist/cli.js` a podporovat:
+  - `--help` (exit code 0)
+  - `list --data <path>` -> vypise JSON { ok: true, tasks: [...] }
+  - `add <title> --data <path>` -> vypise JSON { ok: true, task: {...} }
+  - `done <id> --data <path>` -> JSON { ok: true, task: {...done:true...} }
+  - `remove <id> --data <path>` -> JSON { ok: true, task: {...} }
+
+Technicka poznamka: abys nemusel resit @types/node, v TS nepouzivej `import fs from ...`.
+Pouzij `declare const require: any; declare const process: any;` a nacti builtin pres `const fs = require("node:fs")` atd.
+
+Poznamka: testy budeme pouzivat tyto (musis projit):
+--- BEGIN ORACLE TESTS (tests/oracle.test.js) ---
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+const { spawnSync } = require('node:child_process');
+
+function makeTempDir() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-ts-todo-'));
+}
+
+function parseJsonFromStdout(stdout) {
+  const text = String(stdout || '').trim();
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start >= 0 && end > start) return JSON.parse(text.slice(start, end + 1));
+  throw new Error(`Expected JSON object on stdout, got: ${text.slice(0, 200)}`);
+}
+
+function runCli(workspaceDir, args) {
+  const cliPath = path.join(workspaceDir, 'dist', 'cli.js');
+  const res = spawnSync(process.execPath, [cliPath, ...args], { cwd: workspaceDir, encoding: 'utf8' });
+  return { code: res.status ?? 1, stdout: res.stdout || '', stderr: res.stderr || '' };
+}
+
+test('TaskStore: CRUD persists to JSON file', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { TaskStore } = require('../dist/store.js');
+  assert.equal(typeof TaskStore, 'function');
+
+  const dir = makeTempDir();
+  const dataPath = path.join(dir, 'tasks.json');
+
+  const store = new TaskStore(dataPath);
+  assert.deepEqual(store.list(), []);
+
+  const t1 = store.add('Buy milk');
+  assert.equal(typeof t1.id, 'string');
+  assert.ok(t1.id.length > 0);
+  assert.equal(t1.title, 'Buy milk');
+  assert.equal(t1.done, false);
+  assert.equal(typeof t1.createdAt, 'string');
+  assert.ok(fs.existsSync(dataPath));
+
+  const listed = store.list();
+  assert.equal(listed.length, 1);
+  assert.equal(listed[0].id, t1.id);
+
+  const done = store.done(t1.id);
+  assert.equal(done.done, true);
+  assert.equal(typeof done.doneAt, 'string');
+
+  const removed = store.remove(t1.id);
+  assert.equal(removed.id, t1.id);
+  assert.deepEqual(store.list(), []);
+
+  const persisted = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+  assert.ok(persisted && typeof persisted === 'object');
+  assert.ok(Array.isArray(persisted.tasks));
+});
+
+test('CLI: end-to-end flow', () => {
+  const workspaceDir = path.join(__dirname, '..');
+  const dir = makeTempDir();
+  const dataPath = path.join(dir, 'tasks.json');
+
+  // help
+  const help = runCli(workspaceDir, ['--help']);
+  assert.equal(help.code, 0, help.stderr || help.stdout);
+  assert.ok((help.stdout + help.stderr).toLowerCase().includes('add'));
+
+  // list empty
+  const list0 = runCli(workspaceDir, ['list', '--data', dataPath]);
+  assert.equal(list0.code, 0, list0.stderr || list0.stdout);
+  const list0Json = parseJsonFromStdout(list0.stdout);
+  assert.equal(list0Json.ok, true);
+  assert.ok(Array.isArray(list0Json.tasks));
+  assert.equal(list0Json.tasks.length, 0);
+
+  // add
+  const add = runCli(workspaceDir, ['add', 'Buy milk', '--data', dataPath]);
+  assert.equal(add.code, 0, add.stderr || add.stdout);
+  const addJson = parseJsonFromStdout(add.stdout);
+  assert.equal(addJson.ok, true);
+  assert.equal(addJson.task.title, 'Buy milk');
+  assert.equal(addJson.task.done, false);
+  assert.ok(fs.existsSync(dataPath));
+
+  // list 1
+  const list1 = runCli(workspaceDir, ['list', '--data', dataPath]);
+  assert.equal(list1.code, 0, list1.stderr || list1.stdout);
+  const list1Json = parseJsonFromStdout(list1.stdout);
+  assert.equal(list1Json.ok, true);
+  assert.equal(list1Json.tasks.length, 1);
+  const id = String(list1Json.tasks[0].id);
+
+  // done
+  const done = runCli(workspaceDir, ['done', id, '--data', dataPath]);
+  assert.equal(done.code, 0, done.stderr || done.stdout);
+  const doneJson = parseJsonFromStdout(done.stdout
+...<snip>...
+
+
+CHYBY:
+- Missing required file: package.json
+- Missing required file: tsconfig.json
+- Invalid package.json: ENOENT: no such file or directory, open 'C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1771693923861\ts-todo-oracle_run_01\workspace\package.json'
+- Command failed: node "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\node_modules\typescript\bin\tsc" -p tsconfig.json (exit=1, timedOut=false)
+- Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)
+- Command failed: node dist/cli.js --help (exit=1, timedOut=false)
+
+LOGY (zkraceno):
+- node "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\node_modules\typescript\bin\tsc" -p tsconfig.json
+  stdout: "error TS5058: The specified path does not exist: 'tsconfig.json'.\r\n"
+- node --test tests/oracle.test.js
+  stdout: "node:internal/modules/cjs/loader:1064:22)\n      at Module._load (node:internal/modules/cjs/loader:1227:37)\n      at TracingChannel.traceSync (node:diagnostics_channel:328:14)\n      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\n      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n      at node:internal/main/run_main_module:33:47 {\n    code: 'MODULE_NOT_FOUND',\n    requireStack: []\n  }\n  \n  Node.js v24.12.0\n  \n  \n  1 !== 0\n  \n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\ts-todo-oracle_run_01\\workspace\\tests\\oracle.test.js:69:10)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 1,\n    expected: 0,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n"
+- node dist/cli.js --help
+  stderr: "node:internal/modules/cjs/loader:1424\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\ts-todo-oracle_run_01\\workspace\\dist\\cli.js'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1421:15)\r\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1059:19)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1064:22)\r\n    at Module._load (node:internal/modules/cjs/loader:1227:37)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n\r\nNode.js v24.12.0\r\n"
+
+SOUBORY (zkraceno):
+- README.md
+- src/cli.ts
+- src/store.ts
+- tests/oracle.test.js
+
+KONTEXT SOUBORU (zkraceno):
+--- FILE: tests/oracle.test.js ---
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+const { spawnSync } = require('node:child_process');
+
+function makeTempDir() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-ts-todo-'));
+}
+
+function parseJsonFromStdout(stdout) {
+  const text = String(stdout || '').trim();
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start >= 0 && end > start) return JSON.parse(text.slice(start, end + 1));
+  throw new Error(`Expected JSON object on stdout, got: ${text.slice(0, 200)}`);
+}
+
+function runCli(workspaceDir, args) {
+  const cliPath = path.join(workspaceDir, 'dist', 'cli.js');
+  const res = spawnSync(process.execPath, [cliPath, ...args], { cwd: workspaceDir, encoding: 'utf8' });
+  return { code: res.status ?? 1, stdout: res.stdout || '', stderr: res.stderr || '' };
+}
+
+test('TaskStore: CRUD persists to JSON file', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { TaskStore } = require('../dist/store.js');
+  assert.equal(typeof TaskStore, 'function');
+
+  const dir = makeTempDir();
+  const dataPath = path.join(dir, 'tasks.json');
+
+  const store = new TaskStore(dataPath);
+  assert.deepEqual(store.list(), []);
+
+  const t1 = store.add('Buy milk');
+  assert.equal(typeof t1.id, 'string');
+  assert.ok(t1.id.length > 0);
+  assert.equal(t1.title, 'Buy milk');
+  assert.equal(t1.done, false);
+  assert.equal(typeof t1.createdAt, 'string');
+  assert.ok(fs.existsSync(dataPath));
+
+  const listed = store.list();
+  assert.equal(listed.length, 1);
+  assert.equal(listed[0].id, t1.id);
+
+  const done = store.done(t1.id);
+  assert.equal(done.done, true);
+  assert.equal(typeof done.doneAt, 'string');
+
+  const removed = store.remove(t1.id);
+  assert.equal(removed.id, t1.id);
+  assert.deepEqual(store.list(), []);
+
+  const persisted = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+  assert.ok(persisted && typeof persisted === 'object');
+  assert.ok(Array.isArray(persisted.tasks));
+});
+
+test('CLI: end-to-end flow', () => {
+  const workspaceDir = path.join(__dirname, '..');
+  const dir = makeTempDir();
+  const dataPath = path.join(dir, 'tasks.json');
+
+  // help
+  const help = runCli(workspaceDir, ['--help']);
+  assert.equal(help.code, 0, help.stderr || help.stdout);
+  assert.ok((help.stdout + help.stderr).toLowerCase().includes('add'));
+
+  // list empty
+  const list0 = runCli(workspaceDir, ['list', '--data', dataPath]);
+  assert.equal(list0.code, 0, list0.stderr || list0.stdout);
+  const list0Json = parseJsonFromStdout(list0.stdout);
+  assert.equal(list0Json.ok, true);
+  assert.ok(Array.isArray(list0Json.tasks));
+  assert.equal(list0Json.tasks.length, 0);
+
+  // add
+  const add = runCli(workspaceDir, ['add', 'Buy milk', '--data', dataPath]);
+  assert.equal(add.code, 0, add.stderr || add.stdout);
+  const addJson = parseJsonFromStdout(add.stdout);
+  assert.equal(addJson.ok, true);
+  assert.equal(addJson.task.title, 'Buy milk');
+  assert.equal(addJson.task.done, false);
+  assert.ok(fs.existsSync(dataPath));
+
+  // list 1
+  const list1 = runCli(workspaceDir, ['list', '--data', dataPath]);
+  assert.equal(list1.code, 0, list1.stderr || list1.stdout);
+  const list1Json = parseJsonFromStdout(list1.stdout);
+  assert.equal(list1Json.ok, true);
+  assert.equal(list1Json.tasks.length, 1);
+  const id = String(list1Json.tasks[0].id);
+
+  // done
+  const done = runCli(workspaceDir, ['done', id, '--data', dataPath]);
+  assert.equal(done.code, 0, done.stderr || done.stdout);
+  const doneJson = parseJsonFromStdout(done.stdout);
+  assert.equal(doneJson.ok, true);
+  assert.equal(doneJson.task.done, true);
+
+  // remove
+  const rm = runCli(workspaceDir, ['remove', id, '--data', dataPath]);
+  assert.equal(rm.code, 0, rm.stderr || rm.stdout);
+  const rmJson = parseJsonFromStdout(rm.stdout);
+  assert.equal(rmJson.ok, true);
+  assert.equal(String(rmJson.task.id), id);
+
+  const list2 = runCli(
+...<snip>...

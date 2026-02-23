@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "<--- Add this line to skip type checking for TypeScript files in the output directory (if you're using it with a mix of TypeScript and JavaScript files). This is optional but can be useful if your project uses both languages. You may also want to consider adding `": ", true` after `skipLibCheck` to ensure that all files are checked, including those without a `.ts` extension."
+  },
+  "include": [
+    "src/**/*"
+  ]
+}

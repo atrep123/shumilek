@@ -1,0 +1,19 @@
+test_add_text (test_markov.TestMarkov.test_add_text) ... ok
+test_generate_text (test_markov.TestMarkov.test_generate_text) ... ERROR
+
+======================================================================
+ERROR: test_generate_text (test_markov.TestMarkov.test_generate_text)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768553595715\workspace\tests\test_markov.py", line 15, in test_generate_text
+    generated_text = model.generate_text(10)
+                     ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768553595715\workspace\mini_ai\markov.py", line 19, in generate_text
+    next_word = random.choice(self.chain[text[-1]])
+                              ~~~~~~~~~~^^^^^^^^^^
+KeyError: 'fifteen'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.000s
+
+FAILED (errors=1)

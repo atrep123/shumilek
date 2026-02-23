@@ -1,0 +1,41 @@
+{
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771756646101\\node-api-oracle_run_01",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771756646101\\node-api-oracle_run_01\\workspace",
+  "deterministicFallback": {
+    "mode": "off",
+    "tsTodo": {
+      "activations": 0,
+      "recoveries": 0
+    },
+    "nodeApi": {
+      "activations": 0,
+      "recoveries": 0
+    },
+    "totalActivations": 0,
+    "totalRecoveries": 0
+  },
+  "parseStats": {
+    "plannerFailures": 0,
+    "schemaFailures": 0,
+    "jsonRepairFailures": 0,
+    "parseFailures": 1
+  },
+  "ok": false,
+  "diagnostics": [
+    "src/server.js must export createServer (e.g. module.exports = { createServer })",
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)",
+    "src/server.js must export createServer (oracle assertion)"
+  ],
+  "commands": [
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771756646101\\node-api-oracle_run_01\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 123,
+      "stdout": "✖ GET /health + GET /openapi.json (3.1169ms)\n✖ Todo CRUD + persistence (1.109ms)\nℹ tests 2\nℹ suites 0\nℹ pass 0\nℹ fail 2\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 59.6053\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:39:1\n✖ GET /health + GET /openapi.json (3.1169ms)\n  AssertionError [ERR_ASSERTION]: src/server.js must export createServer\n  + actual - expected\n  \n  + 'undefined'\n  - 'function'\n  \n      at startServer (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771756646101\\node-api-oracle_run_01\\workspace\\tests\\oracle.test.js:14:10)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771756646101\\node-api-oracle_run_01\\workspace\\tests\\oracle.test.js:42:37)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.start (node:internal/test_runner/test:1003:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 'undefined',\n    expected: 'function',\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at tests\\oracle.test.js:59:1\n✖ Todo CRUD + persistence (1.109ms)\n  AssertionError [ERR_ASSERTION]: src/server.js must export createServer\n  + actual - expected\n  \n  + 'undefined'\n  - 'function'\n  \n      at startServer (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771756646101\\node-api-oracle_run_01\\workspace\\tests\\oracle.test.js:14:10)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771756646101\\node-api-oracle_run_01\\workspace\\tests\\oracle.test.js:62:37)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 'undefined',\n    expected: 'function',\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+      "stderr": ""
+    }
+  ]
+}

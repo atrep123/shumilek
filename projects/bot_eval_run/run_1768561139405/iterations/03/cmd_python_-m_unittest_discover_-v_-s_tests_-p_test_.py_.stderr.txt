@@ -1,0 +1,41 @@
+test_generate_text_simple_case (test_markov_chain.TestMarkovChain.test_generate_text_simple_case) ... ERROR
+test_generate_text_single_char_model (test_markov_chain.TestMarkovChain.test_generate_text_single_char_model) ... ERROR
+test_train_model_simple_case (test_markov_chain.TestMarkovChain.test_train_model_simple_case) ... ok
+test_train_model_single_char (test_markov_chain.TestMarkovChain.test_train_model_single_char) ... FAIL
+
+======================================================================
+ERROR: test_generate_text_simple_case (test_markov_chain.TestMarkovChain.test_generate_text_simple_case)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561139405\workspace\tests\test_markov_chain.py", line 42, in test_generate_text_simple_case
+    generated_text = generate_text(model_file, 10)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561139405\workspace\mini_ai\cli.py", line 19, in generate_text
+    current_char = text[0]
+                   ^^^^
+NameError: name 'text' is not defined. Did you mean: 'next'?
+
+======================================================================
+ERROR: test_generate_text_single_char_model (test_markov_chain.TestMarkovChain.test_generate_text_single_char_model)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561139405\workspace\tests\test_markov_chain.py", line 34, in test_generate_text_single_char_model
+    generated_text = generate_text('tests/model.json', 5)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561139405\workspace\mini_ai\cli.py", line 19, in generate_text
+    current_char = text[0]
+                   ^^^^
+NameError: name 'text' is not defined. Did you mean: 'next'?
+
+======================================================================
+FAIL: test_train_model_single_char (test_markov_chain.TestMarkovChain.test_train_model_single_char)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561139405\workspace\tests\test_markov_chain.py", line 29, in test_train_model_single_char
+    self.assertEqual(model['a'], defaultdict(lambda: {'a': 0}))
+AssertionError: {'a': 2} != defaultdict(<function TestMarkovChain.tes[66 chars], {})
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.022s
+
+FAILED (failures=1, errors=2)

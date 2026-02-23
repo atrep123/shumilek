@@ -1,0 +1,93 @@
+[
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 1,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 83856,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771753672975\\ts-todo-oracle_run_01",
+    "diagnostics": [
+      "Deterministic fallback activated (ts-todo-oracle, mode=on-fail) and recovered validation."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 1,
+        "recoveries": 1
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0
+      },
+      "totalActivations": 1,
+      "totalRecoveries": 1
+    }
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 1,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 159833,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771753672975\\node-api-oracle_run_01",
+    "diagnostics": [
+      "Deterministic fallback activated (node-api-oracle, mode=on-fail) and recovered validation."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0
+      },
+      "nodeApi": {
+        "activations": 1,
+        "recoveries": 1
+      },
+      "totalActivations": 1,
+      "totalRecoveries": 1
+    }
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 1,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 77783,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771753672975\\python-ai-stdlib-oracle_run_01",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0
+    }
+  }
+]

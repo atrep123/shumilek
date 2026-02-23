@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1771690085111\python-ai-stdlib-oracle_run_02\workspace\mini_ai\cli.py", line 4, in <module>
+    from mini_ai.markov import MarkovChain
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1771690085111\python-ai-stdlib-oracle_run_02\workspace\mini_ai\markov.py", line 42
+    def from_dict(cls, d: dict) -> "MarkovChain":
+IndentationError: unexpected unindent

@@ -1,0 +1,9 @@
+{
+  "name": "todo-cli",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/cli.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  }
+}

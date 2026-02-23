@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-02-21T18:58:20.1957216Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"README.md\",\n      \"content\": \"# Task Manager CLI\\n\\n## Usage\\n\\n- `add <title> --data <path>`: Add a new task.\\n- `list --data <path>`: List all tasks.\\n- `done <id> --data <path>`: Mark a task as done.\\n- `remove <id> --data <path>`: Remove a task.\"\n    },\n    {\n      \"path\": \"package.json\",\n      \"content\": \"{\\n  \\\"name\\\": \\\"task-manager\\\",\\n  \\\"version\\\": \\\"1.0.0\\\",\\n  \\\"main\\\": \\\"dist/cli.js\\\",\\n  \\\"scripts\\\": {\\n    \\\"build\\\": \\\"tsc -p tsconfig.json\\\"\\n  }\\n}\"\n    },\n    {\n      \"path\": \"tsconfig.json\",\n      \"content\": \"{\\n  \\\"compilerOptions\\\": {\\n    \\\"target\\\": \\\"ES6\\\",\\n    \\\"module\\\": \\\"commonjs\\\",\\n    \\\"outDir\\\": \\\"dist\\\",\\n    \\\"strict\\\": true,\\n    \\\"esModuleInterop\\\": true\\n  },\\n  \\\"include\\\": [\\n    \\\"src/**/*\\\"\\n  ]\\n}\"\n    }\n  ],\n  \"notes\": \"Added README.md, package.json, and tsconfig.json to resolve the missing files and configuration issues.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 9924645600,
+  "load_duration": 73856900,
+  "prompt_eval_count": 3816,
+  "prompt_eval_duration": 942771300,
+  "eval_count": 292,
+  "eval_duration": 3702832800
+}

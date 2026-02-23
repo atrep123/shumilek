@@ -1,0 +1,5 @@
+{
+  "errors": [
+    "The following files have been modified since they were last compiled: 'src/store.ts'. Run 'npm run build' to rebuild them and allow your changes to be recompiled."
+  ]
+}

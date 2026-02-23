@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/server.js",
+      "content": "// Your existing server code here"
+    },
+    {
+      "path": "openapi.json",
+      "content": "// Your updated OpenAPI specification here"
+    }
+  ],
+  "notes": "Ensure to update the server code and OpenAPI specification as per the requirements."
+}

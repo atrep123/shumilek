@@ -1,0 +1,40 @@
+✖ TaskStore: CRUD persists to JSON file (4.0194ms)
+✖ CLI: end-to-end flow (76.1112ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 132.8622
+
+✖ failing tests:
+
+test at tests\oracle.test.js:26:1
+✖ TaskStore: CRUD persists to JSON file (4.0194ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1771709996262\workspace\C:\Users\atrep\AppData\Local\Temp\bot-eval-ts-todo-enrtP2\tasks.json'
+      at writeFileSync (node:fs:2415:20)
+      at TaskStore.list (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1771709996262\workspace\dist\store.js:18:40)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1771709996262\workspace\tests\oracle.test.js:35:26)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1771709996262\\workspace\\C:\\Users\\atrep\\AppData\\Local\\Temp\\bot-eval-ts-todo-enrtP2\\tasks.json'
+  }
+
+test at tests\oracle.test.js:62:1
+✖ CLI: end-to-end flow (76.1112ms)
+  Error: Expected JSON object on stdout, got: 
+      at parseJsonFromStdout (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1771709996262\workspace\tests\oracle.test.js:17:9)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1771709996262\workspace\tests\oracle.test.js:75:21)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3)

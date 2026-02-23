@@ -1,0 +1,16 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "deepseek-r1:8b",
+      "ok": false,
+      "error": "Expected ',' or ']' after array element in JSON at position 6710 (line 25 column 2)",
+      "errorKind": "json_parse"
+    }
+  ],
+  "finalOk": false,
+  "primaryError": "Expected ',' or ']' after array element in JSON at position 6710 (line 25 column 2)",
+  "primaryErrorKind": "json_parse",
+  "finalError": "Expected ',' or ']' after array element in JSON at position 6710 (line 25 column 2)",
+  "finalErrorKind": "json_parse"
+}

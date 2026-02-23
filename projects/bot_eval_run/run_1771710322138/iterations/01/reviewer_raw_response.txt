@@ -1,0 +1,9 @@
+{  
+  "README.md": "",
+  "dist/cli.js": "",
+  "dist/store.js": "",
+  "package.json": "",
+  "src/cli.ts": "",
+  "src/store.ts": "",
+  "tests/oracle.test.js": ""
+}

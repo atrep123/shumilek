@@ -1,0 +1,146 @@
+[
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 1,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 82885,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771748133856\\ts-todo-oracle_run_01",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1
+    }
+  },
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 2,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 79256,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771748133856\\ts-todo-oracle_run_02",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1
+    }
+  },
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 3,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 82897,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771748133856\\ts-todo-oracle_run_03",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1
+    }
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 1,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 141060,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771748133856\\node-api-oracle_run_01",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1
+    }
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 2,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 151464,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771748133856\\node-api-oracle_run_02",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1
+    }
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 3,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 144375,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771748133856\\node-api-oracle_run_03",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1
+    }
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 1,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 76746,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771748133856\\python-ai-stdlib-oracle_run_01",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1
+    }
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 2,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 76655,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771748133856\\python-ai-stdlib-oracle_run_02",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1
+    }
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 3,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 73694,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771748133856\\python-ai-stdlib-oracle_run_03",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1
+    }
+  }
+]

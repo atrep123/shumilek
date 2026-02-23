@@ -1,0 +1,4 @@
+{
+ "review": "remove `dist/` from output, remove external dependencies",
+ "priorityFiles": ["src/cli.ts", "src/store.ts"]  
+}

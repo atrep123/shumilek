@@ -1,0 +1,10 @@
+✔ TaskStore: CRUD persists to JSON file (6.5924ms)
+✔ CLI: end-to-end flow (270.1296ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 330.3754

@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1770643297744\python-ai-stdlib-oracle_run_03\workspace\mini_ai\cli.py", line 4, in <module>
+    from mini_ai.markov import MarkovChain
+ImportError: cannot import name 'MarkovChain' from 'mini_ai.markov' (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1770643297744\python-ai-stdlib-oracle_run_03\workspace\mini_ai\markov.py)

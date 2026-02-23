@@ -1,0 +1,6 @@
+{
+  "review": "Replace `url.parse()` with `new URL().pathname` in the tests to avoid deprecation warning.",
+  "priorityFiles": [
+    "tests/oracle.test.js"
+  ]
+}

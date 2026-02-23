@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "noEmit": true,
+    "<--- Add this line to prevent emitting the source code in dist folder. This is a common practice when creating standalone executable files like .js or .exe for deployment purposes. Also, ensure that your `src` directory includes all necessary imports and exports so they are correctly resolved at runtime. Here's how your updated tsconfig.json should look:  ```json  {   ": "compilerOptions"
+  }
+}

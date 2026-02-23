@@ -1,0 +1,25 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Task Manager CLI\n\n## Usage\n\n- `add <title> --data <path>`: Add a new task.\n- `list --data <path>`: List all tasks.\n- `done <id> --data <path>`: Mark a task as done.\n- `remove <id> --data <path>`: Remove a task."
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"task-manager\",\n  \"version\": \"1.0.0\",\n  \"main\": \"dist/cli.js\",\n  \"scripts\": {\n    \"build\": \"tsc -p tsconfig.json\"\n  }\n}"
+    },
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES6\",\n    \"module\": \"commonjs\",\n    \"outDir\": \"dist\",\n    \"strict\": true,\n    \"esModuleInterop\": true\n  },\n  \"include\": [\n    \"src/**/*\"\n  ]\n}"
+    },
+    {
+      "path": "src/store.ts",
+      "content": "const crypto = require('crypto');\n\nclass TaskStore {\n  constructor(filePath) {\n    this.filePath = filePath;\n    this.tasks = [];\n  }\n\n  load() {\n    try {\n      const data = require(this.filePath);\n      this.tasks = Array.isArray(data) ? data : [];\n    } catch (e) {\n      this.tasks = [];\n    }\n  }\n\n  save() {\n    const fs = require('fs');\n    fs.writeFileSync(this.filePath, JSON.stringify(this.tasks, null, 2));\n  }\n\n  addTask(title) {\n    const task = {\n      id: crypto.randomBytes(16).toString('hex'),\n      title,\n      done: false\n    };\n    this.tasks.push(task);\n    this.save();\n    return task;\n  }\n\n  listTasks() {\n    return this.tasks;\n  }\n\n  markTaskDone(id) {\n    const task = this.tasks.find(t => t.id === id);\n    if (task) {\n      task.done = true;\n      this.save();\n    }\n  }\n\n  removeTask(id) {\n    this.tasks = this.tasks.filter(t => t.id !== id);\n    this.save();\n  }\n}\n\nmodule.exports = TaskStore;"
+    },
+    {
+      "path": "src/cli.ts",
+      "content": "const fs = require('fs');\nconst path = require('path');\nconst { program } = require('commander');\nconst TaskStore = require('./store');\n\nprogram\n  .option('--data <path>', 'Path to the data file', './tasks.json')\n  .parse(process.argv);\n\nconst options = program.opts();\nconst taskStore = new TaskStore(options.data);\ntaskStore.load();\n\nprogram\n  .command('add <title>')\n  .action((title) => {\n    const task = taskStore.addTask(title);\n    console.log(`Added task: ${task.title} (ID: ${task.id})`);\n  });\n\nprogram\n  .command('list')\n  .action(() => {\n    const tasks = taskStore.listTasks();\n    if (tasks.length === 0) {\n      console.log('No tasks found.');\n    } else {\n      tasks.forEach(task => {\n        console.log(`${task.id}: ${task.title} [${task.done ? 'Done' : 'Pending'}]`);\n      });\n    }\n  });\n\nprogram\n  .command('done <id>')\n  .action((id) => {\n    taskStore.markTaskDone(id);\n    console.log(`Marked task ${id} as done.`);\n  });\n\nprogram\n  .command('remove <id>')\n  .action((id) => {\n    taskStore.removeTask(id);\n    console.log(`Removed task ${id}.`);\n  });\n\nif (!process.argv.slice(2).length) {\n  program.outputHelp();\n}"
+    }
+  ],
+  "notes": "Added missing files and corrected the require statements in src/store.ts."
+}

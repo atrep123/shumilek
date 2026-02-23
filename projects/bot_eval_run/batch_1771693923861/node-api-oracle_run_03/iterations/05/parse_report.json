@@ -1,0 +1,27 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "qwen2.5-coder:14b",
+      "ok": false,
+      "error": "Unterminated string in JSON at position 9425 (line 9 column 3793)",
+      "errorKind": "json_parse",
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    },
+    {
+      "stage": "repair_syntax",
+      "model": "qwen2.5:7b",
+      "ok": true,
+      "transport": "generate",
+      "formatKind": "json",
+      "schemaUsed": false,
+      "fallbackUsed": false
+    }
+  ],
+  "finalOk": true,
+  "primaryError": "Unterminated string in JSON at position 9425 (line 9 column 3793)",
+  "primaryErrorKind": "json_parse"
+}

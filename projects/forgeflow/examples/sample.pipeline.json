@@ -1,0 +1,52 @@
+{
+  "name": "Sample",
+  "version": "1.0",
+  "env": {
+    "projectRoot": "."
+  },
+  "settings": {
+    "maxConcurrency": 2,
+    "failFast": true
+  },
+  "tasks": [
+    {
+      "id": "readme",
+      "type": "file.read",
+      "with": {
+        "path": "{{env.projectRoot}}/README.md"
+      }
+    },
+    {
+      "id": "summary",
+      "type": "transform",
+      "dependsOn": ["readme"],
+      "with": {
+        "template": "README bytes={{tasks.readme.bytes}} lines={{tasks.readme.lines}}"
+      }
+    },
+    {
+      "id": "write-summary",
+      "type": "file.write",
+      "dependsOn": ["summary"],
+      "with": {
+        "path": "reports/summary.txt",
+        "content": "{{tasks.summary.result}}"
+      }
+    },
+    {
+      "id": "wait",
+      "type": "delay",
+      "with": {
+        "ms": 100
+      }
+    },
+    {
+      "id": "collect",
+      "type": "collect",
+      "dependsOn": ["write-summary", "wait"],
+      "with": {
+        "sources": ["tasks.readme", "tasks.summary"]
+      }
+    }
+  ]
+}

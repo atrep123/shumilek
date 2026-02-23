@@ -1,0 +1,2 @@
+src/cli.ts(4,16): error TS2664: Invalid module name in augmentation, module 'uuid' cannot be found.
+src/store.ts(2,30): error TS2307: Cannot find module 'uuid' or its corresponding type declarations.

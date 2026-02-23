@@ -1,0 +1,4 @@
+{
+  "error": "AssertionError [ERR_ASSERTION]: assertion failed: fs.existsSync(dataPath) === false",
+  "stack": "AssertionError [ERR_ASSERTION]: assertion failed: fs.existsSync(dataPath) === false\n    at assertValid (node:fs:2618:5)\n    at Object.writeFileSync (node:fs:3097:5)\n    at createServer (src/server.js:426:15)\n    at exports.createServer (src/server.js:435:10)"
+}

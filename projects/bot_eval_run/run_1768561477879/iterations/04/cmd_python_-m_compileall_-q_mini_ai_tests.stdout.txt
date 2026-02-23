@@ -1,0 +1,6 @@
+*** Error compiling 'mini_ai\\generator.py'...
+  File "mini_ai\generator.py", line 1
+    def generate(model_path):\n    # Implementace generovani textu z Markovova lincova
+                              ^
+SyntaxError: unexpected character after line continuation character
+

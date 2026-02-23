@@ -1,0 +1,3 @@
+{
+  "review": "text is missing, priorityFiles: ['tsconfig.json']"
+}

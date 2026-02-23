@@ -1,0 +1,9 @@
+{
+  "errors": [
+    {
+      "message": "Expected JSON response, got: {}",
+      "operator": "strictEqual",
+      "code": "ERR_ASSERTION"
+    }
+  ]
+}

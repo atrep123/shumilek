@@ -1,0 +1,19 @@
+test_train_and_generate_smoke (test_oracle.TestCliOracle.test_train_and_generate_smoke) ... ok
+test_generate_deterministic (test_oracle.TestMarkovOracle.test_generate_deterministic) ... ok
+test_order_validation (test_oracle.TestMarkovOracle.test_order_validation) ... FAIL
+test_round_trip_serialization (test_oracle.TestMarkovOracle.test_round_trip_serialization) ... ok
+test_train_and_to_dict (test_oracle.TestMarkovOracle.test_train_and_to_dict) ... ok
+
+======================================================================
+FAIL: test_order_validation (test_oracle.TestMarkovOracle.test_order_validation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1771693923861\python-ai-stdlib-oracle_run_01\workspace\tests\test_oracle.py", line 14, in test_order_validation
+    with self.assertRaises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.007s
+
+FAILED (failures=1)

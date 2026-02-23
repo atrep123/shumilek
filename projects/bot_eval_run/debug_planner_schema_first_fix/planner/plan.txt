@@ -1,0 +1,10 @@
+1. Vytvořit složku `src` pro ukládání zdrojového kódu.
+2. Vytvořit soubor `server.js` v `src/` a implementovat funkci `createServer({ dataPath })`.
+3. Implementovat endpoint GET /health, který vrátí JSON { ok: true }.
+4. Implementovat endpoint GET /openapi.json, který vrátí OpenAPI 3.x specifikaci s cestou pro `/todos`.
+5. Implementovat endpoint GET /todos, který vrátí seznam TODO úkolů v JSON formátu.
+6. Implementovat endpoint POST /todos (body {title}), který vytvoří nový TODO úkol a vrátí ho s kódem 201.
+7. Implementovat endpoint GET /todos/:id, který vrátí detail TODO úkolu nebo 404, pokud úkol nenalezen.
+8. Implementovat endpoint PATCH /todos/:id (body {done:true}), který aktualizuje status TODO úkolu na hotovo a vrátí ho s kódem 200.
+9. Implementovat endpoint DELETE /todos/:id, který odstraní TODO úkol a vrátí s kódem 200.
+10. Ukládat data do souboru `dataPath` jako JSON {

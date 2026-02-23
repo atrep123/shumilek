@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "src/server.js",
+      "content": "// Import necessary modules\nconst http = require('http');\nconst fs = require('fs');\nconst path = require('path');\n\n// Function to handle requests\nfunction requestHandler(req, res) {\n  let filePath = '.' + req.url;\n  if (filePath === './') {\n    filePath = './index.html';\n  }\n\n  const extname = String(path.extname(filePath)).toLowerCase();\n  const mimeTypes = {\n    '.html': 'text/html',\n    '.js': 'text/javascript',\n    '.css': 'text/css',\n    '.json': 'application/json',\n    '.png': 'image/png',\n    '.jpg': 'image/jpg',\n    '.gif': 'image/gif',\n    '.wav': 'audio/wav',\n    '.mp4': 'video/mp4',\n    '.woff': 'application/font-woff',\n    '.ttf': 'application/font-ttf',\n    '.eot': 'application/vnd.ms-fontobject',\n    '.otf': 'application/font-otf',\n    '.svg': 'application/image/svg+xml'\n  };\n\n  const contentType = mimeTypes[extname] || 'application/octet-stream';\n\n  fs.readFile(filePath, (error, content) => {\n    if (error) {\n      if (error.code === 'ENOENT') {\n        // Page not found\n        res.writeHead(404);\n        res.end('Page Not Found');\n      } else {\n        // Some server error\n        res.writeHead(500);\n        res.end(`Internal Server Error: ${error.code}`);\n      }\n    } else {\n      // Success\n      res.writeHead(200, { 'Content-Type': contentType });\n      res.end(content, 'utf-8');\n    }\n  });\n}\n\n// Create server\nconst server = http.createServer(requestHandler);\n\nmodule.exports = server;"
+    },
+    {
+      "path": "src/routes/todoRoutes.js",
+      "content": "// Import necessary modules\nconst fs = require('fs');\nconst path = require('path');\n\n// Function to handle requests\nfunction requestHandler(req, res) {\n  let filePath = '.' + req.url;\n  if (filePath === './') {\n    filePath = './index.html';\n  }\n\n  const extname = String(path.extname(filePath)).toLowerCase();\n  const mimeTypes = {\n    '.html': 'text/html',\n    '.js': 'text/javascript',\n    '.css': 'text/css',\n    '.json': 'application/json',\n    '.png': 'image/png',\n    '.jpg': 'image/jpg',\n    '.gif': 'image/gif',\n    '.wav': 'audio/wav',\n    '.mp4': 'video/mp4',\n    '.woff': 'application/font-woff',\n    '.ttf': 'application/font-ttf',\n    '.eot': 'application/vnd.ms-fontobject',\n    '.otf': 'application/font-otf',\n    '.svg': 'application/image/svg+xml'\n  };\n\n  const contentType = mimeTypes[extname] || 'application/octet-stream';\n\n  fs.readFile(filePath, (error, content) => {\n    if (error) {\n      if (error.code === 'ENOENT') {\n        // Page not found\n        res.writeHead(404);\n        res.end('Page Not Found');\n      } else {\n        // Some server error\n        res.writeHead(500);\n        res.end(`Internal Server Error: ${error.code}`);\n      }\n    } else {\n      // Success\n      res.writeHead(200, { 'Content-Type': contentType });\n      res.end(content, 'utf-8');\n    }\n  });\n}\n\nmodule.exports = requestHandler;"
+    },
+    {
+      "path": "src/index.js",
+      "content": "// Import necessary modules\nconst server = require('./server');\nconst PORT = process.env.PORT || 3000;\n\n// Start server\nserver.listen(PORT, () => {\n  console.log(`Server is running on port ${PORT}`);\n});"
+    }
+  ],
+  "notes": "Refactored the server setup to separate concerns and adhere to best practices."
+}

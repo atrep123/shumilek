@@ -1,0 +1,3 @@
+src/cli.ts(17,33): error TS7006: Parameter 'arg' implicitly has an 'any' type.
+src/store.ts(2,20): error TS1254: A 'const' initializer in an ambient context must be a string or numeric literal or literal enum reference.
+src/store.ts(3,28): error TS1254: A 'const' initializer in an ambient context must be a string or numeric literal or literal enum reference.

@@ -1,0 +1,8 @@
+{
+  "count": 3,
+  "files": [
+    "dist/cli.js",
+    "src/cli.ts",
+    "tsconfig.json"
+  ]
+}

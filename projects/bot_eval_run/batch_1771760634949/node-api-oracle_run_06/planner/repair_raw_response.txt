@@ -1,0 +1,3 @@
+{
+  "plan": "We are creating a Node.js project with the following structure:\n\n- mode: \"full\"\n- files: an array of objects with \"path\" and \"content\"\n- notes: optional\n\nSteps:\n1. Create a `package.json` with minimal dependencies and set \"type\":\"commonjs\".\n2. Create a `src/server.js` that exports a function `createServer` which returns a server that handles the endpoints.\n3. Create an `openapi.json` file that defines the OpenAPI 3.x specification for the TODO endpoints.\n4. Create a `README.md` with a brief description."
+}

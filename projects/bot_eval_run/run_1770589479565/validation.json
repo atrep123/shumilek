@@ -1,0 +1,44 @@
+{
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1770589479565",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1770589479565\\workspace",
+  "ok": false,
+  "diagnostics": [
+    "No dependencies allowed (dependencies/devDependencies must be empty or missing)",
+    "Non-builtin require \"commander\" in dist/cli.js",
+    "Command failed: node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json (exit=2, timedOut=false)",
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)",
+    "Command failed: node dist/cli.js --help (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json",
+      "cwd": "projects\\bot_eval_run\\run_1770589479565\\workspace",
+      "ok": false,
+      "exitCode": 2,
+      "timedOut": false,
+      "durationMs": 1434,
+      "stdout": "src/store.ts(7,1): error TS1131: Property or signature expected.\r\nsrc/store.ts(7,17): error TS1109: Expression expected.\r\nsrc/store.ts(8,1): error TS1128: Declaration or statement expected.\r\nsrc/store.ts(19,1): error TS1005: '}' expected.\r\n",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "projects\\bot_eval_run\\run_1770589479565\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 173,
+      "stdout": "✖ TaskStore: CRUD persists to JSON file (1.5447ms)\n✖ CLI: end-to-end flow (43.6654ms)\nℹ tests 2\nℹ suites 0\nℹ pass 0\nℹ fail 2\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 106.2195\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:26:1\n✖ TaskStore: CRUD persists to JSON file (1.5447ms)\n  C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1770589479565\\workspace\\dist\\store.js:5\n  doneAt ?  : string;\n            ^\n  \n  SyntaxError: Unexpected token ':'\n      at wrapSafe (node:internal/modules/cjs/loader:1692:18)\n      at Module._compile (node:internal/modules/cjs/loader:1735:20)\n      at Object..js (node:internal/modules/cjs/loader:1893:10)\n      at Module.load (node:internal/modules/cjs/loader:1481:32)\n      at Module._load (node:internal/modules/cjs/loader:1300:12)\n      at TracingChannel.traceSync (node:diagnostics_channel:328:14)\n      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\n      at Module.require (node:internal/modules/cjs/loader:1504:12)\n      at require (node:internal/modules/helpers:152:16)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1770589479565\\workspace\\tests\\oracle.test.js:28:25)\n\ntest at tests\\oracle.test.js:62:1\n✖ CLI: end-to-end flow (43.6654ms)\n  AssertionError [ERR_ASSERTION]: C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1770589479565\\workspace\\dist\\cli.js:5\n  exports.program = new Command();\n                        ^\n  \n  ReferenceError: Command is not defined\n      at Object.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1770589479565\\workspace\\dist\\cli.js:5:23)\n      at Module._compile (node:internal/modules/cjs/loader:1761:14)\n      at Object..js (node:internal/modules/cjs/loader:1893:10)\n      at Module.load (node:internal/modules/cjs/loader:1481:32)\n      at Module._load (node:internal/modules/cjs/loader:1300:12)\n      at TracingChannel.traceSync (node:diagnostics_channel:328:14)\n      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\n      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n      at node:internal/main/run_main_module:33:47\n  \n  Node.js v24.12.0\n  \n  \n  1 !== 0\n  \n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1770589479565\\workspace\\tests\\oracle.test.js:69:10)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 1,\n    expected: 0,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+      "stderr": ""
+    },
+    {
+      "command": "node dist/cli.js --help",
+      "cwd": "projects\\bot_eval_run\\run_1770589479565\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 59,
+      "stdout": "",
+      "stderr": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1770589479565\\workspace\\dist\\cli.js:5\r\nexports.program = new Command();\r\n                      ^\r\n\r\nReferenceError: Command is not defined\r\n    at Object.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1770589479565\\workspace\\dist\\cli.js:5:23)\r\n    at Module._compile (node:internal/modules/cjs/loader:1761:14)\r\n    at Object..js (node:internal/modules/cjs/loader:1893:10)\r\n    at Module.load (node:internal/modules/cjs/loader:1481:32)\r\n    at Module._load (node:internal/modules/cjs/loader:1300:12)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47\r\n\r\nNode.js v24.12.0\r\n"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"todo-app\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple todo app with CRUD operations\",\n  \"main\": \"index.js\",\n  \"scripts\": {\n    \"test\": \"node tests/oracle.test.js\"\n  },\n  \"dependencies\": {\n    \"http\": \"^17.0.0\"\n  }\n}\n"
+    },
+    {
+      "path": "README.md",
+      "content": "# Todo App\n\nA simple todo app with CRUD operations.\n\n## Usage\n\n1. Clone the repository:\n   ```bash\n   git clone https://github.com/yourusername/todo-app.git\n   cd todo-app\n   ```\n2. Run the tests:\n   ```bash\n   npm test\n   ```\n"
+    },
+    {
+      "path": "index.js",
+      "content": "# index.js\n\nconst createServer = require('./src/server');\nconst http = require('http');\n\nconst PORT = 3000;\nconst dataPath = './data.json';\n\n// Ensure the data file exists\nif (!fs.existsSync(dataPath)) {\n  fs.writeFileSync(dataPath, '[]', 'utf8');\n}\n\nconst server = createServer({ dataPath });\nserver.listen(PORT, () => {\n  console.log(`Server is running on http://localhost:${PORT}`);\n});\n"
+    },
+    {
+      "path": "data.json",
+      "content": "[]\n"
+    }
+  ],
+  "notes": "Added package.json, README.md, index.js, and data.json to set up the project structure and ensure the server can run."
+}

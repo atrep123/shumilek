@@ -1,0 +1,27 @@
+test_generator (unittest.loader._FailedTest.test_generator) ... ERROR
+test_train (test_trainer.TestTrainer.test_train) ... ok
+
+======================================================================
+ERROR: test_generator (unittest.loader._FailedTest.test_generator)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_generator
+Traceback (most recent call last):
+  File "C:\Users\atrep\AppData\Local\Programs\Python\Python312\Lib\unittest\loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\AppData\Local\Programs\Python\Python312\Lib\unittest\loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561477879\workspace\tests\test_generator.py", line 2, in <module>
+    from mini_ai.generator import generate
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561477879\workspace\mini_ai\__init__.py", line 2, in <module>
+    from .generator import generate
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561477879\workspace\mini_ai\generator.py", line 1
+    def generate(model_path):\n    # Implementace generovani textu z Markovova lincova
+                              ^
+SyntaxError: unexpected character after line continuation character
+
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.000s
+
+FAILED (errors=1)

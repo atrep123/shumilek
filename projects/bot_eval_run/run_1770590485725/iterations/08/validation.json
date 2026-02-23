@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Parse/write failed: Unterminated string in JSON at position 3279 (line 1 column 3280)"
+  ]
+}

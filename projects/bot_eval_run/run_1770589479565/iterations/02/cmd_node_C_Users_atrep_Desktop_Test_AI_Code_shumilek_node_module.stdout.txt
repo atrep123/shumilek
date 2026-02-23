@@ -1,0 +1,13 @@
+../../../../node_modules/typescript/lib/lib.dom.d.ts(39121,13): error TS2451: Cannot redeclare block-scoped variable 'crypto'.
+src/cli.ts(6,7): error TS2451: Cannot redeclare block-scoped variable 'crypto'.
+src/cli.ts(16,12): error TS7006: Parameter 'options' implicitly has an 'any' type.
+src/cli.ts(22,12): error TS7006: Parameter 'title' implicitly has an 'any' type.
+src/cli.ts(22,19): error TS7006: Parameter 'options' implicitly has an 'any' type.
+src/cli.ts(29,12): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/cli.ts(29,16): error TS7006: Parameter 'options' implicitly has an 'any' type.
+src/cli.ts(36,12): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/cli.ts(36,16): error TS7006: Parameter 'options' implicitly has an 'any' type.
+src/store.ts(1,10): error TS2303: Circular definition of import alias 'Task'.
+src/store.ts(1,10): error TS2459: Module '"./store"' declares 'Task' locally, but it is not exported.
+src/store.ts(1,16): error TS2303: Circular definition of import alias 'TaskStore'.
+src/store.ts(1,16): error TS2459: Module '"./store"' declares 'TaskStore' locally, but it is not exported.

@@ -1,0 +1,10 @@
+{
+  "name": "task-manager",
+  "version": "1.0.0",
+  "description": "A simple task manager CLI",
+  "main": "dist/cli.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node tests/oracle.test.js"
+  }
+}

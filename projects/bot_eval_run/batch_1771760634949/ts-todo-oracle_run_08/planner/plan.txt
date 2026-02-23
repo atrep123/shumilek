@@ -1,0 +1,1 @@
+创建一个TypeScript项目，编译为CommonJS，并通过提供的Oracle测试。项目不使用任何外部npm包（除了Node.js内置模块），必须使用`node:crypto`生成ID，但注意测试使用`TaskStore`期望字符串ID。然而，测试未指定生成ID的方法，因此可以使用`crypto.randomUUID()`。步骤包括创建README.md、package.json、tsconfig.json、src/store.ts和src/cli.ts文件，并确保项目符合上述要求。

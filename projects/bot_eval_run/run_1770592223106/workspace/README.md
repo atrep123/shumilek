@@ -1,0 +1,8 @@
+# Todo CLI
+
+## Usage
+
+- List tasks: `node dist/cli.js list --data <path>`
+- Add task: `node dist/cli.js add <title> --data <path>`
+- Mark task as done: `node dist/cli.js done <id> --data <path>`
+- Remove task: `node dist/cli.js remove <id> --data <path>`

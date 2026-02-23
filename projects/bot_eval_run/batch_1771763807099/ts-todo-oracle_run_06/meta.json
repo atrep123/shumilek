@@ -1,0 +1,17 @@
+{
+  "runId": 1771764490131,
+  "scenario": "ts-todo-oracle",
+  "model": "qwen2.5-coder:14b",
+  "plannerModel": "deepseek-r1:8b",
+  "reviewerModel": "qwen2.5:3b",
+  "jsonRepairModel": "qwen2.5:7b",
+  "deterministicFallbackMode": "off",
+  "baseUrl": "http://localhost:11434",
+  "ollamaOptions": {
+    "temperature": 0.2,
+    "num_predict": 2400,
+    "seed": 42
+  },
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771763807099\\ts-todo-oracle_run_06\\workspace",
+  "startedAt": "2026-02-22T12:48:10.134Z"
+}

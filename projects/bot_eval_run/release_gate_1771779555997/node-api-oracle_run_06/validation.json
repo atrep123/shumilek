@@ -1,0 +1,70 @@
+{
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\node-api-oracle_run_06",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\node-api-oracle_run_06\\workspace",
+  "deterministicFallback": {
+    "mode": "on-fail",
+    "tsTodo": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "nodeApi": {
+      "activations": 1,
+      "recoveries": 1,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 1,
+      "canonicalRecoveries": 1,
+      "rawPasses": 0,
+      "rawFailures": 1,
+      "recoveredByFallback": 1
+    },
+    "totalActivations": 1,
+    "totalRecoveries": 1,
+    "totalTargetedActivations": 0,
+    "totalTargetedRecoveries": 0,
+    "totalCanonicalActivations": 1,
+    "totalCanonicalRecoveries": 1,
+    "totalRawPasses": 0,
+    "totalRawFailures": 1,
+    "totalRecoveredByFallback": 1,
+    "fallbackDependencyRate": 1
+  },
+  "reliability": {
+    "rawPasses": 0,
+    "rawFailures": 1,
+    "recoveredByFallback": 1,
+    "fallbackDependencyRate": 1
+  },
+  "parseStats": {
+    "plannerFailures": 0,
+    "schemaFailures": 0,
+    "jsonRepairFailures": 0,
+    "parseFailures": 1,
+    "jsonParseFailures": 1,
+    "placeholderFailures": 0,
+    "otherFailures": 0
+  },
+  "ok": true,
+  "diagnostics": [
+    "Deterministic fallback activated (node-api-oracle, mode=on-fail, tier=canonical) and recovered validation."
+  ],
+  "commands": [
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1771779555997\\node-api-oracle_run_06\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 200,
+      "stdout": "✔ GET /health + GET /openapi.json (52.4942ms)\n✔ Todo CRUD + persistence (30.9654ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 141.9641\n",
+      "stderr": ""
+    }
+  ]
+}

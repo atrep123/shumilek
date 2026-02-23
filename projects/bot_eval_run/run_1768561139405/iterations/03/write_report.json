@@ -1,0 +1,9 @@
+{
+  "count": 4,
+  "files": [
+    "README.md",
+    "mini_ai/__init__.py",
+    "mini_ai/cli.py",
+    "tests/test_markov_chain.py"
+  ]
+}

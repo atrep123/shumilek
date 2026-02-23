@@ -1,0 +1,14 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Node.js TODO API\n\nTento projekt implementuje REST API pro správu TODO položek s persistencí do souboru.\n\n## Spuštění serveru\n\nPokud chceš spustit server, postupuj podle těchto kroků:\n1. Nainstaluj potřebné balíčky: `npm install`\n2. Spusť server pomocí příkazu: `node src/server.js`\n\n## Endpoints\n- **GET /health**: Vrátí JSON s health checkem.\n- **GET /openapi.json**: Vrátí OpenAPI specifikaci pro API.\n- **GET /todos**: Vrátí seznam všech TODO položek.\n- **POST /todos**: Přidá novou TODO položku (vyžaduje tělo s polem `title`).\n- **GET /todos/:id**: Vrátí konkrétní TODO položku podle ID.\n- **PATCH /todos/:id**: Aktualizuje stav TODO položky (polem `done`).\n- **DELETE /todos/:id**: Odstraní TODO položku podle ID.\n\n## Technologie\n- Node.js s builtin moduly\n- JSON pro persistenci dat\n\n## Testování\nPro testování je k dispozici skript `npm test`, který spustí oracle testy."
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"todo-api\",\n  \"version\": \"1.0.0\",\n  " 
+    }
+  ],
+  "notes": "optional"
+}

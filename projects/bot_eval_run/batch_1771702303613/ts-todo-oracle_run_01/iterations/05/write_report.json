@@ -1,0 +1,8 @@
+{
+  "count": 3,
+  "files": [
+    "tsconfig.json",
+    "src/store.ts",
+    "src/cli.ts"
+  ]
+}

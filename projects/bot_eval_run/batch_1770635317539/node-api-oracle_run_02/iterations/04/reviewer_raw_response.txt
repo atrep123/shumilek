@@ -1,0 +1,1 @@
+{ "review": "Set 'type': 'module' in package.json and remove all dependencies.", "priorityFiles": ["package.json"] }

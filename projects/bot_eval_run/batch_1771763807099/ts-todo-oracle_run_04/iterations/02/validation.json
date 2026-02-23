@@ -1,0 +1,38 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "src/store.ts uses crypto.randomUUID() but missing crypto require"
+  ],
+  "commands": [
+    {
+      "command": "node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771763807099\\ts-todo-oracle_run_04\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 1238,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771763807099\\ts-todo-oracle_run_04\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 417,
+      "stdout": "✔ TaskStore: CRUD persists to JSON file (6.0829ms)\n✔ CLI: end-to-end flow (292.5626ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 354.2878\n",
+      "stderr": ""
+    },
+    {
+      "command": "node dist/cli.js --help",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771763807099\\ts-todo-oracle_run_04\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 57,
+      "stdout": "Usage:\n  add <title> --data <path>\n  list --data <path>\n  done <id> --data <path>\n  remove <id> --data <path>\n",
+      "stderr": ""
+    }
+  ]
+}

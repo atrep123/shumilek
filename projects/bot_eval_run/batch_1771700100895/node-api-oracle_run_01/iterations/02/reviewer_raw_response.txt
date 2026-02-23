@@ -1,0 +1,1 @@
+{ "review": "Add missing files README.md, package.json, and openapi.json. Ensure package.json has correct entry points and dependencies.", "priorityFiles": ["README.md", "package.json", "openapi.json"] }

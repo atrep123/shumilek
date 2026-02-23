@@ -1,0 +1,46 @@
+[
+  {
+    "scenario": "node-api-oracle",
+    "pass": 0,
+    "total": 3,
+    "passRate": 0,
+    "avgMs": 149033,
+    "runsWithPlannerError": 0,
+    "runsWithJsonRepairError": 0,
+    "jsonRepairErrorFiles": 0,
+    "runsWithSchemaFailure": 0,
+    "schemaFailures": 0,
+    "runsWithJsonParseFailure": 3,
+    "jsonParseFailures": 3,
+    "runsWithPlaceholderFailure": 0,
+    "placeholderFailures": 0,
+    "runsWithOtherParseFailure": 0,
+    "otherParseFailures": 0,
+    "runsWithDeterministicFallback": 0,
+    "deterministicFallbackActivations": 0,
+    "deterministicFallbackRecoveries": 0,
+    "deterministicFallbackTargetedActivations": 0,
+    "deterministicFallbackTargetedRecoveries": 0,
+    "deterministicFallbackCanonicalActivations": 0,
+    "deterministicFallbackCanonicalRecoveries": 0,
+    "rawPasses": 0,
+    "rawFailures": 3,
+    "rawPassRate": 0,
+    "recoveredByFallback": 0,
+    "fallbackDependencyRate": 0,
+    "runsWithRawPass": 0,
+    "runsRecoveredByFallback": 0,
+    "rawRunPassRate": 0,
+    "fallbackDependencyRunRate": 0,
+    "topFailureClusters": [
+      {
+        "id": "command_runtime",
+        "count": 3
+      },
+      {
+        "id": "json_parse",
+        "count": 3
+      }
+    ]
+  }
+]

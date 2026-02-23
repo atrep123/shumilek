@@ -1,0 +1,4 @@
+{
+ "review": "Missing required files: README.md, package.json, tsconfig.json, src/store.ts. Missing required modules: commander, yargs, minimist, uuid, fs-extra, axios.",
+ "priorityFiles": ["README.md", "package.json", "tsconfig.json", "src/store.ts"]
+}

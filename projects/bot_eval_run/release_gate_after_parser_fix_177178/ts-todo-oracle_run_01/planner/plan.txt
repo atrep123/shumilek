@@ -1,0 +1,1 @@
+Create a TypeScript project that compiles to `dist/` and passes the provided Oracle tests. The project must not use any external npm packages except Node.js builtins, and must use `node:crypto` for generating IDs if needed.

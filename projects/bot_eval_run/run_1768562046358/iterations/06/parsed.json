@@ -1,0 +1,10 @@
+{
+  "mode": "patch",
+  "files": [
+    {
+      "path": "mini_ai/markov.py",
+      "content": "    def to_dict(self) -> dict:\r\n        return {\r\n            \"order\": self.order,\r\n            \"transitions\": {k: dict(v) for k, v in self.transitions.items()}\r\n        }\r\n\r\n    @classmethod\r\n    def from_dict(cls, d: dict) -> \"MarkovChain\":\r\n        mc = cls(order=d[\"order\"])  # Zde je oprava pro odstraneni chyby v kodu\r\n        mc.transitions = defaultdict(lambda: defaultdict(int), d[\"transitions\"])  # Oprava syntaxe a logiky\r\n        return mc\r\n"
+    }
+  ],
+  "notes": "optional"
+}

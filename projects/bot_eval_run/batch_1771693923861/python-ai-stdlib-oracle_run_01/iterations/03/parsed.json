@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# mini_ai\nThis is a simple AI package implementing a character-level Markov chain generator.\n"
+    },
+    {
+      "path": "mini_ai/__init__.py",
+      "content": ""
+    }
+  ],
+  "notes": "Added README.md and __init__.py to meet the requirements."
+}

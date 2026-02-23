@@ -1,0 +1,23 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing required file: README.md",
+    "Missing required file: package.json",
+    "Missing required file: openapi.json",
+    "Invalid package.json: ENOENT: no such file or directory, open 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770638836021\\node-api-oracle_run_01\\workspace\\package.json'",
+    "Invalid openapi.json: ENOENT: no such file or directory, open 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770638836021\\node-api-oracle_run_01\\workspace\\openapi.json'",
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770638836021\\node-api-oracle_run_01\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 218,
+      "stdout": "Error: ENOENT: no such file or directory, open 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770638836021\\node-api-oracle_run_01\\workspace\\openapi.json'\n    at Object.readFileSync (node:fs:440:20)\n    at IncomingMessage.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770638836021\\node-api-oracle_run_01\\workspace\\src\\server.js:27:41)\n    at IncomingMessage.emit (node:events:508:28)\n    at endReadableNT (node:internal/streams/readable:1701:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {\n  errno: -4058,\n  code: 'ENOENT',\n  syscall: 'open',\n  path: 'C:\\\\Users\\\\atrep\\\\Desktop\\\\Test_AI_Code\\\\shumilek\\\\projects\\\\bot_eval_run\\\\batch_1770638836021\\\\node-api-oracle_run_01\\\\workspace\\\\openapi.json'\n}\n✖ GET /health + GET /openapi.json (69.2521ms)\n✔ Todo CRUD + persistence (28.4905ms)\nℹ tests 2\nℹ suites 0\nℹ pass 1\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 153.4269\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:39:1\n✖ GET /health + GET /openapi.json (69.2521ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  500 !== 200\n  \n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770638836021\\node-api-oracle_run_01\\workspace\\tests\\oracle.test.js:49:12)\n      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 500,\n    expected: 200,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+      "stderr": ""
+    }
+  ]
+}

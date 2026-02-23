@@ -1,0 +1,14 @@
+{
+  "mode": "patch",
+  "files": [
+    {
+      "path": "mini_ai/trainer.py",
+      "content": "import os\nimport random\ndef train(input_file, output_model):\n    if not os.path.exists(input_file):\n        raise FileNotFoundError('No such file or directory: ' + input_file)\n    with open(input_file, 'r') as file:\n        text = file.read()\n    # Training logic here...\n"
+    },
+    {
+      "path": "tests/test_trainer.py",
+      "content": "import unittest\nfrom mini_ai.trainer import train\n\nclass TestTrainer(unittest.TestCase):\n    def test_train(self):\n        with self.assertRaises(FileNotFoundError):\n            train('non_existent_file.txt', 'model.pth')\n"
+    }
+  ],
+  "notes": "optional"
+}

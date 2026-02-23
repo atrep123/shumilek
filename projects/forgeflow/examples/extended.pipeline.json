@@ -1,0 +1,42 @@
+{
+  "name": "Extended",
+  "version": "1.0",
+  "env": {
+    "projectRoot": "."
+  },
+  "settings": {
+    "maxConcurrency": 2,
+    "failFast": true
+  },
+  "tasks": [
+    {
+      "id": "readme",
+      "type": "file.read",
+      "with": {
+        "path": "{{env.projectRoot}}/README.md",
+        "maxBytes": 2000
+      }
+    },
+    {
+      "id": "log",
+      "type": "shell.exec",
+      "with": {
+        "command": "node",
+        "args": ["-e", "console.log('forgeflow ok')"]
+      }
+    },
+    {
+      "id": "merge",
+      "type": "json.merge",
+      "dependsOn": ["readme"],
+      "with": {
+        "sources": [
+          { "name": "ForgeFlow", "tags": ["cli"] },
+          { "tags": ["api"], "readmeBytes": "{{tasks.readme.bytes}}" }
+        ],
+        "destination": "reports/merged.json",
+        "arrayMode": "concat"
+      }
+    }
+  ]
+}

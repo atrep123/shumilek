@@ -1,0 +1,34 @@
+✖ GET /health + GET /openapi.json (67.1995ms)
+✖ Todo CRUD + persistence (11.6749ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 307174.5252
+
+✖ failing tests:
+
+test at tests\oracle.test.js:39:1
+✖ GET /health + GET /openapi.json (67.1995ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1771693923861\node-api-oracle_run_03\workspace\openapi.json'
+      at Object.readFileSync (node:fs:440:20)
+      at IncomingMessage.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1771693923861\node-api-oracle_run_03\workspace\src\server.js:18:36)
+      at IncomingMessage.emit (node:events:508:28)
+      at endReadableNT (node:internal/streams/readable:1701:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_03\\workspace\\openapi.json'
+  }
+
+test at tests\oracle.test.js:59:1
+✖ Todo CRUD + persistence (11.6749ms)
+  TypeError: Cannot read properties of undefined (reading 'push')
+      at IncomingMessage.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1771693923861\node-api-oracle_run_03\workspace\src\server.js:59:20)
+      at IncomingMessage.emit (node:events:508:28)
+      at endReadableNT (node:internal/streams/readable:1701:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:89:21)

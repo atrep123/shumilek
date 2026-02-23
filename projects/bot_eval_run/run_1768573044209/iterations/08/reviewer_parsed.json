@@ -1,0 +1,4 @@
+{
+  "error": "Unexpected token s in JSON at position 0",
+  "hint": "Check your file for any syntax errors or unexpected characters. This error often occurs when there are missing quotes, extra spaces, or other formatting issues."
+}

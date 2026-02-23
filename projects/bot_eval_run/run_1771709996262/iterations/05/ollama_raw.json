@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-02-21T21:43:37.9581757Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/cli.ts\",\n      \"content\": \"declare const require: any;\\ndeclare const process: any;\\n\\nconst fs = require('node:fs');\\nimport { argv } from 'process';\\nimport { TaskStore } from './store';\\n\\nconst args = argv.slice(2);\\nconst command = args[0];\\nconst dataPath = args.find(arg => arg.startsWith('--data='))?.split('=')[1];\\n\\nif (command === '--help' || !dataPath) {\\n  console.log('Usage: node dist/cli.js <command> --data=<path>');\\n  process.exit(0);\\n}\\n\\nconst taskStore = new TaskStore(dataPath);\\n\\nswitch (command) {\\n  case 'add': {\\n    const title = args.find(arg => !arg.startsWith('--'));\\n    if (!title) {\\n      console.log('Title is required for add command.');\\n      process.exit(1);\\n    }\\n    const task = taskStore.add(title);\\n    console.log(JSON.stringify({ ok: true, task }));\\n    break;\\n  }\\n  case 'list': {\\n    const tasks = taskStore.list();\\n    console.log(JSON.stringify({ ok: true, tasks }));\\n    break;\\n  }\\n  case 'done': {\\n    const id = args.find(arg => !arg.startsWith('--'));\\n    if (!id) {\\n      console.log('ID is required for done command.');\\n      process.exit(1);\\n    }\\n    const task = taskStore.done(id);\\n    console.log(JSON.stringify({ ok: true, task }));\\n    break;\\n  }\\n  case 'remove': {\\n    const id = args.find(arg => !arg.startsWith('--'));\\n    if (!id) {\\n      console.log('ID is required for remove command.');\\n      process.exit(1);\\n    }\\n    taskStore.remove(id);\\n    console.log(JSON.stringify({ ok: true }));\\n    break;\\n  }\\n  default:\\n    console.log(`Unknown command: ${command}`);\\n    process.exit(1);\\n}\\n\"\n    }\n  ],\n  \"notes\": \"Fixed the import statement in src/cli.ts to use named import for TaskStore.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 16609686800,
+  "load_duration": 65013700,
+  "prompt_eval_count": 4043,
+  "prompt_eval_duration": 991384200,
+  "eval_count": 512,
+  "eval_duration": 6154303400
+}

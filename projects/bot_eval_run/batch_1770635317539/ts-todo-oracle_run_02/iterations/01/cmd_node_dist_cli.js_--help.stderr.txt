@@ -1,0 +1,12 @@
+file:///C:/Users/atrep/Desktop/Test_AI_Code/shumilek/projects/bot_eval_run/batch_1770635317539/ts-todo-oracle_run_02/workspace/dist/cli.js:2
+Object.defineProperty(exports, "__esModule", { value: true });
+                      ^
+
+ReferenceError: exports is not defined in ES module scope
+This file is being treated as an ES module because it has a '.js' file extension and 'C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1770635317539\ts-todo-oracle_run_02\workspace\package.json' contains "type": "module". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///C:/Users/atrep/Desktop/Test_AI_Code/shumilek/projects/bot_eval_run/batch_1770635317539/ts-todo-oracle_run_02/workspace/dist/cli.js:2:23
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.12.0

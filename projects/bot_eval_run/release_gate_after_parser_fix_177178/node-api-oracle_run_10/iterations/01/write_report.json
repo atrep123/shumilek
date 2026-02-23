@@ -1,0 +1,11 @@
+{
+  "count": 4,
+  "files": [
+    "README.md",
+    "package.json",
+    "openapi.json",
+    "src/server.js"
+  ],
+  "appliedAsPatch": false,
+  "forcePatchFromIncompleteFull": false
+}

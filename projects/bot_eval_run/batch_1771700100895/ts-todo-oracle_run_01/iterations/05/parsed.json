@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Task Manager CLI\n\n## Usage\n\n- `add <title> --data <path>`: Add a new task.\n- `list --data <path>`: List all tasks.\n- `done <id> --data <path>`: Mark a task as done.\n- `remove <id> --data <path>`: Remove a task."
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"task-manager\",\n  \"version\": \"1.0.0\",\n  \"main\": \"dist/cli.js\",\n  \"scripts\": {\n    \"build\": \"tsc -p tsconfig.json\"\n  }\n}"
+    },
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES6\",\n    \"module\": \"commonjs\",\n    \"outDir\": \"dist\",\n    \"strict\": true,\n    \"esModuleInterop\": true\n  },\n  \"include\": [\n    \"src/**/*\"\n  ]\n}"
+    }
+  ],
+  "notes": "Added README.md, package.json, and tsconfig.json to resolve the missing files and configuration issues."
+}

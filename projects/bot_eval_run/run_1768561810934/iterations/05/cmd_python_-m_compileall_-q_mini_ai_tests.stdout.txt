@@ -1,0 +1,6 @@
+*** Error compiling 'mini_ai\\markov.py'...
+  File "mini_ai\markov.py", line 29
+    next_char_options = self.transitions.get(context, {}
+                                            ^
+SyntaxError: '(' was never closed
+

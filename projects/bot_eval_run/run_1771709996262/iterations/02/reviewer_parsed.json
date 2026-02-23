@@ -1,0 +1,24 @@
+{
+  "errors": [],
+  "changes": [
+    {
+      "filePath": "src/cli.ts",
+      "changes": [
+        {
+          "line": 1,
+          "original": "",
+          "new": "import { TaskStore } from './store';"
+        },
+        {
+          "line": 20,
+          "original": "switch (cmd) {"
+        },
+        {
+          "line": 21,
+          "original": " case 'add':",
+          "new": " case 'add':\n\t if (!titleOrId) throw new Error('Missing title');\n\t console.log(taskStore.add(titleOrId));\n\t break;"
+        }
+      ]
+    }
+  ]
+}

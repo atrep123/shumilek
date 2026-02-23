@@ -1,0 +1,10 @@
+{
+  "mode": "patch",
+  "files": [
+    {
+      "path": "src/cli.ts",
+      "content": "declare const require: any;\ndeclare const process: any;\nconst fs = require('node:fs');\nconst path = require('node:path');\nimport { TaskStore } from './store';\n\nfunction help() {\n  console.log(`Usage:\n  node dist/cli.js --help\n  node dist/cli.js list --data <path>\n  node dist/cli.js add <title> --data <path>\n  node dist/cli.js done <id> --data <path>\n  node dist/cli.js remove <id> --data <path>`);\n}\n\nfunction main() {\n  if (process.argv[2] === '--help') {\n    help();\n    process.exit(0);\n  }\n\n  const dataPath = process.argv.find(arg => arg.startsWith('--data='))?.split('=')[1];\n  if (!dataPath) {\n    console.error('Missing --data option');\n    process.exit(1);\n  }\n\n  const store = new TaskStore(dataPath);\n\n  switch (process.argv[2]) {\n    case 'list':\n      console.log(JSON.stringify({ ok: true, tasks: store.list() }));\n      break;\n    case 'add':\n      const titleIndex = process.argv.findIndex(arg => arg === '--data');\n      const title = process.argv[3] && !process.argv[3].startsWith('--') ? process.argv[3] : '';\n      if (!title) {\n        console.error('Missing task title');\n        process.exit(1);\n      }\n      console.log(JSON.stringify({ ok: true, task: store.add(title) }));\n      break;\n    case 'done':\n      const idDone = process.argv[3] && !process.argv[3].startsWith('--') ? process.argv[3] : '';\n      if (!idDone) {\n        console.error('Missing task ID');\n        process.exit(1);\n      }\n      console.log(JSON.stringify({ ok: true, task: store.done(idDone) }));\n      break;\n    case 'remove':\n      const idRemove = process.argv[3] && !process.argv[3].startsWith('--') ? process.argv[3] : '';\n      if (!idRemove) {\n        console.error('Missing task ID');\n        process.exit(1);\n      }\n      console.log(JSON.stringify({ ok: true, task: store.remove(idRemove) }));\n      break;\n    default:\n      help();\n      process.exit(1);\n  }\n}\n\nmain();"
+    }
+  ],
+  "notes": ""
+}

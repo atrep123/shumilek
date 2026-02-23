@@ -1,0 +1,10 @@
+{
+  "name": "todo-api",
+  "version": "1.0.0",
+  "description": "A simple TODO API using Node.js built-in modules",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js"
+  }
+}

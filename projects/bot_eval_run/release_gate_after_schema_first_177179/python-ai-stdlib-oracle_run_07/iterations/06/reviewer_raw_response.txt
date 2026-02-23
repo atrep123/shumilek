@@ -1,0 +1,18 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md"
+    },
+    {
+      "path": "mini_ai/__init__.py"
+    },
+    {
+      "path": "mini_ai/markov.py"
+    },
+    {
+      "path": "mini_ai/cli.py"
+    }
+  ],
+  "notes": "Add basic structure and implementation for MarkovChain, cli, and markov modules as per the requirements."
+}

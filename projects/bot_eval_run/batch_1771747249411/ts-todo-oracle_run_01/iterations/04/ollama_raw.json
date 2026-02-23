@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-02-22T08:03:20.7255426Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/cli.ts\",\n      \"content\": \"declare const require: any;\\ndeclare const process: any;\\nexport {};\\n\\nconst { TaskStore } = require('./store');\\n\\nfunction usage(): string {\\n  return 'Usage:\\\\n  list --data <path>\\\\n  add <title> --data <path>\\\\n  done <id> --data <path>\\\\n  remove <id> --data <path>\\\\n  --help';\\n}\\n\\nfunction parseDataPath(args: string[]): string | null {\\n  const idx = args.indexOf('--data');\\n  if (idx >= 0 && idx + 1 < args.length) return args[idx + 1];\\n  return null;\\n}\\n\\nfunction firstPositional(args: string[]): string | null {\\n  for (const token of args) {\\n    if (!token.startsWith('--')) return token;\\n  }\\n  return null;\\n}\\n\\nfunction main(): number {\\n  const argv = process.argv.slice(2);\\n  const cmd = String(argv[0] || '');\\n\\n  if (cmd === '' || cmd === '--help') {\\n    console.log(usage());\\n    return 0;\\n  }\\n\\n  const dataPath = parseDataPath(argv);\\n  if (!dataPath) {\\n    console.error('Missing --data <path>');\\n    return 1;\\n  }\\n\\n  const value = firstPositional(argv.slice(1));\\n  const store = new TaskStore(dataPath);\\n\\n  try {\\n    if (cmd === 'list') {\\n      console.log(JSON.stringify({ ok: true, tasks: store.list() }));\\n      return 0;\\n    }\\n    if (cmd === 'add') {\\n      if (!value) throw new Error('Missing title');\\n      console.log(JSON.stringify({ ok: true, task: store.add(value) }));\\n      return 0;\\n    }\\n    if (cmd === 'done') {\\n      if (!value) throw new Error('Missing id');\\n      console.log(JSON.stringify({ ok: true, task: store.done(value) }));\\n      return 0;\\n    }\\n    if (cmd === 'remove') {\\n      if (!value) throw new Error('Missing id');\\n      console.log(JSON.stringify({ ok: true, task: store.remove(value) }));\\n      return 0;\\n    }\\n    console.error('Unknown command');\\n    return 1;\\n  } catch (error: any) {\\n    console.error(JSON.stringify({ ok: false, error: String(error?.message || error) }));\\n    return 1;\\n  }\\n}\\n\\nconst exitCode = main();\\nif (typeof process?.exit === \\\"function\\\") process.exit(exitCode);\\n\"\n    }\n  ],\n  \"notes\": \"Added export {} to src/cli.ts to ensure module scope and avoid redeclaration errors.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 20196834900,
+  "load_duration": 60519900,
+  "prompt_eval_count": 3420,
+  "prompt_eval_duration": 14270400,
+  "eval_count": 666,
+  "eval_duration": 7949514800
+}

@@ -1,0 +1,144 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "TODO API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Check the health of the server",
+        "responses": {
+          "200": {
+            "description": "Server is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/todos": {
+        "get": {
+          "summary": "Retrieve all TODO items",
+          "responses": {
+            "200": {
+              "description": "A list of TODO items",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "ok": {
+                        "type": "boolean"
+                      },
+                      "todos": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/Todo"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/todos/{id}": {
+            "options": {
+              "summary": "OPTIONS request for TODO items by ID",
+              "responses": {
+                "200": {
+                  "description": "The options for the TODO item",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/TodoResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/todos/{id}": {
+          "options": {
+            "summary": "OPTIONS request for TODO items by ID",
+            "responses": {
+              "200": {
+                "description": "The options for the TODO item",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "$ref": "#/components/schemas/TodoResponse"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/todos/{id}": {
+        "options": {
+          "summary": "OPTIONS request for TODO items by ID",
+          "responses": {
+            "200": {
+              "description": "The options for the TODO item",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/TodoResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/todos/{id}": {
+      "options": {
+        "summary": "OPTIONS request for TODO items by ID",
+        "responses": {
+          "200": {
+            "description": "The options for the TODO item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/todos/{id}": {
+    "options": {
+      "summary": "OPTIONS request for TODO items by ID",
+      "responses": {
+        "200": {
+          "description": "The options for the TODO item",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TodoResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

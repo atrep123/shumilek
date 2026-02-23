@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Todo API\nThis is a simple Todo API implemented using Node.js and HTTP server.\n"
+    }
+  ],
+  "notes": "Added README.md file to address the missing file issue."
+}

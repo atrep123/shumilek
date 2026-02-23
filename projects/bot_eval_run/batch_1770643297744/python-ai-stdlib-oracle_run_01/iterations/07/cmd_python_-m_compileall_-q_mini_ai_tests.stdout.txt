@@ -1,0 +1,6 @@
+*** Error compiling 'mini_ai\\markov.py'...
+  File "mini_ai\markov.py", line 24
+    context = random.choice([c for c in self.transitions for c])
+                                                              ^
+SyntaxError: invalid syntax
+

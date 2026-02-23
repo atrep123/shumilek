@@ -1,0 +1,20 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Mini AI Project\n\nThis is a simple character-level Markov chain generator implemented in Python without using any external libraries like numpy, pandas, sklearn, torch, tensorflow, or requests.\n\n## Features\n- **Train the model on a text file**: Use `python -m mini_ai.cli train <input_file>` to train the model.\n- **Generate text based on the trained model**: Use `python -m mini_ai.cli generate` to generate new text.\n\n## Installation\n1. Clone the repository: `git clone [repository_url]`\n2. Navigate to the project directory: `cd mini_ai`\n3. Install dependencies: `pip install .`\n\n## Usage\n- To train the model, run:\n  ```bash\n  python -m mini_ai.cli train <input_file>\n  ```\n- To generate text, run:\n  ```bash\n  python -m mini_ai.cli generate\n  ```\n\n## Tests\nTo run the tests, use the following command:\n```bash\npython -m unittest discover -s tests/\n```\n\n"
+    },
+    {
+      "path": "mini_ai/__init__.py",
+      "content": "from .markov import MarkovChain\n"
+    },
+    {
+      "path": "mini_ai/markov.py",
+      "content": "class MarkovChain:\n    def __init__(self):\n        self.chain = {}\n\n    def train(self, text):\n        words = list(text)\n        for i in range(len(words) - 1):\n            if words[i] not in self.chain:\n                self.chain[words[i]] = []\n            self.chain[words[i]].append(words[i + 1])\n\n    def generate(self, length=50):\n        import random\n        first_word = random.choice(list(self.chain.keys()))\n        result = [first_word]\n        while len(result) < length:\n            next_word = random.choice(self.chain[result[-1]])\n            result.append(next_word)\n        return ''.join(result)\n"
+    },
+    {
+      "path": "tests/test_markov.py",
+      "content": "import unittest\nfrom mini_ai.markov import MarkovChain\n\nclass TestMarkovChain(unittest.TestCase):\n    def setUp(self):\n        self.mc = MarkovChain()\n\n    def test_train_single_word(self):\n        self.mc.train('a')\n        self.assertEqual(self.mc.chain, {'a': []})\n\n    def test_train_two_words(self):\n        self.mc.train('ab')\n        self.assertEqual(self.mc.chain, {'a': ['b']})\n\n    def test_train_multiple_words(self):\n        self.mc.train('abc abc')\n        self.assertEqual(self.mc.chain, {'a': ['b'], 'b': ['c'], ' ': ['c']})\n\n    def test_generate_short_text(self):\n        self.mc.train('ab')\n        text = self.mc.generate(1)\n        self.assertEqual(text, 'ab')\n\n    def test_generate_longer_text(self):\n        self.mc.train('abc abc')\n        text = self.mc.generate(3)\n        self.assertIn('a', text)\n        self.assertIn('b', text)\n        self.assertIn('c', text)\n\n    def test_generate_with_chaining(self):\n        self.mc.train('abc abc')\n        text = self.mc.generate(3)\n        self.assertEqual(len(text), 3)\n\nif __name__ == '__main__':\n    unittest.main()"
+    }
+  ]
+}

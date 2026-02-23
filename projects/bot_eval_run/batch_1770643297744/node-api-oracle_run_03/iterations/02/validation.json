@@ -1,0 +1,18 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Command failed: node --test tests/oracle.test.js (exit=null, timedOut=true)"
+  ],
+  "commands": [
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770643297744\\node-api-oracle_run_03\\workspace",
+      "ok": false,
+      "exitCode": null,
+      "timedOut": true,
+      "durationMs": 600014,
+      "stdout": "✖ GET /health + GET /openapi.json (8.44ms)\n✖ Todo CRUD + persistence (34.6462ms)\n",
+      "stderr": ""
+    }
+  ]
+}

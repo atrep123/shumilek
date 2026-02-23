@@ -1,0 +1,23 @@
+[
+  {
+    "scenario": "ts-todo-oracle",
+    "pass": 0,
+    "total": 3,
+    "passRate": 0,
+    "avgMs": 209266
+  },
+  {
+    "scenario": "node-api-oracle",
+    "pass": 0,
+    "total": 3,
+    "passRate": 0,
+    "avgMs": 481512
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "pass": 0,
+    "total": 3,
+    "passRate": 0,
+    "avgMs": 468279
+  }
+]

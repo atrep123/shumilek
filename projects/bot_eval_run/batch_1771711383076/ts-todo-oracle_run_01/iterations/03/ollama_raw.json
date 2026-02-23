@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-02-21T22:05:41.8406553Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/cli.ts\",\n      \"content\": \"const fs = require('node:fs');\\nconst path = require('node:path');\\nconst crypto = require('node:crypto');\\n\\nimport { TaskStore } from './store';\\n\\nfunction parseArgs() {\\n  const args = process.argv.slice(2);\\n  const cmd = args[0];\\n  let dataPath = '';\\n  let titleOrId = '';\\n\\n  for (let i = 1; i < args.length; i++) {\\n    if (args[i] === '--data') {\\n      dataPath = args[i + 1];\\n      i++;\\n    } else {\\n      titleOrId = args[i];\\n    }\\n  }\\n\\n  return { cmd, dataPath, titleOrId };\\n}\\n\\nfunction help() {\\n  console.log(`\\nUsage:\\n  add <title> --data <path>\\n  list --data <path>\\n  done <id> --data <path>\\n  remove <id> --data <path>\\n`);\\n}\\n\\nasync function main() {\\n  const { cmd, dataPath, titleOrId } = parseArgs();\\n\\n  if (cmd === '--help') {\\n    help();\\n    return;\\n  }\\n\\n  if (!dataPath) {\\n    console.error('Missing --data path');\\n    return;\\n  }\\n\\n  const taskStore = new TaskStore(dataPath);\\n\\n  try {\\n    switch (cmd) {\\n      case 'add':\\n        if (!titleOrId) throw new Error('Missing title');\\n        console.log(JSON.stringify({ ok: true, task: taskStore.add(titleOrId) }));\\n        break;\\n      case 'list':\\n        console.log(JSON.stringify({ ok: true, tasks: taskStore.list() }));\\n        break;\\n      case 'done':\\n        if (!titleOrId) throw new Error('Missing id');\\n        console.log(JSON.stringify({ ok: true, task: taskStore.done(titleOrId) }));\\n        break;\\n      case 'remove':\\n        if (!titleOrId) throw new Error('Missing id');\\n        console.log(JSON.stringify({ ok: true, task: taskStore.remove(titleOrId) }));\\n        break;\\n      default:\\n        help();\\n    }\\n  } catch (error: any) {\\n    console.error(JSON.stringify({ ok: false, error: error.message }));\\n  }\\n}\\n\\nmain();\"\n    }\n  ],\n  \"notes\": \"Updated src/cli.ts to ensure all commands output JSON objects with an 'ok' field. Added error handling for missing --data path.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 19767936000,
+  "load_duration": 63586000,
+  "prompt_eval_count": 3532,
+  "prompt_eval_duration": 842141600,
+  "eval_count": 626,
+  "eval_duration": 7549758000
+}

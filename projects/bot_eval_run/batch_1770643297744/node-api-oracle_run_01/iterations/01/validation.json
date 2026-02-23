@@ -1,0 +1,22 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing required file: openapi.json",
+    "Missing required file: src/server.js",
+    "Invalid package.json: Expected double-quoted property name in JSON at position 48 (line 4 column 3)",
+    "Invalid openapi.json: ENOENT: no such file or directory, open 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770643297744\\node-api-oracle_run_01\\workspace\\openapi.json'",
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770643297744\\node-api-oracle_run_01\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 117,
+      "stdout": "node:internal/modules/run_main:76\n  const type = getNearestParentPackageJSONType(mainPath);\n               ^\n\nError: Invalid package config \\\\?\\C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770643297744\\node-api-oracle_run_01\\workspace\\package.json.\n    at shouldUseESMLoader (node:internal/modules/run_main:76:16)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:147:20)\n    at node:internal/main/run_main_module:33:47 {\n  code: 'ERR_INVALID_PACKAGE_CONFIG'\n}\n\nNode.js v24.12.0\n✖ tests\\oracle.test.js (38.7674ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 46.2855\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:1:1\n✖ tests\\oracle.test.js (38.7674ms)\n  'test failed'\n",
+      "stderr": ""
+    }
+  ]
+}

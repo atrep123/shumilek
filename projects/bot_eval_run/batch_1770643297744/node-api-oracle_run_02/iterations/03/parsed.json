@@ -1,0 +1,9 @@
+{
+  "mode": "patch",
+  "files": [
+    {
+      "path": "src/server.js",
+      "content": "module.exports.createServer = ({ dataPath }) => {\n  const todos = [];\n\n  return http.createServer((req, res) => {\n    const parsedUrl = url.parse(req.url, true);\n    if (parsedUrl.pathname === '/health') {\n      res.writeHead(200, { 'Content-Type': 'application/json' });\n      res.end(JSON.stringify({ ok: true }));\n    } else if (parsedUrl.pathname === '/openapi.json') {\n      const openapiSpec = {\n        openapi: '3.0.0',\n        info: { title: 'Todo API', version: '1.0.0' },\n        paths: {}\n      };\n      if (!fs.existsSync(dataPath)) fs.writeFileSync(dataPath, JSON.stringify({ todos: [] }));\n      openapiSpec.paths['/todos'] = {\n        get: { summary: 'Get all todos', responses: {\n          200: { description: 'List of todos', content: { 'application/json': { schema: { type: 'array', items: { $ref: '#/components/schemas/Todo' } } } }\n        },\n        post: { summary: 'Create a new todo', requestBody: {\n          content: { 'application/json': { schema: { $ref: '#/components/schemas/TodoInput' } }\n        }},\n        responses: {\n          201: { description: 'Created todo', content: { 'application/json': { schema: { $ref: '#/components/schemas/Todo' } } }\n        }\n      }\n    };\n\n    res.writeHead(200, { 'Content-Type': 'application/json' });\n    res.end(JSON.stringify(openapiSpec));\n  } else if (parsedUrl.pathname === '/todos') {\n    // Existing code...\n  } else if (parsedUrl.pathname.match(/^/todos/[a-f0-9]+$/i)) {\n    // Existing code...\n  }\n}\n}).listen(8080);\n};"
+    }
+  ]
+}

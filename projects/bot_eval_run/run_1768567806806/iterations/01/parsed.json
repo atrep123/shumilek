@@ -1,0 +1,26 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Task Management CLI\n\nThis is a simple task management CLI application written in TypeScript. It allows you to add, list, mark tasks as done, and remove them. The tasks are stored in a JSON file.\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"task-manager\",\n  \"version\": \"1.0.0\",\n  \"main\": \"dist/cli.js\",\n  \"scripts\": {\n    \"build\": \"tsc -p tsconfig.json\"\n  },\n  \"devDependencies\": {\n    \"typescript\": \"^4.5.2\"\n  }\n}\n"
+    },
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES6\",\n    \"module\": \"CommonJS\",\n    \"outDir\": \"dist\",\n    \"strict\": true,\n    \"esModuleInterop\": true\n  },\n  \"include\": [\n    \"src/**/*\"\n  ]\n}\n"
+    },
+    {
+      "path": "src/store.ts",
+      "content": "declare const require: any;\ndeclare const process: any;\nconst fs = require('node:fs');\nconst path = require('node:path');\n\nexport interface Task {\n  id: string;\n  title: string;\n  done: boolean;\n  createdAt: string;\n  doneAt?: string;\n}\n\nclass TaskStore {\n  private filePath: string;\n  private tasks: Task[] = [];\n\n  constructor(filePath: string) {\n    this.filePath = filePath;\n    if (fs.existsSync(filePath)) {\n      try {\n        const data = fs.readFileSync(filePath, 'utf8');\n        this.tasks = JSON.parse(data) || [];\n      } catch (e) {\n        console.error('Failed to read task file:', e);\n      }\n    }\n  }\n\n  list(): Task[] {\n    return [...this.tasks];\n  }\n\n  add(title: string): Task {\n    const newTask = {\n      id: Date.now().toString(),\n      title,\n      done: false,\n      createdAt: new Date().toISOString()\n    };\n    this.tasks.push(newTask);\n    this.save();\n    return newTask;\n  }\n\n  done(id: string): Task | undefined {\n    const task = this.tasks.find(t => t.id === id);\n    if (task && !task.done) {\n      task.done = true;\n      task.doneAt = new Date().toISOString();\n      this.save();\n    }\n    return task;\n  }\n\n  remove(id: string): Task | undefined {\n    const index = this.tasks.findIndex(t => t.id === id);\n    if (index !== -1) {\n      const removedTask = this.tasks.splice(index, 1)[0];\n      this.save();\n      return removedTask;\n    }\n    return undefined;\n  }\n\n  private save() {\n    try {\n      fs.writeFileSync(this.filePath, JSON.stringify({ tasks: this.tasks }, null, 2));\n    } catch (e) {\n      console.error('Failed to write task file:', e);\n    }\n  }\n}\n\nexport { TaskStore };\n"
+    },
+    {
+      "path": "src/cli.ts",
+      "content": "declare const require: any;\ndeclare const process: any;\nconst fs = require('node:fs');\nconst path = require('node:path');\nimport { TaskStore } from './store';\n\nfunction help() {\n  console.log(`Usage:\n  node dist/cli.js --help\n  node dist/cli.js list --data <path>\n  node dist/cli.js add <title> --data <path>\n  node dist/cli.js done <id> --data <path>\n  node dist/cli.js remove <id> --data <path>`);\n}\n\nfunction main() {\n  if (process.argv[2] === '--help') {\n    help();\n    process.exit(0);\n  }\n\n  const dataPath = process.argv.find(arg => arg.startsWith('--data='))?.split('=')[1];\n  if (!dataPath) {\n    console.error('Missing --data option');\n    process.exit(1);\n  }\n\n  const store = new TaskStore(dataPath);\n\n  switch (process.argv[2]) {\n    case 'list':\n      console.log(JSON.stringify({ ok: true, tasks: store.list() }));\n      break;\n    case 'add':\n      const title = process.argv.find(arg => !arg.startsWith('--')) || '';\n      if (!title) {\n        console.error('Missing task title');\n        process.exit(1);\n      }\n      console.log(JSON.stringify({ ok: true, task: store.add(title) }));\n      break;\n    case 'done':\n      const idDone = process.argv.find(arg => !arg.startsWith('--')) || '';\n      if (!idDone) {\n        console.error('Missing task ID');\n        process.exit(1);\n      }\n      console.log(JSON.stringify({ ok: true, task: store.done(idDone) }));\n      break;\n    case 'remove':\n      const idRemove = process.argv.find(arg => !arg.startsWith('--')) || '';\n      if (!idRemove) {\n        console.error('Missing task ID');\n        process.exit(1);\n      }\n      console.log(JSON.stringify({ ok: true, task: store.remove(idRemove) }));\n      break;\n    default:\n      help();\n      process.exit(1);\n  }\n}\n\nmain();\n"
+    }
+  ],
+  "notes": "This project includes a simple task management CLI application written in TypeScript. It allows you to add, list, mark tasks as done, and remove them. The tasks are stored in a JSON file."
+}

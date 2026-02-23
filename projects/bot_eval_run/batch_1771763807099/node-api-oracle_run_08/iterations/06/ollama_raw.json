@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-02-22T14:11:56.408547Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/server.js\",\n      \"content\": \"// Your server code here\\n\"\n    },\n    {\n      \"path\": \"src/routes/todoRoutes.js\",\n      \"content\": \"// Your todo routes code here\\n\"\n    }\n  ]\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 2882922700,
+  "load_duration": 63595200,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 1003670900,
+  "eval_count": 61,
+  "eval_duration": 756653600
+}

@@ -1,0 +1,7 @@
+{
+  "review": "Add missing 'd' in the PATCH request for deleting a todo. Ensure the server handles DELETE /todos/:id correctly.",
+  "priorityFiles": [
+    "tests/oracle.test.js",
+    "src/server.js"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# TODO API\n\nTento projekt implementuje REST API pro správu TODO položek s persistencí do souboru.\n\n## Endpoints:\n- `GET /health` -> Zdravotní stav serveru.\n- `GET /openapi.json` -> OpenAPI specifikace API.\n- `GET /todos` -> Seznam všech TODO položek.\n- `POST /todos` -> Vytvořit novou TODO položku (povinný titulek).\n- `GET /todos/:id` -> Získat konkrétní TODO položku podle ID.\n- `PATCH /todos/:id` -> Aktualizovat stav TODO položky (doplnit do pole `done`).\n- `DELETE /todos/:id` -> Smazat TODO položku podle ID.\n\n## Instalace a spuštění:\n1. Nainstalujte závislosti: `npm install`\n2. Spusťte server: `node src/server.js`\n\n## Testování:\nPro testování API lze použít skripty uvedené v souboru `tests/oracle.test.js`. Pro spuštění testů nainstalujte závislosti a poté spusťte: `npm run test`"
+    }
+  ]
+}

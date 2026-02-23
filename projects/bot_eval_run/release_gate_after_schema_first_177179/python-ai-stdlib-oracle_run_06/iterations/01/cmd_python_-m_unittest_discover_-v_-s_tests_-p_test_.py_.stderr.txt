@@ -1,0 +1,26 @@
+test_train_and_generate_smoke (test_oracle.TestCliOracle.test_train_and_generate_smoke) ... FAIL
+test_generate_deterministic (test_oracle.TestMarkovOracle.test_generate_deterministic) ... FAIL
+test_order_validation (test_oracle.TestMarkovOracle.test_order_validation) ... ok
+test_round_trip_serialization (test_oracle.TestMarkovOracle.test_round_trip_serialization) ... ok
+test_train_and_to_dict (test_oracle.TestMarkovOracle.test_train_and_to_dict) ... ok
+
+======================================================================
+FAIL: test_train_and_generate_smoke (test_oracle.TestCliOracle.test_train_and_generate_smoke)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_after_schema_first_177179\python-ai-stdlib-oracle_run_06\workspace\tests\test_oracle.py", line 67, in test_train_and_generate_smoke
+    self.assertEqual(len(generated), 12)
+AssertionError: 1 != 12
+
+======================================================================
+FAIL: test_generate_deterministic (test_oracle.TestMarkovOracle.test_generate_deterministic)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_after_schema_first_177179\python-ai-stdlib-oracle_run_06\workspace\tests\test_oracle.py", line 40, in test_generate_deterministic
+    self.assertEqual(len(out), 10)
+AssertionError: 1 != 10
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.005s
+
+FAILED (failures=2)

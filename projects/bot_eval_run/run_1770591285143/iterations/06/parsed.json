@@ -1,0 +1,18 @@
+{
+  "mode": "patch",
+  "files": [
+    {
+      "path": "dist/cli.js",
+      "content": "\"use strict\";\nObject.defineProperty(exports, \"__esModule\", { value: true });\nconst commander_1 = require(\"commander\");\nconst store_1 = require(\"./store\");\nconst program = new commander_1.Command();\nprogram.version('1.0.0').description('A simple todo list CLI');\nprogram\n    .command('list')\n    .option('--data <path>', 'Path to the data file', './data/tasks.json')\n    .action((opts) => {\n    const store = new store_1.TaskStore(opts.data);\n    console.log(JSON.stringify({ ok: true, tasks: store.list() }, null, 2));\n});\nprogram\n    .command('add <title>')\n    .option('--data <path>', 'Path to the data file', './data/tasks.json')\n    .action((title, opts) => {\n    const store = new store_1.TaskStore(opts.data);\n    const task = store.add(title);\n    console.log(JSON.stringify({ ok: true, task }, null, 2));\n});\nprogram\n    .command('done <id>')\n    .option('--data <path>', 'Path to the data file', './data/tasks.json')\n    .action((id, opts) => {\n    const store = new store_1.TaskStore(opts.data);\n    const task = store.done(id);\n    console.log(JSON.stringify({ ok: true, task }, null, 2));\n});\nprogram\n    .command('remove <id>')\n    .option('--data <path>', 'Path to the data file', './data/tasks.json')\n    .action((id, opts) => {\n    const store = new store_1.TaskStore(opts.data);\n    const task = store.remove(id);\n    console.log(JSON.stringify({ ok: true, task }, null, 2));\n});\nprogram.parse(process.argv);\n"
+    },
+    {
+      "path": "src/cli.ts",
+      "content": "\"use strict\";\nObject.defineProperty(exports, \"__esModule\", { value: true });\nimport { Command } from 'commander';\nimport * as path from 'node:path';\nimport fs from 'node:fs';\nimport crypto from 'node:crypto';\nimport { TaskStore, Task } from './store';\n\nconst program = new Command();\n\nprogram.version('1.0.0').description('A simple todo list CLI');\n\nprogram\n  .command('list')\n  .option('--data <path>', 'Path to the data file', './data/tasks.json')\n  .action((opts) => {\n    const store = new TaskStore(opts.data);\n    console.log(JSON.stringify({ ok: true, tasks: store.list() }, null, 2));\n  });\n\nprogram\n  .command('add <title>')\n  .option('--data <path>', 'Path to the data file', './data/tasks.json')\n  .action((title, opts) => {\n    const store = new TaskStore(opts.data);\n    const task = store.add(title);\n    console.log(JSON.stringify({ ok: true, task }, null, 2));\n  });\n\nprogram\n  .command('done <id>')\n  .option('--data <path>', 'Path to the data file', './data/tasks.json')\n  .action((id, opts) => {\n    const store = new TaskStore(opts.data);\n    const task = store.done(id);\n    console.log(JSON.stringify({ ok: true, task }, null, 2));\n  });\n\nprogram\n  .command('remove <id>')\n  .option('--data <path>', 'Path to the data file', './data/tasks.json')\n  .action((id, opts) => {\n    const store = new TaskStore(opts.data);\n    const task = store.remove(id);\n    console.log(JSON.stringify({ ok: true, task }, null, 2));\n  });\n\nprogram.parse(process.argv);\n"
+    },
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES6\",\n    \"module\": \"CommonJS\",\n    \"outDir\": \"./dist\",\n    \"rootDir\": \"./src\",\n    \"strict\": true,\n    \"esModuleInterop\": true\n  },\n  \"include\": [\n    \"src/**/*\"\n  ]\n}"
+    }
+  ],
+  "notes": "optional"
+}

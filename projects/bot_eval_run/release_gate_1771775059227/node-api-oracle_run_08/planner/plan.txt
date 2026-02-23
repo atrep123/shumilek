@@ -1,0 +1,11 @@
+We are creating a Node.js project with the following structure:
+
+- mode: "full"
+- files: an array of objects with "path" and "content"
+- notes: optional
+
+Steps:
+1. Create a `package.json` with minimal dependencies and set "type":"commonjs".
+2. Create a `src/server.js` that exports a function `createServer` which returns a server that handles the endpoints.
+3. Create an `openapi.json` file that defines the OpenAPI 3.x specification for the TODO endpoints.
+4. Create a `README.md` with a brief description.

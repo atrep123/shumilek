@@ -1,0 +1,23 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "deepseek-r1:8b",
+      "ok": false,
+      "error": "Unterminated string in JSON at position 9542 (line 20 column 2617)",
+      "errorKind": "json_parse"
+    },
+    {
+      "stage": "repair_schema",
+      "model": "qwen2.5:7b",
+      "ok": true,
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    }
+  ],
+  "finalOk": true,
+  "primaryError": "Unterminated string in JSON at position 9542 (line 20 column 2617)",
+  "primaryErrorKind": "json_parse"
+}

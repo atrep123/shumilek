@@ -1,0 +1,17 @@
+{
+  "system": true,
+  "data": {
+    "README.md": "",
+    "openapi.json": "",
+    "package.json": "",
+    "src/routes/todoRoutes.js": "",
+    "src/server.js": "# Your existing server code here\nexport function createServer(dataPath) {\n  const app = express();\n  app.use(express.json());\n\n  // Define routes\n  const todoRoutes = require('./routes/todoRoutes');\n  todoRoutes(app);\n\n  return app;\n}\n\nmodule.exports.createServer = createServer;",
+    "tests/oracle.test.js": "# Your existing test code here\nconst { expect } = require('chai');\nrequire('../src/server');"
+  },
+  "changes": [
+    {
+      "file": "src/server.js",
+      "change": "Add the missing server export and route definition."
+    }
+  ]
+}

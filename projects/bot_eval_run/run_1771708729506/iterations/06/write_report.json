@@ -1,0 +1,9 @@
+{
+  "count": 2,
+  "files": [
+    "src/store.ts",
+    "src/cli.ts"
+  ],
+  "appliedAsPatch": true,
+  "forcePatchFromIncompleteFull": true
+}

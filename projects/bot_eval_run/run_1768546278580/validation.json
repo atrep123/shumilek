@@ -1,0 +1,12 @@
+{
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1768546278580",
+  "ok": false,
+  "diagnostics": [
+    "node --test failed"
+  ],
+  "testSummary": {
+    "exitCode": 1,
+    "stdout": "✖ math functions (1.077ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 45.5345\n\n✖ failing tests:\n\ntest at test\\math.test.js:6:1\n✖ math functions (1.077ms)\n  'plan expected 6 assertions but received 0'\n",
+    "stderr": ""
+  }
+}

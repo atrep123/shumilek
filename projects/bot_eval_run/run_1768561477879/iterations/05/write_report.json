@@ -1,0 +1,7 @@
+{
+  "count": 2,
+  "files": [
+    "tests/test_generator.py",
+    "mini_ai/generator.py"
+  ]
+}

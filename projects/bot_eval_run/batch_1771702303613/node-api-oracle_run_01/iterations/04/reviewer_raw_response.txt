@@ -1,0 +1,4 @@
+{
+ "review": "Add missing files: README.md and package.json. Update src/server.js to include createServer function that returns a server object with listen method.",
+ "priorityFiles": ["README.md", "package.json", "src/server.js"]
+}

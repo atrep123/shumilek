@@ -1,0 +1,47 @@
+[
+  {
+    "scenario": "ts-todo-oracle",
+    "pass": 1,
+    "total": 1,
+    "passRate": 1,
+    "avgMs": 83856,
+    "runsWithPlannerError": 0,
+    "runsWithJsonRepairError": 0,
+    "jsonRepairErrorFiles": 0,
+    "runsWithSchemaFailure": 0,
+    "schemaFailures": 0,
+    "runsWithDeterministicFallback": 1,
+    "deterministicFallbackActivations": 1,
+    "deterministicFallbackRecoveries": 1
+  },
+  {
+    "scenario": "node-api-oracle",
+    "pass": 1,
+    "total": 1,
+    "passRate": 1,
+    "avgMs": 159833,
+    "runsWithPlannerError": 0,
+    "runsWithJsonRepairError": 0,
+    "jsonRepairErrorFiles": 0,
+    "runsWithSchemaFailure": 0,
+    "schemaFailures": 0,
+    "runsWithDeterministicFallback": 1,
+    "deterministicFallbackActivations": 1,
+    "deterministicFallbackRecoveries": 1
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "pass": 1,
+    "total": 1,
+    "passRate": 1,
+    "avgMs": 77783,
+    "runsWithPlannerError": 0,
+    "runsWithJsonRepairError": 0,
+    "jsonRepairErrorFiles": 0,
+    "runsWithSchemaFailure": 0,
+    "schemaFailures": 0,
+    "runsWithDeterministicFallback": 0,
+    "deterministicFallbackActivations": 0,
+    "deterministicFallbackRecoveries": 0
+  }
+]

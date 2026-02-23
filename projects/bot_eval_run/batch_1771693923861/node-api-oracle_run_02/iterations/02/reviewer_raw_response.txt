@@ -1,0 +1,1 @@
+{ "error_message": "The provided response content is incomplete and does not match the expected structure. The response should include a 'components' section that defines schemas for 'Todo', 'TodoRequest', 'TodoResponse', and 'Error'. Additionally, there are missing responses for some HTTP methods in the OpenAPI specification.", "status_code": 400 }

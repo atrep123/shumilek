@@ -1,0 +1,2 @@
+src/cli.ts(18,24): error TS2532: Object is possibly 'undefined'.
+src/cli.ts(84,31): error TS18046: 'error' is of type 'unknown'.

@@ -1,0 +1,15 @@
+{
+  "runId": 1770591285143,
+  "scenario": "ts-todo-oracle",
+  "model": "deepseek-coder-v2:16b",
+  "plannerModel": null,
+  "reviewerModel": null,
+  "baseUrl": "http://localhost:11434",
+  "ollamaOptions": {
+    "temperature": 0.2,
+    "num_predict": 2400,
+    "seed": 42
+  },
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1770591285143\\workspace",
+  "startedAt": "2026-02-08T22:54:45.146Z"
+}

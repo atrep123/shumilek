@@ -1,0 +1,20 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing required file: openapi.json",
+    "Invalid openapi.json: ENOENT: no such file or directory, open 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770640212304\\node-api-oracle_run_01\\workspace\\openapi.json'",
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770640212304\\node-api-oracle_run_01\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 115,
+      "stdout": "✖ GET /health + GET /openapi.json (1.8975ms)\n✖ Todo CRUD + persistence (0.8061ms)\nℹ tests 2\nℹ suites 0\nℹ pass 0\nℹ fail 2\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 55.649\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:39:1\n✖ GET /health + GET /openapi.json (1.8975ms)\n  C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770640212304\\node-api-oracle_run_01\\workspace\\src\\server.js:42\n      } else if (parsedUrl.pathname.match(/^/todos/[a-f0-9]+$/)) {\n                                          ^\n  \n  SyntaxError: Invalid regular expression flags\n      at wrapSafe (node:internal/modules/cjs/loader:1692:18)\n      at Module._compile (node:internal/modules/cjs/loader:1735:20)\n      at Object..js (node:internal/modules/cjs/loader:1893:10)\n      at Module.load (node:internal/modules/cjs/loader:1481:32)\n      at Module._load (node:internal/modules/cjs/loader:1300:12)\n      at TracingChannel.traceSync (node:diagnostics_channel:328:14)\n      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\n      at Module.require (node:internal/modules/cjs/loader:1504:12)\n      at require (node:internal/modules/helpers:152:16)\n      at startServer (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770640212304\\node-api-oracle_run_01\\workspace\\tests\\oracle.test.js:13:15)\n\ntest at tests\\oracle.test.js:59:1\n✖ Todo CRUD + persistence (0.8061ms)\n  C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770640212304\\node-api-oracle_run_01\\workspace\\src\\server.js:42\n      } else if (parsedUrl.pathname.match(/^/todos/[a-f0-9]+$/)) {\n                                          ^\n  \n  SyntaxError: Invalid regular expression flags\n      at wrapSafe (node:internal/modules/cjs/loader:1692:18)\n      at Module._compile (node:internal/modules/cjs/loader:1735:20)\n      at Object..js (node:internal/modules/cjs/loader:1893:10)\n      at Module.load (node:internal/modules/cjs/loader:1481:32)\n      at Module._load (node:internal/modules/cjs/loader:1300:12)\n      at TracingChannel.traceSync (node:diagnostics_channel:328:14)\n      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\n      at Module.require (node:internal/modules/cjs/loader:1504:12)\n      at require (node:internal/modules/helpers:152:16)\n      at startServer (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770640212304\\node-api-oracle_run_01\\workspace\\tests\\oracle.test.js:13:15)\n",
+      "stderr": ""
+    }
+  ]
+}

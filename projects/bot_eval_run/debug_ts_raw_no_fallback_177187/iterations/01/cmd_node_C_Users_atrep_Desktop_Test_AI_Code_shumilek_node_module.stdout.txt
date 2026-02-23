@@ -1,0 +1,4 @@
+src/cli.ts(45,11): error TS2451: Cannot redeclare block-scoped variable 'id'.
+src/cli.ts(59,11): error TS2451: Cannot redeclare block-scoped variable 'id'.
+src/store.ts(1,10): error TS2305: Module '"node:crypto"' has no exported member 'v4'.
+src/store.ts(27,10): error TS2304: Cannot find name 'existsSync'.

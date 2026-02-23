@@ -1,0 +1,4 @@
+{
+ "review": "Add missing openapi.json file and update server.js to include paths for CRUD operations, as well as handling 404 errors. Ensure the server listens on a dynamic port using `server.listen(0)` instead of hardcoding 8080.",
+ "priorityFiles": ["src/server.js", "tests/oracle.test.js"]
+}

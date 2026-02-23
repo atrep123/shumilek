@@ -1,0 +1,2 @@
+src/cli.ts(4,7): error TS2441: Duplicate identifier 'require'. Compiler reserves name 'require' in top level scope of a module.
+src/cli.ts(4,31): error TS1343: The 'import.meta' meta-property is only allowed when the '--module' option is 'es2020', 'es2022', 'esnext', 'system', 'node16', 'node18', 'node20', or 'nodenext'.

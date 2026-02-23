@@ -1,0 +1,18 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md",
+      "content": "\n# Mini AI\nA simple character-level Markov chain generator for generating text.\n"
+    },
+    {
+      "path": "mini_ai/__init__.py",
+      "content": ""
+    },
+    {
+      "path": "mini_ai/markov.py",
+      "content": "from typing import Dict, List, Optional, Tuple, Union\nimport json\nimport random\n\n\nclass MarkovChain:\n    def __init__(self, order: int = 1):\n        self.order = order\n        self.transitions: Dict[str, Dict[str, int]] = {}\n        self.counts: Dict[str, int] = {}\n\n    @classmethod\n    def from_dict(cls, d: dict) -> 'MarkovChain':\n        return cls(order=d['order'], transitions=d['transitions'])\n\n    def to_dict(self) -> dict:\n        return {\n            'order': self.order,\n            'transitions': self.transitions\n        }\n\n    def train(self, text: str):\n        if not text or len(text) < self.order:\n            raise ValueError('Text is too short for the specified order.')\n\n        context = [text[i] for i in range(max(0, self.order - 1), len(text))]\n        next_char = text[self.order:]\n        for i in range(len(context) - self.order):\n            key = tuple(context[i:i + self.order])\n            if key not in self.transitions:\n                self.transitions[key] = {}\n            value = next_char[i]\n            if value not in self.transitions[key]:\n                self.counts[key] = 0\n            self.transitions[key][value] = self.counts[key] + 1\n            self.counts[key] += 1\n\n    def generate(self, length: int, seed: Optional[str] = None, random_seed: Optional[int] = None) -> str:\n        if not length or length <= 0:\n            raise ValueError('Length must be a positive integer greater than zero.')\n\n        if seed is not None and random_seed is not None:\n            raise ValueError('Only one of `seed` or `random_seed` can be provided.')\n\n        if seed is not None:\n            random.seed(seed)\n        elif random_seed is not None:\n            random.seed(random_seed)\n\n        context = tuple([random.choice(list(self.transitions.keys()))] * self.order)\n        result = []\n        for _ in range(length):\n            next_char, counts = max((self.transitions.get(key), value) for key, value in self.counts.items() if key[0:self.order - 1] == context)\n            result.append(next_char)\n            new_context = tuple([result[-1]] * (self.order - 1))\n            context = new_context\n        return ''.join(result)"
+    }
+  ],
+  "notes": "The MarkovChain class is implemented with the required methods and attributes. The train method builds the n-gram model from the text, and the generate method generates text based on the trained model."
+}

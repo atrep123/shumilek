@@ -1,0 +1,10 @@
+{
+  "mode": "patch",
+  "files": [
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES6\",\n    \"module\": \"CommonJS\",\n    \"outDir\": \"dist\",\n    \"strict\": true,\n    \"esModuleInterop\": true\n  },\n  \"include\": [\n    \"src/**/*\"\n  ],\n  \"exclude\": [\n    \"node_modules\",\n    \"tests/**/*\"\n  ]\n}\n"
+    }
+  ],
+  "notes": "Updated tsconfig.json to exclude 'tests' directory."
+}

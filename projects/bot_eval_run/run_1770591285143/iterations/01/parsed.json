@@ -1,0 +1,26 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Todo List CLI\n\nThis is a simple command-line interface for managing a todo list.\n\n## Usage\n\n### Add Task\n```sh\ntodo add \"Buy milk\" --data ./data/tasks.json\n```\n\n### List Tasks\n```sh\ntodo list --data ./data/tasks.json\n```\n\n### Mark Task as Done\n```sh\ntodo done <task-id> --data ./data/tasks.json\n```\n\n### Remove Task\n```sh\ntodo remove <task-id> --data ./data/tasks.json\n```\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"todo-cli\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple todo list CLI\",\n  \"main\": \"dist/cli.js\",\n  \"scripts\": {\n    \"build\": \"tsc -p .\",\n    \"start\": \"node dist/cli.js\"\n  },\n  \"dependencies\": {},\n  \"devDependencies\": {\n    \"typescript\": \"^4.7.4\"\n  }\n}"
+    },
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES6\",\n    \"module\": \"CommonJS\",\n    \"outDir\": \"./dist\",\n    \"rootDir\": \"./src\",\n    \"strict\": true,\n    \"esModuleInterop\": true\n  },\n  \"include\": [\n    \"src/**/*\"\n  ]\n}"
+    },
+    {
+      "path": "src/store.ts",
+      "content": "import { Task, TaskStore } from './store';\n\nexport class TaskStore {\n  private filePath: string;\n  private tasks: Task[];\n\n  constructor(filePath: string) {\n    this.filePath = filePath;\n    this.tasks = this.loadTasks();\n  }\n\n  private loadTasks(): Task[] {\n    if (!fs.existsSync(this.filePath)) return [];\n    const data = fs.readFileSync(this.filePath, 'utf8');\n    return JSON.parse(data).tasks || [];\n  }\n\n  list(): Task[] {\n    return this.tasks;\n  }\n\n  add(title: string): Task {\n    const task: Task = { id: crypto.randomUUID(), title, done: false, createdAt: new Date().toISOString() };\n    this.tasks.push(task);\n    this.saveTasks();\n    return task;\n  }\n\n  done(id: string): Task {\n    const task = this.tasks.find(t => t.id === id);\n    if (task) {\n      task.done = true;\n      task.doneAt = new Date().toISOString();\n      this.saveTasks();\n    }\n    return task!;\n  }\n\n  remove(id: string): Task {\n    const index = this.tasks.findIndex(t => t.id === id);\n    if (index !== -1) {\n      const removedTask = this.tasks.splice(index, 1)[0];\n      this.saveTasks();\n      return removedTask;\n    }\n    throw new Error('Task not found');\n  }\n\n  private saveTasks() {\n    fs.writeFileSync(this.filePath, JSON.stringify({ tasks: this.tasks }, null, 2));\n  }\n}\n"
+    },
+    {
+      "path": "src/cli.ts",
+      "content": "import { Command } from 'commander';\nimport * as path from 'node:path';\nimport fs from 'node:fs';\nimport crypto from 'node:crypto';\nimport { TaskStore, Task } from './store';\n\nconst program = new Command();\n\nprogram.version('1.0.0').description('A simple todo list CLI');\n\nprogram\n  .command('list')\n  .option('--data <path>', 'Path to the data file', '.\\data\\tasks.json')\n  .action((opts) => {\n    const store = new TaskStore(opts.data);\n    console.log(JSON.stringify({ ok: true, tasks: store.list() }, null, 2));\n  });\n\nprogram\n  .command('add <title>')\n  .option('--data <path>', 'Path to the data file', '.\\data\\tasks.json')\n  .action((title, opts) => {\n    const store = new TaskStore(opts.data);\n    const task = store.add(title);\n    console.log(JSON.stringify({ ok: true, task }, null, 2));\n  });\n\nprogram\n  .command('done <id>')\n  .option('--data <path>', 'Path to the data file', '.\\data\\tasks.json')\n  .action((id, opts) => {\n    const store = new TaskStore(opts.data);\n    const task = store.done(id);\n    console.log(JSON.stringify({ ok: true, task }, null, 2));\n  });\n\nprogram\n  .command('remove <id>')\n  .option('--data <path>', 'Path to the data file', '.\\data\\tasks.json')\n  .action((id, opts) => {\n    const store = new TaskStore(opts.data);\n    const task = store.remove(id);\n    console.log(JSON.stringify({ ok: true, task }, null, 2));\n  });\n\nprogram.parse(process.argv);\n"
+    }
+  ],
+  "notes": "optional"
+}

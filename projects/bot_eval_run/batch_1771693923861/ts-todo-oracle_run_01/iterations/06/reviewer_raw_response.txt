@@ -1,0 +1,4 @@
+{
+ "review": "Missing required files: package.json, tsconfig.json. Add the following content to these files:",
+ "priorityFiles": ["package.json", "tsconfig.json"]
+}

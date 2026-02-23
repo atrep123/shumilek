@@ -1,0 +1,50 @@
+✖ TaskStore: CRUD persists to JSON file (4.0753ms)
+✖ CLI: end-to-end flow (79.2708ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 138.7352
+
+✖ failing tests:
+
+test at tests\oracle.test.js:26:1
+✖ TaskStore: CRUD persists to JSON file (4.0753ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1771709242645\ts-todo-oracle_run_01\workspace\C:\Users\atrep\AppData\Local\Temp\bot-eval-ts-todo-klWgPu\tasks.json'
+      at writeFileSync (node:fs:2415:20)
+      at TaskStore.list (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1771709242645\ts-todo-oracle_run_01\workspace\dist\store.js:18:40)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1771709242645\ts-todo-oracle_run_01\workspace\tests\oracle.test.js:35:26)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771709242645\\ts-todo-oracle_run_01\\workspace\\C:\\Users\\atrep\\AppData\\Local\\Temp\\bot-eval-ts-todo-klWgPu\\tasks.json'
+  }
+
+test at tests\oracle.test.js:62:1
+✖ CLI: end-to-end flow (79.2708ms)
+  AssertionError [ERR_ASSERTION]: {"ok":false,"error":"ENOENT: no such file or directory, open 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771709242645\\ts-todo-oracle_run_01\\workspace\\C:\\Users\\atrep\\AppData\\Local\\Temp\\bot-eval-ts-todo-SrbBX9\\tasks.json'"}
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1771709242645\ts-todo-oracle_run_01\workspace\tests\oracle.test.js:74:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

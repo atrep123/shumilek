@@ -1,0 +1,6 @@
+{
+  "review": "Add missing 'd' in the PATCH request for deleting a todo, and ensure the response status is 204 (no content).",
+  "priorityFiles": [
+    "tests/oracle.test.js"
+  ]
+}

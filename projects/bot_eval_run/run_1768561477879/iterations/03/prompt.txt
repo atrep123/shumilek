@@ -1,0 +1,66 @@
+Vytvor maly, ale realisticky Python projekt pro "AI" bez externich zavislosti.
+
+Pozadavky:
+- Pouze standardni knihovna Pythonu (zadne numpy/pandas/sklearn/torch/tensorflow/requests).
+- Struktura projektu jako balicek `mini_ai/` + `tests/` + `README.md`.
+- Implementuj jednoduchy model: napr. character-level Markov chain generator + trenovani z textu.
+- Pridat CLI: `python -m mini_ai.cli --help`, `train`, `generate` (offline).
+- Unit testy pres `unittest` (aspon 8 testu / assertu) a musi prochazet.
+
+VYSTUPNI FORMAT (STRICT): vrat JEN JSON objekt tohoto tvaru:
+{
+  "mode": "full",
+  "files": [
+    {"path": "README.md", "content": "...\n"},
+    {"path": "mini_ai/__init__.py", "content": "...\n"},
+    {"path": "mini_ai/...", "content": "...\n"},
+    {"path": "tests/test_....py", "content": "...\n"}
+  ],
+  "notes": "optional"
+}
+
+Pravidla:
+- Zadny markdown, zadne ``` bloky, zadny text mimo JSON.
+- Cesty jsou relativni, pouzij `/`, bez `..` a bez absolutnich cest.
+- Kazdy soubor ukonci znakem noveho radku.
+- "mode" pouzij "full" pro kompletni projekt (v pripade oprav muzes pouzit "patch").
+
+---
+NEPROSLO VALIDACI. Oprav nasledujici problemy.
+
+CHYBY:
+- Missing required file: mini_ai/cli.py
+- Command failed: python -m unittest discover -v -s tests -p "test*.py" (exit=1, timedOut=false)
+- Command failed: python -m mini_ai.cli --help (exit=1, timedOut=false)
+
+LOGY (zkraceno):
+- python -m unittest discover -v -s tests -p "test*.py"
+  stderr: "test_generate (test_generator.TestGenerator.test_generate) ... FAIL\r\ntest_train (test_trainer.TestTrainer.test_train) ... ok\r\n\r\n======================================================================\r\nFAIL: test_generate (test_generator.TestGenerator.test_generate)\r\n----------------------------------------------------------------------\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1768561477879\\workspace\\tests\\test_generator.py\", line 6, in test_generate\r\n    self.assertIsNotNone(generate('model.pth'))\r\nAssertionError: unexpectedly None\r\n\r\n----------------------------------------------------------------------\r\nRan 2 tests in 0.000s\r\n\r\nFAILED (failures=1)\r\n"
+- python -m mini_ai.cli --help
+  stderr: "C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\python.exe: No module named mini_ai.cli\r\n"
+
+AKTUALNI SOUBORY:
+- README.md
+- mini_ai/__init__.py
+- mini_ai/__pycache__/__init__.cpython-312.pyc
+- mini_ai/__pycache__/generator.cpython-312.pyc
+- mini_ai/__pycache__/trainer.cpython-312.pyc
+- mini_ai/generator.py
+- mini_ai/trainer.py
+- tests/__pycache__/test_generator.cpython-312.pyc
+- tests/__pycache__/test_trainer.cpython-312.pyc
+- tests/test_generator.py
+- tests/test_trainer.py
+
+KONTEXT SOUBORU (pro opravu):
+--- FILE: tests/test_generator.py ---
+import unittest
+from mini_ai.generator import generate
+
+class TestGenerator(unittest.TestCase):
+    def test_generate(self):
+        self.assertIsNotNone(generate('model.pth'))
+
+VYSTUP: vrat JEN platny JSON objekt bez markdownu:
+{ "mode": "patch", "files": [ {"path":"...","content":"...\n"} ], "notes": "optional" }
+Pravidla: udelej jen minimalni nutne zmeny; posli jen soubory ktere menis nebo pridavas.

@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-02-21T16:59:47.4441168Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/cli.ts\",\n      \"content\": \"declare const require: any;\\ndeclare const process: any;\\nconst fs = require(\\\"node:fs\\\");\\nconst crypto = require(\\\"node:crypto\\\");\\nimport { TaskStore } from './store';\\n\\nfunction help() {\\n  console.log(`Usage:\\n  node dist/cli.js add <title> --data <path>\\n  node dist/cli.js list --data <path>\\n  node dist/cli.js done <id> --data <path>\\n  node dist/cli.js remove <id> --data <path>`);\\n  process.exit(0);\\n}\\n\\nconst argv = process.argv.slice(2);\\nconst cmd = argv[0];\\nlet dataPath: string | undefined;\\n\\nfor (let i = 1; i < argv.length; i++) {\\n  if (argv[i] === '--data' && i + 1 < argv.length) {\\n    dataPath = argv[i + 1];\\n    break;\\n  }\\n}\\n\\nif (!dataPath && cmd !== '--help') {\\n  console.error('Missing --data option');\\n  process.exit(1);\\n}\\n\\nconst store = new TaskStore(dataPath || '');\\n\\nswitch (cmd) {\\n  case 'add':\\n    if (argv.length < 2) {\\n      console.error('Missing title for add command');\\n      process.exit(1);\\n    }\\n    const title = argv[1];\\n    try {\\n      const task = store.add(title);\\n      console.log(JSON.stringify({ ok: true, task }));\\n    } catch (error: any) {\\n      console.error(JSON.stringify({ ok: false, error: error.message }));\\n      process.exit(1);\\n    }\\n    break;\\n  case 'list':\\n    try {\\n      const tasks = store.list();\\n      console.log(JSON.stringify({ ok: true, tasks }));\\n    } catch (error: any) {\\n      console.error(JSON.stringify({ ok: false, error: error.message }));\\n      process.exit(1);\\n    }\\n    break;\\n  case 'done':\\n    if (argv.length < 2) {\\n      console.error('Missing id for done command');\\n      process.exit(1);\\n    }\\n    const id = argv[1];\\n    try {\\n      const task = store.done(id);\\n      console.log(JSON.stringify({ ok: true, task }));\\n    } catch (error: any) {\\n      console.error(JSON.stringify({ ok: false, error: error.message }));\\n      process.exit(1);\\n    }\\n    break;\\n  case 'remove':\\n    if (argv.length < 2) {\\n      console.error('Missing id for remove command');\\n      process.exit(1);\\n    }\\n    const removeId = argv[1];\\n    try {\\n      const task = store.remove(removeId);\\n      console.log(JSON.stringify({ ok: true, task }));\\n    } catch (error: any) {\\n      console.error(JSON.stringify({ ok: false, error: error.message }));\\n      process.exit(1);\\n    }\\n    break;\\n  case '--help':\\n    help();\\n    break;\\n  default:\\n    console.error('Unknown command');\\n    process.exit(1);\\n}\\n\"\n    }\n  ],\n  \"notes\": \"Fixed the issue with the --data option being required for the --help command and ensured that dataPath is always a string.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 24948482500,
+  "load_duration": 72953000,
+  "prompt_eval_count": 3666,
+  "prompt_eval_duration": 381271100,
+  "eval_count": 807,
+  "eval_duration": 9728046100
+}

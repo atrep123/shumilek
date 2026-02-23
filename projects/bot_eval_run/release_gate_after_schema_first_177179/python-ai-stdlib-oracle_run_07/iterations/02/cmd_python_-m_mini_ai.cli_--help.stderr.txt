@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_after_schema_first_177179\python-ai-stdlib-oracle_run_07\workspace\mini_ai\cli.py", line 2, in <module>
+    from mini_ai.markov import MarkovChain, load_model, save_model
+ImportError: cannot import name 'load_model' from 'mini_ai.markov' (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_after_schema_first_177179\python-ai-stdlib-oracle_run_07\workspace\mini_ai\markov.py)

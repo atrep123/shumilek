@@ -1,0 +1,25 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "mini_ai\n======\n\nA simple character-level Markov chain generator implemented in Python using only the standard library.\n\n## Usage\n\n### Train a model\n```\npython -m mini_ai.cli train <input_text_file> <model_output_file>\n```\n\n### Generate text from a trained model\n```\npython -m mini_ai.cli generate <model_file> <output_length>\n```\n\n## Testing\nRun the unit tests with:\n```\npython -m unittest discover tests/\n```\n"
+    },
+    {
+      "path": "mini_ai/__init__.py",
+      "content": "# mini_ai package initializer"
+    },
+    {
+      "path": "mini_ai/cli.py",
+      "content": "import sys\nfrom .markov_chain import train_model, generate_text\n\ndef main():\n    if len(sys.argv) < 2:\n        print(\"Usage: python -m mini_ai.cli [train|generate] [...]\")\n        sys.exit(1)\n    \n    command = sys.argv[1]\n    if command == 'train':\n        if len(sys.argv) != 4:\n            print(\"Usage: python -m mini_ai.cli train <input_text_file> <model_output_file>\")\n            sys.exit(1)\n        input_file = sys.argv[2]\n        output_file = sys.argv[3]\n        with open(input_file, 'r') as f:\n            text = f.read()\n        model = train_model(text)\n        with open(output_file, 'w') as f:\n            f.write(str(model))\n    elif command == 'generate':\n        if len(sys.argv) != 4:\n            print(\"Usage: python -m mini_ai.cli generate <model_file> <output_length>\")\n            sys.exit(1)\n        model_file = sys.argv[2]\n        length = int(sys.argv[3])\n        with open(model_file, 'r') as f:\n            model_str = f.read()\n            model = eval(model_str)\n        generated_text = generate_text(model, length)\n        print(generated_text)\n    else:\n        print(f\"Unknown command: {command}\")\n        sys.exit(1)\n\nif __name__ == \"__main__\":\n    main()\n"
+    },
+    {
+      "path": "mini_ai/markov_chain.py",
+      "content": "import random\nfrom collections import defaultdict\n\ndef train_model(text):\n    model = defaultdict(lambda: defaultdict(int))\n    for i in range(len(text) - 1):\n        current_char = text[i]\n        next_char = text[i + 1]\n        model[current_char][next_char] += 1\n    return dict(model)\n\ndef generate_text(model, length):\n    if not model:\n        return \"\"\n    first_char = random.choice(list(model.keys()))\n    current_char = first_char\n    generated_text = [current_char]\n    \n    for _ in range(length - 1):\n        next_char_options = model[current_char]\n        total_count = sum(next_char_options.values())\n        rand_index = random.randint(0, total_count - 1)\n        cumulative_count = 0\n        for char, count in next_char_options.items():\n            cumulative_count += count\n            if rand_index < cumulative_count:\n                next_char = char\n                break\n        generated_text.append(next_char)\n        current_char = next_char\n    \n    return ''.join(generated_text)"
+    },
+    {
+      "path": "tests/test_markov_chain.py",
+      "content": "import unittest\nfrom mini_ai.markov_chain import train_model, generate_text\n\nclass TestMarkovChain(unittest.TestCase):\n    def test_train_model_empty_string(self):\n        model = train_model('')\n        self.assertEqual(model, {})\n\n    def test_train_model_single_char(self):\n        model = train_model('a')\n        self.assertEqual(model, {'a': defaultdict(int)})\n\n    def test_train_model_simple_case(self):\n        text = 'abcabc'\n        model = train_model(text)\n        expected_model = {\n            'a': {'b': 2},\n            'b': {'c': 2},\n            'c': {'a': 2}\n        }\n        self.assertEqual(model, expected_model)\n\n    def test_generate_text_empty_model(self):\n        generated_text = generate_text({}, 5)\n        self.assertEqual(generated_text, '')\n\n    def test_generate_text_single_char_model(self):\n        model = {'a': defaultdict(int)}\n        generated_text = generate_text(model, 5)\n        self.assertGreaterEqual(len(generated_text), 5)\n        self.assertTrue(all(char == 'a' for char in generated_text))\n\n    def test_generate_text_simple_case(self):\n        text = 'abcabc'\n        model = train_model(text)\n        generated_text = generate_text(model, 10)\n        self.assertGreaterEqual(len(generated_text), 10)\n        self.assertTrue(all(char in 'abc' for char in generated_text))\n\n    def test_generate_text_length(self):\n        text = 'abcabc'\n        model = train_model(text)\n        generated_text = generate_text(model, 20)\n        self.assertEqual(len(generated_text), 20)\n\nif __name__ == '__main__':\n    unittest.main()\n"
+    }
+  ],
+  "notes": "This is a simple implementation of a character-level Markov chain generator in Python. The project includes a CLI for training the model and generating text, as well as unit tests to ensure functionality."
+}

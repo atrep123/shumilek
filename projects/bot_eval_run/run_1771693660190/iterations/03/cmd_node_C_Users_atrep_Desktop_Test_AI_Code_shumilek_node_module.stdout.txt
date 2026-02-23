@@ -1,0 +1,1 @@
+src/store.ts(3,30): error TS2307: Cannot find module 'uuid' or its corresponding type declarations.

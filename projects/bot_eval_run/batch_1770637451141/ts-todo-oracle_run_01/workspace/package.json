@@ -1,0 +1,7 @@
+{
+  "name": "task-manager",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  }
+}

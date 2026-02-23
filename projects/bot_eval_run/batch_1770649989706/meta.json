@@ -1,0 +1,16 @@
+{
+  "batchId": 1770649989706,
+  "startedAt": "2026-02-09T15:13:09.707Z",
+  "scenarios": [
+    "ts-todo-oracle"
+  ],
+  "runs": 1,
+  "model": "qwen2.5-coder:32b",
+  "plannerModel": "deepseek-r1:8b",
+  "reviewerModel": "qwen2.5:3b",
+  "jsonRepairModel": "qwen2.5:7b",
+  "timeoutSec": 1800,
+  "maxIterations": 10,
+  "hardTimeoutSec": 2400,
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1770649989706"
+}

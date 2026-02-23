@@ -1,0 +1,17 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md",
+      "content": "```python\n# README for mini_ai package\nThis is a simple Markov chain generator.\nIt includes the following files:\n- cli.py: Command line interface to train and generate text using Markov chains.\n- markov.py: Contains the implementation of the MarkovChain class.\n```"
+    },
+    {
+      "path": "mini_ai/__init__.py",
+      "content": ""
+    },
+    {
+      "path": "mini_ai/markov.py",
+      "content": "```python\nfrom typing import Dict, List, Optional, Tuple\nimport json\nimport random\nimport string\n\nclass MarkovChain:\n    def __init__(self, order: int = 1):\n        self.order = order\n        self.transitions: Dict[str, Dict[str, int]] = {}\n        self.contexts: List[Tuple[str, ...]] = []\n\n    @classmethod\n    def from_dict(cls, d: dict) -> "
+    }
+  ]
+}

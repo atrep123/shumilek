@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/server.js",
+      "content": "// Your existing server code here"
+    },
+    {
+      "path": "src/routes/todoRoutes.js",
+      "content": "// Your existing todo routes code here"
+    }
+  ],
+  "notes": "Ensure to replace the placeholder comments with your actual server and route implementation."
+}

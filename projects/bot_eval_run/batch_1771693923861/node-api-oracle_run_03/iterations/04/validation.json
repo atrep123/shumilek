@@ -1,0 +1,20 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing required file: openapi.json",
+    "Invalid openapi.json: ENOENT: no such file or directory, open 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_03\\workspace\\openapi.json'",
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_03\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 307234,
+      "stdout": "✖ GET /health + GET /openapi.json (67.1995ms)\n✖ Todo CRUD + persistence (11.6749ms)\nℹ tests 2\nℹ suites 0\nℹ pass 0\nℹ fail 2\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 307174.5252\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:39:1\n✖ GET /health + GET /openapi.json (67.1995ms)\n  Error: ENOENT: no such file or directory, open 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_03\\workspace\\openapi.json'\n      at Object.readFileSync (node:fs:440:20)\n      at IncomingMessage.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_03\\workspace\\src\\server.js:18:36)\n      at IncomingMessage.emit (node:events:508:28)\n      at endReadableNT (node:internal/streams/readable:1701:12)\n      at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {\n    errno: -4058,\n    code: 'ENOENT',\n    syscall: 'open',\n    path: 'C:\\\\Users\\\\atrep\\\\Desktop\\\\Test_AI_Code\\\\shumilek\\\\projects\\\\bot_eval_run\\\\batch_1771693923861\\\\node-api-oracle_run_03\\\\workspace\\\\openapi.json'\n  }\n\ntest at tests\\oracle.test.js:59:1\n✖ Todo CRUD + persistence (11.6749ms)\n  TypeError: Cannot read properties of undefined (reading 'push')\n      at IncomingMessage.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_03\\workspace\\src\\server.js:59:20)\n      at IncomingMessage.emit (node:events:508:28)\n      at endReadableNT (node:internal/streams/readable:1701:12)\n      at process.processTicksAndRejections (node:internal/process/task_queues:89:21)\n",
+      "stderr": ""
+    }
+  ]
+}

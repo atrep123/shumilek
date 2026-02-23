@@ -1,0 +1,38 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Command failed: python -m unittest discover -v -s tests -p \"test*.py\" (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "python -m compileall -q mini_ai tests",
+      "cwd": "projects\\bot_eval_run\\run_1768561477879\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 70,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "python -m unittest discover -v -s tests -p \"test*.py\"",
+      "cwd": "projects\\bot_eval_run\\run_1768561477879\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 66,
+      "stdout": "",
+      "stderr": "test_generate (test_generator.TestGenerator.test_generate) ... FAIL\r\ntest_train (test_trainer.TestTrainer.test_train) ... ok\r\n\r\n======================================================================\r\nFAIL: test_generate (test_generator.TestGenerator.test_generate)\r\n----------------------------------------------------------------------\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1768561477879\\workspace\\tests\\test_generator.py\", line 6, in test_generate\r\n    self.assertIsNotNone(generate('model.pth'))\r\nAssertionError: unexpectedly None\r\n\r\n----------------------------------------------------------------------\r\nRan 2 tests in 0.000s\r\n\r\nFAILED (failures=1)\r\n"
+    },
+    {
+      "command": "python -m mini_ai.cli --help",
+      "cwd": "projects\\bot_eval_run\\run_1768561477879\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 51,
+      "stdout": "usage: cli.py [-h] {train,generate} ...\r\n\r\nAI CLI\r\n\r\npositional arguments:\r\n  {train,generate}\r\n    train           Train the AI model\r\n    generate        Generate text using a trained model\r\n\r\noptions:\r\n  -h, --help        show this help message and exit\r\n",
+      "stderr": ""
+    }
+  ]
+}

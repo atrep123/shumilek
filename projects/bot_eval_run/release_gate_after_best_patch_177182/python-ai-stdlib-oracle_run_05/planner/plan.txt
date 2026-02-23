@@ -1,0 +1,12 @@
+- Vytvořit strukturu projektu s adresářem `mini_ai/` a soubory `README.md`, `mini_ai/__init__.py`, `mini_ai/markov.py`, `mini_ai/cli.py`
+- Napsat `README.md` s popisem projektu, způsobu použití a příklady
+- Napsat `mini_ai/__init__.py` s minimálním obsahem pro balíček
+- Napsat `mini_ai/markov.py` s implementací třídy `MarkovChain` a jejích metod
+- Napsat `mini_ai/cli.py` s implementací příkazového řádku pomocí `argparse`
+- Zajistit, aby kód byl testovatelný pomocí poskytnutých oracle testů
+- Otestovat kód pomocí poskytnutých testů (test_order_validation, test_train_and_to_dict, test_round_trip_serialization, test_generate_deterministic, test_train_and_generate_smoke)
+- Ujistit se, že kód splňuje specifikace (type hints, absence externích závislostí, atd.)
+- Zkontrolovat, že soubory jsou kompletní a konzistentní
+- Zapsat výstup ve formátu JSON podle požadovaného tvaru
+- Kód musí běžet bez chyb
+- Testy musí projít

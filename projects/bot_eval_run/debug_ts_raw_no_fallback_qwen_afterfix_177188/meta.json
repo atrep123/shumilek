@@ -1,0 +1,18 @@
+{
+  "runId": 1771841352304,
+  "scenario": "ts-todo-oracle",
+  "model": "qwen2.5-coder:14b",
+  "plannerModel": null,
+  "plannerStrategy": "disabled",
+  "reviewerModel": null,
+  "jsonRepairModel": null,
+  "deterministicFallbackMode": "off",
+  "baseUrl": "http://localhost:11434",
+  "ollamaOptions": {
+    "temperature": 0.2,
+    "num_predict": 2400,
+    "seed": 42
+  },
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\debug_ts_raw_no_fallback_qwen_afterfix_177188\\workspace",
+  "startedAt": "2026-02-23T10:09:12.306Z"
+}

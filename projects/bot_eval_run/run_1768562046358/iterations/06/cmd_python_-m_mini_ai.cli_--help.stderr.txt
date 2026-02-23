@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 189, in _run_module_as_main
+  File "<frozen runpy>", line 112, in _get_module_details
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768562046358\workspace\mini_ai\__init__.py", line 1, in <module>
+    from .markov import MarkovChain
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768562046358\workspace\mini_ai\markov.py", line 1
+    def to_dict(self) -> dict:
+IndentationError: unexpected indent

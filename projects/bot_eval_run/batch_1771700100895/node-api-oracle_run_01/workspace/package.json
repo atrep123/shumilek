@@ -1,0 +1,11 @@
+{
+  "name": "node-api",
+  "version": "1.0.0",
+  "description": "A simple Node.js API for managing todos.",
+  "main": "src/server.js",
+  "scripts": {
+    "test": "node --test tests/oracle.test.js"
+  },
+  "type": "commonjs",
+  "dependencies": {}
+}

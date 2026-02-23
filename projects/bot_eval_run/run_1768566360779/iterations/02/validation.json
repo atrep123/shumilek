@@ -1,0 +1,38 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json",
+      "cwd": "projects\\bot_eval_run\\run_1768566360779\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 459,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "projects\\bot_eval_run\\run_1768566360779\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 182,
+      "stdout": "✔ TaskStore: CRUD persists to JSON file (3.0335ms)\n✖ CLI: end-to-end flow (67.2266ms)\nℹ tests 2\nℹ suites 0\nℹ pass 1\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 115.217\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:62:1\n✖ CLI: end-to-end flow (67.2266ms)\n  Error: Expected JSON object on stdout, got: \n      at parseJsonFromStdout (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1768566360779\\workspace\\tests\\oracle.test.js:17:9)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1768566360779\\workspace\\tests\\oracle.test.js:75:21)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3)\n",
+      "stderr": ""
+    },
+    {
+      "command": "node dist/cli.js --help",
+      "cwd": "projects\\bot_eval_run\\run_1768566360779\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 50,
+      "stdout": "\nUsage:\n  cli list --data <path>\n  cli add <title> --data <path>\n  cli done <id> --data <path>\n  cli remove <id> --data <path>\n\n",
+      "stderr": ""
+    }
+  ]
+}

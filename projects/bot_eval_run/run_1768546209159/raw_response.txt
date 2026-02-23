@@ -1,0 +1,30 @@
+﻿// path: src/math.js
+```javascript
+function sum(a, b) {
+    return a + b;
+}
+
+function mul(a, b) {
+    return a * b;
+}
+
+module.exports = { sum, mul };
+```
+
+// path: test/math.test.js
+```javascript
+const { strict: assert } = require('assert');
+const { sum, mul } = require('../src/math');
+
+async function runTests() {
+    // Testy pro sum
+    assert.strictEqual(sum(1, 2), 3);
+    assert.strictEqual(sum(-1, -1), -2);
+
+    // Testy pro mul
+    assert.strictEqual(mul(2, 3), 6);
+    assert.strictEqual(mul(-1, 5), -5);
+}
+
+runTests();
+```

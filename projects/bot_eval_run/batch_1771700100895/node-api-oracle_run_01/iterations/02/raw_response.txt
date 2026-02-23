@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/server.js",
+      "content": "// This file is intentionally left unchanged for the purpose of this task.\n"
+    }
+  ],
+  "notes": "The provided 'src/server.js' file already exports the `createServer` function, which is required by the test. No changes are necessary."
+}

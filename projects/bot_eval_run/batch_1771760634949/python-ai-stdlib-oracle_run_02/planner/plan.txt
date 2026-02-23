@@ -1,0 +1,13 @@
+We are creating a project with the following structure:
+
+- README.md: 
+  - A short description of the project, installation, and usage.
+
+- mini_ai/__init__.py:
+  - Empty or with __all__ if needed.
+
+- mini_ai/markov.py:
+  - Class MarkovChain with the required methods and attributes.
+
+- mini_ai/cli.py:
+  - Main function with argparse for command line interface.

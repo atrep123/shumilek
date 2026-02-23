@@ -1,0 +1,3 @@
+{
+  "plan": "Create a TypeScript project that compiles to `dist/` and passes the provided Oracle tests. The project must use Node.js built-in modules only, with `node:crypto` for generating IDs if needed. The `TaskStore` class will be defined in `src/store.ts`, and the CLI commands (add, list, done, remove) will be implemented in `src/cli.ts`. The Oracle tests are provided and must be passed."
+}

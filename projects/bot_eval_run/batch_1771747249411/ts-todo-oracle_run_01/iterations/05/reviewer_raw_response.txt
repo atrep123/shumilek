@@ -1,0 +1,1 @@
+{ "review": "text", "priorityFiles": ["src/cli.ts", "tsconfig.json"] }

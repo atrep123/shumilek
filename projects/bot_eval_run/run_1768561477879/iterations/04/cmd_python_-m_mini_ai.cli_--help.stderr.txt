@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 189, in _run_module_as_main
+  File "<frozen runpy>", line 112, in _get_module_details
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561477879\workspace\mini_ai\__init__.py", line 2, in <module>
+    from .generator import generate
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561477879\workspace\mini_ai\generator.py", line 1
+    def generate(model_path):\n    # Implementace generovani textu z Markovova lincova
+                              ^
+SyntaxError: unexpected character after line continuation character

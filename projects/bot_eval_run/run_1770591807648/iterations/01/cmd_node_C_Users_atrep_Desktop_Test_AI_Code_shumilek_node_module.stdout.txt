@@ -1,0 +1,6 @@
+src/cli.ts(8,20): error TS2532: Object is possibly 'undefined'.
+src/store.ts(1,30): error TS2307: Cannot find module 'uuid' or its corresponding type declarations.
+src/store.ts(9,3): error TS2564: Property 'id' has no initializer and is not definitely assigned in the constructor.
+src/store.ts(10,3): error TS2564: Property 'title' has no initializer and is not definitely assigned in the constructor.
+src/store.ts(11,3): error TS2564: Property 'done' has no initializer and is not definitely assigned in the constructor.
+src/store.ts(12,3): error TS2564: Property 'createdAt' has no initializer and is not definitely assigned in the constructor.

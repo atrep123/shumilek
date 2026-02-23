@@ -1,0 +1,20 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Mini AI Project\n\nThis is a simple character-level Markov chain generator implemented in Python without using any external libraries like numpy, pandas, sklearn, torch, tensorflow, or requests. The project includes a command-line interface for training and generating text.\n\n## Features\n- Character-level Markov Chain Generator\n- Command Line Interface (CLI) for training and generating text\n\n## Installation\nNo installation required, just Python 3.7+\n\n## Usage\n```bash\npython -m mini_ai.cli --help\ntrain [TEXT]\ngenerate [MODEL_FILE] [LENGTH]\n```\n\n## Contributing\nPull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.\n\n## License\n[MIT](https://choosealicense.com/licenses/mit/)"
+    },
+    {
+      "path": "mini_ai/__init__.py",
+      "content": "from .markov import MarkovChain, train, generate"
+    },
+    {
+      "path": "mini_ai/markov.py",
+      "content": "import random\nimport json\n\nclass MarkovChain:\n    def __init__(self):\n        self.chain = {}\n\n    def add_text(self, text):\n        words = text.split()\n        for i in range(len(words) - 1):\n            if words[i] not in self.chain:\n                self.chain[words[i]] = []\n            self.chain[words[i]].append(words[i + 1])\n\n    def generate_text(self, length):\n        first_word = random.choice(list(self.chain.keys()))\n        text = [first_word]\n        while len(text) < length:\n            next_word = random.choice(self.chain[text[-1]])\n            text.append(next_word)\n        return ' '.join(text)\n\ndef train(model, text):\n    model.add_text(text)\n\ndef generate(model_file, length):\n    with open(model_file, 'r') as f:\n        chain = json.load(f)\n    model = MarkovChain()\n    for key, value in chain.items():\n        model.chain[key] = value\n    return model.generate_text(length)\n"
+    },
+    {
+      "path": "tests/test_markov.py",
+      "content": "import unittest\nfrom mini_ai.markov import MarkovChain, train\n\nclass TestMarkov(unittest.TestCase):\n    def test_add_text(self):\n        model = MarkovChain()\n        text = 'hello world'\n        train(model, text)\n        self.assertEqual(model.chain, {'hello': ['world']})\n\n    def test_generate_text(self):\n        model = MarkovChain()\n        text = 'one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen'\n        train(model, text)\n        generated_text = model.generate_text(10)\n        self.assertEqual(len(generated_text.split()), 10)\n\nif __name__ == '__main__':\n    unittest.main()"
+    }
+  ]
+}

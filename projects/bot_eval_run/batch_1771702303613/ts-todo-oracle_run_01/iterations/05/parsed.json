@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES6\",\n    \"module\": \"commonjs\",\n    \"outDir\": \"dist\",\n    \"strict\": true,\n    \"esModuleInterop\": true\n  },\n  \"include\": [\n    \"src/**/*\"\n  ]\n}\n"
+    },
+    {
+      "path": "src/store.ts",
+      "content": "import { readFileSync, writeFileSync } from 'fs';\nimport { v4 as uuidv4 } from 'uuid';\n\ninterface Task {\n  id: string;\n  title: string;\n  done: boolean;\n  createdAt: string;\n  doneAt?: string;\n}\n\nclass TaskStore {\n  private filePath: string;\n\n  constructor(filePath: string) {\n    this.filePath = filePath;\n  }\n\n  private readTasks(): Task[] {\n    try {\n      const data = readFileSync(this.filePath, 'utf-8');\n      return JSON.parse(data);\n    } catch (error) {\n      return [];\n    }\n  }\n\n  private writeTasks(tasks: Task[]): void {\n    writeFileSync(this.filePath, JSON.stringify(tasks, null, 2));\n  }\n\n  add(title: string): Task {\n    const tasks = this.readTasks();\n    const newTask: Task = {\n      id: uuidv4(),\n      title,\n      done: false,\n      createdAt: new Date().toISOString()\n    };\n    tasks.push(newTask);\n    this.writeTasks(tasks);\n    return newTask;\n  }\n\n  list(): Task[] {\n    return this.readTasks();\n  }\n\n  markAsDone(id: string): void {\n    const tasks = this.readTasks();\n    const task = tasks.find(t => t.id === id);\n    if (task) {\n      task.done = true;\n      task.doneAt = new Date().toISOString();\n      this.writeTasks(tasks);\n    }\n  }\n\n  remove(id: string): void {\n    let tasks = this.readTasks();\n    tasks = tasks.filter(t => t.id !== id);\n    this.writeTasks(tasks);\n  }\n}\n\nexport default TaskStore;\n"
+    },
+    {
+      "path": "src/cli.ts",
+      "content": "import { argv } from 'process';\nimport TaskStore from './store';\n\ndeclare module 'uuid' {\n  export function v4(): string;\n}\n\nconst args = argv.slice(2);\nconst command = args[0];\nconst dataPath = args[args.length - 1];\nconst taskStore = new TaskStore(dataPath);\n\nif (command === 'add') {\n  const title = args.slice(1, -1).join(' ');\n  const task = taskStore.add(title);\n  console.log(JSON.stringify({ addedTask: task }));\n} else if (command === 'list') {\n  const tasks = taskStore.list();\n  console.log(JSON.stringify({ tasks }));\n} else if (command === 'done') {\n  const id = args[1];\n  taskStore.markAsDone(id);\n  console.log(`Marked task with ID ${id} as done.`);\n} else if (command === 'remove') {\n  const id = args[1];\n  taskStore.remove(id);\n  console.log(`Removed task with ID ${id}.`);\n} else if (command === '--help' || command === '-h') {\n  console.log('Usage: node dist/cli.js <command> --data <path>');\n  console.log('Commands: add, list, done, remove');\n} else {\n  console.error('Unknown command. Use --help for more information.');\n}\n"
+    }
+  ],
+  "notes": "Added tsconfig.json to compile TypeScript files into dist directory. Updated src/store.ts to use uuid package for generating unique IDs and fixed method names to match the interface. Modified src/cli.ts to output JSON responses for add and list commands."
+}

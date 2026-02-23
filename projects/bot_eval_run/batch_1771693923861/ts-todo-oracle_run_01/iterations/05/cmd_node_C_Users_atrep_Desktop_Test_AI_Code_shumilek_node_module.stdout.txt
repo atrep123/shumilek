@@ -1,0 +1,4 @@
+src/cli.ts(53,21): error TS18046: 'error' is of type 'unknown'.
+src/cli.ts(67,21): error TS18046: 'error' is of type 'unknown'.
+src/store.ts(28,46): error TS18046: 'error' is of type 'unknown'.
+src/store.ts(36,46): error TS18046: 'error' is of type 'unknown'.

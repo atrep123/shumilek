@@ -1,0 +1,6 @@
+src/cli.ts(44,14): error TS2304: Cannot find name 'args'.
+src/cli.ts(45,32): error TS2304: Cannot find name 'args'.
+src/cli.ts(49,14): error TS2304: Cannot find name 'args'.
+src/cli.ts(50,37): error TS2304: Cannot find name 'args'.
+src/cli.ts(54,14): error TS2304: Cannot find name 'args'.
+src/cli.ts(55,42): error TS2304: Cannot find name 'args'.

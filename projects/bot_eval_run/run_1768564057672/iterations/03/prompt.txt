@@ -1,0 +1,289 @@
+Vytvor maly, ale realisticky Python projekt pro "AI" bez externich zavislosti.
+
+Cil: implementuj character-level Markov chain generator (n-gram) jako balicek `mini_ai/` + dokumentace `README.md`.
+
+POZADAVKY / KONTRAKT (musis splnit):
+- Pouze standardni knihovna Pythonu (zadne numpy/pandas/sklearn/torch/tensorflow/requests).
+- Modul `mini_ai/markov.py` musi obsahovat:
+  - class MarkovChain(order: int = 1)
+  - def train(self, text: str) -> None
+  - def generate(self, length: int, seed: str | None = None, random_seed: int | None = None) -> str
+  - def to_dict(self) -> dict  (JSON-serializovatelny; klice: "order", "transitions")
+  - @classmethod def from_dict(cls, d: dict) -> "MarkovChain"  (nebo pouzij `from __future__ import annotations`)
+- Pozor: type hinty nesmi shodit import (v Python 3.12 pouzij future-annotations nebo string forward refs).
+- Reprezentace transitions v to_dict:
+  - transitions: dict[context: str, dict[next_char: str, count: int]]
+  - context je string delky = order.
+- `mini_ai/cli.py` musi obsahovat:
+  - def main(argv: list[str] | None = None) -> int  (nech argumenty pres argparse)
+  - subcommand train: --input <path> --model-out <path> --order <int>
+  - subcommand generate: --model <path> --length <int> [--seed <str>] [--random-seed <int>]
+  - `python -m mini_ai.cli --help` musi vratit exit code 0
+
+Poznamka: testy budeme pouzivat tyto (musis projit):
+--- BEGIN ORACLE TESTS (tests/test_oracle.py) ---
+import io
+import json
+import os
+import tempfile
+import unittest
+from contextlib import redirect_stdout
+
+from mini_ai.markov import MarkovChain
+from mini_ai.cli import main
+
+
+class TestMarkovOracle(unittest.TestCase):
+    def test_order_validation(self):
+        with self.assertRaises(ValueError):
+            MarkovChain(order=0)
+
+    def test_train_and_to_dict(self):
+        mc = MarkovChain(order=1)
+        mc.train("aba")
+        d = mc.to_dict()
+        self.assertEqual(d["order"], 1)
+        self.assertIn("transitions", d)
+        self.assertIn("a", d["transitions"])
+        self.assertIn("b", d["transitions"]["a"])
+        self.assertEqual(d["transitions"]["a"]["b"], 1)
+
+    def test_round_trip_serialization(self):
+        mc = MarkovChain(order=2)
+        mc.train("abcd")
+        d1 = mc.to_dict()
+        mc2 = MarkovChain.from_dict(d1)
+        d2 = mc2.to_dict()
+        self.assertEqual(d1["order"], d2["order"])
+        self.assertEqual(d1["transitions"], d2["transitions"])
+
+    def test_generate_deterministic(self):
+        mc = MarkovChain(order=1)
+        mc.train("aba")
+        out = mc.generate(length=10, seed="a", random_seed=0)
+        self.assertEqual(len(out), 10)
+        self.assertTrue(set(out) <= {"a", "b"})
+
+
+class TestCliOracle(unittest.TestCase):
+    def test_train_and_generate_smoke(self):
+        with tempfile.TemporaryDirectory() as td:
+            input_path = os.path.join(td, "input.txt")
+            model_path = os.path.join(td, "model.json")
+
+            with open(input_path, "w", encoding="utf-8") as f:
+                f.write("aba")
+
+            rc = main(["train", "--input", input_path, "--model-out", model_path, "--order", "1"])
+            self.assertEqual(rc, 0)
+            self.assertTrue(os.path.exists(model_path))
+
+            with open(model_path, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+            self.assertIn("order", loaded)
+            self.assertIn("transitions", loaded)
+
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                rc2 = main(["generate", "--model", model_path, "--length", "12", "--seed", "a", "--random-seed", "0"])
+            self.assertEqual(rc2, 0)
+            generated = buf.getvalue().strip()
+            self.assertEqual(len(generated), 12)
+--- END ORACLE TESTS ---
+
+VYSTUPNI FORMAT (STRICT): vrat JEN JSON objekt tohoto tvaru:
+{
+  "mode": "full",
+  "files": [
+    {"path": "README.md", "content": "...\n"},
+    {"path": "mini_ai/__init__.py", "content": "...\n"},
+    {"path": "mini_ai/markov.py", "content": "...\n"},
+    {"path": "mini_ai/cli.py", "content": "...\n"}
+  ],
+  "notes": "optional"
+}
+
+Pravidla:
+- Zadny markdown, zadne ``` bloky, zadny text mimo JSON.
+- Cesty jsou relativni, pouzij `/`, bez `..` a bez absolutnich cest.
+- Kazdy soubor ukonci znakem noveho radku.
+- Nezahrnuj vlastni `tests/` (pouziji se oracle testy).
+- `content` je vzdy kompletni obsah souboru (ne diff/snippet).
+
+---
+NEPROSLO VALIDACI. Oprav nasledujici problemy.
+
+CHYBY:
+- Command failed: python -m unittest discover -v -s tests -p "test*.py" (exit=1, timedOut=false)
+
+LOGY (zkraceno):
+- python -m unittest discover -v -s tests -p "test*.py"
+  stderr: "rc2 = main([\"generate\", \"--model\", model_path, \"--length\", \"12\", \"--seed\", \"a\", \"--random-seed\", \"0\"])\r\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1768564057672\\workspace\\mini_ai\\cli.py\", line 33, in main\r\n    generated_text = mc.generate(length=args.length, seed=args.seed, random_seed=args.random_seed)\r\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1768564057672\\workspace\\mini_ai\\markov.py\", line 31, in generate\r\n    next_char = random.choices(possible_chars, weights=weights, seed=random_seed)[0]\r\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\nTypeError: Random.choices() got an unexpected keyword argument 'seed'\r\n\r\n======================================================================\r\nERROR: test_generate_deterministic (test_oracle.TestMarkovOracle.test_generate_deterministic)\r\n----------------------------------------------------------------------\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1768564057672\\workspace\\tests\\test_oracle.py\", line 39, in test_generate_deterministic\r\n    out = mc.generate(length=10, seed=\"a\", random_seed=0)\r\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1768564057672\\workspace\\mini_ai\\markov.py\", line 31, in generate\r\n    next_char = random.choices(possible_chars, weights=weights, seed=random_seed)[0]\r\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\nTypeError: Random.choices() got an unexpected keyword argument 'seed'\r\n\r\n----------------------------------------------------------------------\r\nRan 5 tests in 0.006s\r\n\r\nFAILED (errors=2)\r\n"
+
+AKTUALNI SOUBORY:
+- README.md
+- mini_ai/__init__.py
+- mini_ai/__pycache__/__init__.cpython-312.pyc
+- mini_ai/__pycache__/cli.cpython-312.pyc
+- mini_ai/__pycache__/markov.cpython-312.pyc
+- mini_ai/cli.py
+- mini_ai/markov.py
+- tests/__pycache__/test_oracle.cpython-312.pyc
+- tests/test_oracle.py
+
+KONTEXT SOUBORU (pro opravu):
+--- FILE: tests/test_oracle.py ---
+import io
+import json
+import os
+import tempfile
+import unittest
+from contextlib import redirect_stdout
+
+from mini_ai.markov import MarkovChain
+from mini_ai.cli import main
+
+
+class TestMarkovOracle(unittest.TestCase):
+    def test_order_validation(self):
+        with self.assertRaises(ValueError):
+            MarkovChain(order=0)
+
+    def test_train_and_to_dict(self):
+        mc = MarkovChain(order=1)
+        mc.train("aba")
+        d = mc.to_dict()
+        self.assertEqual(d["order"], 1)
+        self.assertIn("transitions", d)
+        self.assertIn("a", d["transitions"])
+        self.assertIn("b", d["transitions"]["a"])
+        self.assertEqual(d["transitions"]["a"]["b"], 1)
+
+    def test_round_trip_serialization(self):
+        mc = MarkovChain(order=2)
+        mc.train("abcd")
+        d1 = mc.to_dict()
+        mc2 = MarkovChain.from_dict(d1)
+        d2 = mc2.to_dict()
+        self.assertEqual(d1["order"], d2["order"])
+        self.assertEqual(d1["transitions"], d2["transitions"])
+
+    def test_generate_deterministic(self):
+        mc = MarkovChain(order=1)
+        mc.train("aba")
+        out = mc.generate(length=10, seed="a", random_seed=0)
+        self.assertEqual(len(out), 10)
+        self.assertTrue(set(out) <= {"a", "b"})
+
+
+class TestCliOracle(unittest.TestCase):
+    def test_train_and_generate_smoke(self):
+        with tempfile.TemporaryDirectory() as td:
+            input_path = os.path.join(td, "input.txt")
+            model_path = os.path.join(td, "model.json")
+
+            with open(input_path, "w", encoding="utf-8") as f:
+                f.write("aba")
+
+            rc = main(["train", "--input", input_path, "--model-out", model_path, "--order", "1"])
+            self.assertEqual(rc, 0)
+            self.assertTrue(os.path.exists(model_path))
+
+            with open(model_path, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+            self.assertIn("order", loaded)
+            self.assertIn("transitions", loaded)
+
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                rc2 = main(["generate", "--model", model_path, "--length", "12", "--seed", "a", "--random-seed", "0"])
+            self.assertEqual(rc2, 0)
+            generated = buf.getvalue().strip()
+            self.assertEqual(len(generated), 12)
+
+
+--- FILE: mini_ai/cli.py ---
+import argparse
+import json
+from mini_ai.markov import MarkovChain
+
+def main(argv=None):
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest='command')
+
+    train_parser = subparsers.add_parser('train')
+    train_parser.add_argument('--input', type=str, required=True)
+    train_parser.add_argument('--model-out', type=str, required=True)
+    train_parser.add_argument('--order', type=int, required=True)
+
+    generate_parser = subparsers.add_parser('generate')
+    generate_parser.add_argument('--model', type=str, required=True)
+    generate_parser.add_argument('--length', type=int, required=True)
+    generate_parser.add_argument('--seed', type=str, default=None)
+    generate_parser.add_argument('--random-seed', type=int, default=None)
+
+    args = parser.parse_args(argv)
+
+    if args.command == 'train':
+        mc = MarkovChain(order=args.order)
+        with open(args.input, 'r') as f:
+            text = f.read()
+        mc.train(text)
+        with open(args.model_out, 'w') as f:
+            json.dump(mc.to_dict(), f)
+    elif args.command == 'generate':
+        with open(args.model, 'r') as f:
+            model_data = json.load(f)
+        mc = MarkovChain.from_dict(model_data)
+        generated_text = mc.generate(length=args.length, seed=args.seed, random_seed=args.random_seed)
+        print(generated_text)
+    return 0
+
+--- FILE: mini_ai/markov.py ---
+from typing import Dict, List, Tuple, Union
+
+class MarkovChain:
+    def __init__(self, order: int = 1):
+        if order <= 0:
+            raise ValueError('Order must be a positive integer.')
+        self.order = order
+        self.transitions: Dict[str, Dict[str, int]] = {}
+
+    def train(self, text: str) -> None:
+        for i in range(len(text) - self.order):
+            context = text[i:i + self.order]
+            next_char = text[i + self.order]
+            if context not in self.transitions:
+                self.transitions[context] = {next_char: 1}
+            else:
+                if next_char in self.transitions[context]:
+                    self.transitions[context][next_char] += 1
+                else:
+                    self.transitions[context][next_char] = 1
+
+    def generate(self, length: int, seed: str = None, random_seed: int = None) -> str:
+        import random
+        if seed is None:
+            seed = list(self.transitions.keys())[0][:self.order]
+        result = seed
+        for _ in range(length - self.order):
+            context = result[-self.order:]
+            possible_chars = list(self.transitions[context].keys())
+            weights = [self.transitions[context][c] for c in possible_chars]
+            next_char = random.choices(possible_chars, weights=weights, seed=random_seed)[0]
+            result += next_char
+        return result
+
+    def to_dict(self) -> dict:
+        return {"order": self.order, "transitions": self.transitions}
+
+    @classmethod
+    def from_dict(cls, d: dict) -> 'MarkovChain':
+        mc = cls(order=d['order'])
+        mc.transitions = d['transitions']
+        return mc
+
+
+VYSTUP: vrat JEN platny JSON objekt bez markdownu:
+{ "mode": "patch", "files": [ {"path":"...","content":"...\n"} ], "notes": "optional" }
+Pravidla: udelej jen minimalni nutne zmeny; posli jen soubory ktere menis nebo pridavas; u kazdeho posli VZDY cely obsah souboru.

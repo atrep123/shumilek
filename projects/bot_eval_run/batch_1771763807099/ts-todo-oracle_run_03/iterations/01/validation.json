@@ -1,0 +1,41 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "src/store.ts uses crypto.randomUUID() but missing crypto require",
+    "Command failed: node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json (exit=2, timedOut=false)",
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)",
+    "Command failed: node dist/cli.js --help (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771763807099\\ts-todo-oracle_run_03\\workspace",
+      "ok": false,
+      "exitCode": 2,
+      "timedOut": false,
+      "durationMs": 1295,
+      "stdout": "src/cli.ts(33,29): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.\r\n  Type 'undefined' is not assignable to type 'string'.\r\n",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771763807099\\ts-todo-oracle_run_03\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 177,
+      "stdout": "✔ TaskStore: CRUD persists to JSON file (7.3877ms)\n✖ CLI: end-to-end flow (43.5363ms)\nℹ tests 2\nℹ suites 0\nℹ pass 1\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 107.8625\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:62:1\n✖ CLI: end-to-end flow (43.5363ms)\n  AssertionError [ERR_ASSERTION]: Missing --data path\n  \n  \n  1 !== 0\n  \n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771763807099\\ts-todo-oracle_run_03\\workspace\\tests\\oracle.test.js:69:10)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 1,\n    expected: 0,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+      "stderr": ""
+    },
+    {
+      "command": "node dist/cli.js --help",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771763807099\\ts-todo-oracle_run_03\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 62,
+      "stdout": "",
+      "stderr": "Missing --data path\n"
+    }
+  ]
+}

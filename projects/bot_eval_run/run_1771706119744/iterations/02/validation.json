@@ -1,0 +1,38 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Command failed: python -m unittest discover -v -s tests -p \"test*.py\" (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "python -m compileall -q mini_ai tests",
+      "cwd": "projects\\bot_eval_run\\run_1771706119744\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 69,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "python -m unittest discover -v -s tests -p \"test*.py\"",
+      "cwd": "projects\\bot_eval_run\\run_1771706119744\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 82,
+      "stdout": "",
+      "stderr": "test_train_and_generate_smoke (test_oracle.TestCliOracle.test_train_and_generate_smoke) ... ok\r\ntest_generate_deterministic (test_oracle.TestMarkovOracle.test_generate_deterministic) ... ok\r\ntest_order_validation (test_oracle.TestMarkovOracle.test_order_validation) ... FAIL\r\ntest_round_trip_serialization (test_oracle.TestMarkovOracle.test_round_trip_serialization) ... ok\r\ntest_train_and_to_dict (test_oracle.TestMarkovOracle.test_train_and_to_dict) ... ok\r\n\r\n======================================================================\r\nFAIL: test_order_validation (test_oracle.TestMarkovOracle.test_order_validation)\r\n----------------------------------------------------------------------\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1771706119744\\workspace\\tests\\test_oracle.py\", line 14, in test_order_validation\r\n    with self.assertRaises(ValueError):\r\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\nAssertionError: ValueError not raised\r\n\r\n----------------------------------------------------------------------\r\nRan 5 tests in 0.006s\r\n\r\nFAILED (failures=1)\r\n"
+    },
+    {
+      "command": "python -m mini_ai.cli --help",
+      "cwd": "projects\\bot_eval_run\\run_1771706119744\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 53,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

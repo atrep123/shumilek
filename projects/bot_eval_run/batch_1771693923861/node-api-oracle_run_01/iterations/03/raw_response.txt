@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"todo-app\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple TODO application\",\n  \"main\": \"index.js\",\n  \"scripts\": {\n    \"test\": \"node tests/oracle.test.js\"\n  },\n  \"dependencies\": {\n    \"http\": \"^0.0.1-security\"\n  }\n}\n"
+    },
+    {
+      "path": "README.md",
+      "content": "# TODO Application\n\nA simple TODO application with basic CRUD operations.\n\n## Usage\n\n1. Install dependencies:\n   ```bash\n   npm install\n   ```\n2. Run tests:\n   ```bash\n   npm test\n   ```\n"
+    },
+    {
+      "path": "index.js",
+      "content": "# index.js\n\nconst createServer = require('./src/server');\nconst dataPath = './data.json';\n\n// Ensure the data file exists\nif (!fs.existsSync(dataPath)) {\n  fs.writeFileSync(dataPath, '[]', 'utf8');\n}\n\nconst server = createServer(dataPath);\nserver.listen(3000, () => {\n  console.log('Server is running on http://localhost:3000');\n});\n"
+    },
+    {
+      "path": "data.json",
+      "content": "[]\n"
+    }
+  ],
+  "notes": "Added package.json, README.md, index.js, and data.json to set up the project structure and ensure the server runs correctly."
+}

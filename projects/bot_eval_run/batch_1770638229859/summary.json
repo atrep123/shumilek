@@ -1,0 +1,9 @@
+[
+  {
+    "scenario": "ts-todo-oracle",
+    "pass": 3,
+    "total": 3,
+    "passRate": 1,
+    "avgMs": 70895
+  }
+]

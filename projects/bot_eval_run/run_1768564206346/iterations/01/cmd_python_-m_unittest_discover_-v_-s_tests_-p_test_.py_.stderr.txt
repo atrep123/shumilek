@@ -1,0 +1,24 @@
+test_oracle (unittest.loader._FailedTest.test_oracle) ... ERROR
+
+======================================================================
+ERROR: test_oracle (unittest.loader._FailedTest.test_oracle)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_oracle
+Traceback (most recent call last):
+  File "C:\Users\atrep\AppData\Local\Programs\Python\Python312\Lib\unittest\loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\AppData\Local\Programs\Python\Python312\Lib\unittest\loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768564206346\workspace\tests\test_oracle.py", line 8, in <module>
+    from mini_ai.markov import MarkovChain
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768564206346\workspace\mini_ai\__init__.py", line 3
+    This package contains the implementation of a character-level Markov chain generator.
+         ^^^^^^^
+SyntaxError: invalid syntax
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

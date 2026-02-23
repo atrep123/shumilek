@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "allowJs": true,
+    "<-- Add this option to allow JavaScript files to be compiled as well if needed. Ensure your project structure includes .js files for the CLI commands to work correctly with Node.js environments that don't automatically handle them. If you're sure all your code is in TypeScript (no .js files), you can remove or comment out this line and any related file extensions from your include paths.  ": "include\": [\n      \"src/**/*\",\n      \"dist/**/*.ts\"\n    ]",
+    "exclude\": [\n      \"node_modules\",\n      \"dist\"  <-- Ensure you exclude the dist directory to prevent TypeScript from compiling itself again.\n    ]\n  }": "include\": [\n      \"src/**/*\",\n      \"dist/**/*.js\"\n    ]",
+    "<-- If your CLI commands are written in JavaScript, include .js files as well. Adjust based on your project structure and file types you want to compile.\n    ]\n  }": "exclude\": [\n      \"node_modules\",\n      \"dist\"  <-- Ensure you exclude the dist directory to prevent TypeScript from compiling itself again.\n    ]\n  }"
+  }
+}

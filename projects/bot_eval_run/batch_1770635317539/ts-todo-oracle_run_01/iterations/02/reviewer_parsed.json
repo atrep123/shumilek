@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "noEmit": true,
+    "<----- Add this line to prevent emitting the source code in dist directory. Otherwise, it might cause issues with your tests or other files that depend on these modules not being found when running them from a different directory. This is especially important if you're using Node.js and require()ing these modules directly. If you need to keep some of the source code for debugging purposes, consider removing this line temporarily during development but ensure it's added back before deploying your application. ": "noEmitOnError"
+  }
+}

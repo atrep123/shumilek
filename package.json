@@ -1,0 +1,532 @@
+{
+    "name":  "shumilek",
+    "displayName":  "Ĺ umĂ­lek",
+    "description":  "LokĂˇlnĂ­ AI chat s Ollama pĹ™Ă­mo ve VS Code - s historiĂ­ konverzace a systĂ©movĂ˝m promptem.",
+    "version":  "0.1.0",
+    "engines":  {
+                    "vscode":  "^1.85.0"
+                },
+    "categories":  [
+                       "Other",
+                       "Machine Learning"
+                   ],
+    "main":  "./out/extension.js",
+    "activationEvents":  [
+                             "onView:shumilek.chatView",
+                             "onCommand:shumilek.openChat",
+                             "onCommand:shumilek.startAirLLM",
+                             "onCommand:shumilek.switchBackend"
+                         ],
+    "contributes":  {
+                        "viewsContainers":  {
+                                                "panel":  [
+                                                              {
+                                                                  "id":  "shumilek-panel",
+                                                                  "title":  "Ĺ umĂ­lek",
+                                                                  "icon":  "$(comment-discussion)"
+                                                              }
+                                                          ],
+                                                "activitybar":  [
+                                                                    {
+                                                                        "id":  "shumilek-sidebar",
+                                                                        "title":  "Ĺ umĂ­lek AI",
+                                                                        "icon":  "$(comment-discussion)"
+                                                                    }
+                                                                ]
+                                            },
+                        "views":  {
+                                      "shumilek-sidebar":  [
+                                                               {
+                                                                   "type":  "webview",
+                                                                   "id":  "shumilek.chatView",
+                                                                   "name":  "Chat",
+                                                                   "visibility":  "visible"
+                                                               }
+                                                           ]
+                                  },
+                        "commands":  [
+                                         {
+                                             "command":  "shumilek.openChat",
+                                             "title":  "Ĺ umĂ­lek: OtevĹ™Ă­t Chat",
+                                             "icon":  "$(comment-discussion)"
+                                         },
+                                         {
+                                             "command":  "shumilek.exportLastResponse",
+                                             "title":  "Ĺ umĂ­lek: Exportovat poslednĂ­ odpovÄ›ÄŹ do souboru"
+                                         },
+                                         {
+                                             "command":  "shumilek.applyLastResponseToEditor",
+                                             "title":  "Ĺ umĂ­lek: VloĹľit poslednĂ­ odpovÄ›ÄŹ do editoru"
+                                         },
+                                         {
+                                             "command":  "shumilek.clearHistory",
+                                             "title":  "Ĺ umĂ­lek: Vymazat historii"
+                                         },
+                                         {
+                                             "command":  "shumilek.guardianStats",
+                                             "title":  "Ĺ umĂ­lek: Guardian statistiky"
+                                         },
+                                         {
+                                             "command":  "shumilek.addTask",
+                                             "title":  "Ĺ umĂ­lek: PĹ™idat Ăşkol pro SvÄ›domĂ­"
+                                         },
+                                         {
+                                             "command":  "shumilek.viewTasks",
+                                             "title":  "Ĺ umĂ­lek: Zobrazit a spravovat Ăşkoly"
+                                         },
+                                         {
+                                             "command":  "shumilek.scanWorkspace",
+                                             "title":  "Ĺ umĂ­lek: Skenovat projekt"
+                                         },
+                                         {
+                                             "command":  "shumilek.showWorkspaceInfo",
+                                             "title":  "Ĺ umĂ­lek: Zobrazit info o projektu"
+                                         },
+                                         {
+                                             "command":  "shumilek.toggleToolsEnabled",
+                                             "title":  "Ĺ umĂ­lek: PĹ™epnout nĂˇstroje"
+                                         },
+                                         {
+                                             "command":  "shumilek.toggleToolsConfirmEdits",
+                                             "title":  "Ĺ umĂ­lek: PĹ™epnout potvrzovĂˇnĂ­ zmÄ›n"
+                                         },
+                                         {
+                                             "command":  "shumilek.startAirLLM",
+                                             "title":  "Ĺ umĂ­lek: Spustit AirLLM server"
+                                         },
+                                         {
+                                             "command":  "shumilek.switchBackend",
+                                             "title":  "Ĺ umĂ­lek: PĹ™epnout backend (Ollama/AirLLM)"
+                                         }
+                                     ],
+                        "keybindings":  [
+                                            {
+                                                "command":  "shumilek.openChat",
+                                                "key":  "ctrl+shift+s",
+                                                "mac":  "cmd+shift+s"
+                                            }
+                                        ],
+                        "configuration":  {
+                                              "type":  "object",
+                                              "title":  "Ĺ umĂ­lek Settings",
+                                              "properties":  {
+                                                                 "shumilek.model":  {
+                                                                                        "type":  "string",
+                                                                                        "default":  "deepseek-coder-v2:16b",
+                                                                                        "description":  "NĂˇzev modelu v Ollama (napĹ™. deepseek-coder-v2:16b, qwen2.5-coder:7b)"
+                                                                                    },
+                                                                 "shumilek.modelPreset":  {
+                                                                                              "type":  "string",
+                                                                                              "default":  "custom",
+                                                                                              "enum":  [
+                                                                                                           "custom",
+                                                                                                           "fast",
+                                                                                                           "balanced",
+                                                                                                           "quality"
+                                                                                                       ],
+                                                                                              "description":  "Prednastaveny profil modelu. \u0027custom\u0027 pouziva rucni nastaveni model/writer/rozum/mini."
+                                                                                          },
+                                                                 "shumilek.writerModel":  {
+                                                                                              "type":  "string",
+                                                                                              "default":  "starcoder2:15b",
+                                                                                              "description":  "Model pro psanĂ­/refaktor/bugfix (pokud nenĂ­ nastaven, pouĹľije se shumilek.model)"
+                                                                                          },
+                                                                 "shumilek.brainModels":  {
+                                                                                              "type":  "array",
+                                                                                              "items":  {
+                                                                                                            "type":  "string"
+                                                                                                        },
+                                                                                              "default":  [
+                                                                                                              "qwen2.5-coder:7b",
+                                                                                                              "deepseek-coder-v2:16b"
+                                                                                                          ],
+                                                                                              "description":  "Seznam kandidĂˇtĹŻ pro hlavnĂ­ mozek (vĂ˝bÄ›r podle heuristiky)"
+                                                                                          },
+                                                                 "shumilek.pipelineAlwaysOn":  {
+                                                                                                   "type":  "boolean",
+                                                                                                   "default":  true,
+                                                                                                   "description":  "VĹľdy spouĹˇtÄ›t plnou pipeline (delĹˇĂ­, ale kvalitnÄ›jĹˇĂ­ vĂ˝stupy)"
+                                                                                               },
+                                                                 "shumilek.backendType":  {
+                                                                                              "type":  "string",
+                                                                                              "default":  "ollama",
+                                                                                              "enum":  [
+                                                                                                           "ollama",
+                                                                                                           "airllm"
+                                                                                                       ],
+                                                                                              "enumDescriptions":  [
+                                                                                                                       "Ollama - rychlĂ© lokĂˇlnĂ­ inference s kvantizovanĂ˝mi modely",
+                                                                                                                       "AirLLM - 70B+ modely na 4GB GPU bez kvantizace"
+                                                                                                                   ],
+                                                                                              "description":  "Typ backendu pro inference"
+                                                                                          },
+                                                                 "shumilek.baseUrl":  {
+                                                                                          "type":  "string",
+                                                                                          "default":  "http://localhost:11434",
+                                                                                          "description":  "Ollama API endpoint"
+                                                                                      },
+                                                                 "shumilek.airllm.serverUrl":  {
+                                                                                                   "type":  "string",
+                                                                                                   "default":  "http://localhost:11435",
+                                                                                                   "description":  "AirLLM server endpoint (kdyĹľ je backendType = airllm)"
+                                                                                               },
+                                                                 "shumilek.airllm.model":  {
+                                                                                               "type":  "string",
+                                                                                               "default":  "Qwen/Qwen2.5-72B-Instruct",
+                                                                                               "description":  "HuggingFace model ID pro AirLLM"
+                                                                                           },
+                                                                 "shumilek.airllm.compression":  {
+                                                                                                     "type":  "string",
+                                                                                                     "default":  "none",
+                                                                                                     "enum":  [
+                                                                                                                  "none",
+                                                                                                                  "4bit",
+                                                                                                                  "8bit"
+                                                                                                              ],
+                                                                                                     "description":  "Komprese modelu pro AirLLM (4bit/8bit = 3x rychlejĹˇĂ­)"
+                                                                                                 },
+                                                                 "shumilek.airllm.dtype":  {
+                                                                                               "type":  "string",
+                                                                                               "default":  "auto",
+                                                                                               "enum":  [
+                                                                                                            "auto",
+                                                                                                            "bf16",
+                                                                                                            "fp16",
+                                                                                                            "fp32"
+                                                                                                        ],
+                                                                                               "description":  "Precision for AirLLM weights (auto/bf16/fp16/fp32)"
+                                                                                           },
+                                                                 "shumilek.airllm.useKvCache":  {
+                                                                                                    "type":  "boolean",
+                                                                                                    "default":  false,
+                                                                                                    "description":  "Enable KV cache for AirLLM (faster decoding, higher VRAM usage)"
+                                                                                                },
+                                                                 "shumilek.airllm.cacheDir":  {
+                                                                                                  "type":  "string",
+                                                                                                  "default":  "",
+                                                                                                  "description":  "HF cache root for AirLLM (sets HF_HOME/TRANSFORMERS_CACHE)"
+                                                                                              },
+                                                                 "shumilek.airllm.autoStart":  {
+                                                                                                   "type":  "boolean",
+                                                                                                   "default":  false,
+                                                                                                   "description":  "Auto-start AirLLM server when backendType is airllm"
+                                                                                               },
+                                                                 "shumilek.airllm.startCommand":  {
+                                                                                                      "type":  "string",
+                                                                                                      "default":  "",
+                                                                                                      "description":  "Custom start command for AirLLM. Supports {model} {compression} {dtype} {host} {port} {script} {cacheDir}"
+                                                                                                  },
+                                                                 "shumilek.airllm.waitForHealthySeconds":  {
+                                                                                                               "type":  "number",
+                                                                                                               "default":  30,
+                                                                                                               "description":  "Seconds to wait for AirLLM /health after auto-start"
+                                                                                                           },
+                                                                 "shumilek.airllm.maxOutputTokens":  {
+                                                                                                         "type":  "number",
+                                                                                                         "default":  256,
+                                                                                                         "description":  "Max output tokens for AirLLM responses (num_predict). Lower values are much faster on 70B models."
+                                                                                                     },
+                                                                 "shumilek.airllm.runInWsl":  {
+                                                                                                  "type":  "boolean",
+                                                                                                  "default":  false,
+                                                                                                  "description":  "Run AirLLM start command via WSL"
+                                                                                              },
+                                                                 "shumilek.airllm.wslDistro":  {
+                                                                                                   "type":  "string",
+                                                                                                   "default":  "Ubuntu",
+                                                                                                   "description":  "WSL distro name for AirLLM start"
+                                                                                               },
+                                                                 "shumilek.airllm.wslUser":  {
+                                                                                                 "type":  "string",
+                                                                                                 "default":  "",
+                                                                                                 "description":  "WSL user for AirLLM start (leave empty for default)"
+                                                                                             },
+                                                                 "shumilek.summarizerEnabled":  {
+                                                                                                    "type":  "boolean",
+                                                                                                    "default":  true,
+                                                                                                    "description":  "Zapnout sumarizaci na konci odpovÄ›di"
+                                                                                                },
+                                                                 "shumilek.summarizerModel":  {
+                                                                                                  "type":  "string",
+                                                                                                  "default":  "qwen2.5:3b",
+                                                                                                  "description":  "Model pro sumarizaci v Ollama"
+                                                                                              },
+                                                                 "shumilek.systemPrompt":  {
+                                                                                               "type":  "string",
+                                                                                               "default":  "Jsi pomocnĂ˝ asistent pro programovĂˇnĂ­. OdpovĂ­dej struÄŤnÄ› a pĹ™esnÄ›. PouĹľĂ­vej ÄŤeskĂ˝ jazyk.",
+                                                                                               "description":  "SystĂ©movĂ˝ prompt pro model"
+                                                                                           },
+                                                                 "shumilek.toolsEnabled":  {
+                                                                                               "type":  "boolean",
+                                                                                               "default":  true,
+                                                                                               "description":  "Povolit nastroje pro cteni a upravy souboru"
+                                                                                           },
+                                                                 "shumilek.toolsConfirmEdits":  {
+                                                                                                    "type":  "boolean",
+                                                                                                    "default":  false,
+                                                                                                    "description":  "Kdyz je false, upravy souboru se aplikuji rovnou"
+                                                                                                },
+                                                                 "shumilek.toolsModel":  {
+                                                                                             "type":  "string",
+                                                                                             "default":  "qwen2.5:7b-instruct",
+                                                                                             "description":  "Preferovany model pro tool volani (kdyz prazdne, pouzije se writerModel)"
+                                                                                         },
+                                                                 "shumilek.toolsFallbackModel":  {
+                                                                                                     "type":  "string",
+                                                                                                     "default":  "qwen2.5:14b-instruct",
+                                                                                                     "description":  "Zalozni model pro tool volani, pokud primarni selze"
+                                                                                                 },
+                                                                 "shumilek.toolsAutoSaveDir":  {
+                                                                                                   "type":  "string",
+                                                                                                   "default":  "out",
+                                                                                                   "description":  "Slozka v workspace pro automaticke ukladani pri chybejici ceste"
+                                                                                               },
+                                                                 "shumilek.projectMapPath":  {
+                                                                                                 "type":  "string",
+                                                                                                 "default":  "PROJECT_MAP.md",
+                                                                                                 "description":  "Path for generated project map markdown (relative to workspace)"
+                                                                                             },
+                                                                 "shumilek.projectMapCachePath":  {
+                                                                                                      "type":  "string",
+                                                                                                      "default":  "out/project_map.json",
+                                                                                                      "description":  "Path for cached project map JSON (relative to workspace)"
+                                                                                                  },
+                                                                 "shumilek.projectMapAutoUpdate":  {
+                                                                                                       "type":  "boolean",
+                                                                                                       "default":  true,
+                                                                                                       "description":  "Auto-update project map on file changes"
+                                                                                                   },
+                                                                 "shumilek.toolsAutoOpenAutoSave":  {
+                                                                                                        "type":  "boolean",
+                                                                                                        "default":  true,
+                                                                                                        "description":  "Automaticky otevĹ™Ă­t soubory vytvoĹ™enĂ© v auto-save sloĹľce"
+                                                                                                    },
+                                                                 "shumilek.toolsAutoOpenOnWrite":  {
+                                                                                                       "type":  "boolean",
+                                                                                                       "default":  false,
+                                                                                                       "description":  "Automaticky otevĹ™Ă­t upravovanĂ˝ soubor i pĹ™i editaci existujĂ­cĂ­ho souboru"
+                                                                                                   },
+                                                                 "shumilek.toolsWriteToast":  {
+                                                                                                  "type":  "boolean",
+                                                                                                  "default":  false,
+                                                                                                  "description":  "Zobrazit VS Code toast po zĂˇpisu souboru"
+                                                                                              },
+                                                                 "shumilek.toolsMaxIterations":  {
+                                                                                                     "type":  "number",
+                                                                                                     "default":  6,
+                                                                                                     "description":  "Maximalni pocet tool iteraci na dotaz"
+                                                                                                 },
+                                                                 "shumilek.validatorLogsEnabled":  {
+                                                                                                       "type":  "boolean",
+                                                                                                       "default":  true,
+                                                                                                       "description":  "Vypisovat logy z externich validatoru do Output kanalu"
+                                                                                                   },
+                                                                 "shumilek.timeout":  {
+                                                                                          "type":  "number",
+                                                                                          "default":  1200,
+                                                                                          "description":  "Timeout pro poĹľadavky v sekundĂˇch"
+                                                                                      },
+                                                                 "shumilek.contextTokens":  {
+                                                                                                "type":  "number",
+                                                                                                "default":  8192,
+                                                                                                "description":  "Context window tokens for all models (clamped 2048-8192)"
+                                                                                            },
+                                                                 "shumilek.guardianEnabled":  {
+                                                                                                  "type":  "boolean",
+                                                                                                  "default":  true,
+                                                                                                  "description":  "Aktivovat Response Guardian (detekce smyÄŤek a opakovĂˇnĂ­)"
+                                                                                              },
+                                                                 "shumilek.maxRetries":  {
+                                                                                             "type":  "number",
+                                                                                             "default":  2,
+                                                                                             "description":  "MaximĂˇlnĂ­ poÄŤet automatickĂ˝ch opakovĂˇnĂ­ pĹ™i detekci problĂ©mu"
+                                                                                         },
+                                                                 "shumilek.miniModelEnabled":  {
+                                                                                                   "type":  "boolean",
+                                                                                                   "default":  true,
+                                                                                                   "description":  "Aktivovat SvÄ›domĂ­ - Mini-model validĂˇtor (qwen2.5:3b pro kontrolu kvality)"
+                                                                                               },
+                                                                 "shumilek.miniModel":  {
+                                                                                            "type":  "string",
+                                                                                            "default":  "qwen2.5:3b",
+                                                                                            "description":  "NĂˇzev modelu pro SvÄ›domĂ­ (validace odpovÄ›dĂ­)"
+                                                                                        },
+                                                                 "shumilek.workspaceIndexEnabled":  {
+                                                                                                        "type":  "boolean",
+                                                                                                        "default":  true,
+                                                                                                        "description":  "Automaticky pĹ™idĂˇvat kontext projektu k dotazĹŻm"
+                                                                                                    },
+                                                                 "shumilek.workspaceAutoScan":  {
+                                                                                                    "type":  "boolean",
+                                                                                                    "default":  false,
+                                                                                                    "description":  "Automaticky skenovat projekt pĹ™i otevĹ™enĂ­"
+                                                                                                },
+                                                                 "shumilek.rozumEnabled":  {
+                                                                                               "type":  "boolean",
+                                                                                               "default":  true,
+                                                                                               "description":  "Aktivovat Rozum - PlĂˇnovacĂ­ agent (deepseek-r1:8b pro analĂ˝zu a plĂˇnovĂˇnĂ­)"
+                                                                                           },
+                                                                 "shumilek.rozumModel":  {
+                                                                                             "type":  "string",
+                                                                                             "default":  "deepseek-r1:8b",
+                                                                                             "description":  "NĂˇzev modelu pro Rozum (reasoning a plĂˇnovĂˇnĂ­)"
+                                                                                         },
+                                                                 "shumilek.rewardEnabled":  {
+                                                                                                "type":  "boolean",
+                                                                                                "default":  true,
+                                                                                                "description":  "Zapnout reward model kontrolu"
+                                                                                            },
+                                                                 "shumilek.rewardEndpoint":  {
+                                                                                                 "type":  "string",
+                                                                                                 "default":  "",
+                                                                                                 "description":  "Endpoint pro reward model (OpenAssistant RM)"
+                                                                                             },
+                                                                 "shumilek.rewardThreshold":  {
+                                                                                                  "type":  "number",
+                                                                                                  "default":  0.7,
+                                                                                                  "description":  "PrahovĂˇ hodnota reward modelu (0-1)"
+                                                                                              },
+                                                                 "shumilek.hhemEnabled":  {
+                                                                                              "type":  "boolean",
+                                                                                              "default":  true,
+                                                                                              "description":  "Zapnout HHEM kontrolu halucinacĂ­"
+                                                                                          },
+                                                                 "shumilek.hhemEndpoint":  {
+                                                                                               "type":  "string",
+                                                                                               "default":  "",
+                                                                                               "description":  "Endpoint pro Vectara HHEM"
+                                                                                           },
+                                                                 "shumilek.hhemThreshold":  {
+                                                                                                "type":  "number",
+                                                                                                "default":  0.5,
+                                                                                                "description":  "PrahovĂˇ hodnota HHEM (0-1)"
+                                                                                            },
+                                                                 "shumilek.ragasEnabled":  {
+                                                                                               "type":  "boolean",
+                                                                                               "default":  true,
+                                                                                               "description":  "Zapnout RAGAS Faithfulness"
+                                                                                           },
+                                                                 "shumilek.ragasEndpoint":  {
+                                                                                                "type":  "string",
+                                                                                                "default":  "",
+                                                                                                "description":  "Endpoint pro RAGAS Faithfulness"
+                                                                                            },
+                                                                 "shumilek.ragasThreshold":  {
+                                                                                                 "type":  "number",
+                                                                                                 "default":  0.75,
+                                                                                                 "description":  "PrahovĂˇ hodnota RAGAS Faithfulness (0-1)"
+                                                                                             },
+                                                                 "shumilek.executionMode":  {
+                                                                                                "type":  "string",
+                                                                                                "default":  "hybrid",
+                                                                                                "enum":  [
+                                                                                                             "hybrid",
+                                                                                                             "chat",
+                                                                                                             "editor"
+                                                                                                         ],
+                                                                                                "description":  "Rezim vykonavani odpovedi. hybrid prepina mezi chat a editor podle intentu."
+                                                                                            },
+                                                                 "shumilek.validationPolicy":  {
+                                                                                                   "type":  "string",
+                                                                                                   "default":  "fail-soft",
+                                                                                                   "enum":  [
+                                                                                                                "fail-soft",
+                                                                                                                "fail-closed"
+                                                                                                            ],
+                                                                                                   "description":  "Fail-soft vrati odpoved i pri nedostupne validaci; fail-closed ji zablokuje."
+                                                                                               },
+                                                                 "shumilek.maxAutoSteps":  {
+                                                                                               "type":  "number",
+                                                                                               "default":  4,
+                                                                                               "description":  "Maximalni pocet automatickych editacnich kroku v jednom tahu"
+                                                                                           },
+                                                                 "shumilek.autoApprove":  {
+                                                                                              "type":  "object",
+                                                                                              "default":  {
+                                                                                                              "read":  true,
+                                                                                                              "edit":  false,
+                                                                                                              "commands":  false,
+                                                                                                              "browser":  false,
+                                                                                                              "mcp":  false
+                                                                                                          },
+                                                                                              "description":  "Granularni auto-approve pravidla pro read/edit/commands/browser/mcp",
+                                                                                              "properties":  {
+                                                                                                                 "read":  {
+                                                                                                                              "type":  "boolean"
+                                                                                                                          },
+                                                                                                                 "edit":  {
+                                                                                                                              "type":  "boolean"
+                                                                                                                          },
+                                                                                                                 "commands":  {
+                                                                                                                                  "type":  "boolean"
+                                                                                                                              },
+                                                                                                                 "browser":  {
+                                                                                                                                 "type":  "boolean"
+                                                                                                                             },
+                                                                                                                 "mcp":  {
+                                                                                                                             "type":  "boolean"
+                                                                                                                         }
+                                                                                                             }
+                                                                                          },
+                                                                 "shumilek.contextProviders":  {
+                                                                                                   "type":  "array",
+                                                                                                   "items":  {
+                                                                                                                 "type":  "string"
+                                                                                                             },
+                                                                                                   "default":  [
+                                                                                                                   "workspace",
+                                                                                                                   "file",
+                                                                                                                   "code",
+                                                                                                                   "diff"
+                                                                                                               ],
+                                                                                                   "description":  "Povolene context providery (workspace,file,code,diff,terminal,docs,web)"
+                                                                                               },
+                                                                 "shumilek.contextProviderTokenBudget":  {
+                                                                                                             "type":  "number",
+                                                                                                             "default":  1500,
+                                                                                                             "description":  "Token budget pro agregovany kontext provideru"
+                                                                                                         },
+                                                                 "shumilek.stepTimeoutSec":  {
+                                                                                                 "type":  "number",
+                                                                                                 "default":  180,
+                                                                                                 "description":  "Timeout pro jeden krok planu (sekundy)"
+                                                                                             }
+                                                             }
+                                          }
+                    },
+    "scripts":  {
+                    "vscode:prepublish":  "npm run compile",
+                    "compile":  "tsc -p ./",
+                    "watch":  "tsc -watch -p ./",
+                    "lint":  "eslint src --ext ts",
+                    "test":  "node --no-warnings=MODULE_TYPELESS_PACKAGE_JSON scripts/mocha-ts.js test/**/*.test.ts",
+                    "bot:eval":  "ts-node scripts/botEval.ts",
+                    "bot:eval:batch":  "ts-node scripts/botEvalBatch.ts",
+                    "bot:eval:compare":  "ts-node scripts/botEvalCompare.ts",
+                    "bot:eval:compare:gate":  "ts-node scripts/botEvalCompare.ts --gate --gateConfig scripts/config/botEvalGate.ci.json",
+                    "bot:eval:release-gate":  "ts-node scripts/botEvalReleaseGate.ts",
+                    "bot:eval:release-gate:ci":  "ts-node scripts/botEvalReleaseGate.ts --gateConfig scripts/config/botEvalGate.ci.json",
+                    "bot:eval:recommended":  "ts-node scripts/botEval.ts --scenario ts-todo-oracle --model qwen2.5-coder:14b --plannerModel deepseek-r1:8b --reviewerModel qwen2.5:3b --jsonRepairModel qwen2.5:7b --maxIterations 6 --timeoutSec 1200",
+                    "bot:eval:recommended:batch":  "ts-node scripts/botEvalBatch.ts --runs 3 --scenarios ts-todo-oracle,node-api-oracle,python-ai-stdlib-oracle --model qwen2.5-coder:14b --plannerModel deepseek-r1:8b --reviewerModel qwen2.5:3b --jsonRepairModel qwen2.5:7b --maxIterations 6 --timeoutSec 1200 --hardTimeoutSec 1200",
+                    "stress":  "ts-node scripts/stressTest.ts",
+                    "system":  "ts-node scripts/runThroughSystem.ts"
+                },
+    "devDependencies":  {
+                            "@types/node":  "^20.10.0",
+                            "@types/vscode":  "^1.85.0",
+                            "@types/chai":  "^4.3.4",
+                            "@types/mocha":  "^10.0.1",
+                            "@types/node-fetch":  "^2.6.4",
+                            "@typescript-eslint/eslint-plugin":  "^8.52.0",
+                            "@typescript-eslint/parser":  "^8.52.0",
+                            "chai":  "^4.3.7",
+                            "eslint":  "^9.39.2",
+                            "mock-require":  "^3.0.3",
+                            "mocha":  "^10.2.0",
+                            "ts-node":  "^10.9.1",
+                            "typescript":  "^5.3.3"
+                        },
+    "dependencies":  {
+                         "node-fetch":  "^2.6.12"
+                     }
+}

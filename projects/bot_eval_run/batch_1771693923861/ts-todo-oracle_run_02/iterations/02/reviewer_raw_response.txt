@@ -1,0 +1,4 @@
+{
+ "review": "text",
+ "priorityFiles": ["src/store.ts", "tests/oracle.test.js"]
+}

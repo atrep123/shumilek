@@ -1,0 +1,40 @@
+test_train_and_generate_smoke (test_oracle.TestCliOracle.test_train_and_generate_smoke) ... ERROR
+test_generate_deterministic (test_oracle.TestMarkovOracle.test_generate_deterministic) ... ok
+test_order_validation (test_oracle.TestMarkovOracle.test_order_validation) ... FAIL
+test_round_trip_serialization (test_oracle.TestMarkovOracle.test_round_trip_serialization) ... ERROR
+test_train_and_to_dict (test_oracle.TestMarkovOracle.test_train_and_to_dict) ... ok
+
+======================================================================
+ERROR: test_train_and_generate_smoke (test_oracle.TestCliOracle.test_train_and_generate_smoke)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768564057672\workspace\tests\test_oracle.py", line 64, in test_train_and_generate_smoke
+    rc2 = main(["generate", "--model", model_path, "--length", "12", "--seed", "a", "--random-seed", "0"])
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768564057672\workspace\mini_ai\cli.py", line 32, in main
+    mc = MarkovChain.from_dict(model_data)
+         ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'MarkovChain' has no attribute 'from_dict'. Did you mean: 'to_dict'?
+
+======================================================================
+ERROR: test_round_trip_serialization (test_oracle.TestMarkovOracle.test_round_trip_serialization)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768564057672\workspace\tests\test_oracle.py", line 31, in test_round_trip_serialization
+    mc2 = MarkovChain.from_dict(d1)
+          ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'MarkovChain' has no attribute 'from_dict'. Did you mean: 'to_dict'?
+
+======================================================================
+FAIL: test_order_validation (test_oracle.TestMarkovOracle.test_order_validation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768564057672\workspace\tests\test_oracle.py", line 14, in test_order_validation
+    with self.assertRaises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.005s
+
+FAILED (failures=1, errors=2)

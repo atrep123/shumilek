@@ -1,0 +1,6 @@
+{
+  "taskStore": {
+    "status": "Error",
+    "details": "The TaskStore functionality is missing or incomplete. The `TaskStore` class needs to be defined and implemented in the `src/store.ts` file, providing methods for CRUD operations on tasks as described in the test suite."
+  }
+}

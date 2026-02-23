@@ -1,0 +1,58 @@
+✖ GET /health + GET /openapi.json (3.2929ms)
+✖ Todo CRUD + persistence (0.5907ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 64.7831
+
+✖ failing tests:
+
+test at tests\oracle.test.js:39:1
+✖ GET /health + GET /openapi.json (3.2929ms)
+  AssertionError [ERR_ASSERTION]: src/server.js must export createServer
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at startServer (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1771706954381\node-api-oracle_run_01\workspace\tests\oracle.test.js:14:10)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1771706954381\node-api-oracle_run_01\workspace\tests\oracle.test.js:42:37)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:59:1
+✖ Todo CRUD + persistence (0.5907ms)
+  AssertionError [ERR_ASSERTION]: src/server.js must export createServer
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at startServer (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1771706954381\node-api-oracle_run_01\workspace\tests\oracle.test.js:14:10)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1771706954381\node-api-oracle_run_01\workspace\tests\oracle.test.js:62:37)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

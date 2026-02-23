@@ -1,0 +1,8 @@
+*** Error compiling 'mini_ai\\__init__.py'...
+  File "mini_ai\__init__.py", line 3
+    This package contains the implementation of a character-level Markov chain generator.
+         ^^^^^^^
+SyntaxError: invalid syntax
+
+*** Error compiling 'mini_ai\\markov.py'...
+Sorry: IndentationError: unexpected unindent (markov.py, line 50)

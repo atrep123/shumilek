@@ -1,0 +1,17 @@
+{
+  "model": "deepseek-r1:8b",
+  "baseUrl": "http://localhost:11434",
+  "transport": "chat",
+  "formatKind": "schema",
+  "schemaUsed": true,
+  "fallbackUsed": false,
+  "usedFormatJson": false,
+  "doneReason": "length",
+  "evalCount": 2400,
+  "promptEvalCount": 2298,
+  "effectiveOptions": {
+    "num_predict": 2400,
+    "seed": 42,
+    "temperature": 0
+  }
+}

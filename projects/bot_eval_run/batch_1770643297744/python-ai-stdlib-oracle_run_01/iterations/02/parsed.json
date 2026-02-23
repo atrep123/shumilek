@@ -1,0 +1,9 @@
+{
+  "mode": "patch",
+  "files": [
+    {
+      "path": "mini_ai/markov.py",
+      "content": "    def generate(self, length: int, seed: str | None = None, random_seed: int | None = None) -> str:\n        if random_seed is not None:\n            random.seed(random_seed)\n        elif seed is not None:\n            random.seed(seed)\n\n        context = seed if seed else random.choice(list(self.transitions.keys()))\n        result = list(context)\n        for _ in range(length - len(context)):\n            if context not in self.transitions or not self.transitions[context]:\n                break\n            next_char = random.choice(list(self.transitions[context].keys()))\n            result.append(next_char)\n            context = result[-self.order:]        \n        return ''.join(result)\n"
+    }
+  ]
+}

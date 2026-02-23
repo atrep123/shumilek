@@ -1,0 +1,1 @@
+{ "errors": [ { "message": "Cannot find module 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1771693405732\\workspace\\dist\\cli.js'", "type": "MODULE_NOT_FOUND" } ] }

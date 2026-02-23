@@ -1,0 +1,51 @@
+test_generate_text_simple_case (test_markov_chain.TestMarkovChain.test_generate_text_simple_case) ... ERROR
+test_generate_text_single_char_model (test_markov_chain.TestMarkovChain.test_generate_text_single_char_model) ... ERROR
+test_train_model_simple_case (test_markov_chain.TestMarkovChain.test_train_model_simple_case) ... ERROR
+test_train_model_single_char (test_markov_chain.TestMarkovChain.test_train_model_single_char) ... ERROR
+
+======================================================================
+ERROR: test_generate_text_simple_case (test_markov_chain.TestMarkovChain.test_generate_text_simple_case)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561139405\workspace\tests\test_markov_chain.py", line 29, in test_generate_text_simple_case
+    json.dump({
+    ^^^^
+NameError: name 'json' is not defined. Did you forget to import 'json'
+
+======================================================================
+ERROR: test_generate_text_single_char_model (test_markov_chain.TestMarkovChain.test_generate_text_single_char_model)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561139405\workspace\tests\test_markov_chain.py", line 22, in test_generate_text_single_char_model
+    json.dump({'a': defaultdict(int)}, f)
+    ^^^^
+NameError: name 'json' is not defined. Did you forget to import 'json'
+
+======================================================================
+ERROR: test_train_model_simple_case (test_markov_chain.TestMarkovChain.test_train_model_simple_case)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561139405\workspace\tests\test_markov_chain.py", line 11, in test_train_model_simple_case
+    model = train_model('tests/input_simple.txt')
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561139405\workspace\mini_ai\cli.py", line 7, in train_model
+    with open(input_file, 'r') as f:
+         ^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'tests/input_simple.txt'
+
+======================================================================
+ERROR: test_train_model_single_char (test_markov_chain.TestMarkovChain.test_train_model_single_char)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561139405\workspace\tests\test_markov_chain.py", line 6, in test_train_model_single_char
+    model = train_model('tests/input_single_char.txt')
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561139405\workspace\mini_ai\cli.py", line 7, in train_model
+    with open(input_file, 'r') as f:
+         ^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'tests/input_single_char.txt'
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.002s
+
+FAILED (errors=4)

@@ -1,0 +1,26 @@
+test_oracle (unittest.loader._FailedTest.test_oracle) ... ERROR
+
+======================================================================
+ERROR: test_oracle (unittest.loader._FailedTest.test_oracle)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_oracle
+Traceback (most recent call last):
+  File "C:\Users\atrep\AppData\Local\Programs\Python\Python312\Lib\unittest\loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\AppData\Local\Programs\Python\Python312\Lib\unittest\loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768562046358\workspace\tests\test_oracle.py", line 8, in <module>
+    from mini_ai.markov import MarkovChain
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768562046358\workspace\mini_ai\__init__.py", line 1, in <module>
+    from .markov import MarkovChain
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768562046358\workspace\mini_ai\markov.py", line 45
+    mc.transitions = defaultdict(lambda: defaultdict(int), d["transitions"\u4e0d\u5f97\u4e0d\u8bf4\uff0c\u8fd9\u786e\u5b9e\u662f\u4e00\u4e2a\u6311\u6218\uff0c\u4f46\u4e5f\u662f\u4e00\u4e2a\u5b66\u4e60\u548c\u63d0\u9ad8\u7f16\u7a0b\u6280\u80fd\u7684\u597d\u673a\u4f1a\u3002\u5e0c\u671b\u8fd9\u4e2a\u5b9e\u73b0\u80fd\u591f\u6ee1\u8db3\u4f60\u7684\u9700\u6c42\uff0c\u5e76\u4e14\u80fd\u591f\u5728\u5b9e\u8df5\u4e2d\u5e94\u7528\u548c\u6539\u8fdb\u3002\u5982\u679c\u8fd8\u6709\u5176\u4ed6\u95ee\u9898\u6216\u9700\u8981\u8fdb\u4e00\u6b65\u7684\u5e2e\u52a9\uff0c\u8bf7\u968f\u65f6\u544a\u8bc9\u6211\uff01"])
+                                                                              ^
+SyntaxError: invalid character '\uff0c' (U+FF0C)
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

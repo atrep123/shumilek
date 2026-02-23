@@ -1,0 +1,391 @@
+Jsi code reviewer (mini-validator). Tvuj ukol: navrhnout MINIMALNI opravy, ktere povedou k tomu, ze validace projde.
+Odpovez JEN JSON bez markdownu: { "review": "text", "priorityFiles": ["path1","path2"] }
+
+SPEC (zkraceno):
+Vytvor realisticky Node.js projekt (bez externich zavislosti), ktery poskytuje REST API pro TODO a projde oracle testy.
+
+POZADAVKY / KONTRAKT:
+- Zadne externi npm balicky. Pouze Node.js builtin moduly.
+- V kodu NEPOUZIVEJ require/import na nic mimo builtin (napr. zadne "uuid"). Pouzij `node:crypto` (`crypto.randomUUID()`).
+- Kód bude v `src/` a bude CommonJS (require/module.exports).
+- Soubor `src/server.js` musi exportovat funkci `createServer({ dataPath })`.
+- Server musi poskytovat endpointy:
+  - GET /health -> 200 JSON { ok: true }
+  - GET /openapi.json -> 200 JSON OpenAPI 3.x (musí obsahovat paths pro /todos)
+  - GET /todos -> 200 JSON { ok: true, todos: [...] }
+  - POST /todos (body {title}) -> 201 JSON { ok: true, todo }
+  - GET /todos/:id -> 200 JSON { ok:true, todo } nebo 404 JSON { ok:false, error }
+  - PATCH /todos/:id (body {done:true}) -> 200 JSON { ok:true, todo }
+  - DELETE /todos/:id -> 200 JSON { ok:true }
+- Schema TODO objektu:
+  - id: string
+  - title: string
+  - done: boolean
+  - createdAt: ISO string
+  - doneAt?: ISO string (jen kdyz done=true)
+- Persistuj do souboru `dataPath` jako JSON { "todos": [...] } po kazde mutaci.
+- Nevkladej testy do jinych souboru (oracle testy se pridaji zvlast). Nepouzivej duplicity stejnych cest v "files".
+
+Poznamka: testy budeme pouzivat tyto (musis projit):
+--- BEGIN ORACLE TESTS (tests/oracle.test.js) ---
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+
+function makeTempDir() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-node-api-'));
+}
+
+async function startServer(dataPath) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const mod = require('../src/server.js');
+  assert.equal(typeof mod.createServer, 'function', 'src/server.js must export createServer');
+  const server = mod.createServer({ dataPath });
+  assert.equal(typeof server.listen, 'function');
+
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const addr = server.address();
+  assert.ok(addr && typeof addr === 'object' && typeof addr.port === 'number');
+  const baseUrl = `http://127.0.0.1:${addr.port}`;
+  return { server, baseUrl };
+}
+
+async function requestJson(url, init) {
+  const res = await fetch(url, init);
+  const text = await res.text();
+  let json = null;
+  if (text.trim()) {
+    try {
+      json = JSON.parse(text);
+    } catch {
+      throw new Error(`Expected JSON response, got: ${text.slice(0, 200)}`);
+    }
+  }
+  return { res, json, text };
+}
+
+test('GET /health + GET /openapi.json', async () => {
+  const dir = makeTempDir();
+  const dataPath = path.join(dir, 'db.json');
+  const { server, baseUrl } = await startServer(dataPath);
+  try {
+    const health = await requestJson(`${baseUrl}/health`);
+    assert.equal(health.res.status, 200);
+    assert.equal(health.json.ok, true);
+
+    const spec = await requestJson(`${baseUrl}/openapi.json`);
+    assert.equal(spec.res.status, 200);
+    assert.equal(typeof spec.json.openapi, 'string');
+    assert.ok(spec.json.openapi.startsWith('3.'));
+    assert.ok(spec.json.paths && typeof spec.json.paths === 'object');
+    assert.ok(spec.json.paths['/todos']);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
+test('Todo CRUD + persistence', async () => {
+  const dir = makeTempDir();
+  const dataPath = path.join(dir, 'db.json');
+  const { server, baseUrl } = await startServer(dataPath);
+  try {
+    // create
+    const created = await requestJson(`${baseUrl}/todos`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: 'Buy milk' }),
+    });
+    assert.equal(created.res.status, 201, created.text);
+    assert.equal(created.json.ok, true);
+    const id = String(created.json.todo.id);
+    assert.ok(id.length > 0);
+    assert.equal(created.json.todo.title, 'Buy milk');
+    assert.equal(created.json.todo.done, false);
+    assert.equal(typeof created.json.todo.createdAt, 'string');
+
+    // list
+    const list1 = await requestJson(`${baseUrl}/todos`);
+    assert.equal(list1.res.status, 200);
+    assert.equal(list1.json.ok, true);
+    assert.ok(Array.isArray(list1.json.todos));
+    assert.equal(list1.json.todos.length, 1);
+    assert.equal(String(list1.json.todos[0].id), id);
+
+    // get
+    const get1 = await requestJson(`${baseUrl}/todos/${encodeURIComponent(id)}`);
+    assert.equal(get1.res.status, 200);
+    assert.equal(get1.json.ok, true);
+    assert.equal(String(get1.json.todo.id), id);
+
+    // done
+    const done = await requestJson(`${baseUrl}/todos/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ done: true }),
+    });
+    assert.equal(done.res.status, 200, done.text);
+    assert.equal(done.json.ok, true);
+    assert.equal(done.json.todo.done, true);
+    assert.equal(typeof done.json.todo.doneAt, 'string');
+
+    // file persistence check (after done)
+    assert.ok(fs.existsSync(dataPath));
+    const persisted1 = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+    assert.ok(Array.isArray(persisted1.todos));
+    assert.equal(persisted1.todos.length, 1);
+    assert.equal(String(persisted1.todos[0].id), id);
+    assert.equal(Boolean(persisted1.todos[0].done), true);
+
+    // delete
+    const del = await requestJson(`${baseUrl}/todos/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    assert.equal(del.res.status, 200, del.text);
+    assert.equal(del.json.ok, true);
+
+    const list2 = await requestJson(`${baseUrl}/todos`);
+    assert.equal(list2.res.status, 200);
+    assert.equal(list2.json.ok, true);
+    assert.equal(list2.json.todos.length, 0);
+
+    const persisted2 = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+    assert.ok(Array.isArray(persisted2.todos));
+    assert.equal(persisted2.todos.length, 0);
+
+    // 404 cases
+    const missing = await requestJson(`${baseUrl}/todos/
+...<snip>...
+
+
+CHYBY:
+- src/server.js must export createServer (e.g. module.exports = { createServer })
+- Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)
+- src/server.js must export createServer (oracle assertion)
+
+LOGY (zkraceno):
+- node --test tests/oracle.test.js
+  stdout: "ined',\n    expected: 'function',\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at tests\\oracle.test.js:59:1\n✖ Todo CRUD + persistence (0.6152ms)\n  AssertionError [ERR_ASSERTION]: src/server.js must export createServer\n  + actual - expected\n  \n  + 'undefined'\n  - 'function'\n  \n      at startServer (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771711383076\\node-api-oracle_run_01\\workspace\\tests\\oracle.test.js:14:10)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771711383076\\node-api-oracle_run_01\\workspace\\tests\\oracle.test.js:62:37)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 'undefined',\n    expected: 'function',\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n"
+
+SOUBORY (zkraceno):
+- README.md
+- openapi.json
+- package.json
+- src/server.js
+- tests/oracle.test.js
+
+KONTEXT SOUBORU (zkraceno):
+--- FILE: tests/oracle.test.js ---
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+
+function makeTempDir() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-node-api-'));
+}
+
+async function startServer(dataPath) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const mod = require('../src/server.js');
+  assert.equal(typeof mod.createServer, 'function', 'src/server.js must export createServer');
+  const server = mod.createServer({ dataPath });
+  assert.equal(typeof server.listen, 'function');
+
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const addr = server.address();
+  assert.ok(addr && typeof addr === 'object' && typeof addr.port === 'number');
+  const baseUrl = `http://127.0.0.1:${addr.port}`;
+  return { server, baseUrl };
+}
+
+async function requestJson(url, init) {
+  const res = await fetch(url, init);
+  const text = await res.text();
+  let json = null;
+  if (text.trim()) {
+    try {
+      json = JSON.parse(text);
+    } catch {
+      throw new Error(`Expected JSON response, got: ${text.slice(0, 200)}`);
+    }
+  }
+  return { res, json, text };
+}
+
+test('GET /health + GET /openapi.json', async () => {
+  const dir = makeTempDir();
+  const dataPath = path.join(dir, 'db.json');
+  const { server, baseUrl } = await startServer(dataPath);
+  try {
+    const health = await requestJson(`${baseUrl}/health`);
+    assert.equal(health.res.status, 200);
+    assert.equal(health.json.ok, true);
+
+    const spec = await requestJson(`${baseUrl}/openapi.json`);
+    assert.equal(spec.res.status, 200);
+    assert.equal(typeof spec.json.openapi, 'string');
+    assert.ok(spec.json.openapi.startsWith('3.'));
+    assert.ok(spec.json.paths && typeof spec.json.paths === 'object');
+    assert.ok(spec.json.paths['/todos']);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
+test('Todo CRUD + persistence', async () => {
+  const dir = makeTempDir();
+  const dataPath = path.join(dir, 'db.json');
+  const { server, baseUrl } = await startServer(dataPath);
+  try {
+    // create
+    const created = await requestJson(`${baseUrl}/todos`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: 'Buy milk' }),
+    });
+    assert.equal(created.res.status, 201, created.text);
+    assert.equal(created.json.ok, true);
+    const id = String(created.json.todo.id);
+    assert.ok(id.length > 0);
+    assert.equal(created.json.todo.title, 'Buy milk');
+    assert.equal(created.json.todo.done, false);
+    assert.equal(typeof created.json.todo.createdAt, 'string');
+
+    // list
+    const list1 = await requestJson(`${baseUrl}/todos`);
+    assert.equal(list1.res.status, 200);
+    assert.equal(list1.json.ok, true);
+    assert.ok(Array.isArray(list1.json.todos));
+    assert.equal(list1.json.todos.length, 1);
+    assert.equal(String(list1.json.todos[0].id), id);
+
+    // get
+    const get1 = await requestJson(`${baseUrl}/todos/${encodeURIComponent(id)}`);
+    assert.equal(get1.res.status, 200);
+    assert.equal(get1.json.ok, true);
+    assert.equal(String(get1.json.todo.id), id);
+
+    // done
+    const done = await requestJson(`${baseUrl}/todos/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ done: true }),
+    });
+    assert.equal(done.res.status, 200, done.text);
+    assert.equal(done.json.ok, true);
+    assert.equal(done.json.todo.done, true);
+    assert.equal(typeof done.json.todo.doneAt, 'string');
+
+    // file persistence check (after done)
+    assert.ok(fs.existsSync(dataPath));
+    const persisted1 = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+    assert.ok(Array.isArray(persisted1.todos));
+    assert.equal(persisted1.todos.length, 1);
+    assert.equal(String(persisted1.todos[0].id), id);
+    assert.equal(Boolean(persisted1.todos[0].done), true);
+
+    // d
+...<snip>...
+
+--- FILE: src/server.js ---
+const http = require('node:http');
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
+
+function createServer({ dataPath }) {
+  const server = http.createServer((req, res) => {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+
+    req.on('end', () => {
+      if (req.method === 'GET' && req.url === '/health') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } else if (req.method === 'GET' && req.url === '/openapi.json') {
+        fs.readFile(path.join(__dirname, '..', 'openapi.json'), (err, data) => {
+          if (err) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: false, error: 'Internal Server Error' }));
+          } else {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(data);
+          }
+        });
+      } else if (req.method === 'GET' && req.url.startsWith('/todos')) {
+        const id = req.url.split('/')[2];
+        fs.readFile(dataPath, 'utf8', (err, data) => {
+          if (err || !data) {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: false, error: 'Not Found' }));
+            return;
+          }
+
+          const todos = JSON.parse(data);
+          if (id) {
+            const todo = todos.find(t => t.id === id);
+            if (todo) {
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ ok: true, todo }));
+            } else {
+              res.writeHead(404, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ ok: false, error: 'Not Found' }));
+            }
+          } else {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: true, todos }));
+          }
+        });
+      } else if (req.method === 'POST' && req.url === '/todos') {
+        const todo = JSON.parse(body);
+        todo.id = crypto.randomUUID();
+        todo.createdAt = new Date().toISOString();
+
+        fs.readFile(dataPath, 'utf8', (err, data) => {
+          let todos = [];
+          if (!err && data) {
+            todos = JSON.parse(data);
+          }
+
+          todos.push(todo);
+          fs.writeFile(dataPath, JSON.stringify(todos), err => {
+            if (err) {
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ ok: false, error: 'Internal Server Error' }));
+            } else {
+              res.writeHead(201, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ ok: true, todo }));
+            }
+          });
+        });
+      } else if (req.method === 'PATCH' && req.url.startsWith('/todos')) {
+        const id = req.url.split('/')[2];
+        const update = JSON.parse(body);
+
+        fs.readFile(dataPath, 'utf8', (err, data) => {
+          if (err || !data) {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: false, error: 'Not Found' }));
+            return;
+          }
+
+          let todos = JSON.parse(data);
+          const todoIndex = todos.findIndex(t => t.id === id);
+          if (todoIndex !== -1) {
+            const todo = { ...todos[todoIndex], ...update };
+            if (update.done && !todo.doneAt) {
+              todo.doneAt = new Date().toISOString();
+            }
+            todos[todoIndex] = todo;
+
+            fs.writeFile(dataPath, JSON.stringify(todos), err => {
+              if (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ ok: false, error: 'Internal Server Error' }));
+              } else {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ ok: t
+...<snip>...

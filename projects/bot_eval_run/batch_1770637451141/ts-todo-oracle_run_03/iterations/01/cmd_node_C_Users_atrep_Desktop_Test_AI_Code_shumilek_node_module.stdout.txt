@@ -1,0 +1,1 @@
+src/cli.ts(60,54): error TS18046: 'error' is of type 'unknown'.

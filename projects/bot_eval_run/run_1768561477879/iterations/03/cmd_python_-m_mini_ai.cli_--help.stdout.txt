@@ -1,0 +1,11 @@
+usage: cli.py [-h] {train,generate} ...
+
+AI CLI
+
+positional arguments:
+  {train,generate}
+    train           Train the AI model
+    generate        Generate text using a trained model
+
+options:
+  -h, --help        show this help message and exit

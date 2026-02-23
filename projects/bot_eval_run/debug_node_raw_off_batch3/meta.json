@@ -1,0 +1,17 @@
+{
+  "batchId": 1771783368498,
+  "startedAt": "2026-02-22T18:02:48.499Z",
+  "scenarios": [
+    "node-api-oracle"
+  ],
+  "runs": 3,
+  "model": "qwen2.5-coder:14b",
+  "plannerModel": "deepseek-r1:8b",
+  "reviewerModel": "qwen2.5:3b",
+  "jsonRepairModel": "qwen2.5:7b",
+  "deterministicFallbackMode": "off",
+  "timeoutSec": 1200,
+  "maxIterations": 1,
+  "hardTimeoutSec": 1200,
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\debug_node_raw_off_batch3"
+}

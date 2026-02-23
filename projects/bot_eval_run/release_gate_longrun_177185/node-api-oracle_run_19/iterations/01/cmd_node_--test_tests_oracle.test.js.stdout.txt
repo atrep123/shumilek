@@ -1,0 +1,10 @@
+✔ GET /health + GET /openapi.json (58.6091ms)
+✔ Todo CRUD + persistence (29.7947ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 144.8874

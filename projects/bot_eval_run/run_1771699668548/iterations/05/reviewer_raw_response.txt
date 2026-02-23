@@ -1,0 +1,4 @@
+{
+ "review": "Add missing files: package.json and openapi.json. Update server.js to export createServer function.",
+ "priorityFiles": ["src/server.js", "openapi.json", "package.json"]
+}

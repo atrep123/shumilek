@@ -1,0 +1,6 @@
+{
+  "review": "Missing required file: openapi.json",
+  "priorityFiles": [
+    "openapi.json"
+  ]
+}

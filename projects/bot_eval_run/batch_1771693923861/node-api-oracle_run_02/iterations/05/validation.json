@@ -1,0 +1,23 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing required file: package.json",
+    "Missing required file: openapi.json",
+    "Missing required file: src/server.js",
+    "Invalid package.json: ENOENT: no such file or directory, open 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_02\\workspace\\package.json'",
+    "Invalid openapi.json: ENOENT: no such file or directory, open 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_02\\workspace\\openapi.json'",
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_02\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 116,
+      "stdout": "✖ GET /health + GET /openapi.json (1.5742ms)\n✖ Todo CRUD + persistence (0.8699ms)\nℹ tests 2\nℹ suites 0\nℹ pass 0\nℹ fail 2\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 57.7276\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:39:1\n✖ GET /health + GET /openapi.json (1.5742ms)\n  Error: Cannot find module '../src/server.js'\n  Require stack:\n  - C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_02\\workspace\\tests\\oracle.test.js\n      at Module._resolveFilename (node:internal/modules/cjs/loader:1421:15)\n      at defaultResolveImpl (node:internal/modules/cjs/loader:1059:19)\n      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1064:22)\n      at Module._load (node:internal/modules/cjs/loader:1227:37)\n      at TracingChannel.traceSync (node:diagnostics_channel:328:14)\n      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\n      at Module.require (node:internal/modules/cjs/loader:1504:12)\n      at require (node:internal/modules/helpers:152:16)\n      at startServer (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_02\\workspace\\tests\\oracle.test.js:13:15)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_02\\workspace\\tests\\oracle.test.js:42:37) {\n    code: 'MODULE_NOT_FOUND',\n    requireStack: [ 'C:\\\\Users\\\\atrep\\\\Desktop\\\\Test_AI_Code\\\\shumilek\\\\projects\\\\bot_eval_run\\\\batch_1771693923861\\\\node-api-oracle_run_02\\\\workspace\\\\tests\\\\oracle.test.js' ]\n  }\n\ntest at tests\\oracle.test.js:59:1\n✖ Todo CRUD + persistence (0.8699ms)\n  Error: Cannot find module '../src/server.js'\n  Require stack:\n  - C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_02\\workspace\\tests\\oracle.test.js\n      at Module._resolveFilename (node:internal/modules/cjs/loader:1421:15)\n      at defaultResolveImpl (node:internal/modules/cjs/loader:1059:19)\n      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1064:22)\n      at Module._load (node:internal/modules/cjs/loader:1227:37)\n      at TracingChannel.traceSync (node:diagnostics_channel:328:14)\n      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\n      at Module.require (node:internal/modules/cjs/loader:1504:12)\n      at require (node:internal/modules/helpers:152:16)\n      at startServer (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_02\\workspace\\tests\\oracle.test.js:13:15)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\node-api-oracle_run_02\\workspace\\tests\\oracle.test.js:62:37) {\n    code: 'MODULE_NOT_FOUND',\n    requireStack: [ 'C:\\\\Users\\\\atrep\\\\Desktop\\\\Test_AI_Code\\\\shumilek\\\\projects\\\\bot_eval_run\\\\batch_1771693923861\\\\node-api-oracle_run_02\\\\workspace\\\\tests\\\\oracle.test.js' ]\n  }\n",
+      "stderr": ""
+    }
+  ]
+}

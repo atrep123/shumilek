@@ -1,0 +1,279 @@
+Vytvor realisticky TypeScript projekt (bez externich zavislosti), ktery se zkompiluje do `dist/` a projde oracle testy.
+
+POZADAVKY / KONTRAKT:
+- Zadne externi npm balicky (zadne yargs/commander/uuid/etc). Pouze Node.js builtin.
+- VYSLOVNE ZAKAZANO: commander, yargs, minimist, uuid, fs-extra, axios (a jine externi balicky).
+- Pokud potrebujes ID, pouzij `node:crypto` a `crypto.randomUUID()` (builtin).
+- README.md je povinny a musi obsahovat kratke pouziti prikazu add/list/done/remove.
+- Nevytvarej `dist/` ve vystupu (generuje ho `tsc`).
+- `package.json` nesmi mit `"type": "module"` (pouzij `commonjs` nebo vynech).
+- V TS nepouzivej externi helper knihovny pro CLI parser. Pro kompatibilitu muzes pouzit `declare const require: any; declare const process: any;`.
+- Pouzij `const fs = require("node:fs")` (ne `declare const fs = ...`).
+- CLI parser: `argv = process.argv.slice(2)`; `cmd = argv[0]`; `--help` musi vratit exit 0 bez kontroly `--data`.
+- Pro `add <title>`, `done <id>`, `remove <id>` ber prvni pozicni argument jako title/id; `--data <path>` parsuj z argv.
+- V `catch` pouzij `catch (error: any)` nebo `const err = error as any` (kvuli strict TS).
+- Musi existovat `tsconfig.json` a kompilace do `dist/` (CommonJS) pres `tsc -p tsconfig.json`.
+- `src/store.ts` musi exportovat `TaskStore` s metodami:
+  - constructor(filePath: string)
+  - list(): Task[]
+  - add(title: string): Task
+  - done(id: string): Task
+  - remove(id: string): Task
+- `Task` a `TaskStore` definuj primo v `src/store.ts` (nesmi byt import z `./store`).
+- Task ma pole: id (string), title (string), done (boolean), createdAt (ISO string), doneAt? (ISO string).
+- `src/cli.ts` musi po kompilaci vytvorit spustitelny CLI v `dist/cli.js` a podporovat:
+  - `--help` (exit code 0)
+  - `list --data <path>` -> vypise JSON { ok: true, tasks: [...] }
+  - `add <title> --data <path>` -> vypise JSON { ok: true, task: {...} }
+  - `done <id> --data <path>` -> JSON { ok: true, task: {...done:true...} }
+  - `remove <id> --data <path>` -> JSON { ok: true, task: {...} }
+
+Technicka poznamka: abys nemusel resit @types/node, v TS nepouzivej `import fs from ...`.
+Pouzij `declare const require: any; declare const process: any;` a nacti builtin pres `const fs = require("node:fs")` atd.
+
+Poznamka: testy budeme pouzivat tyto (musis projit):
+--- BEGIN ORACLE TESTS (tests/oracle.test.js) ---
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+const { spawnSync } = require('node:child_process');
+
+function makeTempDir() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-ts-todo-'));
+}
+
+function parseJsonFromStdout(stdout) {
+  const text = String(stdout || '').trim();
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start >= 0 && end > start) return JSON.parse(text.slice(start, end + 1));
+  throw new Error(`Expected JSON object on stdout, got: ${text.slice(0, 200)}`);
+}
+
+function runCli(workspaceDir, args) {
+  const cliPath = path.join(workspaceDir, 'dist', 'cli.js');
+  const res = spawnSync(process.execPath, [cliPath, ...args], { cwd: workspaceDir, encoding: 'utf8' });
+  return { code: res.status ?? 1, stdout: res.stdout || '', stderr: res.stderr || '' };
+}
+
+test('TaskStore: CRUD persists to JSON file', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { TaskStore } = require('../dist/store.js');
+  assert.equal(typeof TaskStore, 'function');
+
+  const dir = makeTempDir();
+  const dataPath = path.join(dir, 'tasks.json');
+
+  const store = new TaskStore(dataPath);
+  assert.deepEqual(store.list(), []);
+
+  const t1 = store.add('Buy milk');
+  assert.equal(typeof t1.id, 'string');
+  assert.ok(t1.id.length > 0);
+  assert.equal(t1.title, 'Buy milk');
+  assert.equal(t1.done, false);
+  assert.equal(typeof t1.createdAt, 'string');
+  assert.ok(fs.existsSync(dataPath));
+
+  const listed = store.list();
+  assert.equal(listed.length, 1);
+  assert.equal(listed[0].id, t1.id);
+
+  const done = store.done(t1.id);
+  assert.equal(done.done, true);
+  assert.equal(typeof done.doneAt, 'string');
+
+  const removed = store.remove(t1.id);
+  assert.equal(removed.id, t1.id);
+  assert.deepEqual(store.list(), []);
+
+  const persisted = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+  assert.ok(persisted && typeof persisted === 'object');
+  assert.ok(Array.isArray(persisted.tasks));
+});
+
+test('CLI: end-to-end flow', () => {
+  const workspaceDir = path.join(__dirname, '..');
+  const dir = makeTempDir();
+  const dataPath = path.join(dir, 'tasks.json');
+
+  // help
+  const help = runCli(workspaceDir, ['--help']);
+  assert.equal(help.code, 0, help.stderr || help.stdout);
+  assert.ok((help.stdout + help.stderr).toLowerCase().includes('add'));
+
+  // list empty
+  const list0 = runCli(workspaceDir, ['list', '--data', dataPath]);
+  assert.equal(list0.code, 0, list0.stderr || list0.stdout);
+  const list0Json = parseJsonFromStdout(list0.stdout);
+  assert.equal(list0Json.ok, true);
+  assert.ok(Array.isArray(list0Json.tasks));
+  assert.equal(list0Json.tasks.length, 0);
+
+  // add
+  const add = runCli(workspaceDir, ['add', 'Buy milk', '--data', dataPath]);
+  assert.equal(add.code, 0, add.stderr || add.stdout);
+  const addJson = parseJsonFromStdout(add.stdout);
+  assert.equal(addJson.ok, true);
+  assert.equal(addJson.task.title, 'Buy milk');
+  assert.equal(addJson.task.done, false);
+  assert.ok(fs.existsSync(dataPath));
+
+  // list 1
+  const list1 = runCli(workspaceDir, ['list', '--data', dataPath]);
+  assert.equal(list1.code, 0, list1.stderr || list1.stdout);
+  const list1Json = parseJsonFromStdout(list1.stdout);
+  assert.equal(list1Json.ok, true);
+  assert.equal(list1Json.tasks.length, 1);
+  const id = String(list1Json.tasks[0].id);
+
+  // done
+  const done = runCli(workspaceDir, ['done', id, '--data', dataPath]);
+  assert.equal(done.code, 0, done.stderr || done.stdout);
+  const doneJson = parseJsonFromStdout(done.stdout);
+  assert.equal(doneJson.ok, true);
+  assert.equal(doneJson.task.done, true);
+
+  // remove
+  const rm = runCli(workspaceDir, ['remove', id, '--data', dataPath]);
+  assert.equal(rm.code, 0, rm.stderr || rm.stdout);
+  const rmJson = parseJsonFromStdout(rm.stdout);
+  assert.equal(rmJson.ok, true);
+  assert.equal(String(rmJson.task.id), id);
+
+  const list2 = runCli(workspaceDir, ['list', '--data', dataPath]);
+  const list2Json = parseJsonFromStdout(list2.stdout);
+  assert.equal(list2Json.ok, true);
+  assert.equal(list2Json.tasks.length, 0);
+});
+--- END ORACLE TESTS ---
+
+VYSTUPNI FORMAT (STRICT): vrat JEN JSON objekt tohoto tvaru:
+{
+  "mode": "full",
+  "files": [
+    {"path": "README.md", "content": "...\n"},
+    {"path": "package.json", "content": "...\n"},
+    {"path": "tsconfig.json", "content": "...\n"},
+    {"path": "src/store.ts", "content": "...\n"},
+    {"path": "src/cli.ts", "content": "...\n"}
+  ],
+  "notes": "optional"
+}
+
+Pravidla:
+- Zadny markdown, zadne ``` bloky, zadny text mimo JSON.
+- Cesty jsou relativni, pouzij `/`, bez `..` a bez absolutnich cest.
+- Nezahrnuj vlastni `tests/` (pouziji se oracle testy).
+- `content` je vzdy kompletni obsah souboru (ne diff/snippet).
+- `package.json` muze byt minimalni (nepocitam s `npm install`).
+
+---
+PLAN (planner: deepseek-r1:8b):
+创建一个TypeScript项目，编译为CommonJS，并通过提供的Oracle测试。项目不使用任何外部npm包，仅使用Node.js内置模块。任务存储类（TaskStore）和命令行接口（CLI）的具体实现如下：1. 创建必要的文件结构；2. 实现Task类型和TaskStore类；3. 实现CLI处理逻辑；4. 编写README.md和package.json；5. 配置tsconfig.json以支持CommonJS。
+
+---
+NEPROSLO VALIDACI. Oprav nasledujici problemy.
+
+CHYBY:
+- Do not include dist/ in model output (generated by tsc)
+- src/store.ts uses crypto.randomUUID() but missing crypto require
+
+HARD CHECKLIST (TS TODO):
+- V `mode:"full"` zahrn README.md, package.json, tsconfig.json, src/store.ts, src/cli.ts.
+- Zadny externi balicek v package.json (dependencies/devDependencies prazdne nebo chybi).
+- `src/store.ts` obsahuje class TaskStore s list/add/done/remove.
+- `src/cli.ts`: `--help` MUSI fungovat bez `--data`; pro ostatni prikazy vyzaduj `--data`.
+- `tsconfig.json` musi kompilovat do dist/ (commonjs). Nezahrnuj dist/ ve vystupu.
+
+DULEZITE: Nevytvarej soubory v `dist/`; ty se generuji kompilaci.
+
+DOPORUCENI REVIEWERA:
+crypto require missing in src/store.ts
+
+AKTUALNI SOUBORY:
+- README.md
+- package.json
+- src/cli.ts
+- src/store.ts
+- tests/oracle.test.js
+- tsconfig.json
+
+KONTEXT SOUBORU (pro opravu):
+--- FILE: src/store.ts ---
+declare const require: any;
+declare const process: any;
+const fs = require('node:fs');
+
+interface Task {
+  id: string;
+  title: string;
+  done: boolean;
+  createdAt: string;
+  doneAt?: string;
+}
+
+class TaskStore {
+  private filePath: string;
+
+  constructor(filePath: string) {
+    this.filePath = filePath;
+  }
+
+  list(): Task[] {
+    try {
+      const data = fs.readFileSync(this.filePath, 'utf8');
+      return JSON.parse(data).tasks || [];
+    } catch (error: any) {
+      if (error.code === 'ENOENT') {
+        return [];
+      }
+      throw error;
+    }
+  }
+
+  add(title: string): Task {
+    const task: Task = {
+      id: crypto.randomUUID(),
+      title,
+      done: false,
+      createdAt: new Date().toISOString()
+    };
+    const tasks = this.list();
+    tasks.push(task);
+    fs.writeFileSync(this.filePath, JSON.stringify({ tasks }, null, 2));
+    return task;
+  }
+
+  done(id: string): Task {
+    let tasks = this.list();
+    const taskIndex = tasks.findIndex(t => t.id === id);
+    if (taskIndex !== -1) {
+      tasks[taskIndex].done = true;
+      tasks[taskIndex].doneAt = new Date().toISOString();
+      fs.writeFileSync(this.filePath, JSON.stringify({ tasks }, null, 2));
+      return tasks[taskIndex];
+    }
+    throw new Error('Task not found');
+  }
+
+  remove(id: string): Task {
+    let tasks = this.list();
+    const taskIndex = tasks.findIndex(t => t.id === id);
+    if (taskIndex !== -1) {
+      const removedTask = tasks.splice(taskIndex, 1)[0];
+      fs.writeFileSync(this.filePath, JSON.stringify({ tasks }, null, 2));
+      return removedTask;
+    }
+    throw new Error('Task not found');
+  }
+}
+
+export { TaskStore };
+
+
+VYSTUP: vrat JEN platny JSON objekt bez markdownu:
+{ "mode": "patch", "files": [ {"path":"...","content":"...\n"} ], "notes": "optional" }
+Pravidla: udelej jen minimalni nutne zmeny; posli jen soubory ktere menis nebo pridavas; u kazdeho posli VZDY cely obsah souboru.

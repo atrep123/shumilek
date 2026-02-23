@@ -1,0 +1,1 @@
+创建一个TypeScript项目，编译为CommonJS，并通过提供的Oracle测试。项目不使用任何外部npm包，仅使用Node.js内置模块。任务存储类（TaskStore）和命令行接口（CLI）的具体实现如下：1. 创建必要的文件结构；2. 实现Task类型和TaskStore类；3. 实现CLI处理逻辑；4. 编写README.md和package.json；5. 配置tsconfig.json以支持CommonJS。

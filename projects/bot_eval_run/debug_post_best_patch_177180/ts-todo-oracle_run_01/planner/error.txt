@@ -1,0 +1,1 @@
+Planner output must contain non-empty "plan" string

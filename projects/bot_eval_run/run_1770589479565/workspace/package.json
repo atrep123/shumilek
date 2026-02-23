@@ -1,0 +1,12 @@
+{
+  "name": "todo-cli",
+  "version": "1.0.0",
+  "description": "A simple command-line todo list manager",
+  "main": "dist/cli.js",
+  "scripts": {
+    "start": "node dist/cli.js"
+  },
+  "dependencies": {
+    "commander": "^9.0.0"
+  }
+}

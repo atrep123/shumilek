@@ -1,0 +1,1 @@
+Create a MarkovChain class with the required methods and attributes for generating text based on given training data.

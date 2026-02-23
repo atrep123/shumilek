@@ -1,0 +1,15 @@
+test_generate (test_generator.TestGenerator.test_generate) ... FAIL
+test_train (test_trainer.TestTrainer.test_train) ... ok
+
+======================================================================
+FAIL: test_generate (test_generator.TestGenerator.test_generate)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561477879\workspace\tests\test_generator.py", line 6, in test_generate
+    self.assertIsNotNone(generate('model.pth'))
+AssertionError: unexpectedly None
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.000s
+
+FAILED (failures=1)

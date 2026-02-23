@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "diagnostics": [],
+  "commands": [
+    {
+      "command": "python -m compileall -q mini_ai tests",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771748133856\\python-ai-stdlib-oracle_run_03\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 98,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "python -m unittest discover -v -s tests -p \"test*.py\"",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771748133856\\python-ai-stdlib-oracle_run_03\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 91,
+      "stdout": "",
+      "stderr": "test_train_and_generate_smoke (test_oracle.TestCliOracle.test_train_and_generate_smoke) ... ok\r\ntest_generate_deterministic (test_oracle.TestMarkovOracle.test_generate_deterministic) ... ok\r\ntest_order_validation (test_oracle.TestMarkovOracle.test_order_validation) ... ok\r\ntest_round_trip_serialization (test_oracle.TestMarkovOracle.test_round_trip_serialization) ... ok\r\ntest_train_and_to_dict (test_oracle.TestMarkovOracle.test_train_and_to_dict) ... ok\r\n\r\n----------------------------------------------------------------------\r\nRan 5 tests in 0.005s\r\n\r\nOK\r\n"
+    },
+    {
+      "command": "python -m mini_ai.cli --help",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771748133856\\python-ai-stdlib-oracle_run_03\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 54,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

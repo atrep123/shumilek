@@ -1,0 +1,1 @@
+error TS18003: No inputs were found in config file 'C:/Users/atrep/Desktop/Test_AI_Code/shumilek/projects/bot_eval_run/run_1771693060983/workspace/tsconfig.json'. Specified 'include' paths were '["src/**/*"]' and 'exclude' paths were '["C:/Users/atrep/Desktop/Test_AI_Code/shumilek/projects/bot_eval_run/run_1771693060983/workspace/dist"]'.

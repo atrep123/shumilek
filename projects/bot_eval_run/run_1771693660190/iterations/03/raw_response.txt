@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Task Manager CLI\n\n## Usage\n\n- `add <title> --data <path>`: Add a new task.\n- `list --data <path>`: List all tasks.\n- `done <id> --data <path>`: Mark a task as done.\n- `remove <id> --data <path>`: Remove a task.\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"task-manager\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple task manager CLI\",\n  \"main\": \"dist/cli.js\",\n  \"scripts\": {\n    \"build\": \"tsc -p tsconfig.json\"\n  },\n  \"dependencies\": {}\n}"
+    },
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES6\",\n    \"module\": \"commonjs\",\n    \"outDir\": \"dist\",\n    \"strict\": true,\n    \"esModuleInterop\": true\n  },\n  \"include\": [\n    \"src/**/*\"\n  ]\n}"
+    },
+    {
+      "path": "src/store.ts",
+      "content": "import * as fs from 'fs';\nimport * as path from 'path';\nimport { v4 as uuidv4 } from 'uuid';\n\ndeclare interface Task {\n  id: string;\n  title: string;\n  done: boolean;\n}\n\nclass TaskStore {\n  private filePath: string;\n\n  constructor(filePath: string) {\n    this.filePath = filePath;\n  }\n\n  private readTasks(): Task[] {\n    if (!fs.existsSync(this.filePath)) {\n      return [];\n    }\n    const data = fs.readFileSync(this.filePath, 'utf-8');\n    return JSON.parse(data);\n  }\n\n  private writeTasks(tasks: Task[]): void {\n    fs.writeFileSync(this.filePath, JSON.stringify(tasks, null, 2));\n  }\n\n  addTask(title: string): Task {\n    const tasks = this.readTasks();\n    const newTask: Task = { id: uuidv4(), title, done: false };\n    tasks.push(newTask);\n    this.writeTasks(tasks);\n    return newTask;\n  }\n\n  listTasks(): Task[] {\n    return this.readTasks();\n  }\n\n  markTaskAsDone(id: string): void {\n    const tasks = this.readTasks();\n    const taskIndex = tasks.findIndex(task => task.id === id);\n    if (taskIndex !== -1) {\n      tasks[taskIndex].done = true;\n      this.writeTasks(tasks);\n    }\n  }\n\n  removeTask(id: string): void {\n    const tasks = this.readTasks();\n    const filteredTasks = tasks.filter(task => task.id !== id);\n    this.writeTasks(filteredTasks);\n  }\n}\n\nexport default TaskStore;\n"
+    }
+  ],
+  "notes": "Added missing files and corrected the implementation of TaskStore."
+}

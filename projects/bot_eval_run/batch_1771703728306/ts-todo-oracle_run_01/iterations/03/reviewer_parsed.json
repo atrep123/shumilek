@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "noEmit": true,
+    "><!-- No need to emit the TypeScript files directly in production. They will be compiled into JavaScript by the build process. This is a best practice for maintaining clean and efficient builds. -->  },  ": ",  "
+  }
+}

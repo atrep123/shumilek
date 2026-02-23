@@ -1,0 +1,310 @@
+Jsi code reviewer (mini-validator). Tvuj ukol: navrhnout MINIMALNI opravy, ktere povedou k tomu, ze validace projde.
+Odpovez JEN JSON bez markdownu: { "review": "text", "priorityFiles": ["path1","path2"] }
+
+SPEC (zkraceno):
+Vytvor maly, ale realisticky Python projekt pro "AI" bez externich zavislosti.
+
+Cil: implementuj character-level Markov chain generator (n-gram) jako balicek `mini_ai/` + dokumentace `README.md`.
+
+POZADAVKY / KONTRAKT (musis splnit):
+- Pouze standardni knihovna Pythonu (zadne numpy/pandas/sklearn/torch/tensorflow/requests).
+- Modul `mini_ai/markov.py` musi obsahovat:
+  - class MarkovChain(order: int = 1)
+  - def train(self, text: str) -> None
+  - def generate(self, length: int, seed: str | None = None, random_seed: int | None = None) -> str
+  - def to_dict(self) -> dict  (JSON-serializovatelny; klice: "order", "transitions")
+  - @classmethod def from_dict(cls, d: dict) -> "MarkovChain"  (nebo pouzij `from __future__ import annotations`)
+- Pozor: type hinty nesmi shodit import (v Python 3.12 pouzij future-annotations nebo string forward refs).
+- Reprezentace transitions v to_dict:
+  - transitions: dict[context: str, dict[next_char: str, count: int]]
+  - context je string delky = order.
+- `mini_ai/cli.py` musi obsahovat:
+  - def main(argv: list[str] | None = None) -> int  (nech argumenty pres argparse)
+  - subcommand train: --input <path> --model-out <path> --order <int>
+  - subcommand generate: --model <path> --length <int> [--seed <str>] [--random-seed <int>]
+  - `python -m mini_ai.cli --help` musi vratit exit code 0
+
+Poznamka: testy budeme pouzivat tyto (musis projit):
+--- BEGIN ORACLE TESTS (tests/test_oracle.py) ---
+import io
+import json
+import os
+import tempfile
+import unittest
+from contextlib import redirect_stdout
+
+from mini_ai.markov import MarkovChain
+from mini_ai.cli import main
+
+
+class TestMarkovOracle(unittest.TestCase):
+    def test_order_validation(self):
+        with self.assertRaises(ValueError):
+            MarkovChain(order=0)
+
+    def test_train_and_to_dict(self):
+        mc = MarkovChain(order=1)
+        mc.train("aba")
+        d = mc.to_dict()
+        self.assertEqual(d["order"], 1)
+        self.assertIn("transitions", d)
+        self.assertIn("a", d["transitions"])
+        self.assertIn("b", d["transitions"]["a"])
+        self.assertEqual(d["transitions"]["a"]["b"], 1)
+
+    def test_round_trip_serialization(self):
+        mc = MarkovChain(order=2)
+        mc.train("abcd")
+        d1 = mc.to_dict()
+        mc2 = MarkovChain.from_dict(d1)
+        d2 = mc2.to_dict()
+        self.assertEqual(d1["order"], d2["order"])
+        self.assertEqual(d1["transitions"], d2["transitions"])
+
+    def test_generate_deterministic(self):
+        mc = MarkovChain(order=1)
+        mc.train("aba")
+        out = mc.generate(length=10, seed="a", random_seed=0)
+        self.assertEqual(len(out), 10)
+        self.assertTrue(set(out) <= {"a", "b"})
+
+
+class TestCliOracle(unittest.TestCase):
+    def test_train_and_generate_smoke(self):
+        with tempfile.TemporaryDirectory() as td:
+            input_path = os.path.join(td, "input.txt")
+            model_path = os.path.join(td, "model.json")
+
+            with open(input_path, "w", encoding="utf-8") as f:
+                f.write("aba")
+
+            rc = main(["train", "--input", input_path, "--model-out", model_path, "--order", "1"])
+            self.assertEqual(rc, 0)
+            self.assertTrue(os.path.exists(model_path))
+
+            with open(model_path, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+            self.assertIn("order", loaded)
+            self.assertIn("transitions", loaded)
+
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                rc2 = main(["generate", "--model", model_path, "--length", "12", "--seed", "a", "--random-seed", "0"])
+            self.assertEqual(rc2, 0)
+            generated = buf.getvalue().strip()
+            self.assertEqual(len(generated), 12)
+--- END ORACLE TESTS ---
+
+VYSTUPNI FORMAT (STRICT): vrat JEN JSON objekt tohoto tvaru:
+{
+  "mode": "full",
+  "files": [
+    {"path": "README.md", "content": "...\n"},
+    {"path": "mini_ai/__init__.py", "content": "...\n"},
+    {"path": "mini_ai/markov.py", "content": "...\n"},
+    {"path": "mini_ai/cli.py", "content": "...\n"}
+  ],
+  "notes": "optional"
+}
+
+Pravidla:
+- Zadny markdown, zadne ``` bloky, zadny text mimo JSON.
+- Cesty jsou relativni, pouzij `/`, bez `..` a bez absolutnich cest.
+- Kazdy soubor ukonci znakem noveho radku.
+- Nezahrnuj vlastni `tests/` (pouziji se oracle testy).
+- `content` je vzdy kompletni obsah souboru (ne diff/snippet).
+
+---
+PLAN (planner: deepseek-r1:8b):
+Create a MarkovChain class with the required methods and attributes for generating text based on given training data.
+
+
+CHYBY:
+- Command failed: python -m compileall -q mini_ai tests (exit=1, timedOut=false)
+- Command failed: python -m unittest discover -v -s tests -p "test*.py" (exit=1, timedOut=false)
+- Command failed: python -m mini_ai.cli --help (exit=1, timedOut=false)
+- Too few tests ran: 1 (expected >= 5)
+
+LOGY (zkraceno):
+- python -m compileall -q mini_ai tests
+  stdout: "*** Error compiling 'mini_ai\\\\markov.py'...\r\nSorry: IndentationError: unexpected unindent (markov.py, line 47)\r\n"
+- python -m unittest discover -v -s tests -p "test*.py"
+  stderr: "test_oracle (unittest.loader._FailedTest.test_oracle) ... ERROR\r\n\r\n======================================================================\r\nERROR: test_oracle (unittest.loader._FailedTest.test_oracle)\r\n----------------------------------------------------------------------\r\nImportError: Failed to import test module: test_oracle\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\loader.py\", line 396, in _find_test_path\r\n    module = self._get_module_from_name(name)\r\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\loader.py\", line 339, in _get_module_from_name\r\n    __import__(name)\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771703728306\\python-ai-stdlib-oracle_run_01\\workspace\\tests\\test_oracle.py\", line 8, in <module>\r\n    from mini_ai.markov import MarkovChain\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771703728306\\python-ai-stdlib-oracle_run_01\\workspace\\mini_ai\\markov.py\", line 47\r\n    def from_dict(cls, d: dict) -> \"MarkovChain\":\r\nIndentationError: unexpected unindent\r\n\r\n\r\n----------------------------------------------------------------------\r\nRan 1 test in 0.000s\r\n\r\nFAILED (errors=1)\r\n"
+- python -m mini_ai.cli --help
+  stderr: "Traceback (most recent call last):\r\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\r\n  File \"<frozen runpy>\", line 88, in _run_code\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771703728306\\python-ai-stdlib-oracle_run_01\\workspace\\mini_ai\\cli.py\", line 4, in <module>\r\n    from mini_ai.markov import MarkovChain\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771703728306\\python-ai-stdlib-oracle_run_01\\workspace\\mini_ai\\markov.py\", line 47\r\n    def from_dict(cls, d: dict) -> \"MarkovChain\":\r\nIndentationError: unexpected unindent\r\n"
+
+SOUBORY (zkraceno):
+- README.md
+- mini_ai/__init__.py
+- mini_ai/__pycache__/__init__.cpython-312.pyc
+- mini_ai/__pycache__/cli.cpython-312.pyc
+- mini_ai/cli.py
+- mini_ai/markov.py
+- tests/__pycache__/test_oracle.cpython-312.pyc
+- tests/test_oracle.py
+
+KONTEXT SOUBORU (zkraceno):
+--- FILE: tests/test_oracle.py ---
+import io
+import json
+import os
+import tempfile
+import unittest
+from contextlib import redirect_stdout
+
+from mini_ai.markov import MarkovChain
+from mini_ai.cli import main
+
+
+class TestMarkovOracle(unittest.TestCase):
+    def test_order_validation(self):
+        with self.assertRaises(ValueError):
+            MarkovChain(order=0)
+
+    def test_train_and_to_dict(self):
+        mc = MarkovChain(order=1)
+        mc.train("aba")
+        d = mc.to_dict()
+        self.assertEqual(d["order"], 1)
+        self.assertIn("transitions", d)
+        self.assertIn("a", d["transitions"])
+        self.assertIn("b", d["transitions"]["a"])
+        self.assertEqual(d["transitions"]["a"]["b"], 1)
+
+    def test_round_trip_serialization(self):
+        mc = MarkovChain(order=2)
+        mc.train("abcd")
+        d1 = mc.to_dict()
+        mc2 = MarkovChain.from_dict(d1)
+        d2 = mc2.to_dict()
+        self.assertEqual(d1["order"], d2["order"])
+        self.assertEqual(d1["transitions"], d2["transitions"])
+
+    def test_generate_deterministic(self):
+        mc = MarkovChain(order=1)
+        mc.train("aba")
+        out = mc.generate(length=10, seed="a", random_seed=0)
+        self.assertEqual(len(out), 10)
+        self.assertTrue(set(out) <= {"a", "b"})
+
+
+class TestCliOracle(unittest.TestCase):
+    def test_train_and_generate_smoke(self):
+        with tempfile.TemporaryDirectory() as td:
+            input_path = os.path.join(td, "input.txt")
+            model_path = os.path.join(td, "model.json")
+
+            with open(input_path, "w", encoding="utf-8") as f:
+                f.write("aba")
+
+            rc = main(["train", "--input", input_path, "--model-out", model_path, "--order", "1"])
+            self.assertEqual(rc, 0)
+            self.assertTrue(os.path.exists(model_path))
+
+            with open(model_path, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+            self.assertIn("order", loaded)
+            self.assertIn("transitions", loaded)
+
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                rc2 = main(["generate", "--model", model_path, "--length", "12", "--seed", "a", "--random-seed", "0"])
+            self.assertEqual(rc2, 0)
+            generated = buf.getvalue().strip()
+            self.assertEqual(len(generated), 12)
+
+
+--- FILE: mini_ai/markov.py ---
+from __future__ import annotations
+import json
+import random
+
+class MarkovChain:
+    def __init__(self, order: int = 1):
+        if order <= 0:
+            raise ValueError("Order must be a positive integer.")
+        self.order = order
+        self.transitions = {}
+
+    def train(self, text: str) -> None:
+        for i in range(len(text) - self.order):
+            context = text[i:i + self.order]
+            next_char = text[i + self.order]
+            if context not in self.transitions:
+                self.transitions[context] = {}
+            if next_char not in self.transitions[context]:
+                self.transitions[context][next_char] = 0
+            self.transitions[context][next_char] += 1
+
+    def generate(self, length: int, seed: str | None = None, random_seed: int | None = None) -> str:
+        if random_seed is not None:
+            random.seed(random_seed)
+        if seed is not None and len(seed) == self.order:
+            context = seed
+        else:
+            context = random.choice(list(self.transitions.keys()))
+        result = list(context)
+        for _ in range(length - self.order):
+            next_char = random.choices(
+                population=list(self.transitions[context].keys()),
+                weights=self.transitions[context].values(),
+                k=1
+            )[0]
+            result.append(next_char)
+            context = ''.join(result[-self.order:])
+        return ''.join(result)
+
+    def to_dict(self) -> dict:
+        return {
+            "order": self.order,
+            "transitions": self.transitions
+        }
+
+    @classmethod
+def from_dict(cls, d: dict) -> "MarkovChain":
+        mc = cls(order=d["order"])
+        mc.transitions = d["transitions"]
+        return mc
+--- FILE: mini_ai/cli.py ---
+import argparse
+import json
+import os
+from mini_ai.markov import MarkovChain
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Markov Chain Text Generator")
+    subparsers = parser.add_subparsers(dest='command', required=True)
+
+    # Train command
+    train_parser = subparsers.add_parser('train')
+    train_parser.add_argument('--input', type=str, required=True, help='Path to input text file')
+    train_parser.add_argument('--model-out', type=str, required=True, help='Path to save the trained model')
+    train_parser.add_argument('--order', type=int, required=True, help='Order of the Markov chain')
+
+    # Generate command
+    generate_parser = subparsers.add_parser('generate')
+    generate_parser.add_argument('--model', type=str, required=True, help='Path to trained model JSON file')
+    generate_parser.add_argument('--length', type=int, required=True, help='Length of the generated text')
+    generate_parser.add_argument('--seed', type=str, default=None, help='Seed string for deterministic generation')
+    generate_parser.add_argument('--random-seed', type=int, default=None, help='Random seed for reproducibility')
+
+    args = parser.parse_args(argv)
+
+    if args.command == 'train':
+        with open(args.input, 'r', encoding='utf-8') as f:
+            text = f.read()
+        mc = MarkovChain(order=args.order)
+        mc.train(text)
+        with open(args.model_out, 'w', encoding='utf-8') as f:
+            json.dump(mc.to_dict(), f)
+        return 0
+    elif args.command == 'generate':
+        with open(args.model, 'r', encoding='utf-8') as f:
+            model_data = json.load(f)
+        mc = MarkovChain.from_dict(model_data)
+        generated_text = mc.generate(length=args.length, seed=args.seed, random_seed=args.random_seed)
+        print(generated_text)
+        return 0
+    else:
+        parser.print_help()
+        return 1

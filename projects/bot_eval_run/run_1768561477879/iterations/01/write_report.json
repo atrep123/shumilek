@@ -1,0 +1,11 @@
+{
+  "count": 6,
+  "files": [
+    "README.md",
+    "mini_ai/__init__.py",
+    "mini_ai/trainer.py",
+    "mini_ai/generator.py",
+    "tests/test_trainer.py",
+    "tests/test_generator.py"
+  ]
+}

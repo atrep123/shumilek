@@ -1,0 +1,40 @@
+test_train_and_generate_smoke (test_oracle.TestCliOracle.test_train_and_generate_smoke) ... ERROR
+test_generate_deterministic (test_oracle.TestMarkovOracle.test_generate_deterministic) ... ERROR
+test_order_validation (test_oracle.TestMarkovOracle.test_order_validation) ... ok
+test_round_trip_serialization (test_oracle.TestMarkovOracle.test_round_trip_serialization) ... ok
+test_train_and_to_dict (test_oracle.TestMarkovOracle.test_train_and_to_dict) ... ok
+
+======================================================================
+ERROR: test_train_and_generate_smoke (test_oracle.TestCliOracle.test_train_and_generate_smoke)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1770643297744\python-ai-stdlib-oracle_run_01\workspace\tests\test_oracle.py", line 64, in test_train_and_generate_smoke
+    rc2 = main(["generate", "--model", model_path, "--length", "12", "--seed", "a", "--random-seed", "0"])
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1770643297744\python-ai-stdlib-oracle_run_01\workspace\mini_ai\cli.py", line 24, in main
+    return args.func(args)
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1770643297744\python-ai-stdlib-oracle_run_01\workspace\mini_ai\cli.py", line 38, in generate
+    generated_text = model.generate(length=args.length, seed=args.seed, random_seed=args.random_seed)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1770643297744\python-ai-stdlib-oracle_run_01\workspace\mini_ai\markov.py", line 36, in generate
+    if context not in self.transitions or len(self.transitions[context]) == 0:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: unhashable type: 'list'
+
+======================================================================
+ERROR: test_generate_deterministic (test_oracle.TestMarkovOracle.test_generate_deterministic)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1770643297744\python-ai-stdlib-oracle_run_01\workspace\tests\test_oracle.py", line 39, in test_generate_deterministic
+    out = mc.generate(length=10, seed="a", random_seed=0)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1770643297744\python-ai-stdlib-oracle_run_01\workspace\mini_ai\markov.py", line 36, in generate
+    if context not in self.transitions or len(self.transitions[context]) == 0:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: unhashable type: 'list'
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.007s
+
+FAILED (errors=2)

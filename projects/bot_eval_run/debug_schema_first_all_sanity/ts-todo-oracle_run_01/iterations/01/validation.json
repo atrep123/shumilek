@@ -1,0 +1,39 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "No dependencies allowed (dependencies/devDependencies must be empty or missing)",
+    "Command failed: node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json (exit=2, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\debug_schema_first_all_sanity\\ts-todo-oracle_run_01\\workspace",
+      "ok": false,
+      "exitCode": 2,
+      "timedOut": false,
+      "durationMs": 569,
+      "stdout": "src/cli.ts(51,52): error TS18046: 'error' is of type 'unknown'.\r\n",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\debug_schema_first_all_sanity\\ts-todo-oracle_run_01\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 420,
+      "stdout": "✔ TaskStore: CRUD persists to JSON file (6.7219ms)\n✔ CLI: end-to-end flow (295.246ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 356.7257\n",
+      "stderr": ""
+    },
+    {
+      "command": "node dist/cli.js --help",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\debug_schema_first_all_sanity\\ts-todo-oracle_run_01\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 61,
+      "stdout": "Usage:\n  node dist/cli.js add <title> --data <path>\n  node dist/cli.js list --data <path>\n  node dist/cli.js done <id> --data <path>\n  node dist/cli.js remove <id> --data <path>\n\n",
+      "stderr": ""
+    }
+  ]
+}

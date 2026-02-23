@@ -1,0 +1,17 @@
+{
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1768546404747",
+  "ok": false,
+  "diagnostics": [
+    "Expected 5 code blocks, got 3",
+    "Found extra text outside code blocks",
+    "Missing # path header in a code block",
+    "Missing # path header in a code block",
+    "Missing # path header in a code block",
+    "Did not parse exactly five files",
+    "dataset.py StandardScaler missing",
+    "logistic.py LogisticRegression missing",
+    "metrics.py precision_recall_f1 missing",
+    "pipeline.py train_and_evaluate missing"
+  ],
+  "testSummary": null
+}

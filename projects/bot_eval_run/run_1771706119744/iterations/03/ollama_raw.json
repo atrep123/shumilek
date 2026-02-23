@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-02-21T20:38:14.471064Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"mini_ai/markov.py\",\n      \"content\": \"from __future__ import annotations\\nimport random\\nclass MarkovChain:\\n    def __init__(self, order: int = 1):\\n        if order <= 0:\\n            raise ValueError(\\\"Order must be greater than 0.\\\")\\n        self.order = order\\n        self.transitions = {}\\n\\n    def train(self, text: str) -> None:\\n        for i in range(len(text) - self.order):\\n            context = text[i:i + self.order]\\n            next_char = text[i + self.order]\\n            if context not in self.transitions:\\n                self.transitions[context] = {}\\n            if next_char not in self.transitions[context]:\\n                self.transitions[context][next_char] = 0\\n            self.transitions[context][next_char] += 1\\n\\n    def generate(self, length: int, seed: str | None = None, random_seed: int | None = None) -> str:\\n        if random_seed is not None:\\n            random.seed(random_seed)\\n        if seed is None or len(seed) != self.order:\\n            context = random.choice(list(self.transitions.keys()))\\n        else:\\n            context = seed\\n        result = list(context)\\n        for _ in range(length - self.order):\\n            next_char = random.choices(\\n                population=list(self.transitions[context].keys()),\\n                weights=self.transitions[context].values(),\\n                k=1\\n            )[0]\\n            result.append(next_char)\\n            context = ''.join(result[-self.order:])\\n        return ''.join(result)\\n\\n    def to_dict(self) -> dict:\\n        return {\\n            \\\"order\\\": self.order,\\n            \\\"transitions\\\": self.transitions\\n        }\\n\\n    @classmethod\\ndef from_dict(cls, d: dict) -> \\\"MarkovChain\\\":\\n        mc = cls(order=d[\\\"order\\\"])\\n        mc.transitions = d[\\\"transitions\\\"]\\n        return mc\\n\"\n    }\n  ],\n  \"notes\": \"Fixed the order validation in MarkovChain class to raise ValueError for order <= 0.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 17100329100,
+  "load_duration": 60406000,
+  "prompt_eval_count": 2530,
+  "prompt_eval_duration": 607315400,
+  "eval_count": 478,
+  "eval_duration": 5844097300
+}

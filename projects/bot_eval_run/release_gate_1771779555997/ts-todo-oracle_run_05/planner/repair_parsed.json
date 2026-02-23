@@ -1,0 +1,3 @@
+{
+  "plan": "Create a TypeScript project that compiles to `dist/` and passes the provided Oracle tests. We cannot use any external npm packages except Node.js builtins. We must use `node:crypto` for generating IDs if needed, but note that the tests use `TaskStore` which expects a string path for the data file."
+}

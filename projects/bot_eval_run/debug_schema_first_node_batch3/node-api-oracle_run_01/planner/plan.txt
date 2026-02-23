@@ -1,0 +1,28 @@
+We are creating a Node.js project with the following structure:
+We are given the output format. We must return a JSON object with:
+- mode: "full"
+- files: an array of objects with "path" and "content"
+- notes: optional
+We are to create a project that meets the specified requirements and passes the provided Oracle tests.
+Steps:
+1. We'll create a `package.json` with minimal dependencies and set "type":"commonjs".
+2. We'll create a `src/server.js` that exports a function `createServer` which returns a server that handles the endpoints.
+3. We'll create an `openapi.json` file that defines the OpenAPI 3.x specification for the TODO endpoints.
+4. We'll create a `README.md` with a brief description.
+However, note that the project must not use any external npm modules except builtin ones.
+We are to use `node:crypto` for generating unique IDs.
+The server must:
+- Use CommonJS (require/module.exports)
+- Persist data to a file (JSON) at the given `dataPath` for every mutation.
+We are to write the code for `src/server.js` that implements the endpoints.
+Let's break down the `src/server.js`:
+- We'll use the `http` module to create the server.
+- We'll use the `fs` and `path` modules for file operations.
+- We'll use `crypto` for generating IDs.
+Steps in `src/server.js`:
+1. Require necessary modules: `http`, `fs`, `path`, `crypto`, and `url` (for parsing paths) and `util` for promisifying fs calls? But note: we are in CommonJS and the tests are using `node:fs` (which is the built-in). However, the test code uses `fs` without the `node:` prefix. But in our code, we can use the built-in modules without `node:` because they are available at the root.
+However, note: the test code uses `node:fs` and `node:path` because they are in the Node.js core and available as `fs` and `path` in the global scope. We can use the same.
+2. We'll create a function `createServer({ dataPath })` that returns an HTTP server.
+3. We'll set up the routes:
+- GET /health
+- GET /openapi.json

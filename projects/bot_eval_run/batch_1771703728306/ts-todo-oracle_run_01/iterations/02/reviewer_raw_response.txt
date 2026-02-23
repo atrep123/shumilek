@@ -1,0 +1,8 @@
+{  
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "noEmit": true,  "<--- Add this line to prevent emitting the `cli.js` file during compilation. This is important for a modular structure where only the necessary files are emitted as part of the build process. It also helps in avoiding unnecessary dependencies and making your project cleaner. Also, ensure that you have the correct paths set up in your `tsconfig.json`. Here's how it should look after adding the noEmit option:  ```json  {  ":"compilerOptions"  }  }

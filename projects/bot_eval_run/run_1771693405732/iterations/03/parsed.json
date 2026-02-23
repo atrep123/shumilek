@@ -1,0 +1,25 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Task Manager CLI\n\n## Usage\n\n- `add <title> --data <path>`: Add a new task.\n- `list --data <path>`: List all tasks.\n- `done <id> --data <path>`: Mark a task as done.\n- `remove <id> --data <path>`: Remove a task."
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"task-manager\",\n  \"version\": \"1.0.0\",\n  \"main\": \"dist/cli.js\",\n  \"scripts\": {\n    \"build\": \"tsc -p tsconfig.json\"\n  }\n}"
+    },
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES6\",\n    \"module\": \"commonjs\",\n    \"outDir\": \"dist\",\n    \"strict\": true,\n    \"esModuleInterop\": true\n  },\n  \"include\": [\n    \"src/**/*\"\n  ]\n}"
+    },
+    {
+      "path": "src/store.ts",
+      "content": "declare const require: any;\ndeclare const process: any;\nconst fs = require('node:fs');\n\ninterface Task {\n  id: string;\n  title: string;\n  done: boolean;\n  createdAt: string;\n  doneAt?: string;\n}\n\nclass TaskStore {\n  private filePath: string;\n\n  constructor(filePath: string) {\n    this.filePath = filePath;\n  }\n\n  private readTasks(): Task[] {\n    try {\n      const data = fs.readFileSync(this.filePath, 'utf-8');\n      return JSON.parse(data);\n    } catch (error) {\n      return [];\n    }\n  }\n\n  private writeTasks(tasks: Task[]): void {\n    fs.writeFileSync(this.filePath, JSON.stringify(tasks, null, 2));\n  }\n\n  addTask(title: string): Task {\n    const tasks = this.readTasks();\n    const newTask: Task = {\n      id: Date.now().toString(),\n      title,\n      done: false,\n      createdAt: new Date().toISOString()\n    };\n    tasks.push(newTask);\n    this.writeTasks(tasks);\n    return newTask;\n  }\n\n  listTasks(): Task[] {\n    return this.readTasks();\n  }\n\n  markTaskAsDone(id: string): void {\n    const tasks = this.readTasks();\n    const taskIndex = tasks.findIndex(task => task.id === id);\n    if (taskIndex !== -1) {\n      tasks[taskIndex].done = true;\n      tasks[taskIndex].doneAt = new Date().toISOString();\n      this.writeTasks(tasks);\n    }\n  }\n\n  removeTask(id: string): void {\n    const tasks = this.readTasks();\n    const updatedTasks = tasks.filter(task => task.id !== id);\n    this.writeTasks(updatedTasks);\n  }\n}\n\nexport default TaskStore;"
+    },
+    {
+      "path": "src/cli.ts",
+      "content": "declare const require: any;\ndeclare const process: any;\nconst fs = require('node:fs');\nimport TaskStore from './store';\n\nconst args = process.argv.slice(2);\nconst command = args[0];\nconst dataPath = args[args.length - 1];\nconst taskTitle = args[1] || '';\nconst taskId = args[1] || '';\n\nif (command === '--help') {\n  console.log('Usage:');\n  console.log('- add <title> --data <path>');\n  console.log('- list --data <path>');\n  console.log('- done <id> --data <path>');\n  console.log('- remove <id> --data <path>');\n} else if (command === 'add' && taskTitle && dataPath) {\n  const taskStore = new TaskStore(dataPath);\n  const task = taskStore.addTask(taskTitle);\n  console.log(`Added task: ${task.title}`);\n} else if (command === 'list' && dataPath) {\n  const taskStore = new TaskStore(dataPath);\n  const tasks = taskStore.listTasks();\n  console.log('Tasks:', JSON.stringify(tasks, null, 2));\n} else if (command === 'done' && taskId && dataPath) {\n  const taskStore = new TaskStore(dataPath);\n  taskStore.markTaskAsDone(taskId);\n  console.log(`Marked task ${taskId} as done`);\n} else if (command === 'remove' && taskId && dataPath) {\n  const taskStore = new TaskStore(dataPath);\n  taskStore.removeTask(taskId);\n  console.log(`Removed task ${taskId}`);\n} else {\n  console.error('Invalid command or arguments. Use --help for usage instructions.');\n}"
+    }
+  ],
+  "notes": "Added missing files and corrected the CLI script to handle commands correctly."
+}

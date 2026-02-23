@@ -1,0 +1,8 @@
+{
+  "errors": [
+    {
+      "message": "ENOENT: no such file or directory, open 'tasks.json'",
+      "code": 1
+    }
+  ]
+}

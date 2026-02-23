@@ -1,0 +1,10 @@
+{
+  "errors": [
+    {
+      "message": "Expected JSON response, got: {}"
+    },
+    {
+      "message": "Expected JSON response, got: {}"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+src/cli.ts(6,25): error TS2307: Cannot find module 'commander' or its corresponding type declarations.
+src/cli.ts(33,12): error TS7006: Parameter 'title' implicitly has an 'any' type.
+src/cli.ts(41,12): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/cli.ts(49,12): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/store.ts(3,30): error TS2307: Cannot find module 'uuid' or its corresponding type declarations.

@@ -1,0 +1,92 @@
+{
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\debug_ts_raw_no_fallback_177187",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\debug_ts_raw_no_fallback_177187\\workspace",
+  "deterministicFallback": {
+    "mode": "off",
+    "tsTodo": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 1,
+      "recoveredByFallback": 0
+    },
+    "nodeApi": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "totalActivations": 0,
+    "totalRecoveries": 0,
+    "totalTargetedActivations": 0,
+    "totalTargetedRecoveries": 0,
+    "totalCanonicalActivations": 0,
+    "totalCanonicalRecoveries": 0,
+    "totalRawPasses": 0,
+    "totalRawFailures": 1,
+    "totalRecoveredByFallback": 0,
+    "fallbackDependencyRate": 0
+  },
+  "reliability": {
+    "rawPasses": 0,
+    "rawFailures": 1,
+    "recoveredByFallback": 0,
+    "fallbackDependencyRate": 0
+  },
+  "parseStats": {
+    "plannerFailures": 0,
+    "schemaFailures": 0,
+    "jsonRepairFailures": 0,
+    "parseFailures": 0,
+    "jsonParseFailures": 0,
+    "placeholderFailures": 0,
+    "otherFailures": 0
+  },
+  "ok": false,
+  "diagnostics": [
+    "Command failed: node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json (exit=2, timedOut=false)",
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)",
+    "Command failed: node dist/cli.js --help (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json",
+      "cwd": "projects\\bot_eval_run\\debug_ts_raw_no_fallback_177187\\workspace",
+      "ok": false,
+      "exitCode": 2,
+      "timedOut": false,
+      "durationMs": 1209,
+      "stdout": "src/cli.ts(45,11): error TS2451: Cannot redeclare block-scoped variable 'id'.\r\nsrc/cli.ts(59,11): error TS2451: Cannot redeclare block-scoped variable 'id'.\r\nsrc/store.ts(1,10): error TS2305: Module '\"node:crypto\"' has no exported member 'v4'.\r\nsrc/store.ts(27,10): error TS2304: Cannot find name 'existsSync'.\r\n",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "projects\\bot_eval_run\\debug_ts_raw_no_fallback_177187\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 162,
+      "stdout": "✖ TaskStore: CRUD persists to JSON file (3.9716ms)\n✖ CLI: end-to-end flow (37.5545ms)\nℹ tests 2\nℹ suites 0\nℹ pass 0\nℹ fail 2\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 94.7107\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:26:1\n✖ TaskStore: CRUD persists to JSON file (3.9716ms)\n  ReferenceError: existsSync is not defined\n      at TaskStore.list (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\debug_ts_raw_no_fallback_177187\\workspace\\dist\\store.js:23:9)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\debug_ts_raw_no_fallback_177187\\workspace\\tests\\oracle.test.js:35:26)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.start (node:internal/test_runner/test:1003:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17)\n\ntest at tests\\oracle.test.js:62:1\n✖ CLI: end-to-end flow (37.5545ms)\n  AssertionError [ERR_ASSERTION]: C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\debug_ts_raw_no_fallback_177187\\workspace\\dist\\cli.js:59\n          const id = argv[1];\n                ^\n  \n  SyntaxError: Identifier 'id' has already been declared\n      at wrapSafe (node:internal/modules/cjs/loader:1692:18)\n      at Module._compile (node:internal/modules/cjs/loader:1735:20)\n      at Object..js (node:internal/modules/cjs/loader:1893:10)\n      at Module.load (node:internal/modules/cjs/loader:1481:32)\n      at Module._load (node:internal/modules/cjs/loader:1300:12)\n      at TracingChannel.traceSync (node:diagnostics_channel:328:14)\n      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\n      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n      at node:internal/main/run_main_module:33:47\n  \n  Node.js v24.12.0\n  \n  \n  1 !== 0\n  \n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\debug_ts_raw_no_fallback_177187\\workspace\\tests\\oracle.test.js:69:10)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 1,\n    expected: 0,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+      "stderr": ""
+    },
+    {
+      "command": "node dist/cli.js --help",
+      "cwd": "projects\\bot_eval_run\\debug_ts_raw_no_fallback_177187\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 60,
+      "stdout": "",
+      "stderr": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\debug_ts_raw_no_fallback_177187\\workspace\\dist\\cli.js:59\r\n        const id = argv[1];\r\n              ^\r\n\r\nSyntaxError: Identifier 'id' has already been declared\r\n    at wrapSafe (node:internal/modules/cjs/loader:1692:18)\r\n    at Module._compile (node:internal/modules/cjs/loader:1735:20)\r\n    at Object..js (node:internal/modules/cjs/loader:1893:10)\r\n    at Module.load (node:internal/modules/cjs/loader:1481:32)\r\n    at Module._load (node:internal/modules/cjs/loader:1300:12)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\r\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\r\n    at node:internal/main/run_main_module:33:47\r\n\r\nNode.js v24.12.0\r\n"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "mini_ai/__init__.py",
+      "content": "\n"
+    },
+    {
+      "path": "mini_ai/markov.py",
+      "content": "from typing import Dict, Text\n\nclass MarkovChain:\n    def __init__(self, order: int = 1):\n        self.order = order\n        self.transitions: Dict[Text, Dict[Text, int]] = {}\n\n    def train(self, text: str) -> None:\n        for i in range(len(text) - self.order):\n            context = text[i:i+self.order]\n            next_char = text[i+self.order]\n            if context not in self.transitions:\n                self.transitions[context] = {}\n            if next_char not in self.transitions[context]:\n                self.transitions[context][next_char] = 0\n            self.transitions[context][next_char] += 1\n\n    def generate(self, length: int, seed: Text | None = None, random_seed: int | None = None) -> str:\n        import random\n        if seed is not None and random_seed is not None:\n            random.seed(random_seed)\n        elif seed is not None:\n            random.seed(hash(seed))\n        else:\n            random.seed()\n        context = text[:self.order]\n        result = [context[random.choice(list(self.transitions[context].keys()))]]\n        for _ in range(length - 1):\n            next_char = result[-1][random.choice(list(self.transitions[result[-1]].keys()))]\n            result.append(next_char)\n        return ''.join(result)\n\n    def to_dict(self) -> Dict:\n        return {'order': self.order, 'transitions': self.transitions}\n\n    @classmethod\ndef from_dict(cls, d: Dict) -> "
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# TODO API\nThis is a simple Node.js application that provides a REST API for managing TODO items. It uses only built-in Node.js modules and persists data to a JSON file."
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"todo-api\",\n  \"version\": \"1.0.0\",\n  "},"description\": \"A simple TODO API using Node.js built-in modules\",\n  ","main\": \"src/server.js\",\n  ","type\": \"commonjs\",\n  ","scripts\": {\n    \"start\": \"node src/server.js\"\n  }\n}\n"
+    ],
+    "files": [
+      {
+        "path": "openapi.json",
+        "content": "{\n  \"openapi\": \"3.0.0\",\n  "},"info\": {\n    \"title\": \"TODO API\",\n    \"version\": \"1.0.0\"\n  },\n  "],"paths\": {\n    \"/health\": {\n      \"get\": {\n        \"summary\": \"Check server health\",\n        \"responses\": {\n          \"200\": {\n            \"description\": \"Server is healthy\",\n            \"content\": {\n              \"application/json\": {\n                \"schema\": {\n                  \"type\": \"object\",\n                  ":"",
+      "path": "src/server.js",
+      "content": "const http = require('node:http');\nconst fs = require('node:fs');\nconst path = require('node:path');\nconst crypto = require('node:crypto');\n\nfunction createServer({ dataPath }) {\n  const server = http.createServer((req, res) => {\n    let body = '';\n    req.on('data', chunk => {\n      body += chunk.toString();\n    });\n\n    req.on('end', async () => {\n      try {\n        if (req.method === 'GET' && req.url === '/health') {\n          res.writeHead(200, { 'Content-Type': 'application/json' });\n          res.end(JSON.stringify({ ok: true }));\n        } else if (req.method === 'GET' && req.url === '/openapi.json') {\n          const openapiSpec = JSON.parse(fs.readFileSync(path.join(__dirname, '../openapi.json'), 'utf8'));\n          res.writeHead(200, { 'Content-Type': 'application/json' });\n          res.end(JSON.stringify(openapiSpec));\n        } else if (req.method === 'GET' && req.url.startsWith('/todos/')) {\n          const id = req.url.split('/')[2];\n          let todos = [];\n          if (fs.existsSync(dataPath)) {\n            todos = JSON.parse(fs.readFileSync(dataPath, 'utf8')).todos || [];\n          }\n          const todo = todos.find(t => t.id === id);\n          if (todo) {\n            res.writeHead(200, { 'Content-Type': 'application/json' });\n            res.end(JSON.stringify({ ok: true, todo }));\n          } else {\n            res.writeHead(404, { 'Content-Type': 'application/json' });\n            res.end(JSON.stringify({ ok: false, error: 'TODO item not found' }));\n          }\n        } else if (req.method === 'GET' && req.url === '/todos') {\n          let todos = [];\n          if (fs.existsSync(dataPath)) {\n            todos = JSON.parse(fs.readFileSync(dataPath, 'utf8')).todos || [];\n          }\n          res.writeHead(200, { 'Content-Type': 'application/json' });\n          res.end(JSON.stringify({ ok: true, todos }));\n        } else if (req.method === 'POST' && req.url === '/todos') {\n          const todo = JSON.parse(body);\n          todo.id = crypto.randomUUID();\n          todo.createdAt = new Date().toISOString();\n          let todos = [];\n          if (fs.existsSync(dataPath)) {\n            todos = JSON.parse(fs.readFileSync(dataPath, 'utf8')).todos || [];\n          }\n          todos.push(todo);\n          fs.writeFileSync(dataPath, JSON.stringify({ todos }));\n          res.writeHead(201, { 'Content-Type': 'application/json' });\n          res.end(JSON.stringify({ ok: true, todo "
+    }

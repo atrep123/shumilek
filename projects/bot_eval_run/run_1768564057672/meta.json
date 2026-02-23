@@ -1,0 +1,8 @@
+{
+  "runId": 1768564057672,
+  "scenario": "python-ai-stdlib-oracle",
+  "model": "deepseek-coder-v2:16b",
+  "baseUrl": "http://localhost:11434",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1768564057672\\workspace",
+  "startedAt": "2026-01-16T11:47:37.674Z"
+}

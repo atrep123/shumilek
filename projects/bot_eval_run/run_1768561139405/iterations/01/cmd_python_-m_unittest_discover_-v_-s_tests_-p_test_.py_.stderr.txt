@@ -1,0 +1,42 @@
+test_generate_text_empty_model (test_markov_chain.TestMarkovChain.test_generate_text_empty_model) ... ok
+test_generate_text_length (test_markov_chain.TestMarkovChain.test_generate_text_length) ... ok
+test_generate_text_simple_case (test_markov_chain.TestMarkovChain.test_generate_text_simple_case) ... ok
+test_generate_text_single_char_model (test_markov_chain.TestMarkovChain.test_generate_text_single_char_model) ... ERROR
+test_train_model_empty_string (test_markov_chain.TestMarkovChain.test_train_model_empty_string) ... ok
+test_train_model_simple_case (test_markov_chain.TestMarkovChain.test_train_model_simple_case) ... FAIL
+test_train_model_single_char (test_markov_chain.TestMarkovChain.test_train_model_single_char) ... ERROR
+
+======================================================================
+ERROR: test_generate_text_single_char_model (test_markov_chain.TestMarkovChain.test_generate_text_single_char_model)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561139405\workspace\tests\test_markov_chain.py", line 28, in test_generate_text_single_char_model
+    model = {'a': defaultdict(int)}
+                  ^^^^^^^^^^^
+NameError: name 'defaultdict' is not defined
+
+======================================================================
+ERROR: test_train_model_single_char (test_markov_chain.TestMarkovChain.test_train_model_single_char)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561139405\workspace\tests\test_markov_chain.py", line 11, in test_train_model_single_char
+    self.assertEqual(model, {'a': defaultdict(int)})
+                                  ^^^^^^^^^^^
+NameError: name 'defaultdict' is not defined
+
+======================================================================
+FAIL: test_train_model_simple_case (test_markov_chain.TestMarkovChain.test_train_model_simple_case)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561139405\workspace\tests\test_markov_chain.py", line 21, in test_train_model_simple_case
+    self.assertEqual(model, expected_model)
+AssertionError: {'a': defaultdict(<class 'int'>, {'b': 2}), 'b'[77 chars] 1})} != {'a': {'b': 2}, 'b': {'c': 2}, 'c': {'a': 2}}
++ {'a': {'b': 2}, 'b': {'c': 2}, 'c': {'a': 2}}
+- {'a': defaultdict(<class 'int'>, {'b': 2}),
+-  'b': defaultdict(<class 'int'>, {'c': 2}),
+-  'c': defaultdict(<class 'int'>, {'a': 1})}
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.002s
+
+FAILED (failures=1, errors=2)

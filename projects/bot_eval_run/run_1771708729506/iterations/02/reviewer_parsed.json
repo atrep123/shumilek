@@ -1,0 +1,6 @@
+{
+  "review": "crypto, require, process declarations missing in src/store.ts",
+  "priorityFiles": [
+    "src/store.ts"
+  ]
+}

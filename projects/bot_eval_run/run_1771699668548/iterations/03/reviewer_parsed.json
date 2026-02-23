@@ -1,0 +1,7 @@
+{
+  "review": "Add 'openapi.json' file and update package.json to set type as 'module'.",
+  "priorityFiles": [
+    "src/openapi.json",
+    "package.json"
+  ]
+}

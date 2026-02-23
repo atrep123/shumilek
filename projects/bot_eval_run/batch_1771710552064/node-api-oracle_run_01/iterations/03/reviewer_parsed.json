@@ -1,0 +1,7 @@
+{
+  "review": "Add missing 'd' in the PATCH request body for updating a todo, and ensure that the server correctly handles 404 errors when retrieving non-existent todos.",
+  "priorityFiles": [
+    "tests/oracle.test.js",
+    "src/server.js"
+  ]
+}

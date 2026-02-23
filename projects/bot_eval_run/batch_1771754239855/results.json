@@ -1,0 +1,31 @@
+[
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 1,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 142747,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771754239855\\ts-todo-oracle_run_01",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1
+    },
+    "deterministicFallback": {
+      "mode": "off",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0
+    }
+  }
+]

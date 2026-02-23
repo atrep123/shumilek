@@ -1,0 +1,10 @@
+{
+  "runId": 1768567806806,
+  "scenario": "ts-todo-oracle",
+  "model": "qwen2.5-coder:14b",
+  "plannerModel": "deepseek-r1:8b",
+  "reviewerModel": "qwen2.5:3b",
+  "baseUrl": "http://localhost:11434",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1768567806806\\workspace",
+  "startedAt": "2026-01-16T12:50:06.818Z"
+}

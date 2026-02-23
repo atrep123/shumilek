@@ -1,0 +1,25 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Task Manager CLI\n\n## Usage\n\n- `add <title> --data <path>`: Add a new task.\n- `list --data <path>`: List all tasks.\n- `done <id> --data <path>`: Mark a task as done.\n- `remove <id> --data <path>`: Remove a task.\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"task-manager\",\n  \"version\": \"1.0.0\",\n  \"main\": \"dist/cli.js\",\n  \"scripts\": {\n    \"build\": \"tsc -p tsconfig.json\"\n  }\n}"
+    },
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES6\",\n    \"module\": \"commonjs\",\n    \"outDir\": \"dist\",\n    \"strict\": true,\n    \"esModuleInterop\": true\n  },\n  \"include\": [\n    \"src/**/*\"\n  ]\n}"
+    },
+    {
+      "path": "src/store.ts",
+      "content": "declare const require: any;\ndeclare const process: any;\nconst fs = require('node:fs');\n\ninterface Task {\n  id: string;\n  title: string;\n  done: boolean;\n}\n\nclass TaskStore {\n  private tasks: Task[] = [];\n\n  constructor(private filePath: string) {}\n\n  load(): void {\n    if (fs.existsSync(this.filePath)) {\n      this.tasks = JSON.parse(fs.readFileSync(this.filePath, 'utf-8')) || [];\n    }\n  }\n\n  save(): void {\n    fs.writeFileSync(this.filePath, JSON.stringify(this.tasks, null, 2));\n  }\n\n  add(title: string): Task {\n    const task: Task = {\n      id: Date.now().toString(),\n      title,\n      done: false\n    };\n    this.tasks.push(task);\n    this.save();\n    return task;\n  }\n\n  list(): Task[] {\n    return this.tasks;\n  }\n\n  markDone(id: string): void {\n    const task = this.tasks.find(t => t.id === id);\n    if (task) {\n      task.done = true;\n      this.save();\n    }\n  }\n\n  remove(id: string): void {\n    this.tasks = this.tasks.filter(t => t.id !== id);\n    this.save();\n  }\n}\n\nexport { TaskStore, Task };\n"
+    },
+    {
+      "path": "src/cli.ts",
+      "content": "declare const require: any;\ndeclare const process: any;\nconst fs = require('node:fs');\nimport { TaskStore, Task } from './store';\n\nfunction help(): void {\n  console.log(`\nTask Manager CLI\n\nUsage:\n- add <title> --data <path>\n- list --data <path>\n- done <id> --data <path>\n- remove <id> --data <path>\n`);\n}\n\nfunction parseArgs(): { command: string, title?: string, id?: string, filePath: string } {\n  const args = process.argv.slice(2);\n  let command = args[0];\n  let title: string | undefined;\n  let id: string | undefined;\n  let filePath: string | undefined;\n\n  for (let i = 1; i < args.length; i++) {\n    if (args[i] === '--data') {\n      filePath = args[++i];\n    } else if (!command) {\n      command = args[i];\n    } else if (!title && command === 'add') {\n      title = args[i];\n    } else if (!id && (command === 'done' || command === 'remove')) {\n      id = args[i];\n    }\n  }\n\n  return { command, title, id, filePath: filePath || 'tasks.json' };\n}\n\nfunction main(): void {\n  const { command, title, id, filePath } = parseArgs();\n\n  if (command === '--help') {\n    help();\n    return;\n  }\n\n  const taskStore = new TaskStore(filePath);\n  taskStore.load();\n\n  try {\n    switch (command) {\n      case 'add':\n        if (!title) throw new Error('Title is required for add command');\n        console.log(taskStore.add(title));\n        break;\n      case 'list':\n        taskStore.list().forEach(task => console.log(`${task.id}: ${task.title} [${task.done ? 'Done' : 'Pending'}]`));\n        break;\n      case 'done':\n        if (!id) throw new Error('ID is required for done command');\n        taskStore.markDone(id);\n        console.log(`Task ${id} marked as done.`);\n        break;\n      case 'remove':\n        if (!id) throw new Error('ID is required for remove command');\n        taskStore.remove(id);\n        console.log(`Task ${id} removed.`);\n        break;\n      default:\n        help();\n    }\n  } catch (error) {\n    console.error(error.message);\n  }\n}\n\nmain();\n"
+    }
+  ],
+  "notes": "Added missing files and corrected the implementation to meet the requirements."
+}

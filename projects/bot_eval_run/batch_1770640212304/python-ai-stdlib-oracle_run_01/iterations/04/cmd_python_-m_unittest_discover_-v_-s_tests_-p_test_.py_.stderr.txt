@@ -1,0 +1,26 @@
+test_oracle (unittest.loader._FailedTest.test_oracle) ... ERROR
+
+======================================================================
+ERROR: test_oracle (unittest.loader._FailedTest.test_oracle)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_oracle
+Traceback (most recent call last):
+  File "C:\Users\atrep\AppData\Local\Programs\Python\Python312\Lib\unittest\loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\AppData\Local\Programs\Python\Python312\Lib\unittest\loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1770640212304\python-ai-stdlib-oracle_run_01\workspace\tests\test_oracle.py", line 8, in <module>
+    from mini_ai.markov import MarkovChain
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1770640212304\python-ai-stdlib-oracle_run_01\workspace\mini_ai\__init__.py", line 2, in <module>
+    from .cli import main
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1770640212304\python-ai-stdlib-oracle_run_01\workspace\mini_ai\cli.py", line 5, in <module>
+    def main(argv: Optional[List[str]] = None) -> int:
+                   ^^^^^^^^
+NameError: name 'Optional' is not defined
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

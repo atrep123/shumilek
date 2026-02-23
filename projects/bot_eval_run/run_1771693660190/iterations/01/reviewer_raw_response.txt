@@ -1,0 +1,7 @@
+{ "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,  "<--- Add this option to allow default imports from ES modules (if needed for your setup)  ":", false  <-- Ensure there is a comma here if you have more options  "},"  <-- Close the compilerOptions object  },  ":", false  <-- Ensure there is a comma here if you have more include paths  "    }

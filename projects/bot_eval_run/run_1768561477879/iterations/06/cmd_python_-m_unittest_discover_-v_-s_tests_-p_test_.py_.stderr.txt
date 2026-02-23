@@ -1,0 +1,19 @@
+test_generate (test_generator.TestGenerator.test_generate) ... ERROR
+test_train (test_trainer.TestTrainer.test_train) ... ok
+
+======================================================================
+ERROR: test_generate (test_generator.TestGenerator.test_generate)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561477879\workspace\tests\test_generator.py", line 6, in test_generate
+    self.assertIsNotNone(generate('model.pth'))
+                         ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768561477879\workspace\mini_ai\generator.py", line 3, in generate
+    with open(model_path, 'r') as file:
+         ^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'model.pth'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.000s
+
+FAILED (errors=1)

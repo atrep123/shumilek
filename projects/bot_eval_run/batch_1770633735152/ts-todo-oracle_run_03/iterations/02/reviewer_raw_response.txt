@@ -1,0 +1,23 @@
+{  
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "paths": {
+      "*": [
+        "./**/*"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "references": [
+    { 
+      "path": "../node_modules/typescript/lib",
+      "rollupGlobal": "@types/node" 
+    }
+  ]
+}

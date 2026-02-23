@@ -1,0 +1,8 @@
+{
+  "count": 3,
+  "files": [
+    "mini_ai/__init__.py",
+    "mini_ai/markov.py",
+    "mini_ai/cli.py"
+  ]
+}

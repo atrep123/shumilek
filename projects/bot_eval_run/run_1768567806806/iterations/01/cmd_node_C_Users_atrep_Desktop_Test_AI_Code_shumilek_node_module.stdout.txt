@@ -1,0 +1,4 @@
+src/cli.ts(22,38): error TS7006: Parameter 'arg' implicitly has an 'any' type.
+src/cli.ts(35,39): error TS7006: Parameter 'arg' implicitly has an 'any' type.
+src/cli.ts(43,40): error TS7006: Parameter 'arg' implicitly has an 'any' type.
+src/cli.ts(51,42): error TS7006: Parameter 'arg' implicitly has an 'any' type.

@@ -1,0 +1,9 @@
+{
+  "count": 2,
+  "files": [
+    "src/server.js",
+    "openapi.json"
+  ],
+  "appliedAsPatch": true,
+  "forcePatchFromIncompleteFull": true
+}

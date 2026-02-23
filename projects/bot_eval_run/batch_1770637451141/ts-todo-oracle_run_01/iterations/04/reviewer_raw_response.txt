@@ -1,0 +1,4 @@
+{
+ "review": "Add missing Task and TaskStore types, update CLI commands to use TaskStore methods.",
+ "priorityFiles": ["src/store.ts", "src/cli.ts"]
+}

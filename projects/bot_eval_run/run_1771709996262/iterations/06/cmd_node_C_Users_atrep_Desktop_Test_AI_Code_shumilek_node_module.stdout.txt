@@ -1,0 +1,2 @@
+src/cli.ts(1,25): error TS2307: Cannot find module 'commander' or its corresponding type declarations.
+src/cli.ts(2,8): error TS2613: Module '"C:/Users/atrep/Desktop/Test_AI_Code/shumilek/projects/bot_eval_run/run_1771709996262/workspace/src/store"' has no default export. Did you mean to use 'import { TaskStore } from "C:/Users/atrep/Desktop/Test_AI_Code/shumilek/projects/bot_eval_run/run_1771709996262/workspace/src/store"' instead?

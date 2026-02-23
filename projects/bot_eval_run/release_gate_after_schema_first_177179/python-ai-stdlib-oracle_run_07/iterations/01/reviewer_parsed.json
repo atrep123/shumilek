@@ -1,0 +1,22 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md",
+      "content": ""
+    },
+    {
+      "path": "mini_ai/__init__.py",
+      "content": "from .markov import MarkovChain\n"
+    },
+    {
+      "path": "mini_ai/markov.py",
+      "content": "import json\n\n\nclass MarkovChain:\n    def __init__(self, order: int = 1):\n        self.order = order\n        self.transitions = {}\n\n    def train(self, text: str) -> None:\n        if not text or len(text) < self.order:\n            raise ValueError('Text is too short for the specified order.')\n\n        context = [text[i:i+self.order] for i in range(len(text)-self.order+1)]\n        next_char = text[self.order-1:]\n        for i, char in enumerate(next_char):\n            if not context[i]:\n                continue\n            self._update_transitions(context[i], char)\n\n    def _update_transitions(self, context: str, next_char: str) -> None:\n        transitions = self.transitions.get(context, {})\n        count = transitions.get(next_char, 0)\n        transitions[next_char] = count + 1\n        self.transitions[context] = transitions\n\n    def to_dict(self) -> dict:\n        return {\n            "
+    },
+    {
+      "path": "mini_ai/cli.py",
+      "content": "import argparse\nfrom .markov import MarkovChain\n\n\nclass Cli:\n    @classmethod\n    def main(cls, argv: list[str] | None = None):\n        parser = argparse.ArgumentParser()\n        parser.add_argument('--input', type=str, required=True)\n        parser.add_argument('--model-out', type=str, required=True)\n        parser.add_argument('--order', type=int, default=1)\n        subparsers = parser.add_subparsers(dest='command')\n\n        train_parser = subparsers.add_parser('train')\n        generate_parser = subparsers.add_parser('generate')\n\n        train_parser.set_defaults(func=lambda args: cls._run_train(args))\n        generate_parser.set_defaults(func=lambda args: cls._run_generate(args))\n\n    @classmethod\n    def _run_train(cls, args):\n        with open(args.input, 'r', encoding='utf-8') as f:\n            text = f.read()\n        mc = MarkovChain(order=args.order)\n        mc.train(text)\n        with open(args.model_out, 'w', encoding='utf-8') as f:\n            json.dump(mc.to_dict(), f, indent=2)\n\n    @classmethod\n    def _run_generate(cls, args):\n        model_path = args.model_out\n        length = int(args.length)\n        seed = args.seed if args.seed else None\n        random_seed = int(args.random_seed) if args.random_seed else None\n        mc = MarkovChain.from_dict(json.load(open(model_path)))\n        generated_text = mc.generate(length, seed, random_seed)\n        print(generated_text)\n\nif __name__ == '__main__':\n    Cli.main()\n"
+    },
+    "notes"
+  ]
+}

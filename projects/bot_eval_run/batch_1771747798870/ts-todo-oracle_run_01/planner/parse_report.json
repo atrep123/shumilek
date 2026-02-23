@@ -1,0 +1,27 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "deepseek-r1:8b",
+      "ok": false,
+      "error": "Model output is not valid JSON",
+      "errorKind": "json_parse",
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    },
+    {
+      "stage": "repair_schema",
+      "model": "qwen2.5:7b",
+      "ok": true,
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    }
+  ],
+  "finalOk": true,
+  "primaryError": "Model output is not valid JSON",
+  "primaryErrorKind": "json_parse"
+}

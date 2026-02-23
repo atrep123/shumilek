@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 189, in _run_module_as_main
+  File "<frozen runpy>", line 112, in _get_module_details
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1768564206346\workspace\mini_ai\__init__.py", line 3
+    This package contains the implementation of a character-level Markov chain generator.
+         ^^^^^^^
+SyntaxError: invalid syntax

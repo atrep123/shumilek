@@ -1,0 +1,97 @@
+[
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 1,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 75792,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771690085111\\ts-todo-oracle_run_01",
+    "diagnostics": [],
+    "timedOut": false
+  },
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 2,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 75255,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771690085111\\ts-todo-oracle_run_02",
+    "diagnostics": [],
+    "timedOut": false
+  },
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 3,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 75232,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771690085111\\ts-todo-oracle_run_03",
+    "diagnostics": [],
+    "timedOut": false
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 1,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 219884,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771690085111\\node-api-oracle_run_01",
+    "diagnostics": [],
+    "timedOut": false
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 2,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 223841,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771690085111\\node-api-oracle_run_02",
+    "diagnostics": [],
+    "timedOut": false
+  },
+  {
+    "scenario": "node-api-oracle",
+    "runIndex": 3,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 255282,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771690085111\\node-api-oracle_run_03",
+    "diagnostics": [],
+    "timedOut": false
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 1,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 108899,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771690085111\\python-ai-stdlib-oracle_run_01",
+    "diagnostics": [],
+    "timedOut": false
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 2,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 227283,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771690085111\\python-ai-stdlib-oracle_run_02",
+    "diagnostics": [
+      "Command failed: python -m compileall -q mini_ai tests (exit=1, timedOut=false)",
+      "Command failed: python -m unittest discover -v -s tests -p \"test*.py\" (exit=1, timedOut=false)",
+      "Command failed: python -m mini_ai.cli --help (exit=1, timedOut=false)",
+      "Too few tests ran: 1 (expected >= 5)"
+    ],
+    "timedOut": false
+  },
+  {
+    "scenario": "python-ai-stdlib-oracle",
+    "runIndex": 3,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 89773,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771690085111\\python-ai-stdlib-oracle_run_03",
+    "diagnostics": [],
+    "timedOut": false
+  }
+]

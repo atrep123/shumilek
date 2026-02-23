@@ -1,0 +1,24 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "baseUrl": "http://localhost:11434",
+  "transport": "chat",
+  "formatKind": "schema",
+  "schemaUsed": true,
+  "fallbackUsed": false,
+  "fallbackReason": null,
+  "usedFormatJson": false,
+  "doneReason": "stop",
+  "evalCount": 1452,
+  "promptEvalCount": 2364,
+  "effectiveOptions": {
+    "num_predict": 6000,
+    "seed": 42,
+    "temperature": 0
+  },
+  "options": {
+    "temperature": 0.2,
+    "num_predict": 2400,
+    "seed": 42
+  },
+  "deterministicFallbackMode": "on-fail"
+}

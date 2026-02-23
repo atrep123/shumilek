@@ -1,0 +1,3 @@
+{
+  "plan": "- [src/server.js] Implement basic server setup\n- [src/server.js] Define createServer function\n- [src/server.js] Add health check endpoint\n- [src/server.js] Add OpenAPI spec generation\n- [src/server.js] Implement GET /todos endpoint\n- [src/server.js] Implement POST /todos endpoint\n- [src/server.js] Implement GET /todos/:id endpoint\n- [src/server.js] Implement PATCH /todos/:id endpoint\n- [src/server.js] Implement DELETE /todos/:id endpoint\n- [src/server.js] Add todo persistence logic\n- [openapi.json] Define OpenAPI spec for endpoints\n- [package.json] Create minimal package.json"
+}

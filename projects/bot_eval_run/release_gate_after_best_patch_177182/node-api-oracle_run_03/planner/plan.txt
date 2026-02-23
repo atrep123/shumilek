@@ -1,0 +1,12 @@
+- [src/server.js] Implement basic server setup
+- [src/server.js] Define createServer function
+- [src/server.js] Add health check endpoint
+- [src/server.js] Add OpenAPI spec generation
+- [src/server.js] Implement GET /todos endpoint
+- [src/server.js] Implement POST /todos endpoint
+- [src/server.js] Implement GET /todos/:id endpoint
+- [src/server.js] Implement PATCH /todos/:id endpoint
+- [src/server.js] Implement DELETE /todos/:id endpoint
+- [src/server.js] Add todo persistence logic
+- [openapi.json] Define OpenAPI spec for endpoints
+- [package.json] Create minimal package.json

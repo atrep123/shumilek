@@ -1,0 +1,25 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Task Manager CLI\n\n## Usage\n\n- `add <title> --data <path>`: Add a new task.\n- `list --data <path>`: List all tasks.\n- `done <id> --data <path>`: Mark a task as done.\n- `remove <id> --data <path>`: Remove a task.\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"task-manager\",\n  \"version\": \"1.0.0\",\n  \"main\": \"dist/cli.js\",\n  \"scripts\": {\n    \"build\": \"tsc -p tsconfig.json\"\n  }\n}"
+    },
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES6\",\n    \"module\": \"commonjs\",\n    \"outDir\": \"dist\",\n    \"strict\": true,\n    \"esModuleInterop\": true\n  },\n  \"include\": [\n    \"src/**/*\"\n  ]\n}"
+    },
+    {
+      "path": "src/store.ts",
+      "content": "declare const require: any;\ndeclare const process: any;\nconst fs = require('node:fs');\n\ninterface Task {\n  id: string;\n  title: string;\n  done: boolean;\n}\n\nclass TaskStore {\n  private tasks: Task[] = [];\n\n  constructor(private filePath: string) {}\n\n  load(): void {\n    if (fs.existsSync(this.filePath)) {\n      this.tasks = JSON.parse(fs.readFileSync(this.filePath, 'utf-8')) || [];\n    }\n  }\n\n  save(): void {\n    fs.writeFileSync(this.filePath, JSON.stringify(this.tasks, null, 2));\n  }\n\n  add(title: string): Task {\n    const task: Task = {\n      id: Date.now().toString(),\n      title,\n      done: false\n    };\n    this.tasks.push(task);\n    this.save();\n    return task;\n  }\n\n  list(): Task[] {\n    return this.tasks;\n  }\n\n  markDone(id: string): void {\n    const task = this.tasks.find(t => t.id === id);\n    if (task) {\n      task.done = true;\n      this.save();\n    }\n  }\n\n  remove(id: string): void {\n    this.tasks = this.tasks.filter(t => t.id !== id);\n    this.save();\n  }\n}\n\nexport { TaskStore, Task };\n"
+    },
+    {
+      "path": "src/cli.ts",
+      "content": "declare const require: any;\ndeclare const process: any;\nconst fs = require('node:fs');\nimport { TaskStore, Task } from './store';\n\nfunction help(): void {\n  console.log(`\nTask Manager CLI\n\nUsage:\n- add <title> --data <path>\n- list --data <path>\n- done <id> --data <path>\n- remove <id> --data <path>\n`);\n}\n\nfunction parseArgs(): { command: string, args: any } {\n  const args = process.argv.slice(2);\n  const command = args[0];\n  const options: any = {};\n\n  for (let i = 1; i < args.length; i++) {\n    if (args[i].startsWith('--')) {\n      const [key, value] = args[i].slice(2).split('=');\n      options[key] = value || true;\n    }\n  }\n\n  return { command, args: options };\n}\n\nfunction main(): void {\n  const { command, args } = parseArgs();\n\n  if (command === '--help' || !args.data) {\n    help();\n    return;\n  }\n\n  const store = new TaskStore(args.data);\n  store.load();\n\n  switch (command) {\n    case 'add':\n      if (!args.title) {\n        console.error('Missing title');\n        return;\n      }\n      const task = store.add(args.title);\n      console.log(`Task added: ${task.id} - ${task.title}`);\n      break;\n\n    case 'list':\n      const tasks = store.list();\n      tasks.forEach(task => {\n        console.log(`${task.id} - ${task.title} [${task.done ? 'Done' : 'Pending'}]`);\n      });\n      break;\n\n    case 'done':\n      if (!args.id) {\n        console.error('Missing id');\n        return;\n      }\n      store.markDone(args.id);\n      console.log(`Task ${args.id} marked as done.`);\n      break;\n\n    case 'remove':\n      if (!args.id) {\n        console.error('Missing id');\n        return;\n      }\n      store.remove(args.id);\n      console.log(`Task ${args.id} removed.`);\n      break;\n\n    default:\n      help();\n  }\n}\n\nmain();\n"
+    }
+  ],
+  "notes": "Added missing files and corrected the implementation to meet the requirements."
+}

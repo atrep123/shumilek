@@ -1,0 +1,35 @@
+{  
+  "context": {
+    "src/server.js": [
+      "const http = require('node:http');",
+      "const fs = require('node:fs');",
+      "const path = require('node:path');",
+      "const crypto = require('node:crypto');",
+      "const { parse } = require('node:url');"
+    ],
+    "tests/oracle.test.js": [
+      "const test = require('node:test');",
+      "const assert = require('node:assert/strict');",
+      "const fs = require('node:fs');",
+      "const path = require('node:path');",
+      "const os = require('node:os');"
+    ]
+  },
+  "solutions": {
+    "src/server.js": [
+      "function createServer({ dataPath }) {",
+      "  const server = http.createServer((req, res) => {",
+      "    const url = new URL(req.url, 'http://localhost/');",
+      "    const method = req.method;",
+      "    let body = '';"
+    ],
+    "tests/oracle.test.js": [
+      "async function startServer(dataPath) {",
+      "  // eslint-disable-next-line @typescript-eslint/no-var-requires",
+      "  const mod = require('../src/server.js');",
+      "  assert.equal(typeof mod.createServer, 'function', 'src/server.js must export createServer');",
+      "  const server = mod.createServer({ dataPath });",
+      "  assert.equal(typeof server.listen, 'function');"
+    ]
+  }
+}

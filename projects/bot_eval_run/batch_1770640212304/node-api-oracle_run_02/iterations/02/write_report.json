@@ -1,0 +1,9 @@
+{
+  "count": 4,
+  "files": [
+    "README.md",
+    "package.json",
+    "src/server.js",
+    "tests/oracle.test.js"
+  ]
+}

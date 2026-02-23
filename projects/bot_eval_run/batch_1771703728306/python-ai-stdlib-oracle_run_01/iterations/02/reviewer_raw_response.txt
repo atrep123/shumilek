@@ -1,0 +1,10 @@
+{
+  "mode": "full",
+  "files": [
+    {"path": "README.md"},
+    {"path": "mini_ai/__init__.py"},
+    {"path": "mini_ai/markov.py"},
+    {"path": "mini_ai/cli.py"}
+  ],
+  "notes": "Fix test failures and ensure all required methods are implemented in MarkovChain."
+}

@@ -1,0 +1,22 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md",
+      "content": ""
+    },
+    {
+      "path": "mini_ai/__init__.py",
+      "content": "from .markov import MarkovChain\n"
+    },
+    {
+      "path": "mini_ai/markov.py",
+      "content": "import json\n\n\nclass MarkovChain:\n    def __init__(self, order: int = 1):\n        self.order = order\n        self.transitions = {}\n\n    @staticmethod\n    def from_dict(d: dict) -> 'MarkovChain':\n        return MarkovChain(order=d['order'])\n\n    def to_dict(self) -> dict:\n        return {\n            "
+    },
+    {
+      "path": "mini_ai/cli.py",
+      "content": "import argparse\nfrom .markov import MarkovChain\n\n\ndef main(argv: list[str] | None = None):\n    parser = argparse.ArgumentParser()\n    subparsers = parser.add_subparsers(dest='command')\n\n    train_parser = subparsers.add_parser('train', help='Train the Markov chain model from a text file and save it to a JSON file.')\n    train_parser.add_argument('--input', type=str, required=True, help='Input text file path.')\n    train_parser.add_argument('--model-out', type=str, required=True, help='Output JSON model file path.')\n    train_parser.add_argument('--order', type=int, default=1, help='Order of the Markov chain (default: 1).')\n\n    generate_parser = subparsers.add_parser('generate', help='Generate text using a trained Markov chain model.')\n    generate_parser.add_argument('--model', type=str, required=True, help='Model file path to load.')\n    generate_parser.add_argument('--length', type=int, default=10, help='Length of the generated text (default: 10).')\n    generate_parser.add_argument('--seed', type=str, help='Random seed for deterministic generation.')\n    generate_parser.add_argument('--random-seed', type=int, help='Random seed for non-deterministic generation.')\n\n    args = parser.parse_args(argv)\n\n    if args.command == 'train':\n        mc = MarkovChain(order=args.order)\n        with open(args.input, 'r', encoding='utf-8') as f:\n            text = f.read()\n        mc.train(text)\n        with open(args.model_out, 'w', encoding='utf-8') as f:\n            json.dump(mc.to_dict(), f, ensure_ascii=False)\n\n    elif args.command == 'generate':\n        mc = MarkovChain.from_dict(json.load(open(args.model, 'r', encoding='utf-8')))\n        generated_text = mc.generate(length=args.length, seed=args.seed, random_seed=args.random_seed)\n        print(generated_text)\n\nif __name__ == '__main__':\n    main()"
+    },
+    "notes"
+  ]
+}

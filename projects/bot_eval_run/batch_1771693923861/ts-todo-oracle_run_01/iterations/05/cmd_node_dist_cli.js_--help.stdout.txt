@@ -1,0 +1,6 @@
+Usage: node dist/cli.js [command] [options]
+Commands:
+  add <title>       Add a new task with the given title
+  list              List all tasks
+  done <id>         Mark a task as done by its ID
+  remove <id>       Remove a task by its ID

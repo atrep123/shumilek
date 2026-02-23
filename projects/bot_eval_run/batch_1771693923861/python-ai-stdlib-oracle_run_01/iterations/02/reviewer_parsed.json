@@ -1,0 +1,16 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md"
+    },
+    {
+      "path": "mini_ai/__init__.py",
+      "content": "from .markov import MarkovChain\n"
+    },
+    {
+      "path": "mini_ai/markov.py",
+      "content": "\nimport json\n\nclass MarkovChain:\n    def __init__(self, order: int = 1):\n        self.order = order\n        self.transitions = {}\n\n    def train(self, text: str) -> None:\n        if not isinstance(text, str):\n            raise ValueError('Text must be a string')\n        for i in range(len(text) - self.order + 1):\n            context = text[i:i+self.order]\n            next_char = text[i+self.order]\n            if context not in self.transitions:\n                self.transitions[context] = {}\n            if next_char not in self.transitions[context]:\n                self.transitions[context][next_char] = 0\n            self.transitions[context][next_char] += 1\n\n    def generate(self, length: int, seed: str | None = None, random_seed: int | None = None) -> str:\n        if not isinstance(length, int):\n            raise ValueError('Length must be an integer')\n        import random\n        if seed is not None and random_seed is not None:\n            raise ValueError('Cannot specify both seed and random_seed')\n        if seed is not None:\n            random.seed(seed)\n        elif random_seed is not None:\n            random.seed(random_seed)\n        result = []\n        context = text[:self.order]\n        for _ in range(length):\n            next_char, count = max(self.transitions[context].items(), key=lambda x: x[1])\n            result.append(next_char)\n            if len(result) < self.order:\n                context += text[len(context):len(context)+1]\n            else:\n                context = context[1:] + next_char\n        return ''.join(result)\n\n    def to_dict(self) -> dict:\n        transitions_dict = {context: {next_char: count for next_char, count in self.transitions[context].items()} for context in self.transitions}\n        return {"
+    }
+  ]
+}

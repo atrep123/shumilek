@@ -1,0 +1,3 @@
+{
+  "plan": "创建一个符合要求的TypeScript项目，其中包含README.md、package.json、tsconfig.json、src/store.ts和src/cli.ts文件。确保所有文件都遵循给定的要求，并且JSON对象中的`plan`字段是一个非空字符串。"
+}

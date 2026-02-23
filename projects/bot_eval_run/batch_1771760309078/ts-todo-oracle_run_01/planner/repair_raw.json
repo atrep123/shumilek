@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5:7b",
+  "created_at": "2026-02-22T11:38:58.2502935Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"plan\": \"创建一个符合要求的TypeScript项目，其中包含README.md、package.json、tsconfig.json、src/store.ts和src/cli.ts文件。确保所有文件都遵循给定的要求，并且JSON对象中的`plan`字段是一个非空字符串。\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 4525857000,
+  "load_duration": 2427294900,
+  "prompt_eval_count": 2941,
+  "prompt_eval_duration": 342768300,
+  "eval_count": 61,
+  "eval_duration": 378552800
+}

@@ -1,0 +1,23 @@
+{
+  "name": "forgeflow",
+  "version": "0.1.0",
+  "description": "Workflow runner with CLI and HTTP API",
+  "private": true,
+  "main": "dist/index.js",
+  "bin": {
+    "forgeflow": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/**/*.test.js",
+    "start": "node dist/server.js",
+    "cli": "node dist/cli.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3"
+  }
+}

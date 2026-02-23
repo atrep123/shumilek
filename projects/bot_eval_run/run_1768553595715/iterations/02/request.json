@@ -1,0 +1,5 @@
+{
+  "model": "deepseek-coder-v2:16b",
+  "baseUrl": "http://localhost:11434",
+  "usedFormatJson": true
+}

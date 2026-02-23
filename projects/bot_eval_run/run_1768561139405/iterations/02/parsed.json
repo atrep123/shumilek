@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Mini AI Project\nThis is a simple character-level Markov chain generator implemented in Python without any external dependencies.\n\n## Usage\n- Train the model: `python -m mini_ai.cli train <input_file>`\n- Generate text: `python -m mini_ai.cli generate <model_file> <length>`\n\n## Testing\nRun tests using unittest: `python -m unittest discover -v -s tests -p \"test*.py\"`\n"
+    },
+    {
+      "path": "mini_ai/__init__.py",
+      "content": "# This is the mini_ai package initializer.\n"
+    },
+    {
+      "path": "mini_ai/cli.py",
+      "content": "import sys\nfrom collections import defaultdict\nimport json\n\ndef train_model(input_file):\n    model = defaultdict(lambda: defaultdict(int))\n    with open(input_file, 'r') as f:\n        text = f.read()\n        for i in range(len(text) - 1):\n            current_char = text[i]\n            next_char = text[i + 1]\n            model[current_char][next_char] += 1\n    return model\ndef generate_text(model_file, length):\n    with open(model_file, 'r') as f:\n        model = json.load(f)\n    start_char = list(model.keys())[0]\n    text = [start_char]\n    for _ in range(length - 1):\n        current_char = text[-1]\n        if current_char not in model:\n            break\n        next_chars = list(model[current_char].keys())\n        weights = list(model[current_char].values())\n        next_char = max(zip(next_chars, weights), key=lambda x: x[1])[0]\n        text.append(next_char)\n    return ''.join(text)\ndef main():\n    if len(sys.argv) < 3:\n        print('Unknown command')\n        sys.exit(1)\n    command = sys.argv[1]\n    input_file_or_model = sys.argv[2]\n    if command == 'train':\n        model = train_model(input_file_or_model)\n        with open('model.json', 'w') as f:\n            json.dump(model, f)\n        print('Model trained and saved to model.json')\n    elif command == 'generate':\n        length = int(sys.argv[3]) if len(sys.argv) > 3 else 10\n        text = generate_text(input_file_or_model, length)\n        print(text)\n    else:\n        print('Unknown command')\n        sys.exit(1)\nif __name__ == '__main__':\n    main()\n"
+    },
+    {
+      "path": "tests/test_markov_chain.py",
+      "content": "import unittest\nfrom mini_ai.cli import train_model, generate_text\ndefaultdict = lambda t: {k: defaultdict(t) for k in 'abc'}\nclass TestMarkovChain(unittest.TestCase):\n    def test_train_model_single_char(self):\n        model = train_model('tests/input_single_char.txt')\n        expected_model = {'a': defaultdict(int)}\n        self.assertEqual(model, expected_model)\n\n    def test_train_model_simple_case(self):\n        model = train_model('tests/input_simple.txt')\n        expected_model = {\n            'a': {'b': 2},\n            'b': {'c': 2},\n            'c': {'a': 1}\n        }\n        self.assertEqual(model, expected_model)\n\n    def test_generate_text_single_char_model(self):\n        model_file = 'tests/model_single_char.json'\n        with open(model_file, 'w') as f:\n            json.dump({'a': defaultdict(int)}, f)\n        text = generate_text(model_file, 5)\n        self.assertEqual(text[:1], 'a')\n\n    def test_generate_text_simple_case(self):\n        model_file = 'tests/model_simple.json'\n        with open(model_file, 'w') as f:\n            json.dump({\n                'a': {'b': 2},\n                'b': {'c': 2},\n                'c': {'a': 1}\n            }, f)\n        text = generate_text(model_file, 5)\n        self.assertIn(text[0], 'abc')\n        for i in range(1, len(text)):\n            self.assertIn(text[i], model[text[i-1]])\n\nif __name__ == '__main__':\n    unittest.main()\n"
+    }
+  ],
+  "notes": "This project implements a simple character-level Markov chain generator with command-line interface and unit tests."
+}

@@ -1,0 +1,28 @@
+We are creating a project with the following structure:
+README.md:
+- A short description of the project, installation, and usage.
+mini_ai/__init__.py:
+- Empty or with __all__ if needed.
+mini_ai/markov.py:
+- Class MarkovChain with the required methods and attributes.
+mini_ai/cli.py:
+- Main function with argparse for command line interface.
+We must ensure that the code meets the oracle tests.
+Let's break down the implementation:
+1. README.md:
+- Project description, installation, and usage examples.
+2. mini_ai/__init__.py:
+- We can leave it empty or with a simple __all__ if we have multiple modules.
+3. mini_ai/markov.py:
+- We'll implement the MarkovChain class with the required methods.
+Steps for MarkovChain:
+- __init__: store order and initialize transitions (a dictionary) and maybe a counter for counts.
+- train:
+- We need to build the n-gram model from the text.
+- We'll consider the context as the last (order-1) characters (for order n, context length is order).
+- We'll traverse the text and for each position i (from order-1 to len(text)-1), the context is text[i-order+1:i] (if order>1) and the next character is text[i+1] (if we are at the last character, we don't have a next, so we skip? or we can consider the end of string as a special state? But the tests don't require that, so we'll just skip the last character for training? Actually, the test uses "aba" and order=1, so we need to handle the end.
+However, note: the test `test_train_and_to_dict` uses "aba" and order=1. The transitions should be:
+context "a": next char "b" with count 1
+context "b": next char "a" with count 1
+But note: the text "aba" has:
+index0: 'a' -> context for order1 is '' (if we consider the start) but the test doesn't use start. Actually, the test expects:

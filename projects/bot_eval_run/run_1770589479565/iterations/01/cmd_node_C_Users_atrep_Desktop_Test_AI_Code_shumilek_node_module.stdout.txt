@@ -1,0 +1,12 @@
+src/cli.ts(1,25): error TS2307: Cannot find module 'commander' or its corresponding type declarations.
+src/cli.ts(14,12): error TS7006: Parameter 'options' implicitly has an 'any' type.
+src/cli.ts(20,12): error TS7006: Parameter 'title' implicitly has an 'any' type.
+src/cli.ts(20,19): error TS7006: Parameter 'options' implicitly has an 'any' type.
+src/cli.ts(27,12): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/cli.ts(27,16): error TS7006: Parameter 'options' implicitly has an 'any' type.
+src/cli.ts(34,12): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/cli.ts(34,16): error TS7006: Parameter 'options' implicitly has an 'any' type.
+src/store.ts(1,10): error TS2303: Circular definition of import alias 'Task'.
+src/store.ts(1,10): error TS2459: Module '"./store"' declares 'Task' locally, but it is not exported.
+src/store.ts(1,16): error TS2303: Circular definition of import alias 'TaskStore'.
+src/store.ts(1,16): error TS2459: Module '"./store"' declares 'TaskStore' locally, but it is not exported.

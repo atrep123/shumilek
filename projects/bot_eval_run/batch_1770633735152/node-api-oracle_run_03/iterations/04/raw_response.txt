@@ -1,0 +1,10 @@
+{
+  "mode": "patch",
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"type\": \"commonjs\"\n}\n"
+    }
+  ],
+  "notes": "Added minimal package.json file with type set to 'commonjs'."
+}

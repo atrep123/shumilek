@@ -1,0 +1,2 @@
+src/cli.ts(17,33): error TS7006: Parameter 'arg' implicitly has an 'any' type.
+src/store.ts(18,9): error TS2304: Cannot find name 'fs'.

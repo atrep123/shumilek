@@ -1,0 +1,26 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md",
+      "content": "...\n"
+    },
+    {
+      "path": "package.json",
+      "content": "...\n"
+    },
+    {
+      "path": "tsconfig.json",
+      "content": "...\n"
+    },
+    {
+      "path": "src/store.ts",
+      "content": "...\n"
+    },
+    {
+      "path": "src/cli.ts",
+      "content": "...\n"
+    }
+  ],
+  "notes": "Fix command line arguments handling in CLI and ensure the help functionality works correctly."
+}

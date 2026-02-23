@@ -1,0 +1,41 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "README.md missing basic usage (add/list)",
+    "No dependencies allowed (dependencies/devDependencies must be empty or missing)",
+    "Command failed: node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json (exit=2, timedOut=false)",
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\ts-todo-oracle_run_01\\workspace",
+      "ok": false,
+      "exitCode": 2,
+      "timedOut": false,
+      "durationMs": 527,
+      "stdout": "src/cli.ts(53,21): error TS18046: 'error' is of type 'unknown'.\r\nsrc/cli.ts(67,21): error TS18046: 'error' is of type 'unknown'.\r\nsrc/store.ts(28,46): error TS18046: 'error' is of type 'unknown'.\r\nsrc/store.ts(36,46): error TS18046: 'error' is of type 'unknown'.\r\n",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\ts-todo-oracle_run_01\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 199,
+      "stdout": "Failed to load tasks: ENOENT: no such file or directory, open 'C:\\Users\\atrep\\AppData\\Local\\Temp\\bot-eval-ts-todo-GjklKZ\\tasks.json'\n✖ TaskStore: CRUD persists to JSON file (6.7809ms)\n✖ CLI: end-to-end flow (79.048ms)\nℹ tests 2\nℹ suites 0\nℹ pass 0\nℹ fail 2\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 142.5056\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:26:1\n✖ TaskStore: CRUD persists to JSON file (6.7809ms)\n  TypeError: store.done is not a function\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\ts-todo-oracle_run_01\\workspace\\tests\\oracle.test.js:49:22)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.start (node:internal/test_runner/test:1003:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17)\n\ntest at tests\\oracle.test.js:62:1\n✖ CLI: end-to-end flow (79.048ms)\n  Error: Expected JSON object on stdout, got: No tasks found.\n      at parseJsonFromStdout (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\ts-todo-oracle_run_01\\workspace\\tests\\oracle.test.js:17:9)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\ts-todo-oracle_run_01\\workspace\\tests\\oracle.test.js:75:21)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3)\n",
+      "stderr": ""
+    },
+    {
+      "command": "node dist/cli.js --help",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\ts-todo-oracle_run_01\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 57,
+      "stdout": "Usage: node dist/cli.js [command] [options]\nCommands:\n  add <title>       Add a new task with the given title\n  list              List all tasks\n  done <id>         Mark a task as done by its ID\n  remove <id>       Remove a task by its ID\n",
+      "stderr": "Failed to load tasks: ENOENT: no such file or directory, open 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1771693923861\\ts-todo-oracle_run_01\\workspace\\tasks.json'\n"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "mode": "patch",
+  "files": [
+    {
+      "path": "tests/test_generator.py",
+      "content": "import unittest\nfrom mini_ai.generator import generate\n\nclass TestGenerator(unittest.TestCase):\n    def test_generate(self):\n        self.assertIsNotNone(generate('model.pth'))\n"
+    },
+    {
+      "path": "mini_ai/generator.py",
+      "content": "def generate(model_path):\\\n    # Implementace generovani textu z Markovova lincova\n    pass\n"
+    }
+  ],
+  "notes": "optional"
+}

@@ -1,0 +1,45 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "CLI must parse process.argv manually; do not use commander/yargs/minimist",
+    "src/cli.ts should import TaskStore as named import from ./store",
+    "src/cli.ts should print JSON outputs via JSON.stringify",
+    "src/cli.ts outputs should include \"ok\" field in JSON responses",
+    "Non-builtin import \"commander\" in src/cli.ts",
+    "Command failed: node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json (exit=2, timedOut=false)",
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)",
+    "Command failed: node dist/cli.js --help (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json",
+      "cwd": "projects\\bot_eval_run\\run_1771709996262\\workspace",
+      "ok": false,
+      "exitCode": 2,
+      "timedOut": false,
+      "durationMs": 1150,
+      "stdout": "src/cli.ts(1,25): error TS2307: Cannot find module 'commander' or its corresponding type declarations.\r\nsrc/cli.ts(2,8): error TS2613: Module '\"C:/Users/atrep/Desktop/Test_AI_Code/shumilek/projects/bot_eval_run/run_1771709996262/workspace/src/store\"' has no default export. Did you mean to use 'import { TaskStore } from \"C:/Users/atrep/Desktop/Test_AI_Code/shumilek/projects/bot_eval_run/run_1771709996262/workspace/src/store\"' instead?\r\n",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "projects\\bot_eval_run\\run_1771709996262\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 160,
+      "stdout": "✖ TaskStore: CRUD persists to JSON file (4.193ms)\n✖ CLI: end-to-end flow (39.6099ms)\nℹ tests 2\nℹ suites 0\nℹ pass 0\nℹ fail 2\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 97.1512\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:26:1\n✖ TaskStore: CRUD persists to JSON file (4.193ms)\n  Error: ENOENT: no such file or directory, open 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1771709996262\\workspace\\C:\\Users\\atrep\\AppData\\Local\\Temp\\bot-eval-ts-todo-jEcNQu\\tasks.json'\n      at writeFileSync (node:fs:2415:20)\n      at TaskStore.list (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1771709996262\\workspace\\dist\\store.js:18:40)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1771709996262\\workspace\\tests\\oracle.test.js:35:26)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.start (node:internal/test_runner/test:1003:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {\n    errno: -4058,\n    code: 'ENOENT',\n    syscall: 'open',\n    path: 'C:\\\\Users\\\\atrep\\\\Desktop\\\\Test_AI_Code\\\\shumilek\\\\projects\\\\bot_eval_run\\\\run_1771709996262\\\\workspace\\\\C:\\\\Users\\\\atrep\\\\AppData\\\\Local\\\\Temp\\\\bot-eval-ts-todo-jEcNQu\\\\tasks.json'\n  }\n\ntest at tests\\oracle.test.js:62:1\n✖ CLI: end-to-end flow (39.6099ms)\n  AssertionError [ERR_ASSERTION]: node:internal/modules/cjs/loader:1424\n    throw err;\n    ^\n  \n  Error: Cannot find module 'commander'\n  Require stack:\n  - C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1771709996262\\workspace\\dist\\cli.js\n      at Module._resolveFilename (node:internal/modules/cjs/loader:1421:15)\n      at defaultResolveImpl (node:internal/modules/cjs/loader:1059:19)\n      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1064:22)\n      at Module._load (node:internal/modules/cjs/loader:1227:37)\n      at TracingChannel.traceSync (node:diagnostics_channel:328:14)\n      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\n      at Module.require (node:internal/modules/cjs/loader:1504:12)\n      at require (node:internal/modules/helpers:152:16)\n      at Object.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1771709996262\\workspace\\dist\\cli.js:6:21)\n      at Module._compile (node:internal/modules/cjs/loader:1761:14) {\n    code: 'MODULE_NOT_FOUND',\n    requireStack: [\n      'C:\\\\Users\\\\atrep\\\\Desktop\\\\Test_AI_Code\\\\shumilek\\\\projects\\\\bot_eval_run\\\\run_1771709996262\\\\workspace\\\\dist\\\\cli.js'\n    ]\n  }\n  \n  Node.js v24.12.0\n  \n  \n  1 !== 0\n  \n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1771709996262\\workspace\\tests\\oracle.test.js:69:10)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 1,\n    expected: 0,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+      "stderr": ""
+    },
+    {
+      "command": "node dist/cli.js --help",
+      "cwd": "projects\\bot_eval_run\\run_1771709996262\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 53,
+      "stdout": "",
+      "stderr": "node:internal/modules/cjs/loader:1424\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'commander'\r\nRequire stack:\r\n- C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1771709996262\\workspace\\dist\\cli.js\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1421:15)\r\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1059:19)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1064:22)\r\n    at Module._load (node:internal/modules/cjs/loader:1227:37)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\r\n    at Module.require (node:internal/modules/cjs/loader:1504:12)\r\n    at require (node:internal/modules/helpers:152:16)\r\n    at Object.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1771709996262\\workspace\\dist\\cli.js:6:21)\r\n    at Module._compile (node:internal/modules/cjs/loader:1761:14) {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: [\r\n    'C:\\\\Users\\\\atrep\\\\Desktop\\\\Test_AI_Code\\\\shumilek\\\\projects\\\\bot_eval_run\\\\run_1771709996262\\\\workspace\\\\dist\\\\cli.js'\r\n  ]\r\n}\r\n\r\nNode.js v24.12.0\r\n"
+    }
+  ]
+}

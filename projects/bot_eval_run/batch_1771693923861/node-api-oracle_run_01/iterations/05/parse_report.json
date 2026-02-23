@@ -1,0 +1,38 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "qwen2.5-coder:14b",
+      "ok": false,
+      "error": "Unterminated string in JSON at position 9387 (line 17 column 4114)",
+      "errorKind": "json_parse",
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    },
+    {
+      "stage": "repair_syntax",
+      "model": "qwen2.5:7b",
+      "ok": false,
+      "error": "files[] must be objects",
+      "errorKind": "schema",
+      "transport": "generate",
+      "formatKind": "json",
+      "schemaUsed": false,
+      "fallbackUsed": false
+    },
+    {
+      "stage": "repair_schema",
+      "model": "qwen2.5:7b",
+      "ok": true,
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    }
+  ],
+  "finalOk": true,
+  "primaryError": "Unterminated string in JSON at position 9387 (line 17 column 4114)",
+  "primaryErrorKind": "json_parse"
+}

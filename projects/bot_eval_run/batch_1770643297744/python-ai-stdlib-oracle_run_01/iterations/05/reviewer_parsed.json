@@ -1,0 +1,22 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md",
+      "content": "...\n"
+    },
+    {
+      "path": "mini_ai/__init__.py",
+      "content": "from .markov import MarkovChain\n"
+    },
+    {
+      "path": "mini_ai/markov.py",
+      "content": "class MarkovChain:\n  def __init__(self, order: int = 1):\n    self.order = order\n    self.transitions = {}\n\n  def train(self, text: str) -> None:\n    for i in range(len(text) - self.order):\n      context = text[i:i+self.order]\n      next_char = text[i+self.order]\n      if context not in self.transitions:\n        self.transitions[context] = {}\n      if next_char not in self.transitions[context]:\n        self.transitions[context][next_char] = 0\n      self.transitions[context][next_char] += 1\n\n  def generate(self, length: int, seed: str | None = None, random_seed: int | None = None) -> str:\n    if random_seed is not None:\n      random.seed(random_seed)\n    elif seed is not None:\n      random.seed(seed)\n\n    context = seed if seed else random.choice(list(self.transitions.keys()))\n    result = list(context)\n    for _ in range(length - len(context)):\n      if context not in self.transitions or not self.transitions[context]:\n        break\n      next_char = random.choice(list(self.transitions[context].keys()))\n      result.append(next_char)\n      context = result[-self.order:]  # Update the context to be the last `order` characters of `result`\n    return ''.join(result)\n"
+    },
+    {
+      "path": "mini_ai/cli.py",
+      "content": "import argparse\nfrom mini_ai.markov import MarkovChain\n\ndef main(argv: list[str] | None = None) -> int:\n  parser = argparse.ArgumentParser(description='Mini AI CLI')\n  subparsers = parser.add_subparsers()\n\n  train_parser = subparsers.add_parser('train', help='Train the model from a text file.')\n  train_parser.add_argument('--input', type=str, required=True, help='Path to the input text file.')\n  train_parser.add_argument('--model-out', type=str, required=True, help='Path to save the trained model.')\n  train_parser.add_argument('--order', type=int, required=True, help='Order of the Markov chain.')\n  train_parser.set_defaults(func=train)\n\n  generate_parser = subparsers.add_parser('generate', help='Generate text using a trained model.')\n  generate_parser.add_argument('--model', type=str, required=True, help='Path to the input model file.')\n  generate_parser.add_argument('--length', type=int, required=True, help='Length of the generated text.')\n  generate_parser.add_argument('--seed', type=str, default=None, help='Seed for text generation.')\n  generate_parser.add_argument('--random-seed', type=int, default=None, help='Random seed for reproducibility.')\n  generate_parser.set_defaults(func=generate)\n\n  args = parser.parse_args(argv) if argv is not None else parser.parse_args()\n  return args.func(args)\n"
+    }
+  ],
+  "notes": "IndentationError in markov.py fixed by removing the extra indentation on line 1."
+}

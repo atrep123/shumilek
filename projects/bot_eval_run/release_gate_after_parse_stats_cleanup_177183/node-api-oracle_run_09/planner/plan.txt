@@ -1,0 +1,12 @@
+- [src/server.js] Implement basic server setup
+- [src/server.js] Define createServer function
+- [src/server.js] Implement GET /health endpoint
+- [src/server.js] Implement GET /openapi.json endpoint
+- [src/server.js] Implement GET /todos endpoint
+- [src/server.js] Implement POST /todos endpoint
+- [src/server.js] Implement GET /todos/:id endpoint
+- [src/server.js] Implement PATCH /todos/:id endpoint
+- [src/server.js] Implement DELETE /todos/:id endpoint
+- [src/server.js] Persist data to file
+- [openapi.json] Define OpenAPI 3.x schema
+- [package.json] Add minimal package configuration

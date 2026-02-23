@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "mini_ai/markov.py",
+      "content": "from __future__ import annotations\nimport random\nclass MarkovChain:\n    def __init__(self, order: int = 1):\n        if order <= 0:\n            raise ValueError(\"Order must be greater than 0.\")\n        self.order = order\n        self.transitions = {}\n\n    def train(self, text: str) -> None:\n        for i in range(len(text) - self.order):\n            context = text[i:i + self.order]\n            next_char = text[i + self.order]\n            if context not in self.transitions:\n                self.transitions[context] = {}\n            if next_char not in self.transitions[context]:\n                self.transitions[context][next_char] = 0\n            self.transitions[context][next_char] += 1\n\n    def generate(self, length: int, seed: str | None = None, random_seed: int | None = None) -> str:\n        if random_seed is not None:\n            random.seed(random_seed)\n        if seed is None or len(seed) != self.order:\n            raise ValueError(f\"Seed must be provided and have length {self.order}.\")\n        result = list(seed)\n        for _ in range(length - self.order):\n            context = ''.join(result[-self.order:])\n            if context not in self.transitions or not self.transitions[context]:\n                break\n            next_char = random.choices(list(self.transitions[context].keys()), weights=self.transitions[context].values(), k=1)[0]\n            result.append(next_char)\n        return ''.join(result)\n\n    def to_dict(self) -> dict:\n        return {\n            \"order\": self.order,\n            \"transitions\": self.transitions\n        }\n\n    @classmethod\ndef from_dict(cls, d: dict) -> \"MarkovChain\":\n        mc = cls(order=d[\"order\"])\n        mc.transitions = d[\"transitions\"]\n        return mc\n"
+    }
+  ],
+  "notes": "Fixed the order validation in MarkovChain class to raise ValueError for order <= 0."
+}
