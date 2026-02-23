@@ -100,7 +100,6 @@ jobs:
             projects/bot_eval_run/release_gate_ci_pr_${{ github.run_id }}_${{ github.run_attempt }}/results.json
             projects/bot_eval_run/release_gate_ci_pr_${{ github.run_id }}_${{ github.run_attempt }}/summary.json
             projects/bot_eval_run/release_gate_ci_pr_${{ github.run_id }}_${{ github.run_attempt }}/compare.json
-            projects/bot_eval_run/release_gate_ci_pr_${{ github.run_id }}_${{ github.run_attempt }}/compare_report.txt
 
   gate-nightly:
     if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.profile == 'nightly')
@@ -165,5 +164,4 @@ jobs:
             projects/bot_eval_run/release_gate_ci_nightly_${{ github.run_id }}_${{ github.run_attempt }}/results.json
             projects/bot_eval_run/release_gate_ci_nightly_${{ github.run_id }}_${{ github.run_attempt }}/summary.json
             projects/bot_eval_run/release_gate_ci_nightly_${{ github.run_id }}_${{ github.run_attempt }}/compare.json
-            projects/bot_eval_run/release_gate_ci_nightly_${{ github.run_id }}_${{ github.run_attempt }}/compare_report.txt
 
