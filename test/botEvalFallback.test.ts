@@ -74,7 +74,8 @@ describe('botEval deterministic fallback helpers', () => {
     assert.ok(!/join\(__dirname,\s*'\.\.',\s*filePath\)/.test(out));
     assert.ok(/existsSync\(/.test(out));
     assert.ok(!/fs\.existsSync\(/.test(out));
-    assert.ok(/import\s*\{\s*existsSync,\s*readFileSync,\s*writeFileSync\s*\}\s*from\s*'fs'/.test(out));
+    assert.ok(/const\s*\{\s*existsSync,\s*readFileSync,\s*writeFileSync\s*\}\s*=\s*require\("node:fs"\);/.test(out));
+    assert.ok(/declare const require: any;/.test(out));
     assert.ok(/JSON\.stringify\(\{ tasks \}, null, 2\)/.test(out));
     assert.ok(/Array\.isArray\(parsed\?\.tasks\)/.test(out));
   });
@@ -187,11 +188,13 @@ describe('botEval deterministic fallback helpers', () => {
       'const fs = require("node:fs");',
       'const cmd = process.argv[2];',
       'let dataPath: string | undefined;',
+      'class TaskStore { constructor(_p: string) {} }',
       '',
       'if (!dataPath || !fs.existsSync(dataPath)) {',
       "  console.error('Error: --data <path> is required and must point to an existing file.');",
       '  process.exit(1);',
       '}',
+      'const store = new TaskStore(dataPath);',
       '',
       "if (cmd === '--help') {",
       '  process.exit(0);',
@@ -202,6 +205,7 @@ describe('botEval deterministic fallback helpers', () => {
     assert.ok(out.includes('if (!dataPath) {'));
     assert.ok(!out.includes('!fs.existsSync(dataPath)'));
     assert.ok(out.includes('--data <path> is required.'));
+    assert.ok(out.includes('new TaskStore(dataPath as string)'));
   });
 
   it('replaces ts cli parser/output shape mismatch with canonical fallback cli', () => {

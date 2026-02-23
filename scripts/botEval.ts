@@ -732,7 +732,6 @@ export function normalizeTsTodoStorePathHandling(content: string): string {
       next = `${cryptoRequire}\n${next}`;
     }
   }
-
   const hasFsObjectBinding =
     /\b(?:const|let|var)\s+fs\s*=/.test(next) ||
     /\bimport\s+fs\s+from\s+['"](?:node:)?fs['"]/.test(next) ||
@@ -773,6 +772,30 @@ export function normalizeTsTodoStorePathHandling(content: string): string {
     ''
   ].join('\n'));
   next = next.replace(/JSON\.stringify\(\s*tasks\s*,\s*null\s*,\s*2\s*\)/g, 'JSON.stringify({ tasks }, null, 2)');
+
+  const convertNamedImportToRequire = (source: 'fs' | 'crypto'): void => {
+    const importRe = new RegExp(`import\\s*\\{\\s*([^}]+)\\s*\\}\\s*from\\s*['"](?:node:)?${source}['"]\\s*;?`, 'g');
+    next = next.replace(importRe, (full, rawNames) => {
+      const text = String(rawNames || '');
+      if (/\bas\b/.test(text)) return full;
+      const names = text
+        .split(',')
+        .map((p: string) => p.trim())
+        .filter(Boolean)
+        .join(', ');
+      if (!names) return full;
+      return `const { ${names} } = require("node:${source}");`;
+    });
+  };
+  convertNamedImportToRequire('fs');
+  convertNamedImportToRequire('crypto');
+  next = next.replace(/import\s+\*\s+as\s+fs\s+from\s*['"](?:node:)?fs['"]\s*;?/g, 'const fs = require("node:fs");');
+  next = next.replace(/import\s+fs\s+from\s*['"](?:node:)?fs['"]\s*;?/g, 'const fs = require("node:fs");');
+  next = next.replace(/import\s+\*\s+as\s+crypto\s+from\s*['"](?:node:)?crypto['"]\s*;?/g, 'const crypto = require("node:crypto");');
+  next = next.replace(/import\s+crypto\s+from\s*['"](?:node:)?crypto['"]\s*;?/g, 'const crypto = require("node:crypto");');
+  if (/\brequire\s*\(/.test(next) && !/^\s*declare const require:\s*any;\s*$/m.test(next)) {
+    next = `declare const require: any;\n${next}`;
+  }
 
   return next;
 }
@@ -821,6 +844,7 @@ export function normalizeTsTodoCliContract(content: string): string {
     /--data <path> is required and must point to an existing file\./g,
     '--data <path> is required.'
   );
+  next = next.replace(/\bnew\s+TaskStore\s*\(\s*dataPath\s*\)/g, 'new TaskStore(dataPath as string)');
 
   const hasParserShapeMismatch =
     /return\s*\{\s*cmd\s*,\s*dataPath\s*\}\s*;/.test(next) &&
