@@ -66,7 +66,7 @@ jobs:
         run: npm ci
 
       - name: Verify Ollama connectivity
-        shell: pwsh
+        shell: powershell
         run: |
           $baseUrl = if ($env:OLLAMA_BASE_URL) { $env:OLLAMA_BASE_URL } else { 'http://127.0.0.1:11434' }
           $null = Invoke-RestMethod -Uri "$baseUrl/api/tags" -TimeoutSec 10
@@ -74,7 +74,7 @@ jobs:
 
       - name: Resolve baseline directory
         id: baseline
-        shell: pwsh
+        shell: powershell
         run: |
           $candidate = "$env:BOT_EVAL_BASELINE_DIR".Trim()
           if ([string]::IsNullOrWhiteSpace($candidate)) {
@@ -99,7 +99,7 @@ jobs:
 
       - name: Run release gate (3x3)
         id: gate
-        shell: pwsh
+        shell: powershell
         run: |
           $outDir = "projects/bot_eval_run/release_gate_ci_pr_${env:GITHUB_RUN_ID}_${env:GITHUB_RUN_ATTEMPT}"
           npm run bot:eval:release-gate:ci -- --runs 3 --baseline "${{ steps.baseline.outputs.baseline_dir }}" --outDir $outDir
@@ -147,7 +147,7 @@ jobs:
         run: npm ci
 
       - name: Verify Ollama connectivity
-        shell: pwsh
+        shell: powershell
         run: |
           $baseUrl = if ($env:OLLAMA_BASE_URL) { $env:OLLAMA_BASE_URL } else { 'http://127.0.0.1:11434' }
           $null = Invoke-RestMethod -Uri "$baseUrl/api/tags" -TimeoutSec 10
@@ -155,7 +155,7 @@ jobs:
 
       - name: Resolve baseline directory
         id: baseline
-        shell: pwsh
+        shell: powershell
         run: |
           $candidate = "$env:BOT_EVAL_BASELINE_DIR".Trim()
           if ([string]::IsNullOrWhiteSpace($candidate)) {
@@ -180,7 +180,7 @@ jobs:
 
       - name: Run release gate (10x3)
         id: gate
-        shell: pwsh
+        shell: powershell
         run: |
           $outDir = "projects/bot_eval_run/release_gate_ci_nightly_${env:GITHUB_RUN_ID}_${env:GITHUB_RUN_ATTEMPT}"
           npm run bot:eval:release-gate:ci -- --runs 10 --baseline "${{ steps.baseline.outputs.baseline_dir }}" --outDir $outDir
@@ -197,3 +197,4 @@ jobs:
             ${{ steps.gate.outputs.out_dir }}/summary.json
             ${{ steps.gate.outputs.out_dir }}/compare.json
             ${{ steps.gate.outputs.out_dir }}/compare_report.txt
+
