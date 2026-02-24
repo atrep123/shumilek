@@ -87,6 +87,7 @@ jobs:
         shell: cmd
         run: |
           set "outDir=projects/bot_eval_run/release_gate_ci_pr_%GITHUB_RUN_ID%_%GITHUB_RUN_ATTEMPT%"
+          echo out_dir=%outDir%>>%GITHUB_OUTPUT%
           npm run bot:eval:release-gate:ci -- --runs 3 --baseline "${{ steps.baseline.outputs.baseline_dir }}" --outDir "%outDir%"
           if errorlevel 1 exit /b 1
 
@@ -97,9 +98,16 @@ jobs:
           name: bot-eval-release-gate-pr-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: warn
           path: |
-            projects/bot_eval_run/release_gate_ci_pr_${{ github.run_id }}_${{ github.run_attempt }}/results.json
-            projects/bot_eval_run/release_gate_ci_pr_${{ github.run_id }}_${{ github.run_attempt }}/summary.json
-            projects/bot_eval_run/release_gate_ci_pr_${{ github.run_id }}_${{ github.run_attempt }}/compare.json
+            ${{ steps.gate.outputs.out_dir }}/results.json
+            ${{ steps.gate.outputs.out_dir }}/summary.json
+            ${{ steps.gate.outputs.out_dir }}/compare.json
+
+      - name: Cleanup old bot-eval directories (PR)
+        if: always()
+        shell: cmd
+        run: |
+          npm run bot:eval:cleanup -- --root projects/bot_eval_run --policy "release_gate_ci_pr_:10" --out "${{ steps.gate.outputs.out_dir }}/cleanup_report.json"
+          if errorlevel 1 exit /b 1
 
   gate-nightly:
     if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.profile == 'nightly')
@@ -151,7 +159,30 @@ jobs:
         shell: cmd
         run: |
           set "outDir=projects/bot_eval_run/release_gate_ci_nightly_%GITHUB_RUN_ID%_%GITHUB_RUN_ATTEMPT%"
+          echo out_dir=%outDir%>>%GITHUB_OUTPUT%
           npm run bot:eval:release-gate:ci -- --runs 10 --baseline "${{ steps.baseline.outputs.baseline_dir }}" --outDir "%outDir%"
+          if errorlevel 1 exit /b 1
+
+      - name: Resolve trend input runs
+        if: steps.gate.conclusion == 'success'
+        id: trend
+        shell: cmd
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -Command "$root = Join-Path $PWD 'projects\bot_eval_run'; $dirs = Get-ChildItem $root -Directory | Where-Object { $_.Name -like 'release_gate_ci_nightly_*' } | Sort-Object LastWriteTime -Descending | Select-Object -First 3 -ExpandProperty FullName; if (-not $dirs -or $dirs.Count -eq 0) { throw 'No nightly run directories found for trend aggregation.' }; $inputs = ($dirs -join ','); ('trend_inputs=' + $inputs) | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append; Write-Host ('Trend inputs: ' + $inputs)"
+          if errorlevel 1 exit /b 1
+
+      - name: Build stability trend report
+        if: steps.gate.conclusion == 'success'
+        shell: cmd
+        run: |
+          npm run bot:eval:stability:aggregate -- --inputs "${{ steps.trend.outputs.trend_inputs }}" --out "${{ steps.gate.outputs.out_dir }}/stability_aggregate.json" --outMd "${{ steps.gate.outputs.out_dir }}/stability_aggregate.md"
+          if errorlevel 1 exit /b 1
+
+      - name: Guarded baseline promotion
+        if: steps.gate.conclusion == 'success'
+        shell: cmd
+        run: |
+          npm run bot:eval:baseline:promote -- --candidate "${{ steps.gate.outputs.out_dir }}" --stable "${{ steps.baseline.outputs.baseline_dir }}" --state "C:\actions-runner\release_gate_promotion_state.json" --requiredConsecutive 2 --scenario "ts-todo-oracle" --minRawRunPassRate 1 --maxFallbackDependencyRunRate 0 --out "${{ steps.gate.outputs.out_dir }}/baseline_promotion.json"
           if errorlevel 1 exit /b 1
 
       - name: Upload gate artifacts
@@ -161,7 +192,16 @@ jobs:
           name: bot-eval-release-gate-nightly-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: warn
           path: |
-            projects/bot_eval_run/release_gate_ci_nightly_${{ github.run_id }}_${{ github.run_attempt }}/results.json
-            projects/bot_eval_run/release_gate_ci_nightly_${{ github.run_id }}_${{ github.run_attempt }}/summary.json
-            projects/bot_eval_run/release_gate_ci_nightly_${{ github.run_id }}_${{ github.run_attempt }}/compare.json
+            ${{ steps.gate.outputs.out_dir }}/results.json
+            ${{ steps.gate.outputs.out_dir }}/summary.json
+            ${{ steps.gate.outputs.out_dir }}/compare.json
+            ${{ steps.gate.outputs.out_dir }}/stability_aggregate.json
+            ${{ steps.gate.outputs.out_dir }}/stability_aggregate.md
+            ${{ steps.gate.outputs.out_dir }}/baseline_promotion.json
 
+      - name: Cleanup old bot-eval directories (nightly)
+        if: always()
+        shell: cmd
+        run: |
+          npm run bot:eval:cleanup -- --root projects/bot_eval_run --policy "release_gate_ci_nightly_:10" --policy "release_gate_ci_pr_:10" --out "${{ steps.gate.outputs.out_dir }}/cleanup_report.json"
+          if errorlevel 1 exit /b 1
