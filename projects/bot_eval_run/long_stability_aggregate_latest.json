@@ -1,0 +1,124 @@
+{
+  "generatedAt": "2026-02-24T07:54:00.234Z",
+  "inputs": [
+    "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\long_stability_runA_20260223_215157",
+    "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\long_stability_runB_20260223_222148",
+    "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\long_stability_runC_20260224_075013"
+  ],
+  "baselineDir": "C:\\actions-runner\\release_gate_planner_on_fail_fix2_longrun10_177188",
+  "allGatePassed": true,
+  "gateFailures": [],
+  "scenarios": [
+    {
+      "scenario": "node-api-oracle",
+      "runs": 3,
+      "passRate": {
+        "avg": 1,
+        "min": 1,
+        "max": 1
+      },
+      "rawRunPassRate": {
+        "avg": 1,
+        "min": 1,
+        "max": 1
+      },
+      "fallbackDependencyRunRate": {
+        "avg": 0,
+        "min": 0,
+        "max": 0
+      },
+      "avgMs": {
+        "avg": 91798.66666666667,
+        "min": 91477,
+        "max": 92189
+      },
+      "avgMsDeltaVsBaseline": {
+        "avg": 2078.6666666666665,
+        "min": 1757,
+        "max": 2469
+      },
+      "parseErrorRunsTotal": {
+        "planner": 0,
+        "jsonRepair": 0,
+        "schema": 0,
+        "jsonParse": 0,
+        "placeholder": 0,
+        "other": 0
+      }
+    },
+    {
+      "scenario": "python-ai-stdlib-oracle",
+      "runs": 3,
+      "passRate": {
+        "avg": 1,
+        "min": 1,
+        "max": 1
+      },
+      "rawRunPassRate": {
+        "avg": 0,
+        "min": 0,
+        "max": 0
+      },
+      "fallbackDependencyRunRate": {
+        "avg": 0,
+        "min": 0,
+        "max": 0
+      },
+      "avgMs": {
+        "avg": 42217.666666666664,
+        "min": 41897,
+        "max": 42650
+      },
+      "avgMsDeltaVsBaseline": {
+        "avg": 1254.6666666666667,
+        "min": 934,
+        "max": 1687
+      },
+      "parseErrorRunsTotal": {
+        "planner": 0,
+        "jsonRepair": 0,
+        "schema": 0,
+        "jsonParse": 0,
+        "placeholder": 0,
+        "other": 0
+      }
+    },
+    {
+      "scenario": "ts-todo-oracle",
+      "runs": 3,
+      "passRate": {
+        "avg": 1,
+        "min": 1,
+        "max": 1
+      },
+      "rawRunPassRate": {
+        "avg": 1,
+        "min": 1,
+        "max": 1
+      },
+      "fallbackDependencyRunRate": {
+        "avg": 0,
+        "min": 0,
+        "max": 0
+      },
+      "avgMs": {
+        "avg": 44312.333333333336,
+        "min": 44048,
+        "max": 44484
+      },
+      "avgMsDeltaVsBaseline": {
+        "avg": -5713.666666666667,
+        "min": -5978,
+        "max": -5542
+      },
+      "parseErrorRunsTotal": {
+        "planner": 0,
+        "jsonRepair": 0,
+        "schema": 0,
+        "jsonParse": 0,
+        "placeholder": 0,
+        "other": 0
+      }
+    }
+  ]
+}

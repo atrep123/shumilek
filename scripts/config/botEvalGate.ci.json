@@ -1,7 +1,7 @@
 {
   "minPassRateDelta": 0,
   "maxFallbackDependencyRunRate": 0.9,
-  "maxFallbackDependencyRunRateDelta": 0.25,
+  "maxFallbackDependencyRunRateDelta": 0.2,
   "maxClusterIncreaseRules": [
     {
       "id": "json_parse",
@@ -18,8 +18,8 @@
   ],
   "scenarioOverrides": {
     "ts-todo-oracle": {
-      "maxFallbackDependencyRunRate": 0.95,
-      "maxFallbackDependencyRunRateDelta": 0.95
+      "maxFallbackDependencyRunRate": 0.2,
+      "maxFallbackDependencyRunRateDelta": 0.2
     },
     "node-api-oracle": {
       "maxFallbackDependencyRunRate": 1.0,
