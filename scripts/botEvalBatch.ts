@@ -116,6 +116,31 @@ type SummaryRow = {
 
 const DEFAULT_BATCH_SCENARIOS = ['ts-todo-oracle', 'node-api-oracle', 'python-ai-stdlib-oracle'];
 
+function supportsExplicitRawMetricsForScenario(scenario: string): boolean {
+  const value = String(scenario || '').trim().toLowerCase();
+  return value === 'ts-todo-oracle' || value === 'node-api-oracle';
+}
+
+function deriveRawOutcomeForRun(run: RunResult): {
+  rawPasses: number;
+  rawFailures: number;
+  recoveredByFallback: number;
+} {
+  if (supportsExplicitRawMetricsForScenario(run.scenario)) {
+    return {
+      rawPasses: Number(run.deterministicFallback.totalRawPasses) || 0,
+      rawFailures: Number(run.deterministicFallback.totalRawFailures) || 0,
+      recoveredByFallback: Number(run.deterministicFallback.totalRecoveredByFallback) || 0
+    };
+  }
+
+  return {
+    rawPasses: run.ok ? 1 : 0,
+    rawFailures: run.ok ? 0 : 1,
+    recoveredByFallback: 0
+  };
+}
+
 export function normalizeDeterministicFallbackMode(raw?: string): 'off' | 'on-fail' | 'always' {
   const value = String(raw || '').trim().toLowerCase();
   if (value === 'off' || value === 'always' || value === 'on-fail') return value;
@@ -511,14 +536,15 @@ export function summarize(results: RunResult[]): SummaryRow[] {
     const deterministicFallbackTargetedRecoveries = runs.reduce((acc, r) => acc + r.deterministicFallback.totalTargetedRecoveries, 0);
     const deterministicFallbackCanonicalActivations = runs.reduce((acc, r) => acc + r.deterministicFallback.totalCanonicalActivations, 0);
     const deterministicFallbackCanonicalRecoveries = runs.reduce((acc, r) => acc + r.deterministicFallback.totalCanonicalRecoveries, 0);
-    const rawPasses = runs.reduce((acc, r) => acc + r.deterministicFallback.totalRawPasses, 0);
-    const rawFailures = runs.reduce((acc, r) => acc + r.deterministicFallback.totalRawFailures, 0);
-    const recoveredByFallback = runs.reduce((acc, r) => acc + r.deterministicFallback.totalRecoveredByFallback, 0);
+    const rawOutcome = runs.map(deriveRawOutcomeForRun);
+    const rawPasses = rawOutcome.reduce((acc, r) => acc + r.rawPasses, 0);
+    const rawFailures = rawOutcome.reduce((acc, r) => acc + r.rawFailures, 0);
+    const recoveredByFallback = rawOutcome.reduce((acc, r) => acc + r.recoveredByFallback, 0);
     const rawTotal = rawPasses + rawFailures;
     const rawPassRate = rawTotal > 0 ? rawPasses / rawTotal : null;
     const fallbackDependencyRate = rawTotal > 0 ? recoveredByFallback / rawTotal : 0;
-    const runsWithRawPass = runs.filter(r => r.deterministicFallback.totalRawPasses > 0).length;
-    const runsRecoveredByFallback = runs.filter(r => r.deterministicFallback.totalRecoveredByFallback > 0).length;
+    const runsWithRawPass = rawOutcome.filter(r => r.rawPasses > 0).length;
+    const runsRecoveredByFallback = rawOutcome.filter(r => r.recoveredByFallback > 0).length;
     const rawRunPassRate = total > 0 ? runsWithRawPass / total : 0;
     const fallbackDependencyRunRate = total > 0 ? runsRecoveredByFallback / total : 0;
     const clusterMap = new Map<string, number>();
@@ -643,14 +669,15 @@ async function main() {
       ` topClusters=${topClusters || 'n/a'}`
     );
   }
-  const overallRawPasses = results.reduce((acc, r) => acc + r.deterministicFallback.totalRawPasses, 0);
-  const overallRawFailures = results.reduce((acc, r) => acc + r.deterministicFallback.totalRawFailures, 0);
+  const overallRawOutcome = results.map(deriveRawOutcomeForRun);
+  const overallRawPasses = overallRawOutcome.reduce((acc, r) => acc + r.rawPasses, 0);
+  const overallRawFailures = overallRawOutcome.reduce((acc, r) => acc + r.rawFailures, 0);
   const overallRawTotal = overallRawPasses + overallRawFailures;
-  const overallRecoveredByFallback = results.reduce((acc, r) => acc + r.deterministicFallback.totalRecoveredByFallback, 0);
+  const overallRecoveredByFallback = overallRawOutcome.reduce((acc, r) => acc + r.recoveredByFallback, 0);
   const overallRawPassRate = overallRawTotal > 0 ? overallRawPasses / overallRawTotal : null;
   const overallFallbackDependencyRate = overallRawTotal > 0 ? overallRecoveredByFallback / overallRawTotal : 0;
-  const overallRunsWithRawPass = results.filter(r => r.deterministicFallback.totalRawPasses > 0).length;
-  const overallRunsRecoveredByFallback = results.filter(r => r.deterministicFallback.totalRecoveredByFallback > 0).length;
+  const overallRunsWithRawPass = overallRawOutcome.filter(r => r.rawPasses > 0).length;
+  const overallRunsRecoveredByFallback = overallRawOutcome.filter(r => r.recoveredByFallback > 0).length;
   const overallRawRunPassRate = results.length > 0 ? overallRunsWithRawPass / results.length : 0;
   const overallFallbackDependencyRunRate = results.length > 0 ? overallRunsRecoveredByFallback / results.length : 0;
   const overallClusterMap = new Map<string, number>();
