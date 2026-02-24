@@ -93,6 +93,16 @@ const STRUCTURED_MIN_NUM_PREDICT = 6000;
 const STRUCTURED_RETRY_MIN_NUM_PREDICT = 10000;
 const PLANNER_MIN_NUM_PREDICT = 1200;
 
+function readPositiveIntEnv(name: string, fallback: number): number {
+  const raw = Number(process.env[name]);
+  if (!Number.isFinite(raw) || raw <= 0) return fallback;
+  return Math.max(1, Math.trunc(raw));
+}
+
+const OLLAMA_RETRY_ATTEMPTS = readPositiveIntEnv('BOT_EVAL_OLLAMA_RETRY_ATTEMPTS', 3);
+const OLLAMA_RETRY_BASE_DELAY_MS = readPositiveIntEnv('BOT_EVAL_OLLAMA_RETRY_BASE_DELAY_MS', 350);
+const OLLAMA_RETRY_MAX_DELAY_MS = readPositiveIntEnv('BOT_EVAL_OLLAMA_RETRY_MAX_DELAY_MS', 3000);
+
 const MODEL_OUTPUT_SCHEMA = {
   type: 'object',
   additionalProperties: false,
@@ -2778,6 +2788,90 @@ async function validateNodeApiOracle(workspaceDir: string, context: EvalRunConte
   };
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function computeRetryDelayMs(attempt: number): number {
+  const expDelay = Math.min(OLLAMA_RETRY_MAX_DELAY_MS, OLLAMA_RETRY_BASE_DELAY_MS * Math.pow(2, Math.max(0, attempt - 1)));
+  const jitter = Math.floor(expDelay * 0.2 * Math.random());
+  return expDelay + jitter;
+}
+
+function parseOllamaHttpStatusFromError(message: string): number | null {
+  const m = String(message || '').match(/ollama http\s+(\d{3})/i);
+  if (!m) return null;
+  const status = Number(m[1]);
+  return Number.isFinite(status) ? status : null;
+}
+
+function isRetriableOllamaHttpStatus(status: number): boolean {
+  return status === 408 || status === 409 || status === 425 || status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
+}
+
+export function isRetriableOllamaRequestError(error: unknown): boolean {
+  const message = String((error as any)?.message ?? error ?? '').toLowerCase();
+  const status = parseOllamaHttpStatusFromError(message);
+  if (status != null) return isRetriableOllamaHttpStatus(status);
+
+  return (
+    /\beaddrinuse\b/.test(message) ||
+    /\beconnreset\b/.test(message) ||
+    /\beconnrefused\b/.test(message) ||
+    /\betimedout\b/.test(message) ||
+    /\beconnaborted\b/.test(message) ||
+    /\behostunreach\b/.test(message) ||
+    /\benetunreach\b/.test(message) ||
+    /\beai_again\b/.test(message) ||
+    /socket hang up/.test(message) ||
+    /network error/.test(message) ||
+    /failed to fetch/.test(message) ||
+    /request to .* failed, reason:/.test(message)
+  );
+}
+
+async function withOllamaRetry<T>(request: () => Promise<T>): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= OLLAMA_RETRY_ATTEMPTS; attempt++) {
+    try {
+      return await request();
+    } catch (error: unknown) {
+      lastError = error;
+      if (attempt >= OLLAMA_RETRY_ATTEMPTS || !isRetriableOllamaRequestError(error)) {
+        throw error;
+      }
+      await sleep(computeRetryDelayMs(attempt));
+    }
+  }
+  throw lastError;
+}
+
+async function postOllamaJsonWithRetry(params: {
+  url: string;
+  body: unknown;
+  timeoutMs: number;
+}): Promise<{ ok: boolean; status: number; text: string }> {
+  return await withOllamaRetry(async () => {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), params.timeoutMs);
+    try {
+      const res = await fetch(params.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params.body),
+        signal: controller.signal as any,
+      });
+      const text = await res.text();
+      if (!res.ok && isRetriableOllamaHttpStatus(res.status)) {
+        throw new Error(`Ollama HTTP ${res.status}: ${text}`);
+      }
+      return { ok: res.ok, status: res.status, text };
+    } finally {
+      clearTimeout(t);
+    }
+  });
+}
+
 async function ollamaGenerate(params: {
   baseUrl: string;
   model: string;
@@ -2786,9 +2880,6 @@ async function ollamaGenerate(params: {
   options?: OllamaOptions;
 }): Promise<{ responseText: string; raw: any; usedFormatJson: boolean }> {
   const url = new URL('/api/generate', params.baseUrl).toString();
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), params.timeoutMs);
-
   const payloadWithFormat: any = {
     model: params.model,
     prompt: params.prompt,
@@ -2797,26 +2888,20 @@ async function ollamaGenerate(params: {
   };
   if (params.options && Object.keys(params.options).length > 0) payloadWithFormat.options = params.options;
 
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payloadWithFormat),
-      signal: controller.signal as any,
-    });
-    const text = await res.text();
-    if (!res.ok) {
-      // Fallback for older Ollama that rejects "format"
-      if (text.includes('unknown field') && text.includes('format')) {
-        return await ollamaGenerateWithoutFormat({ ...params, timeoutMs: params.timeoutMs });
-      }
-      throw new Error(`Ollama HTTP ${res.status}: ${text}`);
+  const response = await postOllamaJsonWithRetry({
+    url,
+    body: payloadWithFormat,
+    timeoutMs: params.timeoutMs
+  });
+  if (!response.ok) {
+    // Fallback for older Ollama that rejects "format"
+    if (response.text.includes('unknown field') && response.text.includes('format')) {
+      return await ollamaGenerateWithoutFormat({ ...params, timeoutMs: params.timeoutMs });
     }
-    const raw = JSON.parse(text);
-    return { responseText: String(raw?.response ?? ''), raw, usedFormatJson: true };
-  } finally {
-    clearTimeout(t);
+    throw new Error(`Ollama HTTP ${response.status}: ${response.text}`);
   }
+  const raw = JSON.parse(response.text);
+  return { responseText: String(raw?.response ?? ''), raw, usedFormatJson: true };
 }
 
 async function ollamaChatGenerateWithSchema(params: {
@@ -2828,32 +2913,24 @@ async function ollamaChatGenerateWithSchema(params: {
   options?: OllamaOptions;
 }): Promise<{ responseText: string; raw: any }> {
   const url = new URL('/api/chat', params.baseUrl).toString();
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), params.timeoutMs);
-  try {
-    const body: any = {
-      model: params.model,
-      stream: false,
-      format: params.schema,
-      messages: [
-        { role: 'user', content: params.prompt }
-      ]
-    };
-    if (params.options && Object.keys(params.options).length > 0) body.options = params.options;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: controller.signal as any
-    });
-    const text = await res.text();
-    if (!res.ok) throw new Error(`Ollama HTTP ${res.status}: ${text}`);
-    const raw = JSON.parse(text);
-    const responseText = String(raw?.message?.content ?? raw?.response ?? '');
-    return { responseText, raw };
-  } finally {
-    clearTimeout(t);
-  }
+  const body: any = {
+    model: params.model,
+    stream: false,
+    format: params.schema,
+    messages: [
+      { role: 'user', content: params.prompt }
+    ]
+  };
+  if (params.options && Object.keys(params.options).length > 0) body.options = params.options;
+  const response = await postOllamaJsonWithRetry({
+    url,
+    body,
+    timeoutMs: params.timeoutMs
+  });
+  if (!response.ok) throw new Error(`Ollama HTTP ${response.status}: ${response.text}`);
+  const raw = JSON.parse(response.text);
+  const responseText = String(raw?.message?.content ?? raw?.response ?? '');
+  return { responseText, raw };
 }
 
 function shouldFallbackFromStructured(message: string): boolean {
@@ -2882,28 +2959,19 @@ async function ollamaGenerateWithoutFormat(params: {
   options?: OllamaOptions;
 }): Promise<{ responseText: string; raw: any; usedFormatJson: boolean }> {
   const url = new URL('/api/generate', params.baseUrl).toString();
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), params.timeoutMs);
-
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: params.model,
-        prompt: params.prompt,
-        stream: false,
-        ...(params.options && Object.keys(params.options).length > 0 ? { options: params.options } : {}),
-      }),
-      signal: controller.signal as any,
-    });
-    const text = await res.text();
-    if (!res.ok) throw new Error(`Ollama HTTP ${res.status}: ${text}`);
-    const raw = JSON.parse(text);
-    return { responseText: String(raw?.response ?? ''), raw, usedFormatJson: false };
-  } finally {
-    clearTimeout(t);
-  }
+  const response = await postOllamaJsonWithRetry({
+    url,
+    body: {
+      model: params.model,
+      prompt: params.prompt,
+      stream: false,
+      ...(params.options && Object.keys(params.options).length > 0 ? { options: params.options } : {}),
+    },
+    timeoutMs: params.timeoutMs
+  });
+  if (!response.ok) throw new Error(`Ollama HTTP ${response.status}: ${response.text}`);
+  const raw = JSON.parse(response.text);
+  return { responseText: String(raw?.response ?? ''), raw, usedFormatJson: false };
 }
 
 async function ollamaGenerateStructuredObject<T = any>(params: {
