@@ -102,6 +102,12 @@ function readPositiveIntEnv(name: string, fallback: number): number {
 const OLLAMA_RETRY_ATTEMPTS = readPositiveIntEnv('BOT_EVAL_OLLAMA_RETRY_ATTEMPTS', 3);
 const OLLAMA_RETRY_BASE_DELAY_MS = readPositiveIntEnv('BOT_EVAL_OLLAMA_RETRY_BASE_DELAY_MS', 350);
 const OLLAMA_RETRY_MAX_DELAY_MS = readPositiveIntEnv('BOT_EVAL_OLLAMA_RETRY_MAX_DELAY_MS', 3000);
+const OLLAMA_RECOVERY_ATTEMPTS = readPositiveIntEnv('BOT_EVAL_OLLAMA_RECOVERY_ATTEMPTS', 2);
+const OLLAMA_RECOVERY_WAIT_MS = readPositiveIntEnv('BOT_EVAL_OLLAMA_RECOVERY_WAIT_MS', 12000);
+const OLLAMA_RECOVERY_POLL_MS = readPositiveIntEnv('BOT_EVAL_OLLAMA_RECOVERY_POLL_MS', 1500);
+const OLLAMA_READINESS_TIMEOUT_MS = readPositiveIntEnv('BOT_EVAL_OLLAMA_READINESS_TIMEOUT_MS', 2500);
+const NODE_ORACLE_CMD_RETRY_ATTEMPTS = readPositiveIntEnv('BOT_EVAL_NODE_ORACLE_CMD_RETRY_ATTEMPTS', 3);
+const NODE_ORACLE_CMD_RETRY_BASE_DELAY_MS = readPositiveIntEnv('BOT_EVAL_NODE_ORACLE_CMD_RETRY_BASE_DELAY_MS', 350);
 
 const MODEL_OUTPUT_SCHEMA = {
   type: 'object',
@@ -2596,6 +2602,19 @@ async function validateTsTodoOracle(workspaceDir: string, context: EvalRunContex
   };
 }
 
+function isNodeApiTransientOracleCommandFailure(commandResult: CommandResult): boolean {
+  if (commandResult.ok) return false;
+  const log = `${commandResult.stdout}\n${commandResult.stderr}`.toLowerCase();
+  return (
+    /fetch failed/.test(log) ||
+    /socket hang up/.test(log) ||
+    /econnreset/.test(log) ||
+    /econnrefused/.test(log) ||
+    /etimedout/.test(log) ||
+    /connect eaddrinuse/.test(log)
+  );
+}
+
 async function validateNodeApiOracleOnce(
   workspaceDir: string,
   applyDeterministicFallback: boolean,
@@ -2725,7 +2744,18 @@ async function validateNodeApiOracleOnce(
 
   const cmdTimeoutMs = 10 * 60 * 1000;
   const commands: CommandResult[] = [];
-  commands.push(await runCommand({ command: 'node --test tests/oracle.test.js', cwd: workspaceDir, timeoutMs: cmdTimeoutMs }));
+  let oracleCmd = await runCommand({ command: 'node --test tests/oracle.test.js', cwd: workspaceDir, timeoutMs: cmdTimeoutMs });
+  let transientRetryCount = 0;
+  for (let attempt = 1; attempt < NODE_ORACLE_CMD_RETRY_ATTEMPTS; attempt++) {
+    if (!isNodeApiTransientOracleCommandFailure(oracleCmd)) break;
+    transientRetryCount += 1;
+    await sleep(Math.min(3000, NODE_ORACLE_CMD_RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1)));
+    oracleCmd = await runCommand({ command: 'node --test tests/oracle.test.js', cwd: workspaceDir, timeoutMs: cmdTimeoutMs });
+  }
+  commands.push(oracleCmd);
+  if (transientRetryCount > 0) {
+    diagnostics.push(`Retried node-api oracle command ${transientRetryCount}x after transient transport failure.`);
+  }
 
   for (const c of commands) {
     if (!c.ok) diagnostics.push(`Command failed: ${c.command} (exit=${c.exitCode}, timedOut=${c.timedOut})`);
@@ -2738,7 +2768,7 @@ async function validateNodeApiOracleOnce(
   if (/cannot read properties of undefined \(reading 'listen'\)/i.test(logs)) {
     diagnostics.push('Server startup failed: createServer export/return value is invalid');
   }
-  if (/EADDRINUSE/i.test(logs)) {
+  if (/listen EADDRINUSE/i.test(logs)) {
     diagnostics.push('Server must not auto-listen on fixed port; return server instance only');
   }
 
@@ -2823,6 +2853,8 @@ export function isRetriableOllamaRequestError(error: unknown): boolean {
     /\behostunreach\b/.test(message) ||
     /\benetunreach\b/.test(message) ||
     /\beai_again\b/.test(message) ||
+    /\baborterror\b/.test(message) ||
+    /operation was aborted/.test(message) ||
     /socket hang up/.test(message) ||
     /network error/.test(message) ||
     /failed to fetch/.test(message) ||
@@ -2830,17 +2862,61 @@ export function isRetriableOllamaRequestError(error: unknown): boolean {
   );
 }
 
-async function withOllamaRetry<T>(request: () => Promise<T>): Promise<T> {
+function getBaseUrlOriginFromRequestUrl(requestUrl: string): string | undefined {
+  try {
+    return new URL(requestUrl).origin;
+  } catch {
+    return undefined;
+  }
+}
+
+async function isOllamaReady(baseUrl: string): Promise<boolean> {
+  const url = new URL('/api/tags', baseUrl).toString();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), OLLAMA_READINESS_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      signal: controller.signal as any,
+    });
+    return res.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function waitForOllamaRecoveryWindow(baseUrl: string): Promise<void> {
+  const deadline = Date.now() + OLLAMA_RECOVERY_WAIT_MS;
+  while (Date.now() < deadline) {
+    if (await isOllamaReady(baseUrl)) return;
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) break;
+    await sleep(Math.min(OLLAMA_RECOVERY_POLL_MS, remaining));
+  }
+}
+
+async function withOllamaRetry<T>(request: () => Promise<T>, baseUrlForRecovery?: string): Promise<T> {
   let lastError: unknown;
-  for (let attempt = 1; attempt <= OLLAMA_RETRY_ATTEMPTS; attempt++) {
+  const totalAttempts = OLLAMA_RETRY_ATTEMPTS + OLLAMA_RECOVERY_ATTEMPTS;
+
+  for (let attempt = 1; attempt <= totalAttempts; attempt++) {
     try {
       return await request();
     } catch (error: unknown) {
       lastError = error;
-      if (attempt >= OLLAMA_RETRY_ATTEMPTS || !isRetriableOllamaRequestError(error)) {
+      const retriable = isRetriableOllamaRequestError(error);
+      if (attempt >= totalAttempts || !retriable) {
         throw error;
       }
-      await sleep(computeRetryDelayMs(attempt));
+
+      const inRecoveryPhase = attempt >= OLLAMA_RETRY_ATTEMPTS;
+      if (inRecoveryPhase && baseUrlForRecovery) {
+        await waitForOllamaRecoveryWindow(baseUrlForRecovery);
+      } else {
+        await sleep(computeRetryDelayMs(attempt));
+      }
     }
   }
   throw lastError;
@@ -2851,6 +2927,7 @@ async function postOllamaJsonWithRetry(params: {
   body: unknown;
   timeoutMs: number;
 }): Promise<{ ok: boolean; status: number; text: string }> {
+  const recoveryBaseUrl = getBaseUrlOriginFromRequestUrl(params.url);
   return await withOllamaRetry(async () => {
     const controller = new AbortController();
     const t = setTimeout(() => controller.abort(), params.timeoutMs);
@@ -2869,7 +2946,7 @@ async function postOllamaJsonWithRetry(params: {
     } finally {
       clearTimeout(t);
     }
-  });
+  }, recoveryBaseUrl);
 }
 
 async function ollamaGenerate(params: {

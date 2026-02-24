@@ -13,6 +13,14 @@ describe('botEval Ollama retry classification', () => {
       true
     );
     assert.equal(
+      isRetriableOllamaRequestError('request to http://localhost:11434/api/generate failed, reason: '),
+      true
+    );
+    assert.equal(
+      isRetriableOllamaRequestError('AbortError: The operation was aborted'),
+      true
+    );
+    assert.equal(
       isRetriableOllamaRequestError('socket hang up'),
       true
     );
@@ -28,4 +36,3 @@ describe('botEval Ollama retry classification', () => {
     assert.equal(isRetriableOllamaRequestError('Model output is not valid JSON'), false);
   });
 });
-
