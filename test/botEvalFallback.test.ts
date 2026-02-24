@@ -283,6 +283,7 @@ describe('botEval deterministic fallback helpers', () => {
     assert.ok(out.includes('function createServer({ dataPath })'));
     assert.ok(out.includes('JSON.stringify({ todos }, null, 2)'));
     assert.ok(out.includes('module.exports = { createServer };'));
+    assert.ok(out.includes("'Connection': 'close'"));
     assert.ok(!out.includes("split('/')[3]"));
     assert.ok(out.includes('done: false'));
   });
