@@ -1,7 +1,7 @@
-﻿const mock = require('mock-require');
+const mock = require('mock-require');
 mock('vscode', {});
 
-(globalThis as any).expect = require('chai').expect;
+const { expect } = require('chai');
 const { Rozum } = require('../src/rozum');
 
 describe('Rozum', () => {
@@ -314,4 +314,3 @@ DÉLKA: short`;
     });
   });
 });
-
