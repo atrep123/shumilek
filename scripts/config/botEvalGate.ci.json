@@ -22,8 +22,8 @@
       "maxFallbackDependencyRunRateDelta": 0.2
     },
     "node-api-oracle": {
-      "maxFallbackDependencyRunRate": 1.0,
-      "maxFallbackDependencyRunRateDelta": 1.0
+      "maxFallbackDependencyRunRate": 0.2,
+      "maxFallbackDependencyRunRateDelta": 0.2
     },
     "python-ai-stdlib-oracle": {
       "maxFallbackDependencyRunRate": 0.2,
