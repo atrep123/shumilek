@@ -194,6 +194,13 @@ jobs:
           powershell -NoProfile -ExecutionPolicy Bypass -Command "$outDir='${{ steps.gate.outputs.out_dir }}'; $aggregatePath = Join-Path $PWD ($outDir + '\stability_aggregate.json'); if (-not (Test-Path $aggregatePath)) { throw ('Missing stability aggregate report: ' + $aggregatePath) }; $agg = Get-Content -Raw $aggregatePath | ConvertFrom-Json; $violations = @(); if (-not [bool]$agg.allGatePassed) { $violations += [pscustomobject]@{ scope = 'aggregate'; message = 'allGatePassed is false' } }; foreach ($row in @($agg.scenarios)) { $scenario = [string]$row.scenario; $rawMin = [double]$row.rawRunPassRate.min; if ($rawMin -lt 1) { $violations += [pscustomobject]@{ scope = 'scenario'; scenario = $scenario; metric = 'rawRunPassRate.min'; actual = $rawMin; expected = 1 } }; $fallbackMax = [double]$row.fallbackDependencyRunRate.max; if ($fallbackMax -gt 0) { $violations += [pscustomobject]@{ scope = 'scenario'; scenario = $scenario; metric = 'fallbackDependencyRunRate.max'; actual = $fallbackMax; expected = 0 } }; $parse = $row.parseErrorRunsTotal; $planner = [int]$parse.planner; $jsonRepair = [int]$parse.jsonRepair; $schema = [int]$parse.schema; $jsonParse = [int]$parse.jsonParse; $placeholder = [int]$parse.placeholder; $other = [int]$parse.other; if (($planner + $jsonRepair + $schema + $jsonParse + $placeholder + $other) -gt 0) { $violations += [pscustomobject]@{ scope = 'scenario'; scenario = $scenario; metric = 'parseErrorRunsTotal'; planner = $planner; jsonRepair = $jsonRepair; schema = $schema; jsonParse = $jsonParse; placeholder = $placeholder; other = $other; expectedAllZero = $true } } }; $outPath = Join-Path $PWD ($outDir + '\trend_guard.json'); $guard = [pscustomobject]@{ generatedAt = (Get-Date).ToString('o'); aggregatePath = $aggregatePath; passed = ($violations.Count -eq 0); violations = $violations }; $guard | ConvertTo-Json -Depth 8 | Out-File -FilePath $outPath -Encoding utf8; if ($violations.Count -gt 0) { Write-Host ('Trend quality guard FAILED. Report: ' + $outPath); throw ('Trend quality guard failed with ' + $violations.Count + ' violation(s).') }; Write-Host ('Trend quality guard PASSED. Report: ' + $outPath)"
           if errorlevel 1 exit /b 1
 
+      - name: Build nightly calibration recommendation
+        if: steps.gate.conclusion == 'success' && steps.trend_guard.conclusion == 'success'
+        shell: cmd
+        run: |
+          npm run bot:eval:nightly:calibrate -- --window 10 --root projects/bot_eval_run --out "${{ steps.gate.outputs.out_dir }}/calibration_recommendation.json" --outMd "${{ steps.gate.outputs.out_dir }}/calibration_recommendation.md"
+          if errorlevel 1 exit /b 1
+
       - name: Guarded baseline promotion
         if: steps.gate.conclusion == 'success' && steps.latency_guard.conclusion == 'success' && steps.trend_guard.conclusion == 'success'
         shell: cmd
@@ -215,6 +222,8 @@ jobs:
             ${{ steps.gate.outputs.out_dir }}/stability_aggregate.md
             ${{ steps.gate.outputs.out_dir }}/latency_guard.json
             ${{ steps.gate.outputs.out_dir }}/trend_guard.json
+            ${{ steps.gate.outputs.out_dir }}/calibration_recommendation.json
+            ${{ steps.gate.outputs.out_dir }}/calibration_recommendation.md
             ${{ steps.gate.outputs.out_dir }}/baseline_promotion.json
 
       - name: Cleanup old bot-eval directories (nightly)
