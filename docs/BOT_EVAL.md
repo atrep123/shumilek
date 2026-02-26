@@ -59,8 +59,15 @@ Tenhle repozitář obsahuje jednoduchý eval harness, který:
 Workflow file: `.github/workflows/bot-eval-release-gate.yml`
 
 - PR profile: runs `npm run bot:eval:release-gate:ci -- --runs 3`
-- Nightly profile: runs `npm run bot:eval:release-gate:ci -- --runs 10`
+- Nightly profile: runs `npm run bot:eval:release-gate -- --gateConfig scripts/config/botEvalGate.nightly.json --runs 15`
 - Manual run: `workflow_dispatch` with `profile=pr|nightly`
+
+Nightly safeguards:
+
+- Nightly uses stricter scenario thresholds from `scripts/config/botEvalGate.nightly.json` (including tighter `node-api-oracle` fallback limits).
+- Baseline promotion is guarded by a latency check (`candidate.avgMs <= baseline.avgMs * 1.25` per scenario).
+- Baseline promotion is guarded by a trend quality check (`allGatePassed`, `rawRunPassRate.min == 1`, `fallbackDependencyRunRate.max == 0`, and zero parse-error totals).
+- Baseline promotion state for nightly node-api guard is stored in `C:\actions-runner\release_gate_promotion_state_node_api.json`.
 
 Required runner/setup:
 

@@ -154,13 +154,13 @@ jobs:
           powershell -NoProfile -ExecutionPolicy Bypass -Command "$candidate = $env:BOT_EVAL_BASELINE_DIR; if ($null -eq $candidate) { $candidate = '' }; $candidate = $candidate.Trim(); if ([string]::IsNullOrWhiteSpace($candidate)) { $pointerPath = Join-Path $PWD 'projects\bot_eval_run\release_baseline.txt'; if (Test-Path $pointerPath) { $candidate = (Get-Content -Raw $pointerPath).Trim() } }; if ([string]::IsNullOrWhiteSpace($candidate)) { throw 'Release-gate baseline missing. Set repo variable BOT_EVAL_BASELINE_DIR or update projects/bot_eval_run/release_baseline.txt.' }; $resolved = [System.IO.Path]::GetFullPath($candidate); $resultsPath = Join-Path $resolved 'results.json'; if (-not (Test-Path $resultsPath)) { throw ('Baseline directory is invalid (results.json missing): ' + $resultsPath) }; ('baseline_dir=' + $resolved) | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append; Write-Host ('Using baseline: ' + $resolved)"
           if errorlevel 1 exit /b 1
 
-      - name: Run release gate (10x3)
+      - name: Run release gate (15x3)
         id: gate
         shell: cmd
         run: |
           set "outDir=projects/bot_eval_run/release_gate_ci_nightly_%GITHUB_RUN_ID%_%GITHUB_RUN_ATTEMPT%"
           echo out_dir=%outDir%>>%GITHUB_OUTPUT%
-          npm run bot:eval:release-gate:ci -- --runs 10 --baseline "${{ steps.baseline.outputs.baseline_dir }}" --outDir "%outDir%"
+          npm run bot:eval:release-gate -- --gateConfig scripts/config/botEvalGate.nightly.json --runs 15 --baseline "${{ steps.baseline.outputs.baseline_dir }}" --outDir "%outDir%"
           if errorlevel 1 exit /b 1
 
       - name: Resolve trend input runs
@@ -178,11 +178,27 @@ jobs:
           npm run bot:eval:stability:aggregate -- --inputs "${{ steps.trend.outputs.trend_inputs }}" --out "${{ steps.gate.outputs.out_dir }}/stability_aggregate.json" --outMd "${{ steps.gate.outputs.out_dir }}/stability_aggregate.md"
           if errorlevel 1 exit /b 1
 
-      - name: Guarded baseline promotion
+      - name: Latency guard (+25%)
         if: steps.gate.conclusion == 'success'
+        id: latency_guard
         shell: cmd
         run: |
-          npm run bot:eval:baseline:promote -- --candidate "${{ steps.gate.outputs.out_dir }}" --stable "${{ steps.baseline.outputs.baseline_dir }}" --state "C:\actions-runner\release_gate_promotion_state.json" --requiredConsecutive 2 --scenario "ts-todo-oracle" --minRawRunPassRate 1 --maxFallbackDependencyRunRate 0 --out "${{ steps.gate.outputs.out_dir }}/baseline_promotion.json"
+          powershell -NoProfile -ExecutionPolicy Bypass -Command "$outDir='${{ steps.gate.outputs.out_dir }}'; $comparePath = Join-Path $PWD ($outDir + '\compare.json'); if (-not (Test-Path $comparePath)) { throw ('Missing compare report: ' + $comparePath) }; $report = Get-Content -Raw $comparePath | ConvertFrom-Json; $maxMultiplier = 1.25; $violations = @(); foreach ($row in @($report.scenarios)) { $scenario = [string]$row.scenario; $baseAvg = [double]$row.baseline.avgMs; $candAvg = [double]$row.candidate.avgMs; $limit = [double]($baseAvg * $maxMultiplier); if ($baseAvg -le 0) { $violations += [pscustomobject]@{ scenario = $scenario; baselineAvgMs = $baseAvg; candidateAvgMs = $candAvg; limitAvgMs = $limit; reason = 'baselineAvgMs <= 0' }; continue }; if ($candAvg -gt $limit) { $violations += [pscustomobject]@{ scenario = $scenario; baselineAvgMs = $baseAvg; candidateAvgMs = $candAvg; limitAvgMs = $limit; reason = 'candidate avgMs exceeds 1.25x baseline' } } }; $outPath = Join-Path $PWD ($outDir + '\latency_guard.json'); $guard = [pscustomobject]@{ generatedAt = (Get-Date).ToString('o'); comparePath = $comparePath; maxAllowedMultiplier = $maxMultiplier; passed = ($violations.Count -eq 0); violations = $violations }; $guard | ConvertTo-Json -Depth 8 | Out-File -FilePath $outPath -Encoding utf8; if ($violations.Count -gt 0) { Write-Host ('Latency guard FAILED. Report: ' + $outPath); throw ('Latency guard failed with ' + $violations.Count + ' violation(s).') }; Write-Host ('Latency guard PASSED. Report: ' + $outPath)"
+          if errorlevel 1 exit /b 1
+
+      - name: Trend quality guard
+        if: steps.gate.conclusion == 'success'
+        id: trend_guard
+        shell: cmd
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -Command "$outDir='${{ steps.gate.outputs.out_dir }}'; $aggregatePath = Join-Path $PWD ($outDir + '\stability_aggregate.json'); if (-not (Test-Path $aggregatePath)) { throw ('Missing stability aggregate report: ' + $aggregatePath) }; $agg = Get-Content -Raw $aggregatePath | ConvertFrom-Json; $violations = @(); if (-not [bool]$agg.allGatePassed) { $violations += [pscustomobject]@{ scope = 'aggregate'; message = 'allGatePassed is false' } }; foreach ($row in @($agg.scenarios)) { $scenario = [string]$row.scenario; $rawMin = [double]$row.rawRunPassRate.min; if ($rawMin -lt 1) { $violations += [pscustomobject]@{ scope = 'scenario'; scenario = $scenario; metric = 'rawRunPassRate.min'; actual = $rawMin; expected = 1 } }; $fallbackMax = [double]$row.fallbackDependencyRunRate.max; if ($fallbackMax -gt 0) { $violations += [pscustomobject]@{ scope = 'scenario'; scenario = $scenario; metric = 'fallbackDependencyRunRate.max'; actual = $fallbackMax; expected = 0 } }; $parse = $row.parseErrorRunsTotal; $planner = [int]$parse.planner; $jsonRepair = [int]$parse.jsonRepair; $schema = [int]$parse.schema; $jsonParse = [int]$parse.jsonParse; $placeholder = [int]$parse.placeholder; $other = [int]$parse.other; if (($planner + $jsonRepair + $schema + $jsonParse + $placeholder + $other) -gt 0) { $violations += [pscustomobject]@{ scope = 'scenario'; scenario = $scenario; metric = 'parseErrorRunsTotal'; planner = $planner; jsonRepair = $jsonRepair; schema = $schema; jsonParse = $jsonParse; placeholder = $placeholder; other = $other; expectedAllZero = $true } } }; $outPath = Join-Path $PWD ($outDir + '\trend_guard.json'); $guard = [pscustomobject]@{ generatedAt = (Get-Date).ToString('o'); aggregatePath = $aggregatePath; passed = ($violations.Count -eq 0); violations = $violations }; $guard | ConvertTo-Json -Depth 8 | Out-File -FilePath $outPath -Encoding utf8; if ($violations.Count -gt 0) { Write-Host ('Trend quality guard FAILED. Report: ' + $outPath); throw ('Trend quality guard failed with ' + $violations.Count + ' violation(s).') }; Write-Host ('Trend quality guard PASSED. Report: ' + $outPath)"
+          if errorlevel 1 exit /b 1
+
+      - name: Guarded baseline promotion
+        if: steps.gate.conclusion == 'success' && steps.latency_guard.conclusion == 'success' && steps.trend_guard.conclusion == 'success'
+        shell: cmd
+        run: |
+          npm run bot:eval:baseline:promote -- --candidate "${{ steps.gate.outputs.out_dir }}" --stable "${{ steps.baseline.outputs.baseline_dir }}" --state "C:\actions-runner\release_gate_promotion_state_node_api.json" --requiredConsecutive 2 --scenario "node-api-oracle" --minRawRunPassRate 1 --maxFallbackDependencyRunRate 0 --out "${{ steps.gate.outputs.out_dir }}/baseline_promotion.json"
           if errorlevel 1 exit /b 1
 
       - name: Upload gate artifacts
@@ -197,6 +213,8 @@ jobs:
             ${{ steps.gate.outputs.out_dir }}/compare.json
             ${{ steps.gate.outputs.out_dir }}/stability_aggregate.json
             ${{ steps.gate.outputs.out_dir }}/stability_aggregate.md
+            ${{ steps.gate.outputs.out_dir }}/latency_guard.json
+            ${{ steps.gate.outputs.out_dir }}/trend_guard.json
             ${{ steps.gate.outputs.out_dir }}/baseline_promotion.json
 
       - name: Cleanup old bot-eval directories (nightly)
