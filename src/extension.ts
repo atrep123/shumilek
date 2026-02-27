@@ -12,6 +12,7 @@ import {
 import { ContextProviderRegistry, DEFAULT_CONTEXT_PROVIDERS } from './contextProviders';
 import { TurnOrchestrator } from './orchestration';
 import { PIPELINE_STATUS_ICONS, PIPELINE_STATUS_TEXT } from './statusMessages';
+import { parseToolCalls, resolveToolPermissionScope } from './toolingProtocol';
 import { getMiniUnavailableMessage, isMiniAccepted, shouldRetryMiniValidation } from './validationPolicy';
 import { 
   Rozum, 
@@ -3218,7 +3219,6 @@ PŘÍSTUP K PRÁCI:
 // UTILITIES
 // ============================================================
 
-const TOOL_CALL_REGEX = /<tool_call>([\s\S]*?)<\/tool_call>/g;
 const DEFAULT_EXCLUDE_GLOB = '**/{node_modules,.git,dist,build,.next,__pycache__,.venv,venv,target,bin,obj,.idea,.vscode,coverage,.nyc_output}/**';
 const DEFAULT_MAX_LIST_RESULTS = 200;
 const DEFAULT_MAX_SEARCH_RESULTS = 20;
@@ -3321,79 +3321,6 @@ function buildToolOnlyPrompt(requireMutation: boolean): string {
     'delete_file'
   ];
   return [...rules, `Dostupne nastroje: ${tools.join(', ')}`].join('\n');
-}
-
-function parseToolCalls(text: string): { calls: ToolCall[]; remainingText: string; errors: string[] } {
-  const calls: ToolCall[] = [];
-  const errors: string[] = [];
-  let match: RegExpExecArray | null;
-
-  TOOL_CALL_REGEX.lastIndex = 0;
-  while ((match = TOOL_CALL_REGEX.exec(text)) !== null) {
-    const raw = match[1]?.trim();
-    if (!raw) {
-      errors.push('Empty tool_call payload');
-      continue;
-    }
-    try {
-      const parsed = JSON.parse(raw);
-      if (!parsed || typeof parsed.name !== 'string') {
-        errors.push('Missing tool name');
-        continue;
-      }
-      const args = parsed.arguments && typeof parsed.arguments === 'object'
-        ? parsed.arguments
-        : undefined;
-      calls.push({ name: parsed.name, arguments: args });
-    } catch (err) {
-      errors.push(`Invalid JSON: ${String(err)}`);
-    }
-  }
-
-  if (calls.length === 0) {
-    const candidates: string[] = [];
-    const fenceRegex = /```(\w+)?\s*([\s\S]*?)```/gi;
-    let fenceMatch: RegExpExecArray | null;
-    while ((fenceMatch = fenceRegex.exec(text)) !== null) {
-      const lang = (fenceMatch[1] || '').toLowerCase();
-      if (lang && lang !== 'json') continue;
-      const payload = fenceMatch[2]?.trim();
-      if (!payload) continue;
-      if (!payload.startsWith('{') && !payload.startsWith('[')) continue;
-      candidates.push(payload);
-    }
-    const trimmed = text.trim();
-    if (candidates.length === 0 && (trimmed.startsWith('{') || trimmed.startsWith('['))) {
-      candidates.push(trimmed);
-    }
-
-    const pushParsed = (parsed: unknown) => {
-      if (!parsed) return;
-      const items = Array.isArray(parsed) ? parsed : [parsed];
-      for (const item of items) {
-        if (!item || typeof item !== 'object') continue;
-        const name = (item as { name?: unknown }).name;
-        if (typeof name !== 'string') continue;
-        const args = (item as { arguments?: unknown }).arguments;
-        calls.push({
-          name,
-          arguments: args && typeof args === 'object' ? (args as Record<string, unknown>) : undefined
-        });
-      }
-    };
-
-    for (const candidate of candidates) {
-      try {
-        const parsed = JSON.parse(candidate);
-        pushParsed(parsed);
-      } catch (err) {
-        errors.push(`Invalid JSON: ${String(err)}`);
-      }
-    }
-  }
-
-  const remainingText = calls.length > 0 ? '' : text.replace(TOOL_CALL_REGEX, '').trim();
-  return { calls, remainingText, errors };
 }
 
 interface EditorPlan {
@@ -5069,37 +4996,6 @@ function applyUnifiedDiffToText(
 
   result.push(...originalLines.slice(cursor));
   return { text: result.join(eol), appliedHunks, totalHunks };
-}
-
-const READ_TOOL_NAMES = new Set<string>([
-  'list_files',
-  'read_file',
-  'get_active_file',
-  'search_in_files',
-  'get_symbols',
-  'get_workspace_symbols',
-  'get_definition',
-  'get_references',
-  'get_type_info',
-  'get_diagnostics',
-  'pick_file_for_intent',
-  'pick_save_path'
-]);
-
-const EDIT_TOOL_NAMES = new Set<string>([
-  'apply_patch',
-  'replace_lines',
-  'write_file',
-  'rename_file',
-  'delete_file'
-]);
-
-function resolveToolPermissionScope(name: string): keyof AutoApprovePolicy {
-  if (EDIT_TOOL_NAMES.has(name)) return 'edit';
-  if (READ_TOOL_NAMES.has(name)) return 'read';
-  if (name.startsWith('browser_')) return 'browser';
-  if (name.startsWith('mcp_')) return 'mcp';
-  return 'commands';
 }
 
 async function runToolCall(
