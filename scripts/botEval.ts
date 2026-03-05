@@ -1009,7 +1009,20 @@ export function normalizeTsTodoStorePathHandling(content: string): string {
     '      return Array.isArray(parsed?.tasks) ? parsed.tasks : (Array.isArray(parsed) ? parsed : []);',
     ''
   ].join('\n'));
+  next = next.replace(/return\s+JSON\.parse\(\s*data\s*\)\s*\|\|\s*\[\s*\]\s*;\s*/g, [
+    'const parsed = JSON.parse(data);',
+    '      return Array.isArray(parsed?.tasks) ? parsed.tasks : (Array.isArray(parsed) ? parsed : []);',
+    ''
+  ].join('\n'));
   next = next.replace(/JSON\.stringify\(\s*tasks\s*,\s*null\s*,\s*2\s*\)/g, 'JSON.stringify({ tasks }, null, 2)');
+
+  // TS strict often fails when done/remove are typed as Task but return null/undefined branches.
+  next = next.replace(/\bdone\s*\(\s*id\s*:\s*string\s*\)\s*:\s*Task\s*\{/g, 'done(id: string): Task | null {');
+  next = next.replace(/\bremove\s*\(\s*id\s*:\s*string\s*\)\s*:\s*Task\s*\{/g, 'remove(id: string): Task | null {');
+  next = next.replace(
+    /(const\s+task\s*=\s*tasks\.find\([^;]*\);\s*if\s*\(task\)\s*\{[\s\S]*?\}\s*)return\s+task\s*;/g,
+    '$1return task || null;'
+  );
 
   const convertNamedImportToRequire = (source: 'fs' | 'crypto'): void => {
     const importRe = new RegExp(`import\\s*\\{\\s*([^}]+)\\s*\\}\\s*from\\s*['"](?:node:)?${source}['"]\\s*;?`, 'g');
@@ -1056,6 +1069,11 @@ export function normalizeTsTodoCliContract(content: string): string {
   // Common TS inference trap in parser helpers (`null` inferred too narrowly).
   next = next.replace(/\blet\s+currentOption\s*=\s*null\s*;/g, 'let currentOption: string | null = null;');
 
+  // Avoid TS2451 redeclare errors in script-style CLI files.
+  next = next.replace(/^\s*declare const require:\s*any;\s*$/gm, '');
+  next = next.replace(/^\s*declare const process:\s*any;\s*$/gm, '');
+  next = next.replace(/^\s*(?:const|let|var)\s+process\s*=\s*require\(\s*['"]node:process['"]\s*\)\s*;?\s*$/gm, '');
+
   // Ensure --help exits 0 even when parser stores flags separately from positional cmd.
   next = next.replace(
     /if\s*\(\s*cmd\s*===\s*['"]--help['"]\s*\)\s*\{/g,
@@ -1088,6 +1106,16 @@ export function normalizeTsTodoCliContract(content: string): string {
     /return\s*\{\s*cmd\s*,\s*dataPath\s*\}\s*;/.test(next) &&
     /\bargs\s*\[\s*1\s*\]/.test(next);
   if (hasParserShapeMismatch) {
+    return buildTsTodoFallbackCliTemplate();
+  }
+
+  const hasDestructiveArgvShiftParser =
+    /\bconst\s+argv\s*=\s*process\.argv\.slice\(2\)\s*;/.test(next) &&
+    /while\s*\(\s*argv\.length\s*>\s*0\s*\)\s*\{[\s\S]*?\bargv\.shift\s*\(/m.test(next);
+  const reliesOnMutatedArgvForRequiredValue =
+    /case\s+['"](?:add|done|remove)['"][\s\S]{0,300}\bargv\.(?:length|shift)\b/m.test(next) ||
+    /store\.(?:add|done|remove)\(\s*argv\.shift\(\)\s*\)/m.test(next);
+  if (hasDestructiveArgvShiftParser && reliesOnMutatedArgvForRequiredValue) {
     return buildTsTodoFallbackCliTemplate();
   }
 
