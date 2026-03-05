@@ -77,6 +77,14 @@ type RunDirInfo = {
   mtimeMs: number;
 };
 
+function hasCalibrationArtifacts(dirPath: string): boolean {
+  return (
+    fs.existsSync(path.join(dirPath, 'summary.json')) &&
+    fs.existsSync(path.join(dirPath, 'compare.json')) &&
+    fs.existsSync(path.join(dirPath, 'stability_aggregate.json'))
+  );
+}
+
 function parseArgs(argv: string[]): CalibrateOptions {
   const opts: CalibrateOptions = {
     rootDir: path.resolve('projects/bot_eval_run'),
@@ -180,7 +188,7 @@ function listLatestNightlyRunDirs(rootDir: string, window: number): RunDirInfo[]
   if (!fs.existsSync(rootDir)) {
     throw new Error(`Nightly run root directory does not exist: ${rootDir}`);
   }
-  const dirs = fs.readdirSync(rootDir, { withFileTypes: true })
+  const allNightlyDirs = fs.readdirSync(rootDir, { withFileTypes: true })
     .filter(d => d.isDirectory() && /^release_gate_ci_nightly_/i.test(d.name))
     .map(d => {
       const dirPath = path.join(rootDir, d.name);
@@ -189,12 +197,17 @@ function listLatestNightlyRunDirs(rootDir: string, window: number): RunDirInfo[]
         dirPath,
         mtimeMs: fs.statSync(dirPath).mtimeMs
       };
-    })
+    });
+  const dirs = allNightlyDirs
+    .filter(dir => hasCalibrationArtifacts(dir.dirPath))
     .sort((a, b) => (b.mtimeMs - a.mtimeMs) || b.dirName.localeCompare(a.dirName))
     .slice(0, window);
 
   if (dirs.length === 0) {
-    throw new Error(`No nightly run directories found in ${rootDir}`);
+    const suffix = allNightlyDirs.length > 0
+      ? ' Found nightly directories, but none had summary.json, compare.json, and stability_aggregate.json.'
+      : '';
+    throw new Error(`No completed nightly run directories found in ${rootDir}.${suffix}`);
   }
   return dirs;
 }

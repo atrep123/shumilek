@@ -123,23 +123,50 @@ describe('botEvalNightlyCalibrate', () => {
     }
   });
 
-  it('fails with clear error when compare.json is missing', () => {
+  it('ignores incomplete newer nightly runs and uses only completed runs', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-nightly-calibrate-'));
+    try {
+      const completed = createNightlyRun({
+        root: tmp,
+        runId: 2001,
+        ratioByScenario: {
+          'node-api-oracle': 1.02,
+          'python-ai-stdlib-oracle': 1.01,
+          'ts-todo-oracle': 1
+        },
+        gatePassed: true,
+        allGatePassed: true
+      });
+      const incompleteDir = path.join(tmp, 'release_gate_ci_nightly_999999_1');
+      fs.mkdirSync(incompleteDir, { recursive: true });
+      writeJson(path.join(incompleteDir, 'summary.json'), []);
+
+      const report = buildCalibrationRecommendation({ rootDir: tmp, window: 10 });
+      assert.equal(report.inputs.length, 1);
+      assert.equal(report.inputs[0], completed);
+      assert.equal(report.readiness.ready_to_tighten_pr, false);
+      assert.match(report.readiness.reason_if_not_ready, /Need at least 3 nightly runs/i);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('fails with clear error when no completed nightly run directories exist', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-nightly-calibrate-'));
     try {
       const runDir = path.join(tmp, 'release_gate_ci_nightly_123_1');
       fs.mkdirSync(runDir, { recursive: true });
       writeJson(path.join(runDir, 'summary.json'), []);
-      writeJson(path.join(runDir, 'stability_aggregate.json'), { allGatePassed: true, scenarios: [] });
       assert.throws(
         () => buildCalibrationRecommendation({ rootDir: tmp, window: 10 }),
-        /Missing compare\.json/i
+        /No completed nightly run directories found/i
       );
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
   });
 
-  it('fails with clear error when summary.json is missing', () => {
+  it('fails with clear error when only compare and stability files are present', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-nightly-calibrate-'));
     try {
       const runDir = path.join(tmp, 'release_gate_ci_nightly_124_1');
@@ -152,7 +179,7 @@ describe('botEvalNightlyCalibrate', () => {
       writeJson(path.join(runDir, 'stability_aggregate.json'), { allGatePassed: true, scenarios: [] });
       assert.throws(
         () => buildCalibrationRecommendation({ rootDir: tmp, window: 10 }),
-        /Missing summary\.json/i
+        /No completed nightly run directories found/i
       );
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
