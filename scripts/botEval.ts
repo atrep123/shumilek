@@ -1045,6 +1045,49 @@ export function normalizeTsTodoTypeSafety(content: string): string {
   return next;
 }
 
+export function normalizeTsTodoCliRuntimeGlobals(content: string): string {
+  let next = content.replace(/\r\n/g, '\n');
+  const lines = next.split('\n');
+  const cleaned: string[] = [];
+  let hasRequireDeclare = false;
+  let hasProcessDeclare = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/^const\s+process\s*=\s*require\(\s*['"]node:process['"]\s*\)\s*;?$/.test(trimmed)) {
+      continue;
+    }
+    if (/^declare const require:\s*any;\s*$/.test(trimmed)) {
+      if (hasRequireDeclare) continue;
+      hasRequireDeclare = true;
+      cleaned.push('declare const require: any;');
+      continue;
+    }
+    if (/^declare const process:\s*any;\s*$/.test(trimmed)) {
+      if (hasProcessDeclare) continue;
+      hasProcessDeclare = true;
+      cleaned.push('declare const process: any;');
+      continue;
+    }
+    cleaned.push(line);
+  }
+
+  next = cleaned.join('\n');
+  const withoutDeclares = next
+    .replace(/^\s*declare const require:\s*any;\s*$/gm, '')
+    .replace(/^\s*declare const process:\s*any;\s*$/gm, '');
+
+  if (/\brequire\s*\(/.test(withoutDeclares) && !hasRequireDeclare) {
+    next = `declare const require: any;\n${next}`;
+    hasRequireDeclare = true;
+  }
+  if (/\bprocess\b/.test(withoutDeclares) && !hasProcessDeclare) {
+    next = `declare const process: any;\n${next}`;
+  }
+
+  return next;
+}
+
 export function normalizeTsTodoCliContract(content: string): string {
   let next = normalizeTsTodoTypeSafety(content);
   const lower = next.toLowerCase();
@@ -1098,7 +1141,7 @@ export function normalizeTsTodoCliContract(content: string): string {
     return buildTsTodoFallbackCliTemplate();
   }
 
-  return next;
+  return normalizeTsTodoCliRuntimeGlobals(next);
 }
 
 export function normalizeTsTodoPackageManifest(content: string): string {
@@ -2528,9 +2571,7 @@ async function applyTargetedTsTodoFallback(workspaceDir: string, previous: Valid
     changed = true;
   } else if (fs.existsSync(cliPath)) {
     const original = await fs.promises.readFile(cliPath, 'utf8');
-    let next = original;
-    next = next.replace(/^\s*declare const require:\s*any;\s*$/gm, '');
-    next = next.replace(/^\s*declare const process:\s*any;\s*$/gm, '');
+    const next = normalizeTsTodoCliRuntimeGlobals(original);
     if (next !== original) {
       await fs.promises.writeFile(cliPath, next, 'utf8');
       changed = true;
