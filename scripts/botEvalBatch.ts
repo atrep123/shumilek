@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { spawn } from 'child_process';
+import fetch from 'node-fetch';
 
 type BatchOptions = {
   scenarios: string[];
@@ -13,7 +14,37 @@ type BatchOptions = {
   timeoutSec: number;
   maxIterations: number;
   hardTimeoutSec?: number;
+  stopOnInfraFailure: boolean;
+  autoRestartOnInfraFailure: boolean;
+  maxInfraRestarts: number;
+  infraRestartTimeoutSec: number;
+  infraRestartCooldownSec: number;
+  infraRestartCommand?: string;
+  ollamaBaseUrl: string;
+  infraRecoveryTimeoutSec: number;
+  infraRecoveryPollSec: number;
   outDir?: string;
+};
+
+type InfraFailureKind = 'ollama_unreachable' | 'ollama_model_missing';
+
+type InfraFailureSignal = {
+  kind: InfraFailureKind;
+  message: string;
+  source: 'validation' | 'run_log';
+};
+
+type InfraRecoveryResult = {
+  recovered: boolean;
+  attempts: number;
+  elapsedMs: number;
+};
+
+type InfraRestartResult = {
+  ok: boolean;
+  elapsedMs: number;
+  error?: string;
+  command: string;
 };
 
 type DeterministicFallbackStats = {
@@ -71,6 +102,7 @@ type RunResult = {
     otherFailures: number;
   };
   deterministicFallback: DeterministicFallbackStats;
+  infraFailure: InfraFailureSignal | null;
 };
 
 type FailureClusterCount = {
@@ -150,6 +182,14 @@ export function normalizeDeterministicFallbackMode(raw?: string): 'off' | 'on-fa
 export function classifyFailureCluster(message: string): string {
   const text = String(message || '').toLowerCase();
   if (!text.trim()) return 'other';
+
+  if (
+    /\[infra:ollama_unreachable\]|cannot reach ollama|\/api\/tags failed|ollama request failed|start ollama server/.test(text)
+  ) return 'ollama_infra';
+
+  if (
+    /\[infra:ollama_model_missing\]|requested model .* is not available|ollama pull/.test(text)
+  ) return 'ollama_model_missing';
 
   if (
     /src\/store\.ts|src\/cli\.ts|taskstore|process\.argv|tsconfig\.json|typescript strict mode|dist\/cli\.js missing|dist\/store\.js missing/.test(text)
@@ -251,6 +291,15 @@ function parseArgs(argv: string[]): BatchOptions {
     deterministicFallbackMode: normalizeDeterministicFallbackMode(process.env.BOT_EVAL_DETERMINISTIC_FALLBACK),
     timeoutSec: Number(process.env.BOT_EVAL_TIMEOUT_SEC || 1200),
     maxIterations: Number(process.env.BOT_EVAL_MAX_ITERATIONS || 6),
+    stopOnInfraFailure: parseBooleanFlag(process.env.BOT_EVAL_BATCH_STOP_ON_INFRA_FAILURE, true),
+    autoRestartOnInfraFailure: parseBooleanFlag(process.env.BOT_EVAL_AUTO_RESTART_ON_INFRA_FAILURE, false),
+    maxInfraRestarts: Number(process.env.BOT_EVAL_MAX_INFRA_RESTARTS || 2),
+    infraRestartTimeoutSec: Number(process.env.BOT_EVAL_INFRA_RESTART_TIMEOUT_SEC || 30),
+    infraRestartCooldownSec: Number(process.env.BOT_EVAL_INFRA_RESTART_COOLDOWN_SEC || 5),
+    infraRestartCommand: (process.env.BOT_EVAL_INFRA_RESTART_COMMAND || '').trim() || undefined,
+    ollamaBaseUrl: String(process.env.BOT_EVAL_BASE_URL || 'http://localhost:11434'),
+    infraRecoveryTimeoutSec: Number(process.env.BOT_EVAL_INFRA_RECOVERY_TIMEOUT_SEC || 90),
+    infraRecoveryPollSec: Number(process.env.BOT_EVAL_INFRA_RECOVERY_POLL_SEC || 5),
   };
 
   let scenarioOverrideUsed = false;
@@ -329,6 +378,55 @@ function parseArgs(argv: string[]): BatchOptions {
       i++;
       continue;
     }
+    if (a === '--stopOnInfraFailure' && next()) {
+      opts.stopOnInfraFailure = parseBooleanFlag(next(), true);
+      i++;
+      continue;
+    }
+    if (a === '--continueOnInfraFailure') {
+      opts.stopOnInfraFailure = false;
+      continue;
+    }
+    if (a === '--autoRestartOnInfraFailure' && next()) {
+      opts.autoRestartOnInfraFailure = parseBooleanFlag(next(), false);
+      i++;
+      continue;
+    }
+    if (a === '--maxInfraRestarts' && next()) {
+      opts.maxInfraRestarts = Number(next());
+      i++;
+      continue;
+    }
+    if (a === '--infraRestartTimeoutSec' && next()) {
+      opts.infraRestartTimeoutSec = Number(next());
+      i++;
+      continue;
+    }
+    if (a === '--infraRestartCooldownSec' && next()) {
+      opts.infraRestartCooldownSec = Number(next());
+      i++;
+      continue;
+    }
+    if (a === '--infraRestartCommand' && next()) {
+      opts.infraRestartCommand = String(next() || '').trim() || undefined;
+      i++;
+      continue;
+    }
+    if (a === '--ollamaBaseUrl' && next()) {
+      opts.ollamaBaseUrl = String(next() || opts.ollamaBaseUrl);
+      i++;
+      continue;
+    }
+    if (a === '--infraRecoveryTimeoutSec' && next()) {
+      opts.infraRecoveryTimeoutSec = Number(next());
+      i++;
+      continue;
+    }
+    if (a === '--infraRecoveryPollSec' && next()) {
+      opts.infraRecoveryPollSec = Number(next());
+      i++;
+      continue;
+    }
     if (a === '--outDir' && next()) {
       opts.outDir = next();
       i++;
@@ -342,6 +440,19 @@ function parseArgs(argv: string[]): BatchOptions {
   if (!Number.isFinite(opts.runs) || opts.runs <= 0) opts.runs = 1;
   if (!Number.isFinite(opts.timeoutSec) || opts.timeoutSec <= 0) opts.timeoutSec = 1200;
   if (!Number.isFinite(opts.maxIterations) || opts.maxIterations <= 0) opts.maxIterations = 3;
+  if (!Number.isFinite(opts.maxInfraRestarts) || opts.maxInfraRestarts < 0) opts.maxInfraRestarts = 2;
+  if (!Number.isFinite(opts.infraRestartTimeoutSec) || opts.infraRestartTimeoutSec <= 0) {
+    opts.infraRestartTimeoutSec = 30;
+  }
+  if (!Number.isFinite(opts.infraRestartCooldownSec) || opts.infraRestartCooldownSec < 0) {
+    opts.infraRestartCooldownSec = 5;
+  }
+  if (!Number.isFinite(opts.infraRecoveryTimeoutSec) || opts.infraRecoveryTimeoutSec <= 0) {
+    opts.infraRecoveryTimeoutSec = 90;
+  }
+  if (!Number.isFinite(opts.infraRecoveryPollSec) || opts.infraRecoveryPollSec <= 0) {
+    opts.infraRecoveryPollSec = 5;
+  }
   if (opts.hardTimeoutSec != null && (!Number.isFinite(opts.hardTimeoutSec) || opts.hardTimeoutSec <= 0)) {
     opts.hardTimeoutSec = undefined;
   }
@@ -352,6 +463,14 @@ function parseArgs(argv: string[]): BatchOptions {
 
 export function parseBatchArgs(argv: string[]): BatchOptions {
   return parseArgs(argv);
+}
+
+function parseBooleanFlag(raw: unknown, fallback: boolean): boolean {
+  const value = String(raw ?? '').trim().toLowerCase();
+  if (!value) return fallback;
+  if (value === '1' || value === 'true' || value === 'yes' || value === 'on') return true;
+  if (value === '0' || value === 'false' || value === 'no' || value === 'off') return false;
+  return fallback;
 }
 
 function printUsageAndExit(code: number): never {
@@ -371,9 +490,213 @@ function printUsageAndExit(code: number): never {
     '  --timeoutSec <n>           Request timeout seconds (default: 1200)',
     '  --maxIterations <n>        Iterations (default: 6)',
     '  --hardTimeoutSec <n>       Hard timeout per run (optional)',
+    '  --stopOnInfraFailure <bool>  Stop remaining runs after detected Ollama infra outage (default: true)',
+    '  --continueOnInfraFailure   Continue batch even after infra outage detection',
+    '  --autoRestartOnInfraFailure <bool>  Auto-restart Ollama when recovery probe times out (default: false)',
+    '  --maxInfraRestarts <n>     Max automatic Ollama restarts per batch (default: 2)',
+    '  --infraRestartTimeoutSec <n>  Timeout for one restart command execution (default: 30)',
+    '  --infraRestartCooldownSec <n> Cooldown after restart before probing readiness (default: 5)',
+    '  --infraRestartCommand <cmd> Custom restart command (optional)',
+    '  --ollamaBaseUrl <url>      Ollama base URL for infra recovery probes (default: http://localhost:11434)',
+    '  --infraRecoveryTimeoutSec <n>  Wait timeout before next run after infra outage when continuing (default: 90)',
+    '  --infraRecoveryPollSec <n> Probe interval during infra recovery wait (default: 5)',
     '  --outDir <path>            Batch output directory (default: projects/bot_eval_run/batch_<ts>)',
   ].join('\n'));
   process.exit(code);
+}
+
+const OLLAMA_UNREACHABLE_PATTERNS: RegExp[] = [
+  /cannot reach ollama/i,
+  /start ollama server/i,
+  /\/api\/tags failed/i,
+  /ollama request failed:\s*request to .*\/api\/generate failed/i,
+  /econnrefused/i,
+  /connect econnrefused/i
+];
+
+const OLLAMA_MODEL_MISSING_PATTERNS: RegExp[] = [
+  /requested model "([^"]+)" is not available/i,
+  /pull model "([^"]+)"/i,
+  /pull it first: "ollama pull ([^"]+)"/i
+];
+
+function detectPatternMatch(text: string, patterns: RegExp[]): RegExpMatchArray | null {
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) return match;
+  }
+  return null;
+}
+
+export function detectOllamaInfraFailureFromText(
+  text: string,
+  source: 'validation' | 'run_log' = 'validation'
+): InfraFailureSignal | null {
+  const haystack = String(text || '');
+  if (!haystack.trim()) return null;
+
+  const unreachableMatch = detectPatternMatch(haystack, OLLAMA_UNREACHABLE_PATTERNS);
+  if (unreachableMatch) {
+    return {
+      kind: 'ollama_unreachable',
+      message: 'Cannot reach Ollama preflight endpoint (/api/tags).',
+      source
+    };
+  }
+
+  const modelMissingMatch = detectPatternMatch(haystack, OLLAMA_MODEL_MISSING_PATTERNS);
+  if (modelMissingMatch) {
+    const model = String(modelMissingMatch[1] || '').trim();
+    return {
+      kind: 'ollama_model_missing',
+      message: model
+        ? `Requested Ollama model "${model}" is missing; run "ollama pull ${model}".`
+        : 'Requested Ollama model is missing; run "ollama pull <model>".',
+      source
+    };
+  }
+
+  return null;
+}
+
+export function shouldAbortBatchOnInfraFailure(
+  opts: Pick<BatchOptions, 'stopOnInfraFailure'>,
+  run: Pick<RunResult, 'infraFailure'>
+): boolean {
+  return Boolean(opts.stopOnInfraFailure && run.infraFailure);
+}
+
+async function probeOllamaTags(baseUrl: string, timeoutMs: number): Promise<boolean> {
+  const url = new URL('/api/tags', baseUrl).toString();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), Math.max(1000, timeoutMs));
+  try {
+    const response = await fetch(url, { method: 'GET', signal: controller.signal as any });
+    return response.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function waitForOllamaRecovery(params: {
+  baseUrl: string;
+  timeoutMs: number;
+  pollMs: number;
+  probeTimeoutMs?: number;
+  probe?: (baseUrl: string, timeoutMs: number) => Promise<boolean>;
+}): Promise<InfraRecoveryResult> {
+  const started = Date.now();
+  const timeoutMs = Math.max(1000, Number(params.timeoutMs) || 1000);
+  const pollMs = Math.max(200, Number(params.pollMs) || 1000);
+  const probeTimeoutMs = Math.max(1000, Number(params.probeTimeoutMs) || Math.min(15000, pollMs * 2));
+  const probeFn = params.probe || probeOllamaTags;
+
+  let attempts = 0;
+  while (Date.now() - started <= timeoutMs) {
+    attempts += 1;
+    if (await probeFn(params.baseUrl, probeTimeoutMs)) {
+      return { recovered: true, attempts, elapsedMs: Date.now() - started };
+    }
+    const elapsed = Date.now() - started;
+    if (elapsed >= timeoutMs) break;
+    const waitMs = Math.min(pollMs, Math.max(0, timeoutMs - elapsed));
+    await new Promise(resolve => setTimeout(resolve, waitMs));
+  }
+  return { recovered: false, attempts, elapsedMs: Date.now() - started };
+}
+
+export function resolveOllamaRestartCommand(
+  configuredCommand?: string,
+  platform: NodeJS.Platform = process.platform
+): string {
+  const custom = String(configuredCommand || '').trim();
+  if (custom) return custom;
+  if (platform === 'win32') {
+    return 'taskkill /IM ollama.exe /F >nul 2>&1 & powershell -NoProfile -Command "Start-Process -FilePath ollama -ArgumentList serve -WindowStyle Hidden"';
+  }
+  return 'pkill -f "ollama serve" >/dev/null 2>&1 || true; nohup ollama serve >/dev/null 2>&1 &';
+}
+
+export async function executeShellCommand(params: {
+  command: string;
+  timeoutMs: number;
+}): Promise<InfraRestartResult> {
+  const command = String(params.command || '').trim();
+  const timeoutMs = Math.max(1000, Number(params.timeoutMs) || 1000);
+  const started = Date.now();
+  if (!command) {
+    return {
+      ok: false,
+      elapsedMs: 0,
+      error: 'Empty restart command.',
+      command
+    };
+  }
+
+  const shell = process.platform === 'win32' ? 'cmd.exe' : '/bin/sh';
+  const shellArgs = process.platform === 'win32'
+    ? ['/d', '/s', '/c', command]
+    : ['-c', command];
+
+  return await new Promise<InfraRestartResult>((resolve) => {
+    const child = spawn(shell, shellArgs, { stdio: 'ignore', windowsHide: true });
+    let done = false;
+    const finish = (result: InfraRestartResult) => {
+      if (done) return;
+      done = true;
+      resolve(result);
+    };
+    const timer = setTimeout(() => {
+      try {
+        child.kill('SIGKILL');
+      } catch {
+        // Ignore kill errors for already-exited processes.
+      }
+      finish({
+        ok: false,
+        elapsedMs: Date.now() - started,
+        error: `Restart command timed out after ${timeoutMs}ms.`,
+        command
+      });
+    }, timeoutMs);
+
+    child.on('error', (err: any) => {
+      clearTimeout(timer);
+      finish({
+        ok: false,
+        elapsedMs: Date.now() - started,
+        error: String(err?.message || err),
+        command
+      });
+    });
+
+    child.on('close', (code: number | null) => {
+      clearTimeout(timer);
+      finish({
+        ok: code === 0 || code === null,
+        elapsedMs: Date.now() - started,
+        error: (code === 0 || code === null) ? undefined : `Restart command exited with code ${code}.`,
+        command
+      });
+    });
+  });
+}
+
+export function shouldAttemptOllamaAutoRestart(params: {
+  stopOnInfraFailure: boolean;
+  autoRestartOnInfraFailure: boolean;
+  maxInfraRestarts: number;
+  restartsUsed: number;
+  infraFailure: InfraFailureSignal | null;
+  recoveryRecovered: boolean;
+}): boolean {
+  if (params.stopOnInfraFailure) return false;
+  if (!params.autoRestartOnInfraFailure) return false;
+  if (!params.infraFailure || params.infraFailure.kind !== 'ollama_unreachable') return false;
+  if (params.recoveryRecovered) return false;
+  return params.restartsUsed < Math.max(0, Math.floor(params.maxInfraRestarts));
 }
 
 async function runSingle(params: {
@@ -392,6 +715,7 @@ async function runSingle(params: {
   const args: string[] = [params.tsNodePath, path.join(params.repoRoot, 'scripts', 'botEval.ts')];
   args.push('--scenario', params.scenario);
   args.push('--model', params.opts.model);
+  args.push('--baseUrl', params.opts.ollamaBaseUrl);
   if (params.opts.plannerModel) args.push('--plannerModel', params.opts.plannerModel);
   if (params.opts.reviewerModel) args.push('--reviewerModel', params.opts.reviewerModel);
   if (params.opts.jsonRepairModel) args.push('--jsonRepairModel', params.opts.jsonRepairModel);
@@ -434,6 +758,7 @@ async function runSingle(params: {
     otherFailures: 0
   };
   let deterministicFallback: DeterministicFallbackStats = emptyDeterministicFallback(params.opts.deterministicFallbackMode);
+  let infraFailure: InfraFailureSignal | null = null;
   try {
     const validationPath = path.join(params.outDir, 'validation.json');
     const validation = JSON.parse(await fs.promises.readFile(validationPath, 'utf8'));
@@ -492,6 +817,32 @@ async function runSingle(params: {
     diagnostics = [`Failed to read validation.json: ${String(e?.message || e)}`];
   }
 
+  if (!ok) {
+    const diagnosticText = (diagnostics || []).join('\n');
+    infraFailure = detectOllamaInfraFailureFromText(diagnosticText, 'validation');
+    if (!infraFailure) {
+      try {
+        const logText = await fs.promises.readFile(logPath, 'utf8');
+        infraFailure = detectOllamaInfraFailureFromText(logText, 'run_log');
+      } catch {
+        // Ignore missing log reads, validation diagnostics are primary signal.
+      }
+    }
+    if (infraFailure) {
+      const marker = `[infra:${infraFailure.kind}] ${infraFailure.message}`;
+      if (!(diagnostics || []).some(d => String(d || '').includes(marker))) {
+        diagnostics = [marker, ...(diagnostics || [])];
+      }
+    }
+  }
+
+  if (timedOut) {
+    const timeoutMessage = `Run exceeded hard timeout (${params.opts.hardTimeoutSec || 0}s) and was terminated.`;
+    if (!(diagnostics || []).some(d => String(d || '').includes(timeoutMessage))) {
+      diagnostics = [timeoutMessage, ...(diagnostics || [])];
+    }
+  }
+
   return {
     scenario: params.scenario,
     runIndex: params.runIndex,
@@ -503,6 +854,7 @@ async function runSingle(params: {
     timedOut,
     parseStats,
     deterministicFallback,
+    infraFailure,
   };
 }
 
@@ -620,11 +972,56 @@ async function main() {
     timeoutSec: opts.timeoutSec,
     maxIterations: opts.maxIterations,
     hardTimeoutSec: opts.hardTimeoutSec ?? null,
+    stopOnInfraFailure: opts.stopOnInfraFailure,
+    autoRestartOnInfraFailure: opts.autoRestartOnInfraFailure,
+    maxInfraRestarts: opts.maxInfraRestarts,
+    infraRestartTimeoutSec: opts.infraRestartTimeoutSec,
+    infraRestartCooldownSec: opts.infraRestartCooldownSec,
+    infraRestartCommand: opts.infraRestartCommand ?? null,
+    ollamaBaseUrl: opts.ollamaBaseUrl,
+    infraRecoveryTimeoutSec: opts.infraRecoveryTimeoutSec,
+    infraRecoveryPollSec: opts.infraRecoveryPollSec,
     outDir: batchOutDir,
   };
   await fs.promises.writeFile(path.join(batchOutDir, 'meta.json'), JSON.stringify(meta, null, 2), 'utf8');
 
   const results: RunResult[] = [];
+  const infraRecoveryEvents: Array<{
+    scenario: string;
+    runIndex: number;
+    outDir: string;
+    kind: InfraFailureKind;
+    recovered: boolean;
+    attempts: number;
+    elapsedMs: number;
+    occurredAt: string;
+  }> = [];
+  const infraRestartEvents: Array<{
+    scenario: string;
+    runIndex: number;
+    outDir: string;
+    kind: InfraFailureKind;
+    restartIndex: number;
+    command: string;
+    restartOk: boolean;
+    restartElapsedMs: number;
+    restartError?: string;
+    recoveredAfterRestart: boolean;
+    recoveryAttempts: number;
+    recoveryElapsedMs: number;
+    occurredAt: string;
+  }> = [];
+  let infraRestartCount = 0;
+  const totalPlannedRuns = opts.scenarios.length * opts.runs;
+  let infraAbort: {
+    scenario: string;
+    runIndex: number;
+    outDir: string;
+    kind: InfraFailureKind;
+    message: string;
+    source: 'validation' | 'run_log';
+    detectedAt: string;
+  } | null = null;
   for (const scenario of opts.scenarios) {
     for (let i = 1; i <= opts.runs; i++) {
       const runOutDir = path.join(batchOutDir, `${scenario}_run_${String(i).padStart(2, '0')}`);
@@ -636,12 +1033,133 @@ async function main() {
       console.log(
         `  -> ${res.ok ? 'OK' : 'FAIL'} (${Math.round(res.durationMs / 1000)}s) ${res.outDir}`
       );
+      if (shouldAbortBatchOnInfraFailure(opts, res) && res.infraFailure) {
+        infraAbort = {
+          scenario,
+          runIndex: i,
+          outDir: res.outDir,
+          kind: res.infraFailure.kind,
+          message: res.infraFailure.message,
+          source: res.infraFailure.source,
+          detectedAt: new Date().toISOString()
+        };
+        // eslint-disable-next-line no-console
+        console.warn(
+          `  -> INFRA ABORT: ${res.infraFailure.kind} (${res.infraFailure.source}) ${res.infraFailure.message}`
+        );
+        break;
+      }
+      if (!opts.stopOnInfraFailure && res.infraFailure?.kind === 'ollama_unreachable') {
+        // In continue mode, wait for Ollama health recovery to avoid immediate repeated preflight failures.
+        // eslint-disable-next-line no-console
+        console.warn(
+          `  -> INFRA RECOVERY WAIT: probing ${opts.ollamaBaseUrl}/api/tags up to ${opts.infraRecoveryTimeoutSec}s`
+        );
+        let recovery = await waitForOllamaRecovery({
+          baseUrl: opts.ollamaBaseUrl,
+          timeoutMs: opts.infraRecoveryTimeoutSec * 1000,
+          pollMs: opts.infraRecoveryPollSec * 1000
+        });
+        infraRecoveryEvents.push({
+          scenario,
+          runIndex: i,
+          outDir: res.outDir,
+          kind: res.infraFailure.kind,
+          recovered: recovery.recovered,
+          attempts: recovery.attempts,
+          elapsedMs: recovery.elapsedMs,
+          occurredAt: new Date().toISOString()
+        });
+        // eslint-disable-next-line no-console
+        console.warn(
+          `  -> INFRA RECOVERY ${recovery.recovered ? 'OK' : 'TIMEOUT'} attempts=${recovery.attempts} wait=${Math.round(recovery.elapsedMs / 1000)}s`
+        );
+
+        if (shouldAttemptOllamaAutoRestart({
+          stopOnInfraFailure: opts.stopOnInfraFailure,
+          autoRestartOnInfraFailure: opts.autoRestartOnInfraFailure,
+          maxInfraRestarts: opts.maxInfraRestarts,
+          restartsUsed: infraRestartCount,
+          infraFailure: res.infraFailure,
+          recoveryRecovered: recovery.recovered
+        })) {
+          const restartCommand = resolveOllamaRestartCommand(opts.infraRestartCommand);
+          infraRestartCount += 1;
+          // eslint-disable-next-line no-console
+          console.warn(
+            `  -> INFRA RESTART ${infraRestartCount}/${opts.maxInfraRestarts}: ${restartCommand}`
+          );
+          const restartResult = await executeShellCommand({
+            command: restartCommand,
+            timeoutMs: opts.infraRestartTimeoutSec * 1000
+          });
+          if (opts.infraRestartCooldownSec > 0) {
+            await new Promise(resolve => setTimeout(resolve, opts.infraRestartCooldownSec * 1000));
+          }
+          recovery = await waitForOllamaRecovery({
+            baseUrl: opts.ollamaBaseUrl,
+            timeoutMs: opts.infraRecoveryTimeoutSec * 1000,
+            pollMs: opts.infraRecoveryPollSec * 1000
+          });
+          infraRestartEvents.push({
+            scenario,
+            runIndex: i,
+            outDir: res.outDir,
+            kind: res.infraFailure.kind,
+            restartIndex: infraRestartCount,
+            command: restartResult.command,
+            restartOk: restartResult.ok,
+            restartElapsedMs: restartResult.elapsedMs,
+            restartError: restartResult.error,
+            recoveredAfterRestart: recovery.recovered,
+            recoveryAttempts: recovery.attempts,
+            recoveryElapsedMs: recovery.elapsedMs,
+            occurredAt: new Date().toISOString()
+          });
+          // eslint-disable-next-line no-console
+          console.warn(
+            `  -> INFRA RESTART RESULT ${restartResult.ok ? 'OK' : 'FAIL'} ` +
+            `restartWait=${Math.round(restartResult.elapsedMs / 1000)}s ` +
+            `postRecovery=${recovery.recovered ? 'OK' : 'TIMEOUT'}`
+          );
+        }
+      }
+    }
+    if (infraAbort) {
+      break;
     }
   }
 
   const summary = summarize(results);
   await fs.promises.writeFile(path.join(batchOutDir, 'results.json'), JSON.stringify(results, null, 2), 'utf8');
   await fs.promises.writeFile(path.join(batchOutDir, 'summary.json'), JSON.stringify(summary, null, 2), 'utf8');
+  if (infraRecoveryEvents.length > 0) {
+    await fs.promises.writeFile(
+      path.join(batchOutDir, 'infra_recovery.json'),
+      JSON.stringify(infraRecoveryEvents, null, 2),
+      'utf8'
+    );
+  }
+  if (infraRestartEvents.length > 0) {
+    await fs.promises.writeFile(
+      path.join(batchOutDir, 'infra_restart.json'),
+      JSON.stringify(infraRestartEvents, null, 2),
+      'utf8'
+    );
+  }
+  if (infraAbort) {
+    const skippedRuns = Math.max(0, totalPlannedRuns - results.length);
+    await fs.promises.writeFile(
+      path.join(batchOutDir, 'infra_abort.json'),
+      JSON.stringify({
+        ...infraAbort,
+        plannedRuns: totalPlannedRuns,
+        executedRuns: results.length,
+        skippedRuns
+      }, null, 2),
+      'utf8'
+    );
+  }
 
   // eslint-disable-next-line no-console
   console.log('\nSummary:');
@@ -735,6 +1253,28 @@ async function main() {
     `fallbackDependencyRunRate=${Math.round(overall.fallbackDependencyRunRate * 100)}% ` +
     `topClusters=${overall.topFailureClusters.map((c: FailureClusterCount) => `${c.id}:${c.count}`).join(',') || 'n/a'}`
   );
+  if (infraAbort) {
+    const skippedRuns = Math.max(0, totalPlannedRuns - results.length);
+    // eslint-disable-next-line no-console
+    console.log(
+      `Batch stopped early due to infra outage (${infraAbort.kind}); skippedRuns=${skippedRuns}.`
+    );
+  }
+  if (infraRecoveryEvents.length > 0) {
+    const recoveredCount = infraRecoveryEvents.filter(e => e.recovered).length;
+    // eslint-disable-next-line no-console
+    console.log(
+      `Infra recovery events: ${infraRecoveryEvents.length}, recovered=${recoveredCount}, timeout=${infraRecoveryEvents.length - recoveredCount}.`
+    );
+  }
+  if (infraRestartEvents.length > 0) {
+    const postRecoveryOk = infraRestartEvents.filter(e => e.recoveredAfterRestart).length;
+    const restartOk = infraRestartEvents.filter(e => e.restartOk).length;
+    // eslint-disable-next-line no-console
+    console.log(
+      `Infra restart events: ${infraRestartEvents.length}, restartOk=${restartOk}, postRecoveryOk=${postRecoveryOk}.`
+    );
+  }
   // eslint-disable-next-line no-console
   console.log(`\nBatch output: ${batchOutDir}`);
 }

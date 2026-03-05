@@ -104,6 +104,24 @@ describe('botEval deterministic fallback helpers', () => {
     assert.ok(/fs\.existsSync\(/.test(out));
   });
 
+  it('normalizes ts-todo store JSON.parse(data) || [] pattern to task-envelope read', () => {
+    const src = [
+      "const fs = require('node:fs');",
+      '',
+      'export class TaskStore {',
+      '  list() {',
+      "    const data = fs.readFileSync('x.json', 'utf8');",
+      '    return JSON.parse(data) || [];',
+      '  }',
+      '}',
+      ''
+    ].join('\n');
+    const out = normalizeTsTodoStorePathHandling(src);
+    assert.ok(out.includes('const parsed = JSON.parse(data);'));
+    assert.ok(out.includes('Array.isArray(parsed?.tasks) ? parsed.tasks'));
+    assert.ok(!out.includes('return JSON.parse(data) || [];'));
+  });
+
   it('injects crypto require when store uses crypto.randomUUID without binding', () => {
     const src = [
       'declare const require: any;',
@@ -119,6 +137,34 @@ describe('botEval deterministic fallback helpers', () => {
     const out = normalizeTsTodoStorePathHandling(src);
     assert.ok(out.includes('const crypto = require("node:crypto");'));
     assert.ok(/crypto\.randomUUID\(/.test(out));
+  });
+
+  it('normalizes ts-todo store done/remove signatures to avoid strict null/undefined return errors', () => {
+    const src = [
+      "const fs = require('node:fs');",
+      '',
+      'type Task = { id: string; done: boolean; title: string; createdAt: string };',
+      '',
+      'export class TaskStore {',
+      '  done(id: string): Task {',
+      '    const tasks: Task[] = [];',
+      '    const task = tasks.find(t => t.id === id);',
+      '    if (task) {',
+      '      task.done = true;',
+      '    }',
+      '    return task;',
+      '  }',
+      '',
+      '  remove(id: string): Task {',
+      '    return null;',
+      '  }',
+      '}',
+      ''
+    ].join('\n');
+    const out = normalizeTsTodoStorePathHandling(src);
+    assert.ok(out.includes('done(id: string): Task | null {'));
+    assert.ok(out.includes('remove(id: string): Task | null {'));
+    assert.ok(out.includes('return task || null;'));
   });
 
   it('normalizes ts catch blocks to avoid unknown catch type failures', () => {
@@ -182,6 +228,25 @@ describe('botEval deterministic fallback helpers', () => {
     assert.ok(out.includes("if (cmd === '--help' || process.argv.slice(2).includes('--help')) {"));
   });
 
+  it('removes cli local process/require declarations that trigger TS redeclare errors', () => {
+    const src = [
+      'declare const require: any;',
+      'declare const process: any;',
+      "const process = require('node:process');",
+      "const argv = process.argv.slice(2);",
+      "const cmd = argv[0] || '--help';",
+      "if (cmd === '--help') {",
+      '  return 0;',
+      '}',
+      ''
+    ].join('\n');
+    const out = normalizeTsTodoCliContract(src);
+    assert.ok(!/declare const require:\s*any;/.test(out));
+    assert.ok(!/declare const process:\s*any;/.test(out));
+    assert.ok(!/const process = require\('node:process'\);/.test(out));
+    assert.ok(out.includes('process.argv.slice(2)'));
+  });
+
   it('normalizes ts cli to not require existing --data file', () => {
     const src = [
       'declare const process: any;',
@@ -227,6 +292,43 @@ describe('botEval deterministic fallback helpers', () => {
     const out = normalizeTsTodoCliContract(src);
     assert.ok(out.includes('function usage(): string {'));
     assert.ok(out.includes("const store = new TaskStore(dataPath);"));
+  });
+
+  it('replaces ts cli destructive argv shift parser with canonical fallback cli', () => {
+    const src = [
+      "const process = require('node:process');",
+      "const { TaskStore } = require('./store');",
+      '',
+      'const argv = process.argv.slice(2);',
+      'let cmd = argv[0];',
+      "let dataPath = '';",
+      '',
+      'while (argv.length > 0) {',
+      "  if (argv[0] === '--data') {",
+      '    argv.shift();',
+      '    dataPath = argv.shift();',
+      '  } else {',
+      '    argv.shift();',
+      '  }',
+      '}',
+      '',
+      'const store = new TaskStore(dataPath as string);',
+      'switch (cmd) {',
+      "  case 'add':",
+      '    if (argv.length < 1) throw new Error("missing title");',
+      '    console.log(store.add(argv.shift()));',
+      '    break;',
+      "  case 'done':",
+      '    if (argv.length < 1) throw new Error("missing id");',
+      '    console.log(store.done(argv.shift()));',
+      '    break;',
+      '}',
+      ''
+    ].join('\n');
+    const out = normalizeTsTodoCliContract(src);
+    assert.ok(out.includes('function usage(): string {'));
+    assert.ok(out.includes('const value = firstPositional(argv.slice(1));'));
+    assert.ok(!out.includes('while (argv.length > 0)'));
   });
 
   it('normalizes ts package manifest to oracle policy', () => {

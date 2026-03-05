@@ -49,6 +49,12 @@ Tenhle repozitář obsahuje jednoduchý eval harness, který:
 - Pri rozbitem JSONu harness zkusi automatickou opravu JSON (json-repair).
 - JSON repair lze smerovat na jiny model: `--jsonRepairModel qwen2.5:7b`.
 - Batch behy (pass-rate): `npm run bot:eval:batch -- --runs 3 --scenarios ts-todo-oracle,node-api-oracle,python-ai-stdlib-oracle`.
+- Pri nestabilnim Ollama endpointu lze v batch modu pouzit recovery:
+  - `--continueOnInfraFailure --infraRecoveryTimeoutSec 90 --infraRecoveryPollSec 5`
+  - volitelne `--stopOnInfraFailure false` (ekvivalent continue mode)
+  - volitelne auto-restart: `--autoRestartOnInfraFailure true --maxInfraRestarts 2`
+  - pro vlastni restart prikaz: `--infraRestartCommand "<cmd>"`
+  - batch pak zapisuje `infra_recovery.json` a pri restartu i `infra_restart.json`
 - Doporučena kombinace modelu: `--model qwen2.5-coder:14b --plannerModel deepseek-r1:8b --reviewerModel qwen2.5:3b --jsonRepairModel qwen2.5:7b`.
 - Doporučené skripty:
   - Jednotlivý run: `npm run bot:eval:recommended`
@@ -108,3 +114,15 @@ Useful optional repository variables:
 - `BOT_EVAL_MAX_ITERATIONS`
 - `BOT_EVAL_HARD_TIMEOUT_SEC`
 - `BOT_EVAL_RUN_ROOT` (default `C:\actions-runner\bot_eval_run`)
+
+## Large manual scenario
+
+- Scenario id: `node-project-api-large`
+- Run command (recommended baseline): `npm run bot:eval:large:node-project`
+- The script defaults to `qwen2.5-coder:7b` for stability.
+- Optional confirmation runs:
+  - `npm run bot:eval:large:node-project -- --model qwen2.5-coder:14b`
+  - `npm run bot:eval:large:node-project -- --model qwen2.5-coder:32b`
+- Purpose: medium-large manual benchmark for Project Management API (12+ source files, modules `projects/tasks/members/comments`, oracle tests with 20+ asserts).
+- Outputs: standard eval artifacts (`summary.json`, `validation.json`, `iterations/*`, generated `workspace/`).
+- Scope in this iteration: manual-only benchmark; not part of PR/nightly release gate.
