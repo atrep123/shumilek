@@ -638,7 +638,7 @@ export async function executeShellCommand(params: {
   const shell = process.platform === 'win32' ? 'cmd.exe' : '/bin/sh';
   const shellArgs = process.platform === 'win32'
     ? ['/d', '/s', '/c', command]
-    : ['-lc', command];
+    : ['-c', command];
 
   return await new Promise<InfraRestartResult>((resolve) => {
     const child = spawn(shell, shellArgs, { stdio: 'ignore', windowsHide: true });
