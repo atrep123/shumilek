@@ -23,5 +23,9 @@ describe('botEval ts-todo tsconfig normalization', () => {
 
     assert.deepEqual(parsed.compilerOptions.types, []);
     assert.equal(parsed.compilerOptions.module, 'commonjs');
+    assert.equal(parsed.compilerOptions.moduleResolution, 'node');
+    assert.equal(parsed.compilerOptions.strict, false);
+    assert.equal(parsed.compilerOptions.target, 'ES2020');
+    assert.deepEqual(parsed.include, ['src/**/*.ts']);
   });
 });
