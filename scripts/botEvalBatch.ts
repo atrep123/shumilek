@@ -510,7 +510,7 @@ const OLLAMA_UNREACHABLE_PATTERNS: RegExp[] = [
   /start ollama server/i,
   /\/api\/tags failed/i,
   /ollama request failed:\s*request to .*\/api\/generate failed/i,
-  /ecconnrefused/i,
+  /econnrefused/i,
   /connect econnrefused/i
 ];
 
