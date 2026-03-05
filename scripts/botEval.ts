@@ -1093,7 +1093,7 @@ export function normalizeTsTodoCliContract(content: string): string {
   const lower = next.toLowerCase();
 
   if (/(?:^|\W)(commander|yargs|minimist)(?:$|\W)/i.test(lower)) {
-    return buildTsTodoFallbackCliTemplate();
+    return normalizeTsTodoCliRuntimeGlobals(buildTsTodoFallbackCliTemplate());
   }
 
   // Common TS inference trap in parser helpers (`null` inferred too narrowly).
@@ -1131,14 +1131,14 @@ export function normalizeTsTodoCliContract(content: string): string {
     /return\s*\{\s*cmd\s*,\s*dataPath\s*\}\s*;/.test(next) &&
     /\bargs\s*\[\s*1\s*\]/.test(next);
   if (hasParserShapeMismatch) {
-    return buildTsTodoFallbackCliTemplate();
+    return normalizeTsTodoCliRuntimeGlobals(buildTsTodoFallbackCliTemplate());
   }
 
   const duplicateIdDecls = next.match(/\bconst\s+id\s*=\s*argv\s*\[\s*1\s*\]\s*;/g) || [];
   const hasSwitchWithDoneAndRemove =
     /switch\s*\([^)]*\)\s*\{[\s\S]*case\s+['"]done['"][\s\S]*case\s+['"]remove['"]/m.test(next);
   if (hasSwitchWithDoneAndRemove && duplicateIdDecls.length > 1) {
-    return buildTsTodoFallbackCliTemplate();
+    return normalizeTsTodoCliRuntimeGlobals(buildTsTodoFallbackCliTemplate());
   }
 
   return normalizeTsTodoCliRuntimeGlobals(next);
@@ -2276,6 +2276,8 @@ export function shouldFastFailNodeApiDiagnostics(diagnostics: string[]): boolean
 
 function buildTsTodoFallbackStoreTemplate(): string {
   return [
+    'declare const require: any;',
+    '',
     "const fs = require('node:fs');",
     "const crypto = require('node:crypto');",
     '',
@@ -2354,6 +2356,9 @@ function buildTsTodoFallbackStoreTemplate(): string {
 
 function buildTsTodoFallbackCliTemplate(): string {
   return [
+    'declare const require: any;',
+    'declare const process: any;',
+    '',
     "const { TaskStore } = require('./store');",
     '',
     'function usage(): string {',
@@ -2567,7 +2572,7 @@ async function applyTargetedTsTodoFallback(workspaceDir: string, previous: Valid
 
   if (shouldFixCli) {
     await fs.promises.mkdir(path.dirname(cliPath), { recursive: true });
-    await fs.promises.writeFile(cliPath, buildTsTodoFallbackCliTemplate(), 'utf8');
+    await fs.promises.writeFile(cliPath, normalizeTsTodoCliRuntimeGlobals(buildTsTodoFallbackCliTemplate()), 'utf8');
     changed = true;
   } else if (fs.existsSync(cliPath)) {
     const original = await fs.promises.readFile(cliPath, 'utf8');
@@ -2580,7 +2585,11 @@ async function applyTargetedTsTodoFallback(workspaceDir: string, previous: Valid
 
   if (shouldFixStore) {
     await fs.promises.mkdir(path.dirname(storePath), { recursive: true });
-    await fs.promises.writeFile(storePath, buildTsTodoFallbackStoreTemplate(), 'utf8');
+    await fs.promises.writeFile(
+      storePath,
+      normalizeTsTodoTypeSafety(normalizeTsTodoStorePathHandling(buildTsTodoFallbackStoreTemplate())),
+      'utf8'
+    );
     changed = true;
   }
 
