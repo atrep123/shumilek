@@ -28,4 +28,22 @@ describe('botEval ts-todo cli import normalization', () => {
     assert.ok(!/require\('\.\/store\.ts'\)/.test(out));
     assert.ok(/if \(!dataPath\) \{/.test(out));
   });
+
+  it('injects help guard when cli lacks --help branch', () => {
+    const src = [
+      'const argv = process.argv.slice(2);',
+      "const cmd = String(argv[0] || '');",
+      'const dataPath = argv[1];',
+      'if (!dataPath) {',
+      "  console.error('--data <path> is required');",
+      '  process.exit(1);',
+      '}',
+      ''
+    ].join('\n');
+
+    const out = normalizeTsTodoCliContract(src);
+
+    assert.ok(/if \(cmd === '--help' \|\| process\.argv\.slice\(2\)\.includes\('--help'\)\)/.test(out));
+    assert.ok(/process\.exit\(0\);/.test(out));
+  });
 });

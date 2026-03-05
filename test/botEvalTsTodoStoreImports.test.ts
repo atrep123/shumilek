@@ -31,4 +31,22 @@ describe('botEval ts-todo store import normalization', () => {
     assert.ok(/const \{ randomUUID: uuidv4 \} = require\("node:crypto"\);/.test(out));
     assert.ok(!/from 'uuid'/.test(out));
   });
+
+  it('normalizes JSON task shape and removes dummy fallback task objects', () => {
+    const src = [
+      'class TaskStore {',
+      "  read(data: string) { return JSON.parse(data) || []; }",
+      '  done(task: any) {',
+      "    return task || { id: 'x', title: '', done: false, createdAt: '' };",
+      '  }',
+      '}',
+      ''
+    ].join('\n');
+
+    const out = normalizeTsTodoStorePathHandling(src);
+
+    assert.ok(/Array\.isArray\(parsed\?\.tasks\)/.test(out));
+    assert.ok(/if \(!task\) throw new Error\('Task not found'\);/.test(out));
+    assert.ok(/return task;/.test(out));
+  });
 });
