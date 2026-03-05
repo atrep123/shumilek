@@ -588,9 +588,9 @@ export async function waitForOllamaRecovery(params: {
   probe?: (baseUrl: string, timeoutMs: number) => Promise<boolean>;
 }): Promise<InfraRecoveryResult> {
   const started = Date.now();
-  const timeoutMs = Math.max(1000, Number(params.timeoutMs) || 1000);
-  const pollMs = Math.max(200, Number(params.pollMs) || 1000);
-  const probeTimeoutMs = Math.max(1000, Number(params.probeTimeoutMs) || Math.min(15000, pollMs * 2));
+  const timeoutMs = Number(params.timeoutMs) || 1000;
+  const pollMs = Number(params.pollMs) || 1000;
+  const probeTimeoutMs = Number(params.probeTimeoutMs) || Math.min(15000, pollMs * 2);
   const probeFn = params.probe || probeOllamaTags;
 
   let attempts = 0;
