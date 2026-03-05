@@ -1173,6 +1173,7 @@ export function normalizeTsTodoTsconfig(content: string): string {
     compilerOptions.outDir = 'dist';
     compilerOptions.useUnknownInCatchVariables = false;
     compilerOptions.noImplicitAny = false;
+    compilerOptions.types = [];
     return JSON.stringify(root, null, 2) + '\n';
   } catch {
     return content;
@@ -1710,6 +1711,7 @@ async function stabilizeTsTodoWorkspace(workspaceDir: string): Promise<void> {
       target: 'ES2020',
       module: 'commonjs',
       moduleResolution: 'node',
+      types: [],
       rootDir: 'src',
       outDir: 'dist',
       strict: false,
@@ -1743,6 +1745,8 @@ async function stabilizeTsTodoWorkspace(workspaceDir: string): Promise<void> {
   ].join('\n');
 
   const canonicalStore = [
+    'declare const require: any;',
+    '',
     "const fs = require('node:fs');",
     "const crypto = require('node:crypto');",
     '',
@@ -1819,6 +1823,9 @@ async function stabilizeTsTodoWorkspace(workspaceDir: string): Promise<void> {
   ].join('\n');
 
   const canonicalCli = [
+    'declare const require: any;',
+    'declare const process: any;',
+    '',
     "const { TaskStore } = require('./store');",
     '',
     'function usage(): string {',
@@ -1891,8 +1898,12 @@ async function stabilizeTsTodoWorkspace(workspaceDir: string): Promise<void> {
 
   try {
     await fs.promises.mkdir(path.join(workspaceDir, 'src'), { recursive: true });
-    await fs.promises.writeFile(path.join(workspaceDir, 'src', 'store.ts'), canonicalStore, 'utf8');
-    await fs.promises.writeFile(path.join(workspaceDir, 'src', 'cli.ts'), canonicalCli, 'utf8');
+    await fs.promises.writeFile(
+      path.join(workspaceDir, 'src', 'store.ts'),
+      normalizeTsTodoTypeSafety(normalizeTsTodoStorePathHandling(canonicalStore)),
+      'utf8'
+    );
+    await fs.promises.writeFile(path.join(workspaceDir, 'src', 'cli.ts'), normalizeTsTodoCliRuntimeGlobals(canonicalCli), 'utf8');
   } catch {
     // best-effort normalization
   }
@@ -2599,6 +2610,7 @@ async function applyTargetedTsTodoFallback(workspaceDir: string, previous: Valid
         target: 'ES2020',
         module: 'commonjs',
         moduleResolution: 'node',
+        types: [],
         rootDir: 'src',
         outDir: 'dist',
         strict: false,
