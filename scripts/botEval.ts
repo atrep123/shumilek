@@ -1338,7 +1338,7 @@ function buildPythonOracleCliFallbackTemplate(): string {
 }
 
 export function normalizePythonOracleCliContract(content: string): string {
-  const next = content.replace(/\r\n/g, '\n');
+  const next = ensurePythonOptionalTypingImport(content.replace(/\r\n/g, '\n'));
   const hasMain = /\bdef\s+main\s*\(/.test(next);
   const hasArgparse = /\bimport\s+argparse\b/.test(next);
   const hasMarkovImport = /from\s+mini_ai\.markov\s+import\s+/.test(next);
@@ -1349,6 +1349,45 @@ export function normalizePythonOracleCliContract(content: string): string {
     return buildPythonOracleCliFallbackTemplate();
   }
   return next;
+}
+
+function ensurePythonOptionalTypingImport(content: string): string {
+  if (!/\bOptional\b/.test(content)) {
+    return content;
+  }
+  if (/\btyping\.Optional\b/.test(content)) {
+    return content;
+  }
+  if (/from\s+typing\s+import[^\n]*\bOptional\b/.test(content)) {
+    return content;
+  }
+
+  const typingImportRegex = /^from\s+typing\s+import\s+([^\n]+)$/m;
+  if (typingImportRegex.test(content)) {
+    return content.replace(typingImportRegex, (_match, imported: string) => {
+      const names = imported
+        .split(',')
+        .map(name => name.trim())
+        .filter(Boolean);
+      if (!names.includes('Optional')) {
+        names.push('Optional');
+      }
+      const deduped = Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
+      return `from typing import ${deduped.join(', ')}`;
+    });
+  }
+
+  const lines = content.split('\n');
+  let insertAt = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (/^\s*from\s+__future__\s+import\s+/.test(lines[i])) {
+      insertAt = i + 1;
+      continue;
+    }
+    break;
+  }
+  lines.splice(insertAt, 0, 'from typing import Optional');
+  return lines.join('\n');
 }
 
 export function normalizeNodeApiServerContract(content: string): string {
