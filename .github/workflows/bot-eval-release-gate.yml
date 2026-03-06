@@ -234,9 +234,32 @@ jobs:
             ${{ steps.gate.outputs.out_dir }}/calibration_recommendation.md
             ${{ steps.gate.outputs.out_dir }}/baseline_promotion.json
 
+      - name: Run large nightly canary (3x, non-blocking)
+        if: steps.gate.conclusion == 'success'
+        id: large_canary
+        continue-on-error: true
+        shell: cmd
+        run: |
+          set "label=large_nightly_canary_%GITHUB_RUN_ID%_%GITHUB_RUN_ATTEMPT%"
+          set "outDir=%BOT_EVAL_RUN_ROOT%\%label%"
+          echo out_dir=%outDir%>>%GITHUB_OUTPUT%
+          npm run bot:eval:nightly:large:node-project -- --label "%label%" --outDir "%outDir%"
+          if errorlevel 1 exit /b 1
+
+      - name: Upload large nightly canary artifacts
+        if: always() && steps.large_canary.outputs.out_dir != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: bot-eval-large-nightly-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: warn
+          path: |
+            ${{ steps.large_canary.outputs.out_dir }}/meta.json
+            ${{ steps.large_canary.outputs.out_dir }}/summary.json
+            ${{ steps.large_canary.outputs.out_dir }}/node-project-api-large_run_*/validation.json
+
       - name: Cleanup old bot-eval directories (nightly)
         if: always()
         shell: cmd
         run: |
-          npm run bot:eval:cleanup -- --root "%BOT_EVAL_RUN_ROOT%" --policy "release_gate_ci_nightly_:10" --policy "release_gate_ci_pr_:10" --out "${{ steps.gate.outputs.out_dir }}/cleanup_report.json"
+          npm run bot:eval:cleanup -- --root "%BOT_EVAL_RUN_ROOT%" --policy "release_gate_ci_nightly_:10" --policy "release_gate_ci_pr_:10" --policy "large_nightly_canary_:10" --out "${{ steps.gate.outputs.out_dir }}/cleanup_report.json"
           if errorlevel 1 exit /b 1

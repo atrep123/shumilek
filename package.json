@@ -509,6 +509,7 @@
                     "bot:eval:stability:aggregate":  "ts-node scripts/botEvalStabilityAggregate.ts",
                     "bot:eval:nightly:calibrate":  "ts-node scripts/botEvalNightlyCalibrate.ts",
                     "bot:eval:large:node-project":  "ts-node scripts/botEval.ts --scenario node-project-api-large --model qwen2.5-coder:7b --maxIterations 12",
+                    "bot:eval:nightly:large:node-project":  "ts-node scripts/botEvalBatch.ts --scenario node-project-api-large --runs 3 --model qwen2.5-coder:14b --plannerModel deepseek-r1:8b --reviewerModel qwen2.5:3b --jsonRepairModel qwen2.5:7b --maxIterations 12 --timeoutSec 1200 --hardTimeoutSec 1200",
                     "bot:eval:baseline:promote":  "ts-node scripts/botEvalBaselinePromote.ts",
                     "bot:eval:cleanup":  "ts-node scripts/botEvalCleanup.ts",
                     "bot:eval:recommended":  "ts-node scripts/botEval.ts --scenario ts-todo-oracle --model qwen2.5-coder:14b --plannerModel deepseek-r1:8b --reviewerModel qwen2.5:3b --jsonRepairModel qwen2.5:7b --maxIterations 6 --timeoutSec 1200",
