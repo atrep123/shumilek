@@ -24,6 +24,7 @@ function createNightlyRun(params: {
   rawMin?: number;
   fallbackMax?: number;
   parseErrorTotal?: number;
+  includeHistoricalCompletionArtifacts?: boolean;
 }): string {
   const runDir = path.join(params.root, `release_gate_ci_nightly_${params.runId}_1`);
   fs.mkdirSync(runDir, { recursive: true });
@@ -62,6 +63,30 @@ function createNightlyRun(params: {
       }
     }))
   });
+  writeJson(path.join(runDir, 'latency_guard.json'), {
+    passed: true,
+    violations: []
+  });
+  writeJson(path.join(runDir, 'trend_guard.json'), {
+    passed: true,
+    violations: []
+  });
+  if (params.includeHistoricalCompletionArtifacts !== false) {
+    writeJson(path.join(runDir, 'calibration_recommendation.json'), {
+      readiness: {
+        ready_to_tighten_pr: false,
+        reason_if_not_ready: '',
+        last3NightlyRunIds: []
+      }
+    });
+    writeJson(path.join(runDir, 'baseline_promotion.json'), {
+      qualified: true,
+      promoted: true,
+      streakBefore: 1,
+      streakAfter: 2,
+      promotionMessage: 'promoted after streak 2/2'
+    });
+  }
   return runDir;
 }
 
@@ -123,23 +148,156 @@ describe('botEvalNightlyCalibrate', () => {
     }
   });
 
-  it('fails with clear error when compare.json is missing', () => {
+  it('ignores incomplete newer nightly runs and uses only completed runs', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-nightly-calibrate-'));
+    try {
+      const completed = createNightlyRun({
+        root: tmp,
+        runId: 2001,
+        ratioByScenario: {
+          'node-api-oracle': 1.02,
+          'python-ai-stdlib-oracle': 1.01,
+          'ts-todo-oracle': 1
+        },
+        gatePassed: true,
+        allGatePassed: true
+      });
+      const incompleteDir = path.join(tmp, 'release_gate_ci_nightly_999999_1');
+      fs.mkdirSync(incompleteDir, { recursive: true });
+      writeJson(path.join(incompleteDir, 'summary.json'), []);
+
+      const report = buildCalibrationRecommendation({ rootDir: tmp, window: 10 });
+      assert.equal(report.inputs.length, 1);
+      assert.equal(report.inputs[0], completed);
+      assert.equal(report.readiness.ready_to_tighten_pr, false);
+      assert.match(report.readiness.reason_if_not_ready, /Need at least 3 nightly runs/i);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('treats the newest pre-calibration nightly run as eligible when two prior nightly runs completed', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-nightly-calibrate-'));
+    try {
+      createNightlyRun({
+        root: tmp,
+        runId: 3001,
+        ratioByScenario: {
+          'node-api-oracle': 1.01,
+          'python-ai-stdlib-oracle': 1.01,
+          'ts-todo-oracle': 1.01
+        },
+        gatePassed: true,
+        allGatePassed: true
+      });
+      createNightlyRun({
+        root: tmp,
+        runId: 3002,
+        ratioByScenario: {
+          'node-api-oracle': 1.02,
+          'python-ai-stdlib-oracle': 1.02,
+          'ts-todo-oracle': 1.02
+        },
+        gatePassed: true,
+        allGatePassed: true
+      });
+      const currentRun = createNightlyRun({
+        root: tmp,
+        runId: 3003,
+        ratioByScenario: {
+          'node-api-oracle': 1.03,
+          'python-ai-stdlib-oracle': 1.03,
+          'ts-todo-oracle': 1.03
+        },
+        gatePassed: true,
+        allGatePassed: true,
+        includeHistoricalCompletionArtifacts: false
+      });
+
+      const report = buildCalibrationRecommendation({ rootDir: tmp, window: 10 });
+      assert.equal(report.readiness.ready_to_tighten_pr, true);
+      assert.deepEqual(report.readiness.last3NightlyRunIds, ['3003', '3002', '3001']);
+      assert.equal(report.inputs[0], currentRun);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('blocks readiness when one of the last three nightly runs failed before calibration completion', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-nightly-calibrate-'));
+    try {
+      createNightlyRun({
+        root: tmp,
+        runId: 4001,
+        ratioByScenario: {
+          'node-api-oracle': 1.01,
+          'python-ai-stdlib-oracle': 1.01,
+          'ts-todo-oracle': 1.01
+        },
+        gatePassed: true,
+        allGatePassed: true
+      });
+      createNightlyRun({
+        root: tmp,
+        runId: 4002,
+        ratioByScenario: {
+          'node-api-oracle': 1.02,
+          'python-ai-stdlib-oracle': 1.02,
+          'ts-todo-oracle': 1.02
+        },
+        gatePassed: true,
+        allGatePassed: true
+      });
+      createNightlyRun({
+        root: tmp,
+        runId: 4003,
+        ratioByScenario: {
+          'node-api-oracle': 1.03,
+          'python-ai-stdlib-oracle': 1.03,
+          'ts-todo-oracle': 1.03
+        },
+        gatePassed: true,
+        allGatePassed: true,
+        includeHistoricalCompletionArtifacts: false
+      });
+      createNightlyRun({
+        root: tmp,
+        runId: 4004,
+        ratioByScenario: {
+          'node-api-oracle': 1.04,
+          'python-ai-stdlib-oracle': 1.04,
+          'ts-todo-oracle': 1.04
+        },
+        gatePassed: true,
+        allGatePassed: true,
+        includeHistoricalCompletionArtifacts: false
+      });
+
+      const report = buildCalibrationRecommendation({ rootDir: tmp, window: 10 });
+      assert.equal(report.readiness.ready_to_tighten_pr, false);
+      assert.deepEqual(report.readiness.last3NightlyRunIds, ['4004', '4003', '4002']);
+      assert.match(report.readiness.reason_if_not_ready, /4003.*missing required completion artifacts/i);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('fails with clear error when no completed nightly run directories exist', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-nightly-calibrate-'));
     try {
       const runDir = path.join(tmp, 'release_gate_ci_nightly_123_1');
       fs.mkdirSync(runDir, { recursive: true });
       writeJson(path.join(runDir, 'summary.json'), []);
-      writeJson(path.join(runDir, 'stability_aggregate.json'), { allGatePassed: true, scenarios: [] });
       assert.throws(
         () => buildCalibrationRecommendation({ rootDir: tmp, window: 10 }),
-        /Missing compare\.json/i
+        /No completed nightly run directories found/i
       );
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
   });
 
-  it('fails with clear error when summary.json is missing', () => {
+  it('fails with clear error when only compare and stability files are present', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-nightly-calibrate-'));
     try {
       const runDir = path.join(tmp, 'release_gate_ci_nightly_124_1');
@@ -152,7 +310,7 @@ describe('botEvalNightlyCalibrate', () => {
       writeJson(path.join(runDir, 'stability_aggregate.json'), { allGatePassed: true, scenarios: [] });
       assert.throws(
         () => buildCalibrationRecommendation({ rootDir: tmp, window: 10 }),
-        /Missing summary\.json/i
+        /No completed nightly run directories found/i
       );
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
