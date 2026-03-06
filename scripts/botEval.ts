@@ -858,7 +858,7 @@ export function getTimeoutFallbackModelForScenario(
 
 export function shouldStopAfterGenerationTimeout(scenarioId: string, consecutiveTimeouts: number): boolean {
   const count = Number.isFinite(consecutiveTimeouts) && consecutiveTimeouts > 0 ? Math.floor(consecutiveTimeouts) : 0;
-  if (scenarioId === 'node-project-api-large') return count >= 1;
+  if (scenarioId === 'node-project-api-large') return count >= 2;
   return count >= 2;
 }
 
@@ -4268,9 +4268,20 @@ function hasNodeProjectProjectsCreatePayloadDrift(serviceContent: string): boole
   const payloadSignature =
     /\bcreate\s*\(\s*(?:projectData|payload|data)\s*\)/i.test(text)
     || /\bcreateProject\s*\(\s*(?:projectData|payload|data)\s*\)/i.test(text);
-  if (!payloadSignature) return false;
-  if (!/\b(?:projectData|payload|data)\.name\b/i.test(text)) return false;
-  return true;
+  if (payloadSignature && /\b(?:projectData|payload|data)\.name\b/i.test(text)) {
+    return true;
+  }
+
+  const requestSignature =
+    /\bcreate\s*\(\s*req\s*,\s*res\s*\)/i.test(text)
+    || /\bcreateProject\s*\(\s*req\s*,\s*res\s*\)/i.test(text);
+  if (!requestSignature) return false;
+
+  return (
+    /\breq\.body(?:\?|\.)*\.name\b/i.test(text)
+    || /\bconst\s*\{\s*name\s*\}\s*=\s*req\.body\b/i.test(text)
+    || /\bconst\s+name\s*=\s*String\s*\(\s*req\.body(?:\?|\.)*\.name\b/i.test(text)
+  );
 }
 
 function hasNodeProjectInvalidNullSendErrorInService(serviceContent: string): boolean {
@@ -4307,6 +4318,28 @@ function hasNodeProjectTasksProjectObjectCoupling(serviceContent: string): boole
   if (!/projectsService|projectService|projects\b/i.test(text)) return false;
   return /project\s*\.\s*tasks\s*\.\s*(?:push|find|filter|map)\s*\(/i.test(text)
     || /const\s+project\s*=\s*.*getProjectById\s*\(/i.test(text);
+}
+
+function hasNodeProjectTasksRouteHandlerDrift(serviceContent: string): boolean {
+  const text = String(serviceContent || '');
+  if (!text) return false;
+  const hasTasksSemantics =
+    /\bcreateTask\b/.test(text) ||
+    /\bgetAllTasks\b/.test(text) ||
+    /\bgetTasks\b/.test(text) ||
+    /\bgetTasksByStatus\b/.test(text) ||
+    /\bupdateTaskStatus\b/.test(text);
+  if (!hasTasksSemantics) return false;
+
+  const usesResponseObject =
+    /\bsendError\s*\(\s*res\b/i.test(text) ||
+    /\bres\.status\s*\(/i.test(text);
+  const usesNameContract =
+    /\bcreateTask\s*\(\s*projectId\s*,\s*name\b/i.test(text) ||
+    /\bname\s*,\s*status\s*:\s*['"]todo['"]/i.test(text) ||
+    /\bname\s*:\s*name\b/i.test(text);
+
+  return usesResponseObject || usesNameContract;
 }
 
 function hasNodeProjectCommentsContentFieldContractDrift(serviceContent: string): boolean {
@@ -5404,7 +5437,7 @@ export function applyNodeProjectRouteServiceAdapterBridges(files: FileSpec[], wo
       }
     }
 
-    if (moduleName === 'tasks' && hasNodeProjectTasksProjectObjectCoupling(nextServiceContent)) {
+    if (moduleName === 'tasks' && (hasNodeProjectTasksProjectObjectCoupling(nextServiceContent) || hasNodeProjectTasksRouteHandlerDrift(nextServiceContent))) {
       const canonicalTasksService = buildNodeProjectLargeCoreFileTemplate('src/modules/tasks/service.js');
       if (canonicalTasksService) {
         nextServiceContent = canonicalTasksService;

@@ -1266,6 +1266,29 @@ describe('botEval large node-project scenario', function () {
     assert.ok(service.includes('module.exports = { getAllProjects, getProjectById, getProjectByName, createProject, projects };'));
   });
 
+  it('replaces projects service when exported createProject(req, res) reads req.body.name', () => {
+    const files = [
+      {
+        path: 'src/modules/projects/service.js',
+        content: [
+          "const { randomUUID } = require('node:crypto');",
+          'module.exports = {',
+          '  async createProject(req, res) {',
+          '    const { name } = req.body;',
+          "    if (!name) return res.status(400).json({ error: { code: 'INVALID_REQUEST', message: 'Project name is required' } });",
+          "    return { id: randomUUID(), name };",
+          '  }',
+          '};',
+          ''
+        ].join('\n')
+      }
+    ];
+    const patched = applyNodeProjectRouteServiceAdapterBridges(files);
+    const service = String(patched.find(f => f.path === 'src/modules/projects/service.js')?.content || '');
+    assert.ok(service.includes("const { generateId } = require('../../lib/id');"));
+    assert.ok(service.includes('module.exports = { getAllProjects, getProjectById, getProjectByName, createProject, projects };'));
+  });
+
   it('replaces services that call sendError(null, ...) with canonical template', () => {
     const files = [
       {
@@ -1388,6 +1411,35 @@ describe('botEval large node-project scenario', function () {
           '  return task;',
           '}',
           'module.exports = { createTask };',
+          ''
+        ].join('\n')
+      }
+    ];
+    const patched = applyNodeProjectRouteServiceAdapterBridges(files);
+    const service = String(patched.find(f => f.path === 'src/modules/tasks/service.js')?.content || '');
+    assert.ok(service.includes('const tasks = [];'));
+    assert.ok(service.includes('async function createTask(projectId, title) {'));
+    assert.ok(service.includes('module.exports = { getAllTasks, createTask, getTaskById, updateTaskStatus, tasks };'));
+  });
+
+  it('replaces tasks service when it embeds route-handler error flow and name-based task payload', () => {
+    const files = [
+      {
+        path: 'src/modules/tasks/service.js',
+        content: [
+          "const { sendError } = require('../../lib/errors');",
+          'const tasksStore = [];',
+          'function createTask(projectId, name) {',
+          "  if (!name) return sendError(res, 400, 'BadRequestError', 'Name is required');",
+          "  const task = { id: 't1', projectId, name, status: 'todo' };",
+          '  tasksStore.push(task);',
+          '  return task;',
+          '}',
+          'function updateTaskStatus(projectId, taskId, status) {',
+          "  if (status !== 'todo' && status !== 'done') return sendError(res, 400, 'BadRequestError', 'Invalid status');",
+          '  return tasksStore.find(task => task.projectId === projectId && task.id === taskId) || null;',
+          '}',
+          'module.exports = { createTask, updateTaskStatus, tasksStore };',
           ''
         ].join('\n')
       }
@@ -2541,8 +2593,9 @@ describe('botEval large node-project scenario', function () {
     assert.equal(computeTimeoutFallbackGenerationTimeoutMs(600_000, 'node-api-oracle'), 600_000);
   });
 
-  it('stops early after generation timeout for large scenario', () => {
-    assert.equal(shouldStopAfterGenerationTimeout('node-project-api-large', 1), true);
+  it('stops early after repeated generation timeouts for large scenario', () => {
+    assert.equal(shouldStopAfterGenerationTimeout('node-project-api-large', 1), false);
+    assert.equal(shouldStopAfterGenerationTimeout('node-project-api-large', 2), true);
     assert.equal(shouldStopAfterGenerationTimeout('node-project-api-large', 0), false);
     assert.equal(shouldStopAfterGenerationTimeout('node-api-oracle', 1), false);
     assert.equal(shouldStopAfterGenerationTimeout('node-api-oracle', 2), true);
