@@ -4640,6 +4640,8 @@ function shouldCanonicalizeProjectsRouteContract(routeContent: string): boolean 
   const text = String(routeContent || '');
   if (!text) return false;
   if (/createProject\s*\(\s*req\.body\s*\)/i.test(text)) return true;
+  if (/createProject\s*\(\s*\{\s*name(?:\s*:\s*name)?\s*\}\s*\)/i.test(text)) return true;
+  if (/createProject\s*\(\s*\{\s*name\s*:\s*req\.body(?:\?\.|\.?)name\s*\}\s*\)/i.test(text)) return true;
   if (/\.addProject\s*\(/i.test(text)) return true;
   if (/res\.status\s*\(\s*201\s*\)\s*\.json\s*\(\s*project\s*\)/i.test(text)) return true;
   if (/res\.status\s*\(\s*201\s*\)\s*\.json\s*\(\s*\{\s*project\s*\}\s*\)/i.test(text) && !/if\s*\(\s*!project\s*\)/.test(text)) return true;

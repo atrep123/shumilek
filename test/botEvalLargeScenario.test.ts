@@ -1544,6 +1544,41 @@ describe('botEval large node-project scenario', function () {
     assert.ok(fixed.appliedFixes.some(item => /canonicalized projects route contract/i.test(item)));
   });
 
+  it('auto-fix canonicalizes projects route when createProject receives object literal payload', () => {
+    const files = [
+      {
+        path: 'src/modules/projects/routes.js',
+        content: [
+          "const router = require('express').Router();",
+          "const projectsService = require('./service');",
+          "const { sendError } = require('../../lib/errors');",
+          "router.get('/', async (_req, res) => res.json({ projects: await projectsService.getAllProjects() }));",
+          "router.post('/', async (req, res) => {",
+          "  const name = String(req.body?.name || '').trim();",
+          "  if (!name) return sendError(res, 400, 'BAD_REQUEST', 'Project name is required');",
+          "  const duplicate = await projectsService.getProjectByName(name);",
+          "  if (duplicate) return sendError(res, 409, 'PROJECT_DUPLICATE', 'Project already exists');",
+          "  const project = await projectsService.createProject({ name });",
+          "  if (!project) return sendError(res, 409, 'PROJECT_DUPLICATE', 'Project already exists');",
+          "  return res.status(201).json({ project });",
+          '});',
+          "router.get('/:projectId', async (req, res) => {",
+          "  const project = await projectsService.getProjectById(req.params.projectId);",
+          "  if (!project) return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found');",
+          "  return res.json({ project });",
+          '});',
+          'module.exports = router;',
+          ''
+        ].join('\n')
+      }
+    ];
+    const fixed = applyNodeProjectContractAutoFixes(files);
+    const projects = String(fixed.files[0].content || '');
+    assert.ok(projects.includes('const project = await projectsService.createProject(name);'));
+    assert.ok(!projects.includes('createProject({ name })'));
+    assert.ok(fixed.appliedFixes.some(item => /canonicalized projects route contract/i.test(item)));
+  });
+
   it('auto-fix normalizes POST success status to 201 across domain routes', () => {
     const files = [
       { path: 'src/modules/projects/routes.js', content: "const router=require('express').Router();router.post('/',async(req,res)=>res.json({project:{id:'p1'}}));module.exports=router;\n" },
