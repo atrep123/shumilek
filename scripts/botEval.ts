@@ -2259,8 +2259,10 @@ export function shouldFastFailNodeApiDiagnostics(diagnostics: string[]): boolean
   ]);
 }
 
-function buildTsTodoFallbackStoreTemplate(): string {
+export function buildTsTodoFallbackStoreTemplate(): string {
   return [
+    'declare const require: any;',
+    '',
     "const fs = require('node:fs');",
     "const crypto = require('node:crypto');",
     '',
@@ -2337,8 +2339,11 @@ function buildTsTodoFallbackStoreTemplate(): string {
   ].join('\n');
 }
 
-function buildTsTodoFallbackCliTemplate(): string {
+export function buildTsTodoFallbackCliTemplate(): string {
   return [
+    'declare const require: any;',
+    'declare const process: any;',
+    '',
     "const { TaskStore } = require('./store');",
     '',
     'function usage(): string {',
