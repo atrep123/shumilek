@@ -77,11 +77,21 @@ type RunDirInfo = {
   mtimeMs: number;
 };
 
-function hasCalibrationArtifacts(dirPath: string): boolean {
+function hasPreCalibrationArtifacts(dirPath: string): boolean {
   return (
     fs.existsSync(path.join(dirPath, 'summary.json')) &&
     fs.existsSync(path.join(dirPath, 'compare.json')) &&
-    fs.existsSync(path.join(dirPath, 'stability_aggregate.json'))
+    fs.existsSync(path.join(dirPath, 'stability_aggregate.json')) &&
+    fs.existsSync(path.join(dirPath, 'latency_guard.json')) &&
+    fs.existsSync(path.join(dirPath, 'trend_guard.json'))
+  );
+}
+
+function hasHistoricalCompletionArtifacts(dirPath: string): boolean {
+  return (
+    hasPreCalibrationArtifacts(dirPath) &&
+    fs.existsSync(path.join(dirPath, 'calibration_recommendation.json')) &&
+    fs.existsSync(path.join(dirPath, 'baseline_promotion.json'))
   );
 }
 
@@ -184,11 +194,11 @@ export function computeRecommendedLatencyMultiplier(p95LatencyRatio: number): nu
   return roundUp(p95LatencyRatio * 1.15, 0.01);
 }
 
-function listLatestNightlyRunDirs(rootDir: string, window: number): RunDirInfo[] {
+function listNightlyRunDirs(rootDir: string): RunDirInfo[] {
   if (!fs.existsSync(rootDir)) {
     throw new Error(`Nightly run root directory does not exist: ${rootDir}`);
   }
-  const allNightlyDirs = fs.readdirSync(rootDir, { withFileTypes: true })
+  return fs.readdirSync(rootDir, { withFileTypes: true })
     .filter(d => d.isDirectory() && /^release_gate_ci_nightly_/i.test(d.name))
     .map(d => {
       const dirPath = path.join(rootDir, d.name);
@@ -197,19 +207,30 @@ function listLatestNightlyRunDirs(rootDir: string, window: number): RunDirInfo[]
         dirPath,
         mtimeMs: fs.statSync(dirPath).mtimeMs
       };
-    });
-  const dirs = allNightlyDirs
-    .filter(dir => hasCalibrationArtifacts(dir.dirPath))
-    .sort((a, b) => (b.mtimeMs - a.mtimeMs) || b.dirName.localeCompare(a.dirName))
+    })
+    .sort((a, b) => (b.mtimeMs - a.mtimeMs) || b.dirName.localeCompare(a.dirName));
+}
+
+function isEligibleForCalibrationWindow(dir: RunDirInfo, index: number): boolean {
+  if (index === 0) {
+    return hasPreCalibrationArtifacts(dir.dirPath);
+  }
+  return hasHistoricalCompletionArtifacts(dir.dirPath);
+}
+
+function listLatestNightlyRunDirs(rootDir: string, window: number): { allNightlyDirs: RunDirInfo[]; eligibleDirs: RunDirInfo[] } {
+  const allNightlyDirs = listNightlyRunDirs(rootDir);
+  const eligibleDirs = allNightlyDirs
+    .filter((dir, index) => isEligibleForCalibrationWindow(dir, index))
     .slice(0, window);
 
-  if (dirs.length === 0) {
+  if (eligibleDirs.length === 0) {
     const suffix = allNightlyDirs.length > 0
-      ? ' Found nightly directories, but none had summary.json, compare.json, and stability_aggregate.json.'
+      ? ' Found nightly directories, but none had the required readiness artifacts.'
       : '';
     throw new Error(`No completed nightly run directories found in ${rootDir}.${suffix}`);
   }
-  return dirs;
+  return { allNightlyDirs, eligibleDirs };
 }
 
 function loadNightlyRun(dir: RunDirInfo): NightlyRun {
@@ -238,14 +259,27 @@ function loadNightlyRun(dir: RunDirInfo): NightlyRun {
   };
 }
 
-function evaluateReadiness(runsNewestFirst: NightlyRun[]): CalibrationReadiness {
-  const last3 = runsNewestFirst.slice(0, 3);
+function evaluateReadiness(allNightlyDirsNewestFirst: RunDirInfo[], runsNewestFirst: NightlyRun[]): CalibrationReadiness {
+  const last3Dirs = allNightlyDirsNewestFirst.slice(0, 3);
+  const runsByDirName = new Map(runsNewestFirst.map(run => [run.dirName, run]));
   const violations: string[] = [];
-  if (last3.length < 3) {
-    violations.push(`Need at least 3 nightly runs for readiness, found ${last3.length}.`);
+  if (last3Dirs.length < 3) {
+    violations.push(`Need at least 3 nightly runs for readiness, found ${last3Dirs.length}.`);
   }
 
-  for (const run of last3) {
+  for (const [index, dir] of last3Dirs.entries()) {
+    const hasRequiredArtifacts = index === 0
+      ? hasPreCalibrationArtifacts(dir.dirPath)
+      : hasHistoricalCompletionArtifacts(dir.dirPath);
+    if (!hasRequiredArtifacts) {
+      violations.push(`${dir.dirName}: nightly run is missing required completion artifacts`);
+      continue;
+    }
+    const run = runsByDirName.get(dir.dirName);
+    if (!run) {
+      violations.push(`${dir.dirName}: nightly run could not be loaded for readiness evaluation`);
+      continue;
+    }
     if (!run.compare?.gate?.passed) {
       violations.push(`${run.dirName}: gate.passed is false`);
     }
@@ -278,7 +312,7 @@ function evaluateReadiness(runsNewestFirst: NightlyRun[]): CalibrationReadiness 
   return {
     ready_to_tighten_pr: violations.length === 0,
     reason_if_not_ready: violations.join(' | '),
-    last3NightlyRunIds: last3.map(run => getNightlyRunId(run.dirName))
+    last3NightlyRunIds: last3Dirs.map(run => getNightlyRunId(run.dirName))
   };
 }
 
@@ -318,8 +352,8 @@ export function buildCalibrationRecommendation(params: {
   rootDir: string;
   window: number;
 }): CalibrationRecommendation {
-  const runDirs = listLatestNightlyRunDirs(params.rootDir, params.window);
-  const runs = runDirs.map(loadNightlyRun);
+  const { allNightlyDirs, eligibleDirs } = listLatestNightlyRunDirs(params.rootDir, params.window);
+  const runs = eligibleDirs.map(loadNightlyRun);
   const ratiosByScenario = new Map<string, number[]>();
 
   for (const run of runs) {
@@ -353,7 +387,7 @@ export function buildCalibrationRecommendation(params: {
     inputs: runs.map(run => run.dirPath),
     baselineDir: runs[0]?.compare?.baselineDir || '',
     scenarios,
-    readiness: evaluateReadiness(runs)
+    readiness: evaluateReadiness(allNightlyDirs, runs)
   };
 }
 
