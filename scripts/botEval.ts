@@ -3946,12 +3946,17 @@ function appendNodeProjectServiceWrappers(
         "  const payload = { message: normalizedMessage };",
         `  let result = await module.exports.${wrapper.targetMethod}(projectId, taskId, payload);`,
         "  let normalized = result && typeof result === 'object' && 'comment' in result ? result.comment : result;",
-        `  if ((!normalized || typeof normalized !== 'object' || typeof normalized.message === 'undefined') && typeof module.exports.${wrapper.targetMethod} === 'function') {`,
+        "  const shouldRetryWithString = !normalized || typeof normalized !== 'object' || typeof normalized.message === 'undefined' || (normalized && typeof normalized === 'object' && normalized.message && typeof normalized.message === 'object');",
+        `  if (shouldRetryWithString && typeof module.exports.${wrapper.targetMethod} === 'function') {`,
         `    const retry = await module.exports.${wrapper.targetMethod}(projectId, taskId, normalizedMessage);`,
         "    const retryNormalized = retry && typeof retry === 'object' && 'comment' in retry ? retry.comment : retry;",
         "    if (retryNormalized && typeof retryNormalized === 'object') normalized = retryNormalized;",
         '  }',
         "  if (!normalized || typeof normalized !== 'object') return { projectId: String(projectId || ''), taskId: String(taskId || ''), message: normalizedMessage };",
+        "  if (normalized.message && typeof normalized.message === 'object') {",
+        "    const nestedMessage = typeof normalized.message.message === 'string' ? normalized.message.message : normalizedMessage;",
+        "    normalized = { ...normalized, message: nestedMessage };",
+        '  }',
         "  return typeof normalized.message === 'undefined' ? { ...normalized, message: normalizedMessage } : normalized;",
         '};'
       ].join('\n');
@@ -4329,6 +4334,14 @@ function normalizeCommentsServiceAddCommentSignature(serviceContent: string): { 
     /\bmessage\s*:\s*([A-Za-z_$][\w$]*)\.message\b/g,
     (_m, argName: string) => `message: typeof ${argName} === 'string' ? ${argName} : String(${argName}?.message || '')`
   );
+  return { content: next, changed: next !== before };
+}
+
+function normalizeNodeProjectProjectsServiceLookupAliases(serviceContent: string): { content: string; changed: boolean } {
+  let next = String(serviceContent || '');
+  if (!next) return { content: serviceContent, changed: false };
+  const before = next;
+  next = next.replace(/\b((?:projects|project)Service)\.getProject\s*\(/g, '$1.getProjectById(');
   return { content: next, changed: next !== before };
 }
 
@@ -5412,6 +5425,14 @@ export function applyNodeProjectRouteServiceAdapterBridges(files: FileSpec[], wo
       }
     }
 
+    if (moduleName !== 'projects') {
+      const normalizedProjectsLookup = normalizeNodeProjectProjectsServiceLookupAliases(nextServiceContent);
+      if (normalizedProjectsLookup.changed) {
+        nextServiceContent = normalizedProjectsLookup.content;
+        changed = true;
+      }
+    }
+
     const randomUuidFix = ensureNodeProjectRandomUuidBinding(nextServiceContent);
     if (randomUuidFix.changed) {
       nextServiceContent = randomUuidFix.content;
@@ -5813,6 +5834,35 @@ export async function validateNodeProjectApiLarge(workspaceDir: string): Promise
         if (!hasTaskApi) {
           diagnostics.push(`Cross-module contract mismatch: comments service calls taskService.${apiName}() but tasks service does not define/export it`);
         }
+      }
+    }
+    if (tasksServiceSource && projectsServiceSource) {
+      const projectApiCalls = [...tasksServiceSource.matchAll(/\b((?:projects|project)Service)\.(\w+)\s*\(/g)]
+        .map(match => ({ alias: String(match[1]), apiName: String(match[2]) }));
+      const seenProjectApiCalls = new Set<string>();
+      for (const { alias, apiName } of projectApiCalls) {
+        const key = `${alias}:${apiName}`;
+        if (seenProjectApiCalls.has(key)) continue;
+        seenProjectApiCalls.add(key);
+        const hasProjectApi =
+          new RegExp(`\\bfunction\\s+${apiName}\\b`).test(projectsServiceSource) ||
+          new RegExp(`\\b${apiName}\\s*:\\s*\\(`).test(projectsServiceSource) ||
+          new RegExp(`\\bmodule\\.exports\\.${apiName}\\s*=`).test(projectsServiceSource) ||
+          new RegExp(`\\bexports\\.${apiName}\\s*=`).test(projectsServiceSource);
+        if (hasProjectApi) continue;
+        if (
+          apiName === 'getProject' &&
+          (
+            /\bfunction\s+getProjectById\b/.test(projectsServiceSource) ||
+            /\bgetProjectById\s*:\s*\(/.test(projectsServiceSource) ||
+            /\bmodule\.exports\.getProjectById\s*=/.test(projectsServiceSource) ||
+            /\bexports\.getProjectById\s*=/.test(projectsServiceSource)
+          )
+        ) {
+          diagnostics.push(`Cross-module contract mismatch: tasks service calls ${alias}.getProject() but projects service does not define/export it; use ${alias}.getProjectById().`);
+          continue;
+        }
+        diagnostics.push(`Cross-module contract mismatch: tasks service calls ${alias}.${apiName}() but projects service does not define/export it`);
       }
     }
     if (tasksServiceSource && /\b(?:const|let)\s+projects\s*=\s*(?:\{\}|\[\])/i.test(tasksServiceSource)) {

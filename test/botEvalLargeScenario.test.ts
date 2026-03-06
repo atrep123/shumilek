@@ -446,6 +446,37 @@ describe('botEval large node-project scenario', function () {
     }
   });
 
+  it('flags tasks->projects cross-module API mismatch with getProjectById guidance', async () => {
+    const workspace = seedLargeWorkspaceWithContractRoutes();
+    try {
+      writeFile(
+        workspace,
+        'src/modules/tasks/service.js',
+        [
+          "const projectsService = require('../projects/service');",
+          'module.exports = {',
+          "  createTask: async (projectId, title) => {",
+          '    const project = await projectsService.getProject(projectId);',
+          "    return project ? { id: 't1', title, status: 'todo' } : null;",
+          '  }',
+          '};',
+          ''
+        ].join('\n')
+      );
+      writeFile(
+        workspace,
+        'src/modules/projects/service.js',
+        "module.exports = { getProjectById: (projectId) => projectId ? { id: projectId, name: 'x' } : null };\n"
+      );
+      const result = await validateNodeProjectApiLarge(workspace);
+      assert.equal(result.ok, false);
+      assert.ok(result.diagnostics.some(d => /Cross-module contract mismatch: tasks service calls projectsService\.getProject\(\) but projects service does not define\/export it; use projectsService\.getProjectById\(\)\./i.test(d)));
+      assert.equal((result.commands || []).length, 0);
+    } finally {
+      fs.rmSync(workspace, { recursive: true, force: true });
+    }
+  });
+
   it('flags route-service mismatch when routes call non-exported service methods', async () => {
     const workspace = seedLargeWorkspaceWithContractRoutes();
     try {
@@ -987,6 +1018,57 @@ describe('botEval large node-project scenario', function () {
     const patched = applyNodeProjectRouteServiceAdapterBridges(files);
     const tasksService = String(patched.find(f => f.path === 'src/modules/tasks/service.js')?.content || '');
     assert.ok(tasksService.includes('module.exports.updateTask = module.exports.updateTaskStatus;'));
+  });
+
+  it('normalizes tasks service projects lookup alias from getProject to getProjectById', () => {
+    const files = [
+      {
+        path: 'src/modules/tasks/service.js',
+        content: [
+          "const projectsService = require('../projects/service');",
+          'async function createTask(projectId, title) {',
+          '  const project = await projectsService.getProject(projectId);',
+          "  return project ? { id: 't1', title, status: 'todo' } : null;",
+          '}',
+          'module.exports = { createTask };',
+          ''
+        ].join('\n')
+      }
+    ];
+    const patched = applyNodeProjectRouteServiceAdapterBridges(files);
+    const tasksService = String(patched.find(f => f.path === 'src/modules/tasks/service.js')?.content || '');
+    assert.ok(tasksService.includes('projectsService.getProjectById(projectId)'));
+    assert.ok(!tasksService.includes('projectsService.getProject(projectId)'));
+  });
+
+  it('bridges comments service createComment string contract when first call returns nested message object', () => {
+    const files = [
+      {
+        path: 'src/modules/comments/routes.js',
+        content: [
+          "const router = require('express').Router();",
+          "const commentsService = require('./service');",
+          "router.post('/', async (req, res) => res.status(201).json({ comment: await commentsService.addComment(req.params.projectId, req.params.taskId, req.body.message) }));",
+          'module.exports = router;',
+          ''
+        ].join('\n')
+      },
+      {
+        path: 'src/modules/comments/service.js',
+        content: [
+          'async function createComment(projectId, taskId, message) {',
+          '  return { projectId, taskId, message };',
+          '}',
+          'module.exports = { createComment };',
+          ''
+        ].join('\n')
+      }
+    ];
+    const patched = applyNodeProjectRouteServiceAdapterBridges(files);
+    const commentsService = String(patched.find(f => f.path === 'src/modules/comments/service.js')?.content || '');
+    assert.ok(commentsService.includes('const shouldRetryWithString ='));
+    assert.ok(commentsService.includes('normalized.message && typeof normalized.message === \'object\''));
+    assert.ok(commentsService.includes('const nestedMessage = typeof normalized.message.message === \'string\' ? normalized.message.message : normalizedMessage;'));
   });
 
   it('synthesizes getAllProjects bridge from detected in-memory store', () => {
