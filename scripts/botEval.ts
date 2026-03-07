@@ -1126,6 +1126,17 @@ export function normalizeTsTodoCliContract(content: string): string {
     return buildTsTodoFallbackCliTemplate();
   }
 
+  if (/\brequire\s*\(/.test(next) && !/^\s*declare const require:\s*any;\s*$/m.test(next)) {
+    next = `declare const require: any;\n${next}`;
+  }
+  if (/\bprocess\./.test(next) && !/^\s*declare const process:\s*any;\s*$/m.test(next)) {
+    if (/^\s*declare const require:\s*any;\s*$/m.test(next)) {
+      next = next.replace(/^\s*declare const require:\s*any;\s*$/m, m => `${m}\ndeclare const process: any;`);
+    } else {
+      next = `declare const process: any;\n${next}`;
+    }
+  }
+
   return next;
 }
 
@@ -1155,9 +1166,12 @@ export function normalizeTsTodoTsconfig(content: string): string {
         : {};
     root.compilerOptions = compilerOptions;
     compilerOptions.module = 'commonjs';
+    compilerOptions.moduleResolution = 'node';
     compilerOptions.outDir = 'dist';
     compilerOptions.useUnknownInCatchVariables = false;
     compilerOptions.noImplicitAny = false;
+    compilerOptions.skipLibCheck = true;
+    compilerOptions.types = [];
     return JSON.stringify(root, null, 2) + '\n';
   } catch {
     return content;
@@ -1701,7 +1715,8 @@ async function stabilizeTsTodoWorkspace(workspaceDir: string): Promise<void> {
       noImplicitAny: false,
       useUnknownInCatchVariables: false,
       esModuleInterop: true,
-      skipLibCheck: true
+      skipLibCheck: true,
+      types: []
     },
     include: ['src/**/*.ts']
   };
@@ -2588,7 +2603,8 @@ async function applyTargetedTsTodoFallback(workspaceDir: string, previous: Valid
         noImplicitAny: false,
         useUnknownInCatchVariables: false,
         esModuleInterop: true,
-        skipLibCheck: true
+        skipLibCheck: true,
+        types: []
       },
       include: ['src/**/*.ts']
     };
