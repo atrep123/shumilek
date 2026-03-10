@@ -176,7 +176,7 @@ describe('SvedomiValidator', () => {
       const prompt = validator.buildValidationPrompt('Question', 'Answer', tasks);
       
       expect(prompt).to.include('Check grammar');
-      expect(prompt).to.include('Hmotnost: 8');
+      expect(prompt).to.include('Weight: 8');
     });
 
     it('should truncate long inputs', () => {

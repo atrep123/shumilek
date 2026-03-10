@@ -2,6 +2,8 @@ import { strict as assert } from 'assert';
 
 import {
   normalizeNodeApiServerContract,
+  normalizeNodeProjectServiceNoRawThrow,
+  normalizeNodeProjectServerNoListen,
   normalizePythonOracleCliContract,
   normalizeScenarioFileContentBeforeWrite,
   normalizeDeterministicFallbackMode,
@@ -294,6 +296,61 @@ describe('botEval deterministic fallback helpers', () => {
     const nodeOther = normalizeScenarioFileContentBeforeWrite('node-api-oracle', 'openapi.json', source);
     assert.ok(nodeServer.includes('module.exports = { createServer };'));
     assert.equal(nodeOther, source);
+  });
+
+  it('normalizes node-project server to avoid auto-listen', () => {
+    const source = [
+      "const app = require('./app');",
+      'const PORT = process.env.PORT || 3000;',
+      '',
+      'app.listen(PORT, () => {',
+      "  console.log('started');",
+      '});',
+      ''
+    ].join('\n');
+    const out = normalizeNodeProjectServerNoListen(source);
+    assert.ok(!/\.listen\s*\(/.test(out));
+    assert.ok(!/const\s+PORT\s*=/.test(out));
+    assert.ok(!/=>\s*\{/.test(out));
+    assert.ok(!/started/.test(out));
+    assert.ok(/module\.exports\s*=\s*app;/.test(out));
+  });
+
+  it('applies node-project server normalization only for server entrypoints', () => {
+    const source = [
+      "const app = require('./app');",
+      'app.listen(3000);',
+      ''
+    ].join('\n');
+    const server = normalizeScenarioFileContentBeforeWrite('node-project-api-large', 'src/server.js', source);
+    const app = normalizeScenarioFileContentBeforeWrite('node-project-api-large', 'src/app.js', source);
+    assert.ok(!/\.listen\s*\(/.test(server));
+    assert.ok(/module\.exports\s*=\s*app;/.test(server));
+    assert.equal(app, source);
+  });
+
+  it('normalizes node-project service to avoid raw throw new Error', () => {
+    const source = [
+      'function createProject(name) {',
+      '  if (!name) {',
+      "    throw new Error('name required');",
+      '  }',
+      "  return { id: 'p1', name };",
+      '}',
+      'module.exports = { createProject };',
+      ''
+    ].join('\n');
+    const out = normalizeNodeProjectServiceNoRawThrow(source);
+    assert.ok(!/throw\s+new\s+Error\s*\(/.test(out));
+    assert.ok(/return null;/.test(out));
+  });
+
+  it('applies node-project service normalization only for module service files', () => {
+    const source = "function x() { throw new Error('boom'); }\n";
+    const service = normalizeScenarioFileContentBeforeWrite('node-project-api-large', 'src/modules/tasks/service.js', source);
+    const routes = normalizeScenarioFileContentBeforeWrite('node-project-api-large', 'src/modules/tasks/routes.js', source);
+    assert.ok(!/throw\s+new\s+Error\s*\(/.test(service));
+    assert.equal(routes, source);
   });
 
   it('normalizes risky python oracle cli contract before write', () => {

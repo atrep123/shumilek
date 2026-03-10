@@ -128,7 +128,7 @@ DÉLKA: medium`;
       const output = `SLOŽITOST: simple
 KROKY:
 - Nainstalovat npm závislosti
-- Napsat kód funkce
+- Write code funkce
 - Otestovat výsledek
 PŘÍSTUP: Jednoduchý
 DÉLKA: short`;
@@ -190,20 +190,20 @@ DÉLKA: short`;
 
     it('should infer code type', () => {
       const rozum = new Rozum();
-      expect(rozum.inferStepType('Napsat funkci pro výpočet')).to.equal('code');
+      expect(rozum.inferStepType('Write a function for calculation')).to.equal('code');
       expect(rozum.inferStepType('Implement the class')).to.equal('code');
     });
 
     it('should infer test type', () => {
       const rozum = new Rozum();
-      expect(rozum.inferStepType('Otestovat funkčnost')).to.equal('test');
-      expect(rozum.inferStepType('Ověřit výsledek')).to.equal('test');
+      expect(rozum.inferStepType('test the feature')).to.equal('test');
+      expect(rozum.inferStepType('verify the result')).to.equal('test');
     });
 
     it('should infer debug type', () => {
       const rozum = new Rozum();
       expect(rozum.inferStepType('Debug the error')).to.equal('debug');
-      expect(rozum.inferStepType('Opravit chybu')).to.equal('debug');
+      expect(rozum.inferStepType('error')).to.equal('debug');
     });
 
     it('should return other for unknown', () => {

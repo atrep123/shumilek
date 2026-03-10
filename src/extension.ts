@@ -1,4 +1,5 @@
 ﻿import * as vscode from 'vscode';
+import { Logger } from './logger';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { exec } from 'child_process';
@@ -1193,6 +1194,7 @@ let sidebarProvider: ShumilekViewProvider | undefined;
 export function activate(context: vscode.ExtensionContext) {
   // Initialize output channel for logging
   outputChannel = vscode.window.createOutputChannel('Shumilek');
+  Logger.initialize(context, outputChannel);
   context.subscriptions.push(outputChannel);
   const rawAppendLine = outputChannel.appendLine.bind(outputChannel);
   const rawAppend = outputChannel.append.bind(outputChannel);
@@ -1240,10 +1242,10 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }
   }));
-  setRozumLogger(outputChannel);
-  setGuardianLogger((msg: string) => outputChannel?.appendLine(msg));
+  setRozumLogger({ appendLine: (msg: string) => Logger.info(msg) } as any);
+  setGuardianLogger((msg: string) => Logger.info(msg));
   setGuardianStats(guardianStats);
-  setHallucinationLogger((msg: string) => outputChannel?.appendLine(msg));
+  setHallucinationLogger((msg: string) => Logger.info(msg));
   setSvedomiLogger(outputChannel);
   setSvedomiStats(guardianStats);
 
@@ -1684,7 +1686,7 @@ export function activate(context: vscode.ExtensionContext) {
   setSvedomiTasks(tasksDatabase);
 
   // Workspace indexer commands
-  setWorkspaceLogger(outputChannel);
+  setWorkspaceLogger({ appendLine: (msg: string) => Logger.info(msg) } as any);
 
   // Auto-scan workspace on extension load for deep work
   (async () => {
