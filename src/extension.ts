@@ -697,8 +697,8 @@ function pickBrainModel(prompt: string, candidates: string[], fallback: string):
 
 function getToolRequirements(prompt: string): { requireToolCall: boolean; requireMutation: boolean } {
   const normalized = prompt.toLowerCase();
-  const requireMutation = /(vytvo[rř]|ulo[zž]|zapi[sš]|napi[sš]|uprav|upravit|přepi[sš]|prepis|přidej|pridej|sma[zž]|smaz|smazat|prejmenuj|přejmenuj|rename|delete|write|edit|modify|create|replace|patch|apply_patch|write_file|replace_lines)/.test(normalized);
-  const requireToolCall = requireMutation || /(přečti|precti|zobraz|otevri|otevř|najdi|hledej|search|list_files|read_file|get_active_file|symboly|symbol|definice|definition|reference|references|diagnostik|diagnostics|lsp|get_symbols|get_workspace_symbols|get_definition|get_references|get_type_info|get_diagnostics)/.test(normalized);
+  const requireMutation = /(vytvo[rř]|ulo[zž]|zapi[sš]|napi[sš]|uprav|upravit|přepi[sš]|prepis|přidej|pridej|sma[zž]|smaz|smazat|prejmenuj|přejmenuj|rename|delete|write|edit|modify|create|replace|patch|apply_patch|write_file|replace_lines|run_terminal_command|spust|spustit|prikaz|přikaz|terminal)/.test(normalized);
+  const requireToolCall = requireMutation || /(přečti|precti|zobraz|otevri|otevř|najdi|hledej|search|list_files|read_file|get_active_file|symboly|symbol|definice|definition|reference|references|diagnostik|diagnostics|lsp|get_symbols|get_workspace_symbols|get_definition|get_references|get_type_info|get_diagnostics|run_terminal_command)/.test(normalized);
   return { requireToolCall, requireMutation };
 }
 
@@ -3286,6 +3286,7 @@ function buildToolInstructions(): string {
     '- route_file { intent: string, preferredExtension?: string, fileNameHint?: string, maxResults?: number, glob?: string, allowCreate?: boolean }',
     '- rename_file { from: string, to: string }',
     '- delete_file { path: string }',
+    '- run_terminal_command { command: string, timeoutMs?: number }',
     '',
     'Pravidla:',
     '- Pri editaci nejdriv nacti soubor a pouzij replace_lines s presnymi radky.',
@@ -3320,7 +3321,8 @@ function buildToolOnlyPrompt(requireMutation: boolean): string {
     'pick_save_path',
     'route_file',
     'rename_file',
-    'delete_file'
+    'delete_file',
+    'run_terminal_command'
   ];
   return [...rules, `Dostupne nastroje: ${tools.join(', ')}`].join('\n');
 }
@@ -6101,6 +6103,80 @@ async function runToolCall(
         await vscode.workspace.fs.delete(uri, { recursive: false });
         markToolMutation(session, name);
         return { ok: true, tool: name, approved: true, message: 'soubor smazan' };
+      }
+      case 'run_terminal_command': {
+        const command = asString(args.command);
+        if (!command) return { ok: false, tool: name, message: 'command je povinny' };
+        
+        let timeoutMs = clampNumber(args.timeoutMs, 30000, 1000, 120000);
+        
+        let approved = true;
+        if (confirmEdits && !autoApprove.edit) {
+          const choice = await vscode.window.showInformationMessage(
+            `Spustit příkaz v terminálu?\n\n${command}`,
+            { modal: true },
+            'Spustit',
+            'Zamítnout'
+          );
+          approved = choice === 'Spustit';
+        }
+        if (!approved) return { ok: true, tool: name, approved: false, message: 'spusteni zamitnuto uzivatelem' };
+        
+        const cwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        
+        return new Promise((resolve) => {
+           exec(command, { cwd, timeout: timeoutMs }, (error, stdout, stderr) => {
+             resolve({
+               ok: true,
+               tool: name,
+               approved: true,
+               message: 'prikaz dokoncen',
+               data: {
+                 stdout: stdout ? stdout.slice(0, 15000) : '',
+                 stderr: stderr ? stderr.slice(0, 15000) : '',
+                 exitCode: error ? (error as any).code || 1 : 0,
+                 error: error ? error.message : undefined
+               }
+             });
+           });
+        });
+      }
+      case 'run_terminal_command': {
+        const command = asString(args.command);
+        if (!command) return { ok: false, tool: name, message: 'command je povinny' };
+        
+        let timeoutMs = clampNumber(args.timeoutMs, 30000, 1000, 120000);
+        
+        let approved = true;
+        if (confirmEdits && !autoApprove.edit) {
+          const choice = await vscode.window.showInformationMessage(
+            `Spustit příkaz v terminálu?\n\n${command}`,
+            { modal: true },
+            'Spustit',
+            'Zamítnout'
+          );
+          approved = choice === 'Spustit';
+        }
+        if (!approved) return { ok: true, tool: name, approved: false, message: 'spusteni zamitnuto uzivatelem' };
+        
+        const cwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        
+        return new Promise((resolve) => {
+           exec(command, { cwd, timeout: timeoutMs }, (error, stdout, stderr) => {
+             resolve({
+               ok: true,
+               tool: name,
+               approved: true,
+               message: 'prikaz dokoncen',
+               data: {
+                 stdout: stdout ? stdout.slice(0, 15000) : '',
+                 stderr: stderr ? stderr.slice(0, 15000) : '',
+                 exitCode: error ? (error as any).code || 1 : 0,
+                 error: error ? error.message : undefined
+               }
+             });
+           });
+        });
       }
       default:
         return { ok: false, tool: name, message: 'neznamy nastroj' };

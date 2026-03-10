@@ -29,6 +29,7 @@ const READ_TOOL_NAMES = new Set<string>([
 ]);
 
 const EDIT_TOOL_NAMES = new Set<string>([
+  'run_terminal_command',
   'apply_patch',
   'replace_lines',
   'write_file',
