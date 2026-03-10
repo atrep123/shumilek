@@ -698,7 +698,7 @@ function pickBrainModel(prompt: string, candidates: string[], fallback: string):
 function getToolRequirements(prompt: string): { requireToolCall: boolean; requireMutation: boolean } {
   const normalized = prompt.toLowerCase();
   const requireMutation = /(vytvo[rř]|ulo[zž]|zapi[sš]|napi[sš]|uprav|upravit|přepi[sš]|prepis|přidej|pridej|sma[zž]|smaz|smazat|prejmenuj|přejmenuj|rename|delete|write|edit|modify|create|replace|patch|apply_patch|write_file|replace_lines|run_terminal_command|spust|spustit|prikaz|přikaz|terminal)/.test(normalized);
-  const requireToolCall = requireMutation || /(přečti|precti|zobraz|otevri|otevř|najdi|hledej|search|list_files|read_file|get_active_file|symboly|symbol|definice|definition|reference|references|diagnostik|diagnostics|lsp|get_symbols|get_workspace_symbols|get_definition|get_references|get_type_info|get_diagnostics|run_terminal_command)/.test(normalized);
+  const requireToolCall = requireMutation || /(přečti|precti|zobraz|otevri|otevř|najdi|hledej|search|list_files|read_file|get_active_file|symboly|symbol|definice|definition|reference|references|diagnostik|diagnostics|lsp|get_symbols|get_workspace_symbols|get_definition|get_references|get_type_info|get_diagnostics|run_terminal_command|fetch|web|stahni|stáhni|url)/.test(normalized);
   return { requireToolCall, requireMutation };
 }
 
@@ -3272,7 +3272,7 @@ function buildToolInstructions(): string {
     '- list_files { glob?: string, maxResults?: number }',
     '- read_file { path: string, startLine?: number, endLine?: number }',
     '- get_active_file { }',
-    '- search_in_files { query: string, glob?: string, maxResults?: number }',
+    '- search_in_files { query: string, glob?: string, maxResults?: number, isRegex?: boolean }',
     '- get_symbols { path?: string, maxDepth?: number, maxResults?: number }',
     '- get_workspace_symbols { query?: string, maxResults?: number }',
     '- get_definition { path?: string, line?: number, character?: number, symbol?: string }',
@@ -3287,6 +3287,7 @@ function buildToolInstructions(): string {
     '- rename_file { from: string, to: string }',
     '- delete_file { path: string }',
     '- run_terminal_command { command: string, timeoutMs?: number }',
+    '- fetch_webpage { url: string }',
     '',
     'RULES:',
     '- When editing, read the file first and use replace_lines with precise line content matches.',
@@ -3323,7 +3324,8 @@ function buildToolOnlyPrompt(requireMutation: boolean): string {
     'route_file',
     'rename_file',
     'delete_file',
-    'run_terminal_command'
+    'run_terminal_command',
+    'fetch_webpage'
   ];
   return [...rules, `Dostupne nastroje: ${tools.join(', ')}`].join('\n');
 }
@@ -5154,6 +5156,17 @@ async function runToolCall(
       case 'search_in_files': {
         const query = asString(args.query);
         if (!query) return { ok: false, tool: name, message: 'query je povinny' };
+        
+        const isRegex = args.isRegex === true;
+        let queryRegex: RegExp | undefined;
+        if (isRegex) {
+          try {
+             queryRegex = new RegExp(query, 'g');
+          } catch (e) {
+             return { ok: false, tool: name, message: 'Neplatny regex: ' + String(e) };
+          }
+        }
+        
         const glob = asString(args.glob);
         const maxResults = clampNumber(args.maxResults, DEFAULT_MAX_SEARCH_RESULTS, 1, 200);
         const matches: Array<{ path: string; line: number; text: string }> = [];
@@ -5176,7 +5189,11 @@ async function runToolCall(
           for (let i = 0; i < lines.length; i++) {
             if (matches.length >= maxResults) break;
             const lineText = lines[i];
-            if (lineText.includes(query)) {
+            
+            const isMatch = isRegex ? queryRegex!.test(lineText) : lineText.includes(query);
+            if (isRegex) queryRegex!.lastIndex = 0;
+            
+            if (isMatch) {
               matches.push({
                 path: getRelativePathForWorkspace(uri),
                 line: i + 1,
