@@ -6196,6 +6196,27 @@ async function runToolCall(
            });
         });
       }
+      case 'fetch_webpage': {
+        const url = asString(args.url);
+        if (!url) return { ok: false, tool: name, message: 'url je povinne' };
+
+        try {
+          const fetch = require('node-fetch');
+          const response = await fetch(url);
+          const html = await response.text();
+
+          // simple string manipulation to strip script and style tags, to save tokens
+          let stripped = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+          stripped = stripped.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+          stripped = stripped.replace(/<[^>]+>/g, ' '); // remove remaining html tags
+          stripped = stripped.replace(/\s+/g, ' ').trim(); // normalize whitespace
+
+          return { ok: true, tool: name, message: stripped.substring(0, 50000) };
+        } catch (e) {
+          return { ok: false, tool: name, message: 'Failed to fetch: ' + String(e) };
+        }
+      }
+
       default:
         return { ok: false, tool: name, message: 'neznamy nastroj' };
     }
