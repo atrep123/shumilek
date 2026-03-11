@@ -1,0 +1,19 @@
+{
+  "runId": 1773238215689,
+  "scenario": "python-ai-stdlib-oracle",
+  "model": "qwen2.5-coder:14b",
+  "plannerModel": "deepseek-r1:8b",
+  "plannerStrategy": "on-fail",
+  "reviewerModel": "qwen2.5:3b",
+  "jsonRepairModel": "qwen2.5:7b",
+  "timeoutFallbackModel": null,
+  "deterministicFallbackMode": "on-fail",
+  "baseUrl": "http://localhost:11434",
+  "ollamaOptions": {
+    "temperature": 0.05,
+    "num_predict": 4800,
+    "seed": 42
+  },
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773236376836\\python-ai-stdlib-oracle_run_09\\workspace",
+  "startedAt": "2026-03-11T14:10:15.692Z"
+}

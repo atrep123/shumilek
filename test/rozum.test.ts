@@ -313,4 +313,108 @@ DÉLKA: short`;
       expect(result.length).to.be.lessThan(longPrompt.length + 1000);
     });
   });
+
+  describe('executePlan - instruction mutation fix', () => {
+    it('should not accumulate retry suffixes on step.instruction', async () => {
+      const rozum = new Rozum();
+      rozum.configure('http://localhost:11434', 'test-model', false, false);
+
+      const plan = {
+        shouldPlan: true,
+        complexity: 'simple' as const,
+        steps: [{
+          id: 1,
+          type: 'code' as const,
+          title: 'Write code',
+          instruction: 'Original instruction',
+          status: 'pending' as const,
+        }],
+        warnings: [],
+        suggestedApproach: 'test',
+        estimatedLength: 'short' as const,
+        totalSteps: 1,
+      };
+
+      let callCount = 0;
+      const capturedInstructions: string[] = [];
+
+      const executeStep = async (prompt: string, step: any) => {
+        callCount++;
+        capturedInstructions.push(step.instruction);
+        return `Result ${callCount}`;
+      };
+
+      // Review rejects first 2 attempts, approves 3rd
+      let reviewCount = 0;
+      const originalReview = rozum.reviewStepResult.bind(rozum);
+      rozum.reviewStepResult = async () => {
+        reviewCount++;
+        if (reviewCount <= 2) {
+          return { approved: false, shouldRetry: true, feedback: `Fix issue ${reviewCount}` };
+        }
+        return { approved: true, shouldRetry: false, feedback: 'OK' };
+      };
+
+      await rozum.executeStepByStep(plan, 'test prompt', executeStep);
+
+      // After 3 calls, instruction should still be based on original
+      expect(callCount).to.equal(3);
+      // First call: original instruction only
+      expect(capturedInstructions[0]).to.equal('Original instruction');
+      // Second call: original + retry suffix (NOT accumulated)
+      expect(capturedInstructions[1]).to.include('Original instruction');
+      expect(capturedInstructions[1]).to.include('RETRY ATTEMPT 2');
+      expect((capturedInstructions[1].match(/RETRY ATTEMPT/g) || []).length).to.equal(1);
+      // Third call: original + retry suffix (NOT accumulated from previous)
+      expect(capturedInstructions[2]).to.include('Original instruction');
+      expect(capturedInstructions[2]).to.include('RETRY ATTEMPT 3');
+      expect((capturedInstructions[2].match(/RETRY ATTEMPT/g) || []).length).to.equal(1);
+    });
+
+    it('should not accumulate Rozum feedback on step.instruction', async () => {
+      const rozum = new Rozum();
+      rozum.configure('http://localhost:11434', 'test-model', false, false);
+
+      const plan = {
+        shouldPlan: true,
+        complexity: 'simple' as const,
+        steps: [{
+          id: 1,
+          type: 'code' as const,
+          title: 'Write code',
+          instruction: 'Original instruction',
+          status: 'pending' as const,
+        }],
+        warnings: [],
+        suggestedApproach: 'test',
+        estimatedLength: 'short' as const,
+        totalSteps: 1,
+      };
+
+      let callCount = 0;
+      const capturedInstructions: string[] = [];
+
+      const executeStep = async (prompt: string, step: any) => {
+        callCount++;
+        capturedInstructions.push(step.instruction);
+        return `Result ${callCount}`;
+      };
+
+      let reviewCount = 0;
+      rozum.reviewStepResult = async () => {
+        reviewCount++;
+        if (reviewCount <= 2) {
+          return { approved: false, shouldRetry: true, feedback: `Rozum feedback ${reviewCount}` };
+        }
+        return { approved: true, shouldRetry: false, feedback: 'OK' };
+      };
+
+      await rozum.executeStepByStep(plan, 'test prompt', executeStep);
+
+      // Third call should have only ONE OPRAVA section, not accumulated
+      const lastInstruction = capturedInstructions[capturedInstructions.length - 1];
+      expect((lastInstruction.match(/OPRAVA OD ROZUMU/g) || []).length).to.be.at.most(1);
+      expect((lastInstruction.match(/RETRY ATTEMPT/g) || []).length).to.be.at.most(1);
+    });
+  });
 });

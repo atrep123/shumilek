@@ -2662,7 +2662,8 @@ PŘÍSTUP K PRÁCI:
   }
 
   const url = `${baseUrl}/api/chat`;
-  abortController = new AbortController();
+  const localAbortController = new AbortController();
+  abortController = localAbortController;
 
   let fullResponse = '';
   let streamedToUi = false;
@@ -3359,7 +3360,10 @@ PŘÍSTUP K PRÁCI:
     }
   } finally {
     outputChannel?.appendLine(`[Orchestrator] State: ${orchestrator.getCurrent()} | checkpoints=${orchestrator.getCheckpoints().length}`);
-    abortController = undefined;
+    // Only clear global if it's still our controller (prevents race with concurrent requests)
+    if (abortController === localAbortController) {
+      abortController = undefined;
+    }
   }
 }
 

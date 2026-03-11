@@ -323,6 +323,7 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
 
     for (let i = 0; i < plan.steps.length; i++) {
       const step = plan.steps[i];
+      const originalInstruction = step.instruction;
       let stepRetries = 0;
       let stepResult = '';
       let stepApproved = false;
@@ -337,9 +338,9 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
           logChannel?.appendLine(`[Rozum] đź”„ Opakuji krok ${step.id} (pokus ${stepRetries + 1}/${MAX_STEP_RETRIES + 1})`);
           onStatus?.(`đź”„ Opakuji krok ${step.id} (pokus ${stepRetries + 1})`);
           
-          // Propagate actual review feedback into retry instruction
+          // Rebuild instruction from original + retry suffix (prevent accumulation)
           const lastResult = results.length > 0 ? results[results.length - 1] : '';
-          step.instruction += `\n\n[RETRY ATTEMPT ${stepRetries + 1}: The previous attempt was rejected. Review the feedback carefully and address the specific issues. Do NOT repeat the same mistake.]`;
+          step.instruction = `${originalInstruction}\n\n[RETRY ATTEMPT ${stepRetries + 1}: The previous attempt was rejected. Review the feedback carefully and address the specific issues. Do NOT repeat the same mistake.]`;
         }
 
         try {
@@ -379,7 +380,7 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
             } else {
               logChannel?.appendLine(`[Pipeline] âš ď¸Ź Svedomi zamĂ­tlo krok ${step.id}: ${svedomiReason}`);
               if (stepRetries < MAX_STEP_RETRIES) {
-                step.instruction = `${step.instruction}\n\n[OPRAVA OD SVÄšDOMĂŤ - AUTOKOREKCE]: ${svedomiReason}`;
+                step.instruction = `${originalInstruction}\n\n[OPRAVA OD SVÄšDOMĂŤ - AUTOKOREKCE]: ${svedomiReason}`;
                 stepRetries++;
                 onStatus?.(`âš ď¸Ź Svedomi zamĂ­tlo: ${svedomiReason.slice(0, 50)}..., opravuji`);
               } else {
@@ -393,7 +394,7 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
             }
           } else if (review.shouldRetry && stepRetries < MAX_STEP_RETRIES) {
             // Rozum wants retry - modify instruction based on feedback
-            step.instruction = `${step.instruction}\n\n[OPRAVA OD ROZUMU]: ${review.feedback}`;
+            step.instruction = `${originalInstruction}\n\n[OPRAVA OD ROZUMU]: ${review.feedback}`;
             stepRetries++;
           } else {
             // No retry available or not worth retrying
