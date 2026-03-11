@@ -2353,12 +2353,58 @@ PŘÍSTUP K PRÁCI:
         if (!postEditVerification.ok) {
           const firstFail = postEditVerification.failed[0];
           const detail = firstFail ? `${firstFail.command} failed` : 'verification failed';
-          if (validationPolicy === 'fail-closed') {
-            postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
-            return;
+
+          // Self-correction: try to fix verification errors automatically
+          const errorOutput = firstFail
+            ? (firstFail.stderr || firstFail.stdout || '').slice(0, 3000)
+            : '';
+          if (errorOutput && toolCallsEnabled) {
+            outputChannel?.appendLine(`[SelfCorrect] Post-edit verification failed, attempting auto-fix for: ${detail}`);
+            postToAllWebviews({ type: 'pipelineStatus', icon: '🔧', text: `Auto-oprava: ${detail}`, statusType: 'step', loading: true });
+            const fixPrompt = [
+              'SELF-CORRECTION: The code changes you made caused build/test/lint errors.',
+              `FAILED COMMAND: ${firstFail?.command ?? 'unknown'}`,
+              'ERROR OUTPUT:',
+              errorOutput,
+              '',
+              'Fix ALL errors using write_file or replace_lines. Do not explain, just fix.'
+            ].join('\n');
+            const fixMessages: ChatMessage[] = [
+              ...chatMessages.slice(-3),
+              { role: 'system', content: fixPrompt }
+            ];
+            const fixResult = await generateWithTools(
+              panel, baseUrl, writerModel, toolPromptForMain, fixMessages, stepTimeout,
+              3, toolsConfirmEdits, { requireToolCall: true, requireMutation: true },
+              { systemPromptOverride: toolPromptForMain, primaryModel: toolPrimaryModel, fallbackModel: toolsFallbackModel },
+              abortController?.signal, toolSession, autoApprovePolicy
+            );
+            outputChannel?.appendLine(`[SelfCorrect] Fix result: ${fixResult.slice(0, 200)}`);
+
+            // Re-verify after fix attempt
+            const reVerify = await runPostEditVerification(stepTimeout);
+            if (reVerify.ok) {
+              outputChannel?.appendLine('[SelfCorrect] Post-edit re-verification PASSED');
+              postToAllWebviews({ type: 'pipelineStatus', icon: '✅', text: 'Auto-oprava uspesna!', statusType: 'step', loading: false });
+              fullResponse += `\n\n[Auto-corrected: ${detail}]`;
+              postEditVerification = reVerify;
+            } else {
+              outputChannel?.appendLine('[SelfCorrect] Post-edit re-verification still FAILED');
+              if (validationPolicy === 'fail-closed') {
+                postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
+                return;
+              }
+              postToAllWebviews({ type: 'guardianAlert', message: `Verify warning (auto-fix failed): ${detail}` });
+              fullResponse += `\n\n[Verify warning] ${detail} (auto-fix attempted but failed)`;
+            }
+          } else {
+            if (validationPolicy === 'fail-closed') {
+              postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
+              return;
+            }
+            postToAllWebviews({ type: 'guardianAlert', message: `Verify warning: ${detail}` });
+            fullResponse += `\n\n[Verify warning] ${detail}`;
           }
-          postToAllWebviews({ type: 'guardianAlert', message: `Verify warning: ${detail}` });
-          fullResponse += `\n\n[Verify warning] ${detail}`;
         }
       }
       orchestrator.transition('verify', { stepMode: true, hadMutations: toolSession.hadMutations });
@@ -2803,12 +2849,58 @@ PŘÍSTUP K PRÁCI:
       if (!postEditVerification.ok) {
         const firstFail = postEditVerification.failed[0];
         const detail = firstFail ? `${firstFail.command} failed` : 'verification failed';
-        if (validationPolicy === 'fail-closed') {
-          postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
-          return;
+
+        // Self-correction: try to fix verification errors automatically
+        const errorOutput = firstFail
+          ? (firstFail.stderr || firstFail.stdout || '').slice(0, 3000)
+          : '';
+        if (errorOutput && toolCallsEnabled) {
+          outputChannel?.appendLine(`[SelfCorrect] Post-edit verification failed, attempting auto-fix for: ${detail}`);
+          postToAllWebviews({ type: 'pipelineStatus', icon: '🔧', text: `Auto-oprava: ${detail}`, statusType: 'step', loading: true });
+          const fixPrompt = [
+            'SELF-CORRECTION: The code changes you made caused build/test/lint errors.',
+            `FAILED COMMAND: ${firstFail?.command ?? 'unknown'}`,
+            'ERROR OUTPUT:',
+            errorOutput,
+            '',
+            'Fix ALL errors using write_file or replace_lines. Do not explain, just fix.'
+          ].join('\n');
+          const fixMessages: ChatMessage[] = [
+            ...chatMessages.slice(-3),
+            { role: 'system', content: fixPrompt }
+          ];
+          const fixResult = await generateWithTools(
+            panel, baseUrl, writerModel, toolPromptForMain, fixMessages, stepTimeout,
+            3, toolsConfirmEdits, { requireToolCall: true, requireMutation: true },
+            { systemPromptOverride: toolPromptForMain, primaryModel: toolPrimaryModel, fallbackModel: toolsFallbackModel },
+            abortController?.signal, toolSession, autoApprovePolicy
+          );
+          outputChannel?.appendLine(`[SelfCorrect] Fix result: ${fixResult.slice(0, 200)}`);
+
+          // Re-verify after fix attempt
+          const reVerify = await runPostEditVerification(stepTimeout);
+          if (reVerify.ok) {
+            outputChannel?.appendLine('[SelfCorrect] Post-edit re-verification PASSED');
+            postToAllWebviews({ type: 'pipelineStatus', icon: '✅', text: 'Auto-oprava uspesna!', statusType: 'step', loading: false });
+            fullResponse += `\n\n[Auto-corrected: ${detail}]`;
+            postEditVerification = reVerify;
+          } else {
+            outputChannel?.appendLine('[SelfCorrect] Post-edit re-verification still FAILED');
+            if (validationPolicy === 'fail-closed') {
+              postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
+              return;
+            }
+            postToAllWebviews({ type: 'guardianAlert', message: `Verify warning (auto-fix failed): ${detail}` });
+            fullResponse += `\n\n[Verify warning] ${detail} (auto-fix attempted but failed)`;
+          }
+        } else {
+          if (validationPolicy === 'fail-closed') {
+            postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
+            return;
+          }
+          postToAllWebviews({ type: 'guardianAlert', message: `Verify warning: ${detail}` });
+          fullResponse += `\n\n[Verify warning] ${detail}`;
         }
-        postToAllWebviews({ type: 'guardianAlert', message: `Verify warning: ${detail}` });
-        fullResponse += `\n\n[Verify warning] ${detail}`;
       }
     }
     orchestrator.transition('verify', { stepMode: false, hadMutations: toolSession.hadMutations });
@@ -6288,6 +6380,42 @@ async function executeModelCallWithMessages(
   return fullResponse;
 }
 
+interface DiagnosticEntry { path: string; line: number; message: string; severity: string }
+
+/**
+ * Collect error-level VS Code diagnostics from all open workspace files.
+ * Waits briefly for language servers to update after file writes.
+ */
+async function collectPostWriteDiagnostics(): Promise<DiagnosticEntry[]> {
+  // Give language servers a moment to process the written files
+  await new Promise(resolve => setTimeout(resolve, 800));
+
+  const allDiagnostics = vscode.languages.getDiagnostics();
+  const errors: DiagnosticEntry[] = [];
+  const folders = vscode.workspace.workspaceFolders;
+
+  for (const [uri, diagnostics] of allDiagnostics) {
+    // Only include files within the workspace
+    if (folders && !folders.some(f => uri.fsPath.startsWith(f.uri.fsPath))) continue;
+    // Skip node_modules, .git, etc.
+    const rel = vscode.workspace.asRelativePath(uri, false);
+    if (rel.includes('node_modules') || rel.startsWith('.git')) continue;
+
+    for (const diag of diagnostics) {
+      if (diag.severity === vscode.DiagnosticSeverity.Error) {
+        errors.push({
+          path: rel,
+          line: diag.range.start.line + 1,
+          message: diag.message,
+          severity: 'error'
+        });
+      }
+    }
+    if (errors.length >= 30) break;
+  }
+  return errors;
+}
+
 async function generateWithTools(
   panel: WebviewWrapper,
   baseUrl: string,
@@ -6303,6 +6431,7 @@ async function generateWithTools(
   session?: ToolSessionState,
   autoApprovePolicy?: AutoApprovePolicy
 ): Promise<string> {
+  const MAX_SELF_CORRECTIONS = 3;
   const iterations = clampNumber(maxIterations, 6, 1, 10);
   const workingMessages = messages.map(m => ({ ...m }));
   const requireToolCall = requirements?.requireToolCall ?? false;
@@ -6310,6 +6439,7 @@ async function generateWithTools(
   const startHadMutations = session?.hadMutations ?? false;
   let sawToolCall = false;
   let localMutation = false;
+  let selfCorrectionCount = 0;
   const systemPromptOverride = toolOptions?.systemPromptOverride ?? systemPrompt;
   const fallbackModel = (toolOptions?.fallbackModel || '').trim();
   let currentModel = (toolOptions?.primaryModel || model).trim();
@@ -6457,10 +6587,42 @@ async function generateWithTools(
         content: 'Musis provest zmenu souboru (write_file/replace_lines). Pouhe cteni nebo listovani nestaci.'
       });
     } else if (mutated) {
+      // Self-correction: check diagnostics on written files before returning
+      if (selfCorrectionCount < MAX_SELF_CORRECTIONS && i < iterations - 1) {
+        const diagErrors = await collectPostWriteDiagnostics();
+        if (diagErrors.length > 0) {
+          selfCorrectionCount++;
+          outputChannel?.appendLine(`[SelfCorrect] Attempt ${selfCorrectionCount}/${MAX_SELF_CORRECTIONS}: ${diagErrors.length} error(s) detected`);
+          if (panel && panel.visible) {
+            panel.webview.postMessage({
+              type: 'pipelineStatus',
+              icon: '🔧',
+              text: `Auto-oprava ${selfCorrectionCount}/${MAX_SELF_CORRECTIONS}: ${diagErrors.length} chyb...`,
+              statusType: 'step',
+              loading: true
+            });
+          }
+          workingMessages.push({
+            role: 'system',
+            content: [
+              'SELF-CORRECTION: The code you just wrote has errors. Fix them NOW using write_file or replace_lines.',
+              'ERRORS:',
+              ...diagErrors.slice(0, 15).map(d => `- ${d.path}:${d.line}: ${d.message}`),
+              diagErrors.length > 15 ? `... and ${diagErrors.length - 15} more errors` : '',
+              '',
+              'Fix ALL errors. Do not explain, just use tool_call to fix the code.'
+            ].filter(Boolean).join('\n')
+          });
+          continue;
+        }
+      }
       const writePath = session?.lastWritePath;
+      const correctionNote = selfCorrectionCount > 0
+        ? ` (auto-corrected ${selfCorrectionCount}x)`
+        : '';
       return writePath
-        ? `Hotovo: zmena souboru provedena (${writePath}).`
-        : 'Hotovo: zmena souboru provedena.';
+        ? `Hotovo: zmena souboru provedena (${writePath}).${correctionNote}`
+        : `Hotovo: zmena souboru provedena.${correctionNote}`;
     } else if (requireToolCall && sawToolCall) {
       return 'Hotovo: nastroje byly pouzity.';
     }
