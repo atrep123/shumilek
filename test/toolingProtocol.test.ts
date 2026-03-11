@@ -12,6 +12,10 @@ describe('toolingProtocol', () => {
       assert.equal(resolveToolPermissionScope('pick_file_for_intent'), 'commands');
     });
 
+    it('classifies run_terminal_command as commands scope', () => {
+      assert.equal(resolveToolPermissionScope('run_terminal_command'), 'commands');
+    });
+
     it('classifies edit tools as edit scope', () => {
       const editTools = ['write_file', 'replace_lines', 'apply_patch', 'rename_file', 'delete_file'];
       for (const tool of editTools) {
