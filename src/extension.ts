@@ -53,6 +53,7 @@ import {
   ExecutionMode,
   ValidationPolicy
 } from './types';
+import { buildCompressedMessages } from './contextMemory';
 // (Types imported from ./types)
 
 // Webview message types
@@ -2636,10 +2637,19 @@ PŘÍSTUP K PRÁCI:
   }
 
   // === STANDARD SINGLE-CALL MODE (no steps) ===
-  const apiMessages: ChatMessage[] = [
-    { role: 'system', content: toolSystemPrompt },
-    ...messages
-  ];
+  const contextTokens = getContextTokens();
+  const { apiMessages, compressed: compressionResult } = buildCompressedMessages(
+    toolSystemPrompt,
+    messages,
+    contextTokens
+  );
+  if (compressionResult.wasCompressed) {
+    outputChannel?.appendLine(
+      `[ContextMemory] Compressed: ${compressionResult.stats.originalCount} msgs -> ` +
+      `${compressionResult.stats.summarizedCount} summarized + ${compressionResult.stats.recentCount} recent ` +
+      `(~${compressionResult.stats.estimatedTokensSaved} tokens saved)`
+    );
+  }
 
   const url = `${baseUrl}/api/chat`;
   abortController = new AbortController();
@@ -6327,17 +6337,25 @@ async function executeModelCallWithMessages(
   forceJson?: boolean
 ): Promise<string> {
   const url = `${baseUrl}/api/chat`;
+  const contextTokens = getContextTokens();
   const options = {
     repeat_penalty: 1.2,
     repeat_last_n: 256,
     num_predict: getMaxOutputTokens(forceJson ? 1024 : 2048),
     temperature: forceJson ? 0.1 : 0.3,
-    num_ctx: getContextTokens()
+    num_ctx: contextTokens
   };
+  const { apiMessages: compressedMsgs, compressed } = buildCompressedMessages(systemPrompt, messages, contextTokens);
+  if (compressed.wasCompressed) {
+    outputChannel?.appendLine(
+      `[ContextMemory/executeModel] Compressed: ${compressed.stats.originalCount} msgs -> ` +
+      `${compressed.stats.summarizedCount} summarized + ${compressed.stats.recentCount} recent`
+    );
+  }
   const body: Record<string, unknown> = {
     model,
     stream: true,
-    messages: [{ role: 'system', content: systemPrompt }, ...messages],
+    messages: compressedMsgs,
     options
   };
   if (forceJson) {
