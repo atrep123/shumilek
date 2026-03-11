@@ -459,7 +459,8 @@ let guardianStats: GuardianStats = {
   miniModelValidations: 0,
   miniModelRejections: 0,
   hallucinationsDetected: 0,
-  similarResponsesBlocked: 0
+  similarResponsesBlocked: 0,
+  truncationsRepaired: 0
 };
 
 // Backup for clear/undo flow
@@ -3249,6 +3250,7 @@ PŘÍSTUP K PRÁCI:
       outputChannel?.appendLine(`[Stats] Opravená opakování: ${guardianStats.repetitionsFixed}`);
       outputChannel?.appendLine(`[Stats] Halucinace: ${guardianStats.hallucinationsDetected}`);
       outputChannel?.appendLine(`[Stats] Podobné odpovědi: ${guardianStats.similarResponsesBlocked}`);
+      outputChannel?.appendLine(`[Stats] Opravené zkrácení: ${guardianStats.truncationsRepaired}`);
       outputChannel?.appendLine(`[Stats] Mini-model validací: ${guardianStats.miniModelValidations}`);
       outputChannel?.appendLine(`[Stats] Mini-model zamítnutí: ${guardianStats.miniModelRejections}`);
       outputChannel?.appendLine('╔══════════════════════════════════════════════════════════════╗');
