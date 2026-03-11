@@ -1906,6 +1906,327 @@ async function handleChat(
   return handleChatInternal(wrapPanel(panel), context, prompt, messages, retryCount);
 }
 
+// === VALIDATION PIPELINE (shared between step-mode and single-call) ===
+
+interface ValidationPipelineConfig {
+  trimmedPrompt: string;
+  chatMessages: ChatMessage[];
+  stepMode: boolean;
+  panel: WebviewWrapper;
+  // Self-correction
+  toolCallsEnabled: boolean;
+  baseUrl: string;
+  writerModel: string;
+  toolPromptForMain: string;
+  toolPrimaryModel: string;
+  toolsFallbackModel: string;
+  toolsConfirmEdits: boolean;
+  stepTimeout: number;
+  autoApprovePolicy: AutoApprovePolicy;
+  abortSignal?: AbortSignal;
+  // Validators
+  guardianEnabled: boolean;
+  miniModelEnabled: boolean;
+  validationPolicy: ValidationPolicy;
+  validatorLogsEnabled: boolean;
+  summarizerEnabled: boolean;
+  summarizerModel: string;
+  timeout: number;
+  // External validators
+  rewardEnabled: boolean;
+  rewardEndpoint: string;
+  rewardThreshold: number;
+  hhemEnabled: boolean;
+  hhemEndpoint: string;
+  hhemThreshold: number;
+  ragasEnabled: boolean;
+  ragasEndpoint: string;
+  ragasThreshold: number;
+}
+
+interface ValidationPipelineResult {
+  fullResponse: string;
+  postEditVerification: VerificationSummary | null;
+  hallucinationResult: HallucinationResult;
+  guardianResult: GuardianResult;
+  miniResult: MiniModelResult | null;
+  qualityChecks: QualityCheckResult[];
+  external: {
+    rewardResult: QualityCheckResult;
+    hhemResult: QualityCheckResult;
+    ragasResult: QualityCheckResult;
+    results: QualityCheckResult[];
+  };
+  summary: string | null;
+  structuredOutput: string;
+}
+
+/**
+ * Runs the full validation pipeline: post-edit verification, hallucination detection,
+ * Guardian analysis, response history check, Svedomi validation, quality checks,
+ * external validators, summarizer, and structured output assembly.
+ *
+ * Returns null if publishing is blocked by fail-closed verification failure.
+ */
+async function runValidationPipeline(
+  fullResponse: string,
+  toolSession: ToolSessionState,
+  cfg: ValidationPipelineConfig
+): Promise<ValidationPipelineResult | null> {
+
+  // === POST-EDIT VERIFICATION ===
+  let postEditVerification: VerificationSummary | null = null;
+  if (fullResponse && toolSession.hadMutations) {
+    postToAllWebviews({ type: 'pipelineStatus', icon: '✅', text: 'Overuji lint/test/build po editaci...', statusType: 'validation', loading: true });
+    postEditVerification = await runPostEditVerification(cfg.stepTimeout);
+    if (postEditVerification.ran.length > 0) {
+      for (const cmd of postEditVerification.ran) {
+        outputChannel?.appendLine(`[Verify] ${cmd.command} => ${cmd.ok ? 'OK' : `FAIL(${cmd.exitCode})`}`);
+      }
+    }
+    if (!postEditVerification.ok) {
+      const firstFail = postEditVerification.failed[0];
+      const detail = firstFail ? `${firstFail.command} failed` : 'verification failed';
+
+      const errorOutput = firstFail
+        ? (firstFail.stderr || firstFail.stdout || '').slice(0, 3000)
+        : '';
+      if (errorOutput && cfg.toolCallsEnabled) {
+        outputChannel?.appendLine(`[SelfCorrect] Post-edit verification failed, attempting auto-fix for: ${detail}`);
+        postToAllWebviews({ type: 'pipelineStatus', icon: '🔧', text: `Auto-oprava: ${detail}`, statusType: 'step', loading: true });
+        const fixPrompt = [
+          'SELF-CORRECTION: The code changes you made caused build/test/lint errors.',
+          `FAILED COMMAND: ${firstFail?.command ?? 'unknown'}`,
+          'ERROR OUTPUT:',
+          errorOutput,
+          '',
+          'Fix ALL errors using write_file or replace_lines. Do not explain, just fix.'
+        ].join('\n');
+        const fixMessages: ChatMessage[] = [
+          ...cfg.chatMessages.slice(-3),
+          { role: 'system', content: fixPrompt }
+        ];
+        const fixResult = await generateWithTools(
+          cfg.panel, cfg.baseUrl, cfg.writerModel, cfg.toolPromptForMain, fixMessages, cfg.stepTimeout,
+          3, cfg.toolsConfirmEdits, { requireToolCall: true, requireMutation: true },
+          { systemPromptOverride: cfg.toolPromptForMain, primaryModel: cfg.toolPrimaryModel, fallbackModel: cfg.toolsFallbackModel },
+          cfg.abortSignal, toolSession, cfg.autoApprovePolicy
+        );
+        outputChannel?.appendLine(`[SelfCorrect] Fix result: ${fixResult.slice(0, 200)}`);
+
+        const reVerify = await runPostEditVerification(cfg.stepTimeout);
+        if (reVerify.ok) {
+          outputChannel?.appendLine('[SelfCorrect] Post-edit re-verification PASSED');
+          postToAllWebviews({ type: 'pipelineStatus', icon: '✅', text: 'Auto-oprava uspesna!', statusType: 'step', loading: false });
+          fullResponse += `\n\n[Auto-corrected: ${detail}]`;
+          postEditVerification = reVerify;
+        } else {
+          outputChannel?.appendLine('[SelfCorrect] Post-edit re-verification still FAILED');
+          if (cfg.validationPolicy === 'fail-closed') {
+            postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
+            return null;
+          }
+          postToAllWebviews({ type: 'guardianAlert', message: `Verify warning (auto-fix failed): ${detail}` });
+          fullResponse += `\n\n[Verify warning] ${detail} (auto-fix attempted but failed)`;
+        }
+      } else {
+        if (cfg.validationPolicy === 'fail-closed') {
+          postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
+          return null;
+        }
+        postToAllWebviews({ type: 'guardianAlert', message: `Verify warning: ${detail}` });
+        fullResponse += `\n\n[Verify warning] ${detail}`;
+      }
+    }
+  }
+
+  // === HALLUCINATION DETECTION ===
+  postToAllWebviews({ type: 'pipelineStatus', icon: '🔮', text: 'Kontrola halucinací...', statusType: 'validation', loading: true });
+
+  const hallucinationResult = hallucinationDetector.analyze(fullResponse, cfg.trimmedPrompt, cfg.chatMessages);
+  if (hallucinationResult.isHallucination) {
+    guardianStats.hallucinationsDetected++;
+    outputChannel?.appendLine(`[HallucinationDetector] HALUCINACE detekovana (${(hallucinationResult.confidence * 100).toFixed(1)}%)`);
+    outputChannel?.appendLine(`[HallucinationDetector] Kategorie: ${hallucinationResult.category}`);
+    postToAllWebviews({
+      type: 'guardianAlert',
+      message: `🔮 Halucinace: ${hallucinationDetector.getSummary(hallucinationResult)}`
+    });
+  } else {
+    outputChannel?.appendLine(`[HallucinationDetector] OK: ${hallucinationDetector.getSummary(hallucinationResult)}`);
+  }
+
+  // === GUARDIAN ANALYSIS ===
+  let guardianResult: GuardianResult = {
+    isOk: true,
+    cleanedResponse: fullResponse,
+    issues: [],
+    shouldRetry: false,
+    loopDetected: false,
+    repetitionScore: 0
+  };
+
+  if (cfg.guardianEnabled) {
+    postToAllWebviews({ type: 'pipelineStatus', icon: '🛡️', text: 'Guardian kontroluje vzory...', statusType: 'validation', loading: true });
+
+    guardianResult = guardian.analyze(fullResponse, cfg.trimmedPrompt);
+
+    outputChannel?.appendLine(`[ResponseGuardian] isOk: ${guardianResult.isOk}, loopDetected: ${guardianResult.loopDetected}, repetitionScore: ${(guardianResult.repetitionScore * 100).toFixed(1)}%`);
+    if (guardianResult.issues.length > 0) {
+      guardianResult.issues.forEach(issue => {
+        outputChannel?.appendLine(`[ResponseGuardian]   - ${issue}`);
+      });
+    }
+
+    postToAllWebviews({
+      type: 'guardianStatus',
+      result: {
+        isOk: guardianResult.isOk,
+        issues: guardianResult.issues,
+        repetitionScore: guardianResult.repetitionScore,
+        loopDetected: guardianResult.loopDetected
+      }
+    });
+
+    if (!guardianResult.isOk) {
+      fullResponse = guardianResult.cleanedResponse;
+      if (guardianResult.issues.length > 0) {
+        postToAllWebviews({
+          type: 'guardianAlert',
+          message: `Guardian: ${guardianResult.issues.join(', ')}`
+        });
+      }
+    }
+  }
+
+  // === RESPONSE HISTORY CHECK ===
+  postToAllWebviews({
+    type: 'pipelineStatus',
+    icon: PIPELINE_STATUS_ICONS.history,
+    text: PIPELINE_STATUS_TEXT.checkingHistory,
+    statusType: 'validation',
+    loading: true
+  });
+
+  const similarityCheck = responseHistoryManager.checkSimilarity(fullResponse, cfg.trimmedPrompt);
+  if (similarityCheck.isSimilar) {
+    outputChannel?.appendLine(`[ResponseHistory] Podobna odpoved nalezena (${(similarityCheck.similarity * 100).toFixed(1)}%)`);
+    postToAllWebviews({
+      type: 'guardianAlert',
+      message: `📋 Podobná odpověď v historii (${(similarityCheck.similarity * 100).toFixed(0)}%)`
+    });
+  } else {
+    outputChannel?.appendLine('[ResponseHistory] Odpověď je unikátní');
+  }
+
+  // === SVEDOMI (MINI-MODEL VALIDATION) ===
+  let miniResult: MiniModelResult | null = null;
+  if (cfg.miniModelEnabled) {
+    postToAllWebviews({
+      type: 'pipelineStatus',
+      icon: PIPELINE_STATUS_ICONS.svedomi,
+      text: PIPELINE_STATUS_TEXT.svedomiValidation,
+      statusType: 'validation',
+      loading: true
+    });
+    postToAllWebviews({ type: 'svedomiValidating' });
+    miniResult = await svedomi.validate(
+      cfg.trimmedPrompt,
+      fullResponse,
+      (status: string) => {
+        postToAllWebviews({ type: 'pipelineStatus', icon: '🧠', text: status, statusType: 'validation', loading: true });
+      }
+    );
+    postToAllWebviews({ type: 'svedomiValidationDone' });
+    postToAllWebviews({ type: 'miniModelResult', result: miniResult });
+  } else {
+    outputChannel?.appendLine('[Svedomi] Mini-model je vypnut');
+  }
+  if (miniResult?.unavailable) {
+    postToAllWebviews({
+      type: 'guardianAlert',
+      message: getMiniUnavailableMessage(cfg.validationPolicy, true)
+    });
+  }
+
+  // === QUALITY CHECKS ARRAY ===
+  const qualityChecks: QualityCheckResult[] = [];
+  qualityChecks.push({
+    name: 'Guardian',
+    ok: cfg.guardianEnabled ? guardianResult.isOk : true,
+    unavailable: !cfg.guardianEnabled,
+    details: cfg.guardianEnabled
+      ? (guardianResult.issues.length > 0 ? guardianResult.issues.join(', ') : undefined)
+      : 'Vypnuto'
+  });
+  qualityChecks.push({
+    name: 'HallucinationDetector',
+    ok: !hallucinationResult.isHallucination,
+    score: hallucinationResult.confidence,
+    threshold: 0.7,
+    details: hallucinationDetector.getSummary(hallucinationResult)
+  });
+  if (miniResult) {
+    const svedomiOk = isMiniAccepted(miniResult, cfg.validationPolicy);
+    qualityChecks.push({
+      name: 'svedomi',
+      ok: svedomiOk,
+      score: miniResult.score,
+      threshold: 5,
+      details: miniResult.reason,
+      unavailable: miniResult.unavailable
+    });
+  }
+  if (postEditVerification) {
+    qualityChecks.push({
+      name: 'post-edit verify',
+      ok: postEditVerification.ok,
+      unavailable: postEditVerification.ran.length === 0,
+      details: postEditVerification.ok
+        ? (postEditVerification.ran.length > 0 ? 'lint/test/build OK' : 'No verification scripts')
+        : (postEditVerification.failed[0]?.command || 'Verification failed')
+    });
+  }
+
+  // === EXTERNAL VALIDATORS ===
+  const external = await runExternalValidators(cfg.panel, cfg.trimmedPrompt, fullResponse, {
+    rewardEnabled: cfg.rewardEnabled,
+    rewardEndpoint: cfg.rewardEndpoint,
+    rewardThreshold: cfg.rewardThreshold,
+    hhemEnabled: cfg.hhemEnabled,
+    hhemEndpoint: cfg.hhemEndpoint,
+    hhemThreshold: cfg.hhemThreshold,
+    ragasEnabled: cfg.ragasEnabled,
+    ragasEndpoint: cfg.ragasEndpoint,
+    ragasThreshold: cfg.ragasThreshold,
+    timeoutMs: cfg.timeout
+  }, cfg.validatorLogsEnabled);
+  qualityChecks.push(...external.results);
+
+  // === SUMMARIZER + STRUCTURED OUTPUT ===
+  const summary = cfg.summarizerEnabled
+    ? await summarizeResponse(cfg.baseUrl, cfg.summarizerModel, cfg.trimmedPrompt, fullResponse, cfg.timeout)
+    : null;
+  const structuredOutput = buildStructuredOutput(fullResponse, summary, qualityChecks, !cfg.stepMode);
+
+  return {
+    fullResponse,
+    postEditVerification,
+    hallucinationResult,
+    guardianResult,
+    miniResult,
+    qualityChecks,
+    external: {
+      rewardResult: external.rewardResult,
+      hhemResult: external.hhemResult,
+      ragasResult: external.ragasResult,
+      results: external.results
+    },
+    summary,
+    structuredOutput
+  };
+}
+
 async function handleChatInternal(
   panel: WebviewWrapper,
   context: vscode.ExtensionContext,
@@ -2352,249 +2673,32 @@ PŘÍSTUP K PRÁCI:
         return result;
       }).join('\n\n---\n\n');
 
-      let postEditVerification: VerificationSummary | null = null;
-      if (toolSession.hadMutations) {
-        postToAllWebviews({ type: 'pipelineStatus', icon: '✅', text: 'Overuji lint/test/build po editaci...', statusType: 'validation', loading: true });
-        postEditVerification = await runPostEditVerification(stepTimeout);
-        if (postEditVerification.ran.length > 0) {
-          for (const cmd of postEditVerification.ran) {
-            outputChannel?.appendLine(`[Verify] ${cmd.command} => ${cmd.ok ? 'OK' : `FAIL(${cmd.exitCode})`}`);
-          }
-        }
-        if (!postEditVerification.ok) {
-          const firstFail = postEditVerification.failed[0];
-          const detail = firstFail ? `${firstFail.command} failed` : 'verification failed';
-
-          // Self-correction: try to fix verification errors automatically
-          const errorOutput = firstFail
-            ? (firstFail.stderr || firstFail.stdout || '').slice(0, 3000)
-            : '';
-          if (errorOutput && toolCallsEnabled) {
-            outputChannel?.appendLine(`[SelfCorrect] Post-edit verification failed, attempting auto-fix for: ${detail}`);
-            postToAllWebviews({ type: 'pipelineStatus', icon: '🔧', text: `Auto-oprava: ${detail}`, statusType: 'step', loading: true });
-            const fixPrompt = [
-              'SELF-CORRECTION: The code changes you made caused build/test/lint errors.',
-              `FAILED COMMAND: ${firstFail?.command ?? 'unknown'}`,
-              'ERROR OUTPUT:',
-              errorOutput,
-              '',
-              'Fix ALL errors using write_file or replace_lines. Do not explain, just fix.'
-            ].join('\n');
-            const fixMessages: ChatMessage[] = [
-              ...chatMessages.slice(-3),
-              { role: 'system', content: fixPrompt }
-            ];
-            const fixResult = await generateWithTools(
-              panel, baseUrl, writerModel, toolPromptForMain, fixMessages, stepTimeout,
-              3, toolsConfirmEdits, { requireToolCall: true, requireMutation: true },
-              { systemPromptOverride: toolPromptForMain, primaryModel: toolPrimaryModel, fallbackModel: toolsFallbackModel },
-              abortController?.signal, toolSession, autoApprovePolicy
-            );
-            outputChannel?.appendLine(`[SelfCorrect] Fix result: ${fixResult.slice(0, 200)}`);
-
-            // Re-verify after fix attempt
-            const reVerify = await runPostEditVerification(stepTimeout);
-            if (reVerify.ok) {
-              outputChannel?.appendLine('[SelfCorrect] Post-edit re-verification PASSED');
-              postToAllWebviews({ type: 'pipelineStatus', icon: '✅', text: 'Auto-oprava uspesna!', statusType: 'step', loading: false });
-              fullResponse += `\n\n[Auto-corrected: ${detail}]`;
-              postEditVerification = reVerify;
-            } else {
-              outputChannel?.appendLine('[SelfCorrect] Post-edit re-verification still FAILED');
-              if (validationPolicy === 'fail-closed') {
-                postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
-                return;
-              }
-              postToAllWebviews({ type: 'guardianAlert', message: `Verify warning (auto-fix failed): ${detail}` });
-              fullResponse += `\n\n[Verify warning] ${detail} (auto-fix attempted but failed)`;
-            }
-          } else {
-            if (validationPolicy === 'fail-closed') {
-              postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
-              return;
-            }
-            postToAllWebviews({ type: 'guardianAlert', message: `Verify warning: ${detail}` });
-            fullResponse += `\n\n[Verify warning] ${detail}`;
-          }
-        }
-      }
       orchestrator.transition('verify', { stepMode: true, hadMutations: toolSession.hadMutations });
-      
-      // === LOCAL VALIDATION ===
-      if (panel && panel.visible) {
-        panel.webview.postMessage({ type: 'pipelineStatus', icon: '[H]', text: 'Kontrola halucinaci...', statusType: 'validation', loading: true });
-      }
 
-      const hallucinationResult = hallucinationDetector.analyze(fullResponse, trimmedPrompt, chatMessages);
-      if (hallucinationResult.isHallucination) {
-        guardianStats.hallucinationsDetected++;
-        outputChannel?.appendLine(`[HallucinationDetector] HALUCINACE detekovana (${(hallucinationResult.confidence * 100).toFixed(1)}%)`);
-        postToAllWebviews({ 
-          type: 'guardianAlert', 
-          message: `Halucinace: ${hallucinationDetector.getSummary(hallucinationResult)}` 
-        });
-      } else {
-        outputChannel?.appendLine(`[HallucinationDetector] OK: ${hallucinationDetector.getSummary(hallucinationResult)}`);
-      }
+      const vResult = await runValidationPipeline(fullResponse, toolSession, {
+        trimmedPrompt, chatMessages, stepMode: true, panel,
+        toolCallsEnabled, baseUrl, writerModel, toolPromptForMain,
+        toolPrimaryModel, toolsFallbackModel, toolsConfirmEdits,
+        stepTimeout, autoApprovePolicy, abortSignal: abortController?.signal,
+        guardianEnabled, miniModelEnabled, validationPolicy,
+        validatorLogsEnabled, summarizerEnabled, summarizerModel, timeout,
+        rewardEnabled, rewardEndpoint, rewardThreshold,
+        hhemEnabled, hhemEndpoint, hhemThreshold,
+        ragasEnabled, ragasEndpoint, ragasThreshold,
+      });
+      if (!vResult) return; // blocked by fail-closed verification
 
-      let guardianResult: GuardianResult = {
-        isOk: true,
-        cleanedResponse: fullResponse,
-        issues: [],
-        shouldRetry: false,
-        loopDetected: false,
-        repetitionScore: 0
-      };
-
-      if (guardianEnabled) {
-        if (panel && panel.visible) {
-          panel.webview.postMessage({ type: 'pipelineStatus', icon: '[G]', text: 'Guardian kontroluje vzory...', statusType: 'validation', loading: true });
-        }
-
-        guardianResult = guardian.analyze(fullResponse, trimmedPrompt);
-
-        if (panel && panel.visible) {
-          panel.webview.postMessage({
-            type: 'guardianStatus',
-            result: {
-              isOk: guardianResult.isOk,
-              issues: guardianResult.issues,
-              repetitionScore: guardianResult.repetitionScore,
-              loopDetected: guardianResult.loopDetected
-            }
-          });
-        }
-
-        if (!guardianResult.isOk) {
-          fullResponse = guardianResult.cleanedResponse;
-          if (panel && panel.visible && guardianResult.issues.length > 0) {
-            panel.webview.postMessage({
-              type: 'guardianAlert',
-              message: `Guardian: ${guardianResult.issues.join(', ')}`
-            });
-          }
-        }
-      }
-
-      if (panel && panel.visible) {
-        postToAllWebviews({
-          type: 'pipelineStatus',
-          icon: PIPELINE_STATUS_ICONS.history,
-          text: PIPELINE_STATUS_TEXT.checkingHistory,
-          statusType: 'validation',
-          loading: true
-        });
-      }
-
-      const similarityCheck = responseHistoryManager.checkSimilarity(fullResponse, trimmedPrompt);
-      if (similarityCheck.isSimilar) {
-        outputChannel?.appendLine(`[ResponseHistory] Podobna odpoved nalezena (${(similarityCheck.similarity * 100).toFixed(1)}%)`);
-        postToAllWebviews({ 
-          type: 'guardianAlert', 
-          message: `Podobna odpoved v historii (${(similarityCheck.similarity * 100).toFixed(0)}%)` 
-        });
-      } else {
-        outputChannel?.appendLine('[ResponseHistory] Odpověď je unikátní');
-      }
-
-      let miniResult: MiniModelResult | null = null;
-      if (miniModelEnabled) {
-        // Show validation status in chat
-        postToAllWebviews({
-          type: 'pipelineStatus',
-          icon: PIPELINE_STATUS_ICONS.svedomi,
-          text: PIPELINE_STATUS_TEXT.svedomiValidation,
-          statusType: 'validation',
-          loading: true
-        });
-        // Signal loader start
-        postToAllWebviews({ type: 'svedomiValidating' });
-        miniResult = await svedomi.validate(
-          trimmedPrompt,
-          fullResponse,
-          (status: string) => {
-            postToAllWebviews({ type: 'pipelineStatus', icon: '🧠', text: status, statusType: 'validation', loading: true });
-          }
-        );
-      
-        // Signal loader done
-        postToAllWebviews({ type: 'svedomiValidationDone' });
-        postToAllWebviews({ type: 'miniModelResult', result: miniResult });
-      } else {
-        outputChannel?.appendLine('[Svedomi] Mini-model je vypnut');
-      }
-
-      if (miniResult?.unavailable) {
-        const policyMessage = getMiniUnavailableMessage(validationPolicy);
-        postToAllWebviews({ type: 'guardianAlert', message: policyMessage });
-      }
-      if (validationPolicy === 'fail-closed' && !isMiniAccepted(miniResult, validationPolicy)) {
+      // Step-mode: fail-closed svedomi check
+      if (validationPolicy === 'fail-closed' && !isMiniAccepted(vResult.miniResult, validationPolicy)) {
         postToAllWebviews({
           type: 'responseError',
-          text: `Publish blocked by validation policy: ${miniResult?.reason ?? 'Validation failed'}`
+          text: `Publish blocked by validation policy: ${vResult.miniResult?.reason ?? 'Validation failed'}`
         });
         return;
       }
 
-      const qualityChecks: QualityCheckResult[] = [];
-      qualityChecks.push({
-        name: 'Guardian',
-        ok: guardianEnabled ? guardianResult.isOk : true,
-        unavailable: !guardianEnabled,
-        details: guardianEnabled
-          ? (guardianResult.issues.length > 0 ? guardianResult.issues.join(', ') : undefined)
-          : 'Vypnuto'
-      });
-      qualityChecks.push({
-        name: 'HallucinationDetector',
-        ok: !hallucinationResult.isHallucination,
-        score: hallucinationResult.confidence,
-        threshold: 0.7,
-        details: hallucinationDetector.getSummary(hallucinationResult)
-      });
-      if (miniResult) {
-        const svedomiOk = isMiniAccepted(miniResult, validationPolicy);
-        qualityChecks.push({
-          name: 'svedomi',
-          ok: svedomiOk,
-          score: miniResult.score,
-          threshold: 5,
-          details: miniResult.reason,
-          unavailable: miniResult.unavailable
-        });
-      }
-      if (postEditVerification) {
-        qualityChecks.push({
-          name: 'post-edit verify',
-          ok: postEditVerification.ok,
-          unavailable: postEditVerification.ran.length === 0,
-          details: postEditVerification.ok
-            ? (postEditVerification.ran.length > 0 ? 'lint/test/build OK' : 'No verification scripts')
-            : (postEditVerification.failed[0]?.command || 'Verification failed')
-        });
-      }
-
-      const external = await runExternalValidators(panel, trimmedPrompt, fullResponse, {
-        rewardEnabled,
-        rewardEndpoint,
-        rewardThreshold,
-        hhemEnabled,
-        hhemEndpoint,
-        hhemThreshold,
-        ragasEnabled,
-        ragasEndpoint,
-        ragasThreshold,
-        timeoutMs: timeout
-      }, validatorLogsEnabled);
-      qualityChecks.push(...external.results);
-
-      const summary = summarizerEnabled
-        ? await summarizeResponse(baseUrl, summarizerModel, trimmedPrompt, fullResponse, timeout)
-        : null;
-      const responseForHistory = fullResponse;
-      const appendix = buildStructuredOutput('', summary, qualityChecks, false).trim();
-      fullResponse = buildStructuredOutput(fullResponse, summary, qualityChecks, false);
-
+      fullResponse = vResult.structuredOutput;
+      const appendix = buildStructuredOutput('', vResult.summary, vResult.qualityChecks, false).trim();
       if (appendix) {
         postToAllWebviews({ type: 'responseChunk', text: `\n\n${appendix}` });
       }
@@ -2602,28 +2706,17 @@ PŘÍSTUP K PRÁCI:
       postToAllWebviews({ type: 'rozumPlanningDone' });
       postToAllWebviews({ type: 'allStepsComplete', totalSteps: rozumPlan!.totalSteps });
       
-      // === SEND FULL RESPONSE AFTER PIPELINE APPROVAL ===
       orchestrator.transition('publish', { stepMode: true, checkpoints: orchestrator.getCheckpoints().length });
-      postToAllWebviews({ 
-        type: 'pipelineApproved',
-        message: 'Odpoved schvalena Rozumem a validaci'
-      });
+      postToAllWebviews({ type: 'pipelineApproved', message: 'Odpoved schvalena Rozumem a validaci' });
       postToAllWebviews({ type: 'responseChunk', text: fullResponse });
 
-      // Log final pipeline summary
       outputChannel?.appendLine('');
-      outputChannel?.appendLine('╔══════════════════════════════════════════════════════════════╗');
-      outputChannel?.appendLine('║          ✅ PIPELINE DOKONČEN                                ║');
-      outputChannel?.appendLine('╚══════════════════════════════════════════════════════════════╝');
-      outputChannel?.appendLine(`[Pipeline] Celkem kroků: ${rozumPlan.totalSteps}`);
-      outputChannel?.appendLine(`[Pipeline] Úspěšně dokončeno: ${stepResults.length}`);
-      outputChannel?.appendLine('');
+      outputChannel?.appendLine(`[Pipeline] Celkem kroků: ${rozumPlan.totalSteps}, dokončeno: ${stepResults.length}`);
 
-      // Save assistant response
       messages.push({ role: 'assistant', content: fullResponse, timestamp: Date.now() });
       await saveChatMessages(context, messages);
-      const finalScore = miniResult?.score || 7;
-      responseHistoryManager.addResponse(responseForHistory, trimmedPrompt, finalScore);
+      const finalScore = vResult.miniResult?.score || 7;
+      responseHistoryManager.addResponse(vResult.fullResponse, trimmedPrompt, finalScore);
 
       postToAllWebviews({ type: 'responseDone' });
 
@@ -2858,350 +2951,39 @@ PŘÍSTUP K PRÁCI:
     }
   }
 
-    let postEditVerification: VerificationSummary | null = null;
-    if (fullResponse && toolSession.hadMutations) {
-      postToAllWebviews({ type: 'pipelineStatus', icon: '✅', text: 'Overuji lint/test/build po editaci...', statusType: 'validation', loading: true });
-      postEditVerification = await runPostEditVerification(stepTimeout);
-      if (postEditVerification.ran.length > 0) {
-        for (const cmd of postEditVerification.ran) {
-          outputChannel?.appendLine(`[Verify] ${cmd.command} => ${cmd.ok ? 'OK' : `FAIL(${cmd.exitCode})`}`);
-        }
-      }
-      if (!postEditVerification.ok) {
-        const firstFail = postEditVerification.failed[0];
-        const detail = firstFail ? `${firstFail.command} failed` : 'verification failed';
-
-        // Self-correction: try to fix verification errors automatically
-        const errorOutput = firstFail
-          ? (firstFail.stderr || firstFail.stdout || '').slice(0, 3000)
-          : '';
-        if (errorOutput && toolCallsEnabled) {
-          outputChannel?.appendLine(`[SelfCorrect] Post-edit verification failed, attempting auto-fix for: ${detail}`);
-          postToAllWebviews({ type: 'pipelineStatus', icon: '🔧', text: `Auto-oprava: ${detail}`, statusType: 'step', loading: true });
-          const fixPrompt = [
-            'SELF-CORRECTION: The code changes you made caused build/test/lint errors.',
-            `FAILED COMMAND: ${firstFail?.command ?? 'unknown'}`,
-            'ERROR OUTPUT:',
-            errorOutput,
-            '',
-            'Fix ALL errors using write_file or replace_lines. Do not explain, just fix.'
-          ].join('\n');
-          const fixMessages: ChatMessage[] = [
-            ...chatMessages.slice(-3),
-            { role: 'system', content: fixPrompt }
-          ];
-          const fixResult = await generateWithTools(
-            panel, baseUrl, writerModel, toolPromptForMain, fixMessages, stepTimeout,
-            3, toolsConfirmEdits, { requireToolCall: true, requireMutation: true },
-            { systemPromptOverride: toolPromptForMain, primaryModel: toolPrimaryModel, fallbackModel: toolsFallbackModel },
-            abortController?.signal, toolSession, autoApprovePolicy
-          );
-          outputChannel?.appendLine(`[SelfCorrect] Fix result: ${fixResult.slice(0, 200)}`);
-
-          // Re-verify after fix attempt
-          const reVerify = await runPostEditVerification(stepTimeout);
-          if (reVerify.ok) {
-            outputChannel?.appendLine('[SelfCorrect] Post-edit re-verification PASSED');
-            postToAllWebviews({ type: 'pipelineStatus', icon: '✅', text: 'Auto-oprava uspesna!', statusType: 'step', loading: false });
-            fullResponse += `\n\n[Auto-corrected: ${detail}]`;
-            postEditVerification = reVerify;
-          } else {
-            outputChannel?.appendLine('[SelfCorrect] Post-edit re-verification still FAILED');
-            if (validationPolicy === 'fail-closed') {
-              postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
-              return;
-            }
-            postToAllWebviews({ type: 'guardianAlert', message: `Verify warning (auto-fix failed): ${detail}` });
-            fullResponse += `\n\n[Verify warning] ${detail} (auto-fix attempted but failed)`;
-          }
-        } else {
-          if (validationPolicy === 'fail-closed') {
-            postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
-            return;
-          }
-          postToAllWebviews({ type: 'guardianAlert', message: `Verify warning: ${detail}` });
-          fullResponse += `\n\n[Verify warning] ${detail}`;
-        }
-      }
-    }
     orchestrator.transition('verify', { stepMode: false, hadMutations: toolSession.hadMutations });
 
-    // === GUARDIAN POST-PROCESSING ===
     if (fullResponse) {
-      outputChannel?.appendLine('');
-      outputChannel?.appendLine('╔══════════════════════════════════════════════════════════════╗');
-      outputChannel?.appendLine('║          🛡️ VALIDAČNÍ SYSTÉMY - ANALÝZA ODPOVĚDI            ║');
-      outputChannel?.appendLine('╚══════════════════════════════════════════════════════════════╝');
-      outputChannel?.appendLine(`[Prompt] ${trimmedPrompt.slice(0, 100)}...`);
-      outputChannel?.appendLine(`[Response] ${fullResponse.slice(0, 200)}...`);
-      outputChannel?.appendLine('');
-
-      // === SYSTEM 1: HALLUCINATION DETECTOR ===
-      outputChannel?.appendLine('┌─────────────────────────────────────────────────────────────┐');
-      outputChannel?.appendLine('│ SYSTÉM 1: HallucinationDetector                             │');
-      outputChannel?.appendLine('└─────────────────────────────────────────────────────────────┘');
-      
-      // Show hallucination check status in chat
-      if (panel && panel.visible) {
-        panel.webview.postMessage({ type: 'pipelineStatus', icon: '🔮', text: 'Kontrola halucinací...', statusType: 'validation', loading: true });
-      }
-      
-      const hallucinationResult = hallucinationDetector.analyze(fullResponse, trimmedPrompt, chatMessages);
-      if (hallucinationResult.isHallucination) {
-        guardianStats.hallucinationsDetected++;
-        outputChannel?.appendLine(`[HallucinationDetector] 🚨 HALUCINACE DETEKOVÁNA!`);
-        outputChannel?.appendLine(`[HallucinationDetector] Kategorie: ${hallucinationResult.category}`);
-        outputChannel?.appendLine(`[HallucinationDetector] Confidence: ${(hallucinationResult.confidence * 100).toFixed(1)}%`);
-        
-        // Notify UI
-        postToAllWebviews({ 
-          type: 'guardianAlert', 
-          message: `🔮 Halucinace: ${hallucinationDetector.getSummary(hallucinationResult)}` 
-        });
-      } else {
-        outputChannel?.appendLine(`[HallucinationDetector] ✅ ${hallucinationDetector.getSummary(hallucinationResult)}`);
-      }
-      outputChannel?.appendLine('');
-
-      let guardianResult: GuardianResult = {
-        isOk: true,
-        cleanedResponse: fullResponse,
-        issues: [],
-        shouldRetry: false,
-        loopDetected: false,
-        repetitionScore: 0
-      };
-
-      if (guardianEnabled) {
-      // === SYSTEM 2: RESPONSE GUARDIAN ===
-      outputChannel?.appendLine('┌─────────────────────────────────────────────────────────────┐');
-      outputChannel?.appendLine('│ SYSTÉM 2: ResponseGuardian                                  │');
-      outputChannel?.appendLine('└─────────────────────────────────────────────────────────────┘');
-      
-            
-      // Show Guardian status in chat
-      
-      postToAllWebviews({ type: 'pipelineStatus', icon: '🛡️', text: 'Guardian kontroluje vzory...', statusType: 'validation', loading: true });
-      
-      
-      guardianResult = guardian.analyze(fullResponse, trimmedPrompt);
-      
-      
-      outputChannel?.appendLine(`[ResponseGuardian] isOk: ${guardianResult.isOk}`);
-      
-      outputChannel?.appendLine(`[ResponseGuardian] loopDetected: ${guardianResult.loopDetected}`);
-      
-      outputChannel?.appendLine(`[ResponseGuardian] repetitionScore: ${(guardianResult.repetitionScore * 100).toFixed(1)}%`);
-      
-      if (guardianResult.issues.length > 0) {
-      
-        outputChannel?.appendLine(`[ResponseGuardian] Issues:`);
-      
-        guardianResult.issues.forEach(issue => {
-      
-          outputChannel?.appendLine(`[ResponseGuardian]   - ${issue}`);
-      
-        });
-      
-      }
-      
-      outputChannel?.appendLine('');
-      
-      
-      // Send guardian status to UI
-      
-      postToAllWebviews({ 
-      
-        type: 'guardianStatus', 
-      
-        result: {
-      
-          isOk: guardianResult.isOk,
-      
-          issues: guardianResult.issues,
-      
-          repetitionScore: guardianResult.repetitionScore,
-      
-          loopDetected: guardianResult.loopDetected
-      
-        }
-      
+      const vResult = await runValidationPipeline(fullResponse, toolSession, {
+        trimmedPrompt, chatMessages, stepMode: false, panel,
+        toolCallsEnabled, baseUrl, writerModel, toolPromptForMain,
+        toolPrimaryModel, toolsFallbackModel, toolsConfirmEdits,
+        stepTimeout, autoApprovePolicy, abortSignal: abortController?.signal,
+        guardianEnabled, miniModelEnabled, validationPolicy,
+        validatorLogsEnabled, summarizerEnabled, summarizerModel, timeout,
+        rewardEnabled, rewardEndpoint, rewardThreshold,
+        hhemEnabled, hhemEndpoint, hhemThreshold,
+        ragasEnabled, ragasEndpoint, ragasThreshold,
       });
+      if (!vResult) return; // blocked by fail-closed verification
 
-      
-      // Apply cleaned response
-      
-      if (!guardianResult.isOk) {
-      
-        fullResponse = guardianResult.cleanedResponse;
-  
-      
-        // Notify UI about cleaning
-      
-        if (guardianResult.issues.length > 0) {
-      
-          postToAllWebviews({ 
-      
-            type: 'guardianAlert', 
-      
-            message: `Guardian: ${guardianResult.issues.join(', ')}` 
-      
-          });
-      
-        }
-      
-      }
+      // === UNIFIED RETRY LOGIC (single-call only) ===
+      const { hallucinationResult, guardianResult, miniResult, external } = vResult;
+      const { rewardResult, hhemResult, ragasResult } = external;
 
-      }
-
-// === RESPONSE HISTORY CHECK ===
-      outputChannel?.appendLine('┌─────────────────────────────────────────────────────────────┐');
-      outputChannel?.appendLine('│ SYSTÉM 3: ResponseHistoryManager                            │');
-      outputChannel?.appendLine('└─────────────────────────────────────────────────────────────┘');
-      
-      // Show history check status
-      postToAllWebviews({
-        type: 'pipelineStatus',
-        icon: PIPELINE_STATUS_ICONS.history,
-        text: PIPELINE_STATUS_TEXT.checkingHistory,
-        statusType: 'validation',
-        loading: true
-      });
-      
-      const similarityCheck = responseHistoryManager.checkSimilarity(fullResponse, trimmedPrompt);
-      if (similarityCheck.isSimilar) {
-        outputChannel?.appendLine(`[ResponseHistory] ⚠️ Podobná odpověď nalezena!`);
-        outputChannel?.appendLine(`[ResponseHistory] Podobnost: ${(similarityCheck.similarity * 100).toFixed(1)}%`);
-        outputChannel?.appendLine(`[ResponseHistory] Index v historii: ${similarityCheck.matchedIndex}`);
-        
-        postToAllWebviews({ 
-          type: 'guardianAlert', 
-          message: `📋 Podobná odpověď v historii (${(similarityCheck.similarity * 100).toFixed(0)}%)` 
-        });
-      } else {
-        outputChannel?.appendLine(`[ResponseHistory] ✅ Odpověď je unikátní`);
-      }
-      
-      const historyStats = responseHistoryManager.getStats();
-      outputChannel?.appendLine(`[ResponseHistory] Historie: ${historyStats.total} odpovědí, průměrné skóre: ${historyStats.avgScore.toFixed(1)}`);
-      outputChannel?.appendLine('');
-
-      // === MINI-MODEL VALIDATION (SVĚDOMÍ) ===
-      outputChannel?.appendLine('┌─────────────────────────────────────────────────────────────┐');
-      outputChannel?.appendLine('│ SYSTÉM 4: svedomi (Mini-model Validator)                    │');
-      outputChannel?.appendLine('└─────────────────────────────────────────────────────────────┘');
-      
-      // Run even if Guardian wants retry to get comprehensive feedback
-      let miniResult: MiniModelResult | null = null;
-      if (miniModelEnabled) {
-        // Show validation status in chat
-        postToAllWebviews({
-          type: 'pipelineStatus',
-          icon: PIPELINE_STATUS_ICONS.svedomi,
-          text: PIPELINE_STATUS_TEXT.svedomiValidation,
-          statusType: 'validation',
-          loading: true
-        });
-        // Signal loader start
-        postToAllWebviews({ type: 'svedomiValidating' });
-        miniResult = await svedomi.validate(
-          trimmedPrompt,
-          fullResponse,
-          (status: string) => {
-            postToAllWebviews({ type: 'pipelineStatus', icon: '🧠', text: status, statusType: 'validation', loading: true });
-          }
-        );
-      
-        // Signal loader done
-        postToAllWebviews({ type: 'svedomiValidationDone' });
-        postToAllWebviews({ type: 'miniModelResult', result: miniResult });
-      } else {
-        outputChannel?.appendLine('[Svedomi] Mini-model je vypnut');
-      }
-      const miniUnavailable = Boolean(miniResult?.unavailable);
-      if (miniUnavailable) {
-        postToAllWebviews({
-          type: 'guardianAlert',
-          message: getMiniUnavailableMessage(validationPolicy, true)
-        });
-      }
-      outputChannel?.appendLine('');
-
-      const qualityChecks: QualityCheckResult[] = [];
-      qualityChecks.push({
-        name: 'Guardian',
-        ok: guardianEnabled ? guardianResult.isOk : true,
-        unavailable: !guardianEnabled,
-        details: guardianEnabled
-          ? (guardianResult.issues.length > 0 ? guardianResult.issues.join(', ') : undefined)
-          : 'Vypnuto'
-      });
-      qualityChecks.push({
-        name: 'HallucinationDetector',
-        ok: !hallucinationResult.isHallucination,
-        score: hallucinationResult.confidence,
-        threshold: 0.7,
-        details: hallucinationDetector.getSummary(hallucinationResult)
-      });
-      if (miniResult) {
-        const svedomiOk = isMiniAccepted(miniResult, validationPolicy);
-        qualityChecks.push({
-          name: 'svedomi',
-          ok: svedomiOk,
-          score: miniResult.score,
-          threshold: 5,
-          details: miniResult.reason,
-          unavailable: miniResult.unavailable
-        });
-      }
-      if (postEditVerification) {
-        qualityChecks.push({
-          name: 'post-edit verify',
-          ok: postEditVerification.ok,
-          unavailable: postEditVerification.ran.length === 0,
-          details: postEditVerification.ok
-            ? (postEditVerification.ran.length > 0 ? 'lint/test/build OK' : 'No verification scripts')
-            : (postEditVerification.failed[0]?.command || 'Verification failed')
-        });
-      }
-
-      // === EXTERNAL VALIDATORS (Reward / HHEM / RAGAS) ===
-      const external = await runExternalValidators(panel, trimmedPrompt, fullResponse, {
-        rewardEnabled,
-        rewardEndpoint,
-        rewardThreshold,
-        hhemEnabled,
-        hhemEndpoint,
-        hhemThreshold,
-        ragasEnabled,
-        ragasEndpoint,
-        ragasThreshold,
-        timeoutMs: timeout
-      }, validatorLogsEnabled);
-      const rewardResult = external.rewardResult;
-      const hhemResult = external.hhemResult;
-      const ragasResult = external.ragasResult;
-      qualityChecks.push(...external.results);
-
-      // === UNIFIED RETRY LOGIC ===
-      // Prioritize mini-model decision, fallback to Guardian
       const shouldRetryMini = shouldRetryMiniValidation(miniResult, validationPolicy);
       const shouldRetryGuardian = guardianResult.shouldRetry;
       const shouldRetryHallucination = hallucinationResult.isHallucination && hallucinationResult.confidence > 0.7;
       const shouldRetryReward = rewardEnabled && !rewardResult.ok && !rewardResult.unavailable;
       const shouldRetryHhem = hhemEnabled && !hhemResult.ok && !hhemResult.unavailable;
       const shouldRetryRagas = ragasEnabled && !ragasResult.ok && !ragasResult.unavailable;
-      // In fail-closed mode, unavailable external validators should also trigger retry
       const failClosedUnavailableReward = rewardEnabled && rewardResult.unavailable && validationPolicy === 'fail-closed';
       const failClosedUnavailableHhem = hhemEnabled && hhemResult.unavailable && validationPolicy === 'fail-closed';
       const failClosedUnavailableRagas = ragasEnabled && ragasResult.unavailable && validationPolicy === 'fail-closed';
       const shouldRetryAny = shouldRetryMini || shouldRetryGuardian || shouldRetryHallucination || shouldRetryReward || shouldRetryHhem || shouldRetryRagas || failClosedUnavailableReward || failClosedUnavailableHhem || failClosedUnavailableRagas;
       const retryBlockedByTools = toolsEnabled && toolSession.hadMutations;
-      
-      if (shouldRetryAny
-        && retryCount < maxRetries
-        && !retryBlockedByTools
-      ) {
+
+      if (shouldRetryAny && retryCount < maxRetries && !retryBlockedByTools) {
         const retrySource = shouldRetryHallucination
           ? 'Hallucination'
           : (shouldRetryMini
@@ -3211,14 +2993,14 @@ PŘÍSTUP K PRÁCI:
               : (shouldRetryHhem ? 'HHEM' : (shouldRetryRagas ? 'RAGAS' : 'Guardian'))));
         const retryDetail = shouldRetryHallucination
           ? `Halucinace ${(hallucinationResult.confidence * 100).toFixed(0)}%`
-          : (shouldRetryMini 
-            ? `Skóre ${miniResult!.score}/10 - ${miniResult!.reason}` 
+          : (shouldRetryMini
+            ? `Skóre ${miniResult!.score}/10 - ${miniResult!.reason}`
             : (shouldRetryReward
               ? `Reward pod prahem ${rewardThreshold}`
               : (shouldRetryHhem
                 ? `HHEM pod prahem ${hhemThreshold}`
                 : (shouldRetryRagas ? `RAGAS pod prahem ${ragasThreshold}` : `Problém detekován`))));
-        
+
         const retryFeedbackMessage = [
           `Duvod: ${retrySource} - ${retryDetail}`,
           guardianEnabled && guardianResult.issues.length > 0 ? `Guardian: ${guardianResult.issues.join(', ')}` : '',
@@ -3226,23 +3008,19 @@ PŘÍSTUP K PRÁCI:
           hallucinationResult.isHallucination ? `Halucinace: ${hallucinationDetector.getSummary(hallucinationResult)}` : ''
         ].filter(Boolean).join('\n');
 
-        outputChannel?.appendLine(`[Retry] 🔄 Spouštím retry - důvod: ${retrySource}`);
+        outputChannel?.appendLine(`[Retry] Spoustim retry - duvod: ${retrySource}`);
         guardianStats.retriesTriggered++;
-        
-        // Check panel before retry message
-        postToAllWebviews({ 
-          type: 'guardianAlert', 
-          message: `🔄 ${retrySource}: ${retryDetail}. Zkouším znovu (${retryCount + 1}/${maxRetries})` 
+
+        postToAllWebviews({
+          type: 'guardianAlert',
+          message: `🔄 ${retrySource}: ${retryDetail}. Zkouším znovu (${retryCount + 1}/${maxRetries})`
         });
-        
-        // Remove failed assistant response attempt
+
         if (messages[messages.length - 1]?.role === 'assistant') {
           messages.pop();
         }
-        
-        // Wait before retry
+
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
         return handleChatInternal(panel, context, trimmedPrompt, messages, retryCount + 1, retryFeedbackMessage);
       }
       if (retryBlockedByTools && shouldRetryAny) {
@@ -3270,51 +3048,22 @@ PŘÍSTUP K PRÁCI:
         }
       }
 
-      // === LOG FINAL STATS ===
-      outputChannel?.appendLine('');
-      outputChannel?.appendLine('┌─────────────────────────────────────────────────────────────┐');
-      outputChannel?.appendLine('│ VÝSLEDEK VALIDACE                                           │');
-      outputChannel?.appendLine('└─────────────────────────────────────────────────────────────┘');
-      outputChannel?.appendLine(`[Stats] Celkem kontrol: ${guardianStats.totalChecks}`);
-      outputChannel?.appendLine(`[Stats] Detekované smyčky: ${guardianStats.loopsDetected}`);
-      outputChannel?.appendLine(`[Stats] Opravená opakování: ${guardianStats.repetitionsFixed}`);
-      outputChannel?.appendLine(`[Stats] Halucinace: ${guardianStats.hallucinationsDetected}`);
-      outputChannel?.appendLine(`[Stats] Podobné odpovědi: ${guardianStats.similarResponsesBlocked}`);
-      outputChannel?.appendLine(`[Stats] Opravené zkrácení: ${guardianStats.truncationsRepaired}`);
-      outputChannel?.appendLine(`[Stats] Mini-model validací: ${guardianStats.miniModelValidations}`);
-      outputChannel?.appendLine(`[Stats] Mini-model zamítnutí: ${guardianStats.miniModelRejections}`);
-      outputChannel?.appendLine('╔══════════════════════════════════════════════════════════════╗');
-      outputChannel?.appendLine('║          ✅ VALIDACE DOKONČENA                               ║');
-      outputChannel?.appendLine('╚══════════════════════════════════════════════════════════════╝');
-      outputChannel?.appendLine('');
+      fullResponse = vResult.structuredOutput;
 
-      const summary = summarizerEnabled
-        ? await summarizeResponse(baseUrl, summarizerModel, trimmedPrompt, fullResponse, timeout)
-        : null;
-      const responseForHistory = fullResponse;
-      fullResponse = buildStructuredOutput(fullResponse, summary, qualityChecks);
-
-      // Signal pipeline approval and send response
       orchestrator.transition('publish', { stepMode: false, checkpoints: orchestrator.getCheckpoints().length });
-      postToAllWebviews({
-        type: 'pipelineApproved',
-        message: '✅ Odpověď schválena'
-      });
+      postToAllWebviews({ type: 'pipelineApproved', message: '✅ Odpověď schválena' });
 
-      // Add to response history for future similarity checks
       const finalScore = miniResult?.score || 7;
-      responseHistoryManager.addResponse(responseForHistory, trimmedPrompt, finalScore);
+      responseHistoryManager.addResponse(vResult.fullResponse, trimmedPrompt, finalScore);
     }
 
     if (!streamedToUi && fullResponse) {
       postToAllWebviews({ type: 'responseChunk', text: fullResponse });
     }
 
-    // Save assistant response
     messages.push({ role: 'assistant', content: fullResponse, timestamp: Date.now() });
     await saveChatMessages(context, messages);
 
-    // Check panel validity before final message
     postToAllWebviews({ type: 'responseDone' });
 
   } catch (err: unknown) {
