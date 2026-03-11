@@ -163,9 +163,10 @@ DĂ‰LKA: [long]
           prompt: planningPrompt,
           stream: false,
           options: {
-            temperature: 0.2, // Lower temperature for more stable planning
-            num_predict: 2048, // More tokens for detailed plans
-            top_p: 0.95
+            temperature: 0.3, // Slight creativity for better decomposition
+            num_predict: 4096, // Enough tokens for 15+ detailed steps
+            top_p: 0.95,
+            repeat_penalty: 1.1 // Discourage repetitive step descriptions
           }
         }),
         signal: controller.signal
@@ -253,8 +254,8 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
           prompt: reviewPrompt,
           stream: false,
           options: {
-            temperature: 0.2,
-            num_predict: 200,
+            temperature: 0.15,
+            num_predict: 400,
             top_p: 0.9
           }
         }),
@@ -336,8 +337,9 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
           logChannel?.appendLine(`[Rozum] đź”„ Opakuji krok ${step.id} (pokus ${stepRetries + 1}/${MAX_STEP_RETRIES + 1})`);
           onStatus?.(`đź”„ Opakuji krok ${step.id} (pokus ${stepRetries + 1})`);
           
-          // Explicitly add "slow down" instruction
-          step.instruction += "\n\n[DĹ®LEĹ˝ITĂ‰: NespÄ›chej. Zamysli se znovu. Zkontroluj kaĹľdĂ˝ detail.]";
+          // Propagate actual review feedback into retry instruction
+          const lastResult = results.length > 0 ? results[results.length - 1] : '';
+          step.instruction += `\n\n[RETRY ATTEMPT ${stepRetries + 1}: The previous attempt was rejected. Review the feedback carefully and address the specific issues. Do NOT repeat the same mistake.]`;
         }
 
         try {
@@ -509,7 +511,7 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
       plan.complexity = complexityMatch[1].toLowerCase() as RozumPlan['complexity'];
     }
 
-    const stepMatches = output.matchAll(/KROK\s*(\d+):\s*\n\s*TYP:\s*(\w+)\s*\n\s*N[ÁA]ZEV:\s*(.+?)\s*\n\s*INSTRUKCE:\s*(.+?)(?=\n\s*KROK|\n\s*VAROV[ÁA]N[ÍI]:|\n\s*P[ŘR][ÍI]STUP:|$)/gis);
+    const stepMatches = output.matchAll(/KROK\s*(\d+):\s*\n\s*TYP:\s*(\w+)\s*\n\s*N[ÁA]ZEV:\s*(.+?)\s*\n\s*INSTRUKCE:\s*(.+?)(?=\nKROK\s*\d|\nVAROV[ÁA]N[ÍI]:|\nPRISTUP:|\nP[ŘR][ÍI]STUP:|\nDELKA:|\nD[ÉE]LKA:|$)/gis);
 
     for (const match of stepMatches) {
       const stepId = parseInt(match[1], 10);
@@ -522,8 +524,8 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
       plan.steps.push({
         id: stepId,
         type: stepType,
-        title: title.slice(0, 100),
-        instruction: instruction.slice(0, 500),
+        title: title.slice(0, 120),
+        instruction: instruction.slice(0, 2000),
         status: 'pending'
       });
     }
@@ -621,27 +623,48 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
    * Generate prompt for a specific step
    */
   generateStepPrompt(step: ActionStep, originalPrompt: string, previousResults: string[], totalSteps: number): string {
-    const contextFromPrevious = previousResults.length > 0
-      ? `\n\nPŘEDCHOZÍ KROKY (${previousResults.length}):\n${previousResults.map((r, i) => `Krok ${i + 1}: ${r.slice(0, 500)}...`).join('\n\n')}`
-      : '';
+    // Give more context from recent steps, less from older ones
+    let contextFromPrevious = '';
+    if (previousResults.length > 0) {
+      const recentCount = Math.min(3, previousResults.length);
+      const olderCount = previousResults.length - recentCount;
+      const olderSummary = olderCount > 0
+        ? previousResults.slice(0, olderCount).map((r, i) => `Step ${i + 1}: ${r.slice(0, 200)}...`).join('\n')
+        : '';
+      const recentDetail = previousResults.slice(olderCount).map((r, i) => `Step ${olderCount + i + 1}: ${r.slice(0, 1500)}`).join('\n---\n');
+      contextFromPrevious = `\n\n=== PREVIOUS STEPS (${previousResults.length} completed) ===\n${olderSummary ? 'Older steps (summary):\n' + olderSummary + '\n\nRecent steps (detailed):\n' : ''}${recentDetail}`;
+    }
 
-    return `PŮVODNÍ DOTAZ: ${originalPrompt}
+    const typeGuidance: Record<string, string> = {
+      'analyze': 'Read files COMPLETELY. List every relevant function, class, and dependency. Note line numbers.',
+      'code': 'Write clean, minimal code. Follow existing patterns. Show exact file paths and line numbers for edits.',
+      'compile': 'Run the build command. If errors occur, list ALL of them with file:line references.',
+      'test': 'Run tests. Report pass/fail counts. If failures occur, show the assertion messages.',
+      'refactor': 'Preserve behavior. Show before/after for each change. Verify no regressions.',
+      'debug': 'Reproduce the bug first. Identify root cause (not symptoms). Verify the fix.',
+      'install': 'Use exact version pins when possible. Verify installation succeeded.',
+      'review': 'Check that ALL original requirements are met. List any remaining issues.',
+      'document': 'Be accurate. Reference actual code, not assumptions.',
+      'explain': 'Be precise and reference concrete code/architecture.'
+    };
+    const guidance = typeGuidance[step.type] || 'Be thorough and specific.';
+
+    return `=== ORIGINAL REQUEST ===
+${originalPrompt.slice(0, 3000)}
 ${contextFromPrevious}
 
-AKTUÁLNÍ KROK (${step.id}/${totalSteps}): ${step.title}
-TYP: ${step.type.toUpperCase()}
+=== CURRENT STEP (${step.id}/${totalSteps}): ${step.title} ===
+Type: ${step.type.toUpperCase()}
 
-INSTRUKCE:
+Instruction:
 ${step.instruction}
 
-PŘÍSTUP K PRÁCI:
-- Postupuj METODICKY, KROK PO KROKU
-- Pokud analyzuješ soubory, PŘEČTI je CELÉ, ne jen začátek
-- Pokud hledáš chyby, ZKONTROLUJ VŠECHNY výskyty, ne jen první
-- Dokumentuj CO přesně jsi našel a KDE
-- Buď KONKRÉTNÍ - uveď čísla řádků, názvy funkcí, konkrétní chyby
-
-Proveď POUZE tento krok. Buď důkladný a konkrétní.`;
+=== EXECUTION GUIDELINES ===
+- ${guidance}
+- Be SPECIFIC: file paths, line numbers, function names, exact error messages.
+- Do ONLY this step. Do not jump ahead to future steps.
+- If you encounter a blocker, describe it clearly instead of guessing.
+- Show your work — explain what you found and why you made each decision.`;
   }
 
 
@@ -678,44 +701,43 @@ Proveď POUZE tento krok. Buď důkladný a konkrétní.`;
    */
   buildPlanningPrompt(userPrompt: string, conversationHistory: ChatMessage[]): string {
     return `<think>
-Jsi "Rozum" - plánovací agent pro programování. Analyzuj dotaz a vytvoř AKČNÍ PLÁN s konkrétními kroky.
+You are "Rozum" — a planning agent for software engineering. Analyze the request and create a precise, actionable plan.
 
-DOTAZ:
-${userPrompt.slice(0, 4000)}
+TASK:
+${userPrompt.slice(0, 6000)}
 
-KONTEXT:
-${conversationHistory.slice(-5).map(m => `${m.role}: ${m.content.slice(0, 1000)}...`).join('\n')}
+CONTEXT:
+${conversationHistory.slice(-5).map(m => `[${m.role}]: ${m.content.slice(0, 1500)}`).join('\n---\n')}
 
-TYPY KROKŮ (použij tyto):
-- ANALYZE: Analyzovat požadavek/kód
-- INSTALL: Nainstalovat závislosti (npm, pip, atd.)
-- CODE: Napsat nebo upravit kód
-- COMPILE: Zkompilovat/buildovat projekt
-- TEST: Otestovat funkčnost
-- EXPLAIN: Vysvětlit koncept/kód
-- REFACTOR: Refaktorovat existující kód
-- DEBUG: Najít a opravit chybu
-- DOCUMENT: Napsat dokumentaci
-- REVIEW: Zkontrolovat kód
+STEP TYPES:
+- ANALYZE: Examine code, files, or the problem
+- INSTALL: Install dependencies
+- CODE: Write or modify code
+- COMPILE: Build / compile the project
+- TEST: Test functionality
+- EXPLAIN: Explain a concept or architecture
+- REFACTOR: Restructure code without changing behavior
+- DEBUG: Find and fix bugs
+- DOCUMENT: Write documentation
+- REVIEW: Final verification
 
-ODPOVĚZ V TOMTO FORMÁTU:
-SLOŽITOST: [simple/medium/complex]
+RULES:
+1. Start with ANALYZE. Never jump to CODE without understanding first.
+2. After CODE, always verify with COMPILE or TEST.
+3. End with REVIEW.
+4. Each step: WHAT to do, WHERE (files), HOW to verify.
+
+FORMAT:
+SLOZITOST: [simple|medium|complex]
 
 KROK 1:
-TYP: [typ z výše]
-NÁZEV: [krátký název]
-INSTRUKCE: [co přesně má hlavní model udělat]
+TYP: [type]
+NAZEV: [title]
+INSTRUKCE: [detailed instruction]
 
-KROK 2:
-TYP: [typ]
-NÁZEV: [název]
-INSTRUKCE: [instrukce]
-
-(pokračuj s dalšími kroky podle potřeby)
-
-VAROVÁNÍ: [případná varování, nebo "žádné"]
-PŘÍSTUP: [doporučený celkový přístup]
-DÉLKA: [short/medium/long]
+VAROVANI: [warnings or "none"]
+PRISTUP: [approach summary]
+DELKA: [short|medium|long]
 </think>`;
   }
 

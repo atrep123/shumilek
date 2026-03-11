@@ -243,8 +243,8 @@ DÉLKA: short`;
       
       const prompt = rozum.generateStepPrompt(step, 'Prompt', ['Výsledek kroku 1'], 2);
       
-      expect(prompt).to.include('PŘEDCHOZÍ KROKY');
-      expect(prompt).to.include('Krok 1');
+      expect(prompt).to.include('PREVIOUS STEPS');
+      expect(prompt).to.include('Step 1');
     });
   });
 
@@ -300,7 +300,7 @@ DÉLKA: short`;
       ]);
       
       expect(prompt).to.include('Vytvoř REST API');
-      expect(prompt).to.include('SLOŽITOST');
+      expect(prompt).to.include('SLOZITOST');
       expect(prompt).to.include('KROK 1');
       expect(prompt).to.include('TYP');
     });
