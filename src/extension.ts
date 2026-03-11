@@ -5963,7 +5963,21 @@ async function runToolCall(
 
         try {
           const fetch = require('node-fetch');
-          const response = await fetch(url);
+          let response = await fetch(url, { redirect: 'manual' });
+
+          // Follow redirects safely — re-validate each Location header
+          const MAX_REDIRECTS = 5;
+          for (let i = 0; i < MAX_REDIRECTS && [301, 302, 303, 307, 308].includes(response.status); i++) {
+            const location = response.headers.get('location');
+            if (!location) break;
+            const resolved = new URL(location, url).toString();
+            const redirectCheck = isSafeUrl(resolved);
+            if (!redirectCheck.safe) {
+              return { ok: false, tool: name, message: `Redirect blokován: ${redirectCheck.reason}` };
+            }
+            response = await fetch(resolved, { redirect: 'manual' });
+          }
+
           const html = await response.text();
 
           // simple string manipulation to strip script and style tags, to save tokens
