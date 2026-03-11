@@ -54,7 +54,7 @@ import {
   ValidationPolicy
 } from './types';
 import { buildCompressedMessages } from './contextMemory';
-import { humanizeApiError, isTransientError, isSafeUrl } from './utils';
+import { humanizeApiError, isTransientError, isSafeUrl, normalizeTaskWeight, isChatMessage, normalizeScore, pickBrainModel } from './utils';
 // (Types imported from ./types)
 
 // Webview message types
@@ -546,15 +546,6 @@ function extractPreferredFencedCodeBlock(text: string): { code: string; lang?: s
   return { code: best.code.replace(/\r\n/g, '\n').trimEnd(), lang: best.lang };
 }
 
-function isChatMessage(value: unknown): value is ChatMessage {
-  if (!value || typeof value !== 'object') return false;
-  const v = value as any;
-  const roleOk = v.role === 'system' || v.role === 'user' || v.role === 'assistant';
-  const contentOk = typeof v.content === 'string';
-  const timestampOk = v.timestamp === undefined || typeof v.timestamp === 'number';
-  return roleOk && contentOk && timestampOk;
-}
-
 function sanitizeChatMessages(raw: unknown): ChatMessage[] {
   if (!raw || typeof raw !== 'object') return [];
   const maybeState = raw as any;
@@ -671,15 +662,6 @@ async function summarizeResponse(
   }
 }
 
-function normalizeScore(value: unknown): number | undefined {
-  if (typeof value === 'number' && !Number.isNaN(value)) return value;
-  if (typeof value === 'string') {
-    const parsed = Number(value);
-    if (!Number.isNaN(parsed)) return parsed;
-  }
-  return undefined;
-}
-
 function normalizeExternalScore(
   score: number | undefined,
   threshold?: number
@@ -690,20 +672,6 @@ function normalizeExternalScore(
     return { score: score / 100, rawScore };
   }
   return { score, rawScore };
-}
-
-function pickBrainModel(prompt: string, candidates: string[], fallback: string): string {
-  const normalized = prompt.toLowerCase();
-  const prefersCode = /refaktor|bug|chyba|code|k[oó]d|test|typ|lint/.test(normalized);
-  if (candidates.length === 0) return fallback;
-  if (candidates.length === 1) return candidates[0];
-
-  // Heuristic: prefer coder model for code-heavy tasks, otherwise first in list.
-  if (prefersCode) {
-    const match = candidates.find(m => m.toLowerCase().includes('coder')) ?? candidates[0];
-    return match;
-  }
-  return candidates[0];
 }
 
 function getToolRequirements(prompt: string): { requireToolCall: boolean; requireMutation: boolean } {
@@ -1101,86 +1069,7 @@ class ShumilekViewProvider implements vscode.WebviewViewProvider {
 
   private async handleMessage(msg: WebviewMessage) {
     if (!this._view) return;
-
-    switch (msg.type) {
-      case 'debugLog':
-        outputChannel?.appendLine(`[Webview] ${String(msg.text ?? '')}`);
-        break;
-
-      case 'chat':
-        if (msg.prompt) {
-          await handleChatForView(this._view, this._context, msg.prompt, chatMessages);
-        }
-        break;
-
-      case 'stop':
-        if (abortController) {
-          abortController.abort();
-          abortController = undefined;
-        }
-        break;
-
-      case 'requestActiveFile':
-        const content = getActiveEditorContent();
-        const fileName = getActiveFileName();
-        this._view.webview.postMessage({
-          type: 'activeFileContent',
-          text: content,
-          fileName
-        });
-        break;
-
-      case 'clearHistory':
-        lastClearedMessages = chatMessages.slice();
-        lastClearedAt = Date.now();
-        chatMessages.length = 0;
-        guardian.resetHistory();
-        await saveChatMessages(this._context, chatMessages);
-        postToAllWebviews({ type: 'historyCleared' });
-        break;
-
-      case 'restoreHistory':
-        if (lastClearedMessages && lastClearedMessages.length > 0) {
-          if (lastClearedAt && (Date.now() - lastClearedAt) > 300000) {
-            outputChannel?.appendLine('[Warning] Undo expired (>5 minutes)');
-            postToAllWebviews({ type: 'historyRestoreFailed' });
-            lastClearedMessages = undefined;
-            lastClearedAt = undefined;
-            break;
-          }
-          
-          chatMessages.length = 0;
-          chatMessages.push(...lastClearedMessages);
-          try {
-            await saveChatMessages(this._context, chatMessages);
-            postToAllWebviews({ type: 'historyRestored', messages: chatMessages });
-          } catch (err) {
-            outputChannel?.appendLine(`[Error] Failed to restore history: ${String(err)}`);
-            postToAllWebviews({ type: 'historyRestoreFailed' });
-          }
-          lastClearedMessages = undefined;
-          lastClearedAt = undefined;
-        } else {
-          postToAllWebviews({ type: 'historyRestoreFailed' });
-        }
-        break;
-
-      case 'getGuardianStats':
-        this._view.webview.postMessage({ 
-          type: 'guardianStats', 
-          stats: guardian.getStats() 
-        });
-        break;
-      case 'toggleSafeMode':
-        try {
-          const enabled = await toggleSafeModeSetting();
-          postToAllWebviews({ type: 'safeModeUpdated', enabled });
-        } catch (err) {
-          outputChannel?.appendLine(`[Tools] Failed to toggle safe mode: ${String(err)}`);
-          postToAllWebviews({ type: 'safeModeUpdated', enabled: getSafeModeSetting() });
-        }
-        break;
-    }
+    await handleWebviewMessage(wrapView(this._view), this._context, msg, chatMessages);
   }
 
   public postMessage(message: WebviewMessage) {
@@ -1329,93 +1218,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Store message handler to prevent duplicates
     const messageHandler = async (msg: WebviewMessage) => {
       if (!currentPanel) return;
-
-      switch (msg.type) {
-        case 'debugLog':
-          outputChannel?.appendLine(`[Webview] ${String(msg.text ?? '')}`);
-          break;
-
-        case 'chat':
-          if (msg.prompt) {
-            await handleChat(currentPanel, context, msg.prompt, chatMessages);
-          }
-          break;
-
-        case 'stop':
-          if (abortController) {
-            abortController.abort();
-            abortController = undefined;
-          }
-          break;
-
-        case 'requestActiveFile':
-          const content = getActiveEditorContent();
-          const fileName = getActiveFileName();
-          currentPanel.webview.postMessage({
-            type: 'activeFileContent',
-            text: content,
-            fileName
-          });
-          break;
-
-        case 'clearHistory':
-          // Save backup for potential undo
-          lastClearedMessages = chatMessages.slice();
-          lastClearedAt = Date.now();
-
-          chatMessages.length = 0;
-          guardian.resetHistory();
-          await saveChatMessages(context, chatMessages);
-          postToAllWebviews({ type: 'historyCleared' });
-          break;
-
-        case 'restoreHistory':
-          if (!currentPanel) break; // Panel may have been disposed
-          if (lastClearedMessages && lastClearedMessages.length > 0) {
-            // Check if undo is still valid (within 5 minutes)
-            if (lastClearedAt && (Date.now() - lastClearedAt) > 300000) {
-              outputChannel?.appendLine('[Warning] Undo expired (>5 minutes)');
-              currentPanel.webview.postMessage({ type: 'historyRestoreFailed' });
-              lastClearedMessages = undefined;
-              lastClearedAt = undefined;
-              break;
-            }
-            
-            // Update array contents instead of reassigning const
-            chatMessages.length = 0;
-            chatMessages.push(...lastClearedMessages);
-            try {
-              await saveChatMessages(context, chatMessages);
-              postToAllWebviews({ type: 'historyRestored', messages: chatMessages });
-            } catch (err) {
-              outputChannel?.appendLine(`[Error] Failed to restore history: ${String(err)}`);
-              postToAllWebviews({ type: 'historyRestoreFailed' });
-            }
-            lastClearedMessages = undefined;
-            lastClearedAt = undefined;
-          } else {
-            postToAllWebviews({ type: 'historyRestoreFailed' });
-          }
-          break;
-
-        case 'getGuardianStats':
-          if (currentPanel) {
-            currentPanel.webview.postMessage({ 
-              type: 'guardianStats', 
-              stats: guardian.getStats() 
-            });
-          }
-          break;
-        case 'toggleSafeMode':
-          try {
-            const enabled = await toggleSafeModeSetting();
-            postToAllWebviews({ type: 'safeModeUpdated', enabled });
-          } catch (err) {
-            outputChannel?.appendLine(`[Tools] Failed to toggle safe mode: ${String(err)}`);
-            postToAllWebviews({ type: 'safeModeUpdated', enabled: getSafeModeSetting() });
-          }
-          break;
-      }
+      await handleWebviewMessage(wrapPanel(currentPanel), context, msg, chatMessages);
     };
 
     // Subscribe to message handler
@@ -1883,6 +1686,95 @@ function wrapView(view: vscode.WebviewView): WebviewWrapper {
     webview: view.webview,
     get visible() { return view.visible; }
   };
+}
+
+// Shared message handler for both sidebar and panel webviews
+async function handleWebviewMessage(
+  wrapper: WebviewWrapper,
+  context: vscode.ExtensionContext,
+  msg: WebviewMessage,
+  messages: ChatMessage[]
+): Promise<void> {
+  switch (msg.type) {
+    case 'debugLog':
+      outputChannel?.appendLine(`[Webview] ${String(msg.text ?? '')}`);
+      break;
+
+    case 'chat':
+      if (msg.prompt) {
+        await handleChatInternal(wrapper, context, msg.prompt, messages);
+      }
+      break;
+
+    case 'stop':
+      if (abortController) {
+        abortController.abort();
+        abortController = undefined;
+      }
+      break;
+
+    case 'requestActiveFile':
+      const content = getActiveEditorContent();
+      const fileName = getActiveFileName();
+      wrapper.webview.postMessage({
+        type: 'activeFileContent',
+        text: content,
+        fileName
+      });
+      break;
+
+    case 'clearHistory':
+      lastClearedMessages = messages.slice();
+      lastClearedAt = Date.now();
+      messages.length = 0;
+      guardian.resetHistory();
+      await saveChatMessages(context, messages);
+      postToAllWebviews({ type: 'historyCleared' });
+      break;
+
+    case 'restoreHistory':
+      if (lastClearedMessages && lastClearedMessages.length > 0) {
+        if (lastClearedAt && (Date.now() - lastClearedAt) > 300000) {
+          outputChannel?.appendLine('[Warning] Undo expired (>5 minutes)');
+          postToAllWebviews({ type: 'historyRestoreFailed' });
+          lastClearedMessages = undefined;
+          lastClearedAt = undefined;
+          break;
+        }
+
+        messages.length = 0;
+        messages.push(...lastClearedMessages);
+        try {
+          await saveChatMessages(context, messages);
+          postToAllWebviews({ type: 'historyRestored', messages });
+        } catch (err) {
+          outputChannel?.appendLine(`[Error] Failed to restore history: ${String(err)}`);
+          postToAllWebviews({ type: 'historyRestoreFailed' });
+        }
+        lastClearedMessages = undefined;
+        lastClearedAt = undefined;
+      } else {
+        postToAllWebviews({ type: 'historyRestoreFailed' });
+      }
+      break;
+
+    case 'getGuardianStats':
+      wrapper.webview.postMessage({
+        type: 'guardianStats',
+        stats: guardian.getStats()
+      });
+      break;
+
+    case 'toggleSafeMode':
+      try {
+        const enabled = await toggleSafeModeSetting();
+        postToAllWebviews({ type: 'safeModeUpdated', enabled });
+      } catch (err) {
+        outputChannel?.appendLine(`[Tools] Failed to toggle safe mode: ${String(err)}`);
+        postToAllWebviews({ type: 'safeModeUpdated', enabled: getSafeModeSetting() });
+      }
+      break;
+  }
 }
 
 // Handle chat for WebviewView (sidebar)
@@ -6608,16 +6500,6 @@ async function fetchWithTimeout(
       originalSignal.removeEventListener('abort', abortHandler);
     }
   }
-}
-
-function normalizeTaskWeight(w: number | undefined): number {
-  // Normalize existing 0.1-1.0 scale to 1-10, and clamp any value to [1,10]
-  if (typeof w !== 'number' || isNaN(w)) return 5;
-  if (w <= 1) {
-    // assume legacy 0.1-1.0 scale
-    return Math.max(1, Math.min(10, Math.round(w * 10)));
-  }
-  return Math.max(1, Math.min(10, Math.round(w)));
 }
 
 function getContextTokens(): number {
