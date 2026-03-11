@@ -2,7 +2,7 @@ const mock = require('mock-require');
 mock('vscode', {});
 
 const { expect } = require('chai');
-const { normalizeTaskWeight, humanizeApiError, isTransientError, isSafeUrl } = require('../src/utils');
+const { normalizeTaskWeight, humanizeApiError, isTransientError, isSafeUrl, getNonce } = require('../src/utils');
 
 describe('normalizeTaskWeight', () => {
   it('should convert 0.1-1.0 scale to 1-10', () => {
@@ -185,5 +185,25 @@ describe('isSafeUrl', () => {
 
   it('should block IPv6 loopback', () => {
     expect(isSafeUrl('http://[::1]:8080').safe).to.be.false;
+  });
+});
+
+describe('getNonce', () => {
+  it('should return a non-empty string', () => {
+    const nonce = getNonce();
+    expect(nonce).to.be.a('string');
+    expect(nonce.length).to.be.greaterThan(0);
+  });
+
+  it('should return unique values on successive calls', () => {
+    const nonces = new Set(Array.from({ length: 50 }, () => getNonce()));
+    expect(nonces.size).to.equal(50);
+  });
+
+  it('should be URL-safe base64 (no +, /, =)', () => {
+    for (let i = 0; i < 20; i++) {
+      const nonce = getNonce();
+      expect(nonce).to.not.match(/[+/=]/);
+    }
   });
 });

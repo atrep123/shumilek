@@ -1,6 +1,7 @@
 // Utility functions
 
 import { URL } from 'url';
+import * as crypto from 'crypto';
 
 const PRIVATE_IP_RANGES = [
   /^127\./,
@@ -65,12 +66,7 @@ export function isChatMessage(value: unknown): value is { role: string; content:
 }
 
 export function getNonce(): string {
-  let text = '';
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  for (let i = 0; i < 32; i++) {
-    text += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return text;
+  return crypto.randomBytes(16).toString('base64url');
 }
 
 export function pickBrainModel(prompt: string, candidates: string[], fallback: string): string {
