@@ -2,7 +2,7 @@ const mock = require('mock-require');
 mock('vscode', {});
 
 const { expect } = require('chai');
-const { normalizeTaskWeight, humanizeApiError, isTransientError } = require('../src/utils');
+const { normalizeTaskWeight, humanizeApiError, isTransientError, isSafeUrl } = require('../src/utils');
 
 describe('normalizeTaskWeight', () => {
   it('should convert 0.1-1.0 scale to 1-10', () => {
@@ -131,5 +131,59 @@ describe('isTransientError', () => {
 
   it('should handle Error objects with empty message', () => {
     expect(isTransientError(new Error(''))).to.be.false;
+  });
+});
+
+describe('isSafeUrl', () => {
+  it('should allow normal public URLs', () => {
+    expect(isSafeUrl('https://example.com')).to.deep.equal({ safe: true });
+    expect(isSafeUrl('http://github.com/repo')).to.deep.equal({ safe: true });
+    expect(isSafeUrl('https://docs.python.org/3/library.html')).to.deep.equal({ safe: true });
+  });
+
+  it('should block localhost', () => {
+    const r = isSafeUrl('http://localhost:11434/api/tags');
+    expect(r.safe).to.be.false;
+    expect(r.reason).to.include('localhost');
+  });
+
+  it('should block 127.x.x.x', () => {
+    expect(isSafeUrl('http://127.0.0.1:8080').safe).to.be.false;
+    expect(isSafeUrl('http://127.0.0.1').safe).to.be.false;
+  });
+
+  it('should block 10.x private range', () => {
+    expect(isSafeUrl('http://10.0.0.1').safe).to.be.false;
+    expect(isSafeUrl('http://10.255.255.255').safe).to.be.false;
+  });
+
+  it('should block 192.168.x private range', () => {
+    expect(isSafeUrl('http://192.168.1.1').safe).to.be.false;
+  });
+
+  it('should block 172.16-31 private range', () => {
+    expect(isSafeUrl('http://172.16.0.1').safe).to.be.false;
+    expect(isSafeUrl('http://172.31.255.255').safe).to.be.false;
+  });
+
+  it('should block cloud metadata endpoint', () => {
+    expect(isSafeUrl('http://169.254.169.254/latest/meta-data').safe).to.be.false;
+    expect(isSafeUrl('http://metadata.google.internal/computeMetadata').safe).to.be.false;
+  });
+
+  it('should block non-http protocols', () => {
+    const r = isSafeUrl('file:///etc/passwd');
+    expect(r.safe).to.be.false;
+    expect(r.reason).to.include('protokol');
+    expect(isSafeUrl('ftp://internal.host/data').safe).to.be.false;
+  });
+
+  it('should reject invalid URLs', () => {
+    expect(isSafeUrl('not-a-url').safe).to.be.false;
+    expect(isSafeUrl('').safe).to.be.false;
+  });
+
+  it('should block IPv6 loopback', () => {
+    expect(isSafeUrl('http://[::1]:8080').safe).to.be.false;
   });
 });

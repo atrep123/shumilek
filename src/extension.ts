@@ -54,7 +54,7 @@ import {
   ValidationPolicy
 } from './types';
 import { buildCompressedMessages } from './contextMemory';
-import { humanizeApiError, isTransientError } from './utils';
+import { humanizeApiError, isTransientError, isSafeUrl } from './utils';
 // (Types imported from ./types)
 
 // Webview message types
@@ -6064,6 +6064,11 @@ async function runToolCall(
         const url = asString(args.url);
         if (!url) return { ok: false, tool: name, message: 'url je povinne' };
 
+        const urlCheck = isSafeUrl(url);
+        if (!urlCheck.safe) {
+          return { ok: false, tool: name, message: `URL blokována: ${urlCheck.reason}` };
+        }
+
         try {
           const fetch = require('node-fetch');
           const response = await fetch(url);
@@ -6137,9 +6142,17 @@ async function executeModelCallWithMessages(
   const decoder = new TextDecoder();
   let buffer = '';
   let fullResponse = '';
+  let lastChunkAt = Date.now();
+  const STREAM_STALL_MS = 15000;
 
   for await (const chunk of res.body as any) {
     if (!chunk) continue;
+    const now = Date.now();
+    if (now - lastChunkAt > STREAM_STALL_MS && fullResponse.length > 50) {
+      outputChannel?.appendLine('[executeModelCallWithMessages] Stream stall detected, aborting');
+      break;
+    }
+    lastChunkAt = now;
     buffer += decoder.decode(chunk, { stream: true });
     let newlineIndex;
     while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
@@ -6487,18 +6500,28 @@ async function executeModelCall(
       signal: controller.signal
     });
 
-    clearTimeout(timeoutId);
+    // Don't clear timeout yet — keep it alive during streaming
 
     if (!res.ok || !res.body) {
+      clearTimeout(timeoutId);
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
 
     const decoder = new TextDecoder();
     let buffer = '';
     let fullResponse = '';
+    let lastChunkAt = Date.now();
+    const STREAM_STALL_MS = 15000;
 
     for await (const chunk of res.body as any) {
       if (!chunk) continue;
+      const now = Date.now();
+      if (now - lastChunkAt > STREAM_STALL_MS && fullResponse.length > 50) {
+        outputChannel?.appendLine('[executeModelCall] Stream stall detected, aborting');
+        controller.abort();
+        break;
+      }
+      lastChunkAt = now;
       buffer += decoder.decode(chunk, { stream: true });
 
       let newlineIndex;
@@ -6512,14 +6535,13 @@ async function executeModelCall(
           const parsed = JSON.parse(line);
           if (parsed.message?.content) {
             fullResponse += parsed.message.content;
-            // Only stream to UI if not in silent mode (during validation)
-            // Response will be sent after full pipeline approval
           }
         } catch {
           // Ignore JSON parse errors
         }
       }
     }
+    clearTimeout(timeoutId);
 
     // Apply guardian if enabled
     if (guardianEnabled && fullResponse) {

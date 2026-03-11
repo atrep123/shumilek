@@ -1,5 +1,50 @@
 // Utility functions
 
+import { URL } from 'url';
+
+const PRIVATE_IP_RANGES = [
+  /^127\./,
+  /^10\./,
+  /^172\.(1[6-9]|2\d|3[01])\./,
+  /^192\.168\./,
+  /^169\.254\./,
+  /^0\./,
+  /^::1$/,
+  /^fc00:/i,
+  /^fd/i,
+  /^fe80:/i,
+];
+
+/**
+ * Validate a URL for safe external fetching.
+ * Blocks private/reserved IPs, non-http(s) schemes, and cloud metadata endpoints.
+ */
+export function isSafeUrl(raw: string): { safe: boolean; reason?: string } {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return { safe: false, reason: 'Neplatná URL' };
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return { safe: false, reason: `Nepovolený protokol: ${parsed.protocol}` };
+  }
+  const hostname = parsed.hostname.toLowerCase();
+  if (hostname === 'localhost' || hostname === '[::1]') {
+    return { safe: false, reason: 'Přístup na localhost je zakázán' };
+  }
+  for (const re of PRIVATE_IP_RANGES) {
+    if (re.test(hostname)) {
+      return { safe: false, reason: 'Přístup na privátní IP je zakázán' };
+    }
+  }
+  // Block cloud metadata endpoints
+  if (hostname === '169.254.169.254' || hostname === 'metadata.google.internal') {
+    return { safe: false, reason: 'Přístup ke cloud metadata je zakázán' };
+  }
+  return { safe: true };
+}
+
 export function normalizeTaskWeight(w: number | undefined): number {
   // Normalize existing 0.1-1.0 scale to 1-10, and clamp any value to [1,10]
   if (typeof w !== 'number' || isNaN(w)) return 5;
