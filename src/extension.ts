@@ -55,6 +55,7 @@ import {
 } from './types';
 import { buildCompressedMessages } from './contextMemory';
 import { humanizeApiError, isTransientError, isSafeUrl, normalizeTaskWeight, isChatMessage, normalizeScore, pickBrainModel, getNonce } from './utils';
+import { ChatRequestConcurrencyGuard } from './chatConcurrency';
 // (Types imported from ./types)
 
 // Webview message types
@@ -459,6 +460,7 @@ async function ensureAirLLMRunning(
 // when the panel already exists (retainContextWhenHidden=true), without breaking
 // the message handler's reference.
 let chatMessages: ChatMessage[] = [];
+const chatRequestGuard = new ChatRequestConcurrencyGuard();
 let guardianStats: GuardianStats = {
   totalChecks: 0,
   loopsDetected: 0,
@@ -2236,6 +2238,14 @@ async function handleChatInternal(
     return;
   }
 
+  if (!chatRequestGuard.tryAcquire(retryCount)) {
+    panel.webview.postMessage({
+      type: 'responseError',
+      text: 'Jiný dotaz se stále zpracovává. Počkejte prosím na dokončení.'
+    });
+    return;
+  }
+
   // Only add user message on first attempt
   if (retryCount === 0) {
     messages.push({ role: 'user', content: trimmedPrompt, timestamp: Date.now() });
@@ -2248,6 +2258,7 @@ async function handleChatInternal(
         type: 'responseError',
         text: 'AirLLM server is not ready. Start it and retry.'
       });
+      chatRequestGuard.release(retryCount);
       return;
     }
   }
@@ -3000,6 +3011,7 @@ PŘÍSTUP K PRÁCI:
       postToAllWebviews({ type: 'responseError', text: errorMsg });
     }
   } finally {
+    chatRequestGuard.release(retryCount);
     outputChannel?.appendLine(`[Orchestrator] State: ${orchestrator.getCurrent()} | checkpoints=${orchestrator.getCheckpoints().length}`);
     // Only clear global if it's still our controller (prevents race with concurrent requests)
     if (abortController === localAbortController) {
