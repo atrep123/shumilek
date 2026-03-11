@@ -87,3 +87,19 @@ export function humanizeApiError(raw: string): string {
 
   return raw;
 }
+
+/**
+ * Detect transient network/server errors that are worth retrying.
+ * Returns true for ECONNRESET, ETIMEDOUT, socket hang up, HTTP 5xx, etc.
+ */
+export function isTransientError(error: Error | string): boolean {
+  const msg = (typeof error === 'string' ? error : error.message ?? '').toLowerCase();
+  if (msg.includes('econnreset')) return true;
+  if (msg.includes('etimedout')) return true;
+  if (msg.includes('socket hang up')) return true;
+  if (msg.includes('network timeout')) return true;
+  if (/http\s+5\d{2}/.test(msg)) return true;
+  if (msg.includes('epipe')) return true;
+  if (msg.includes('econnaborted')) return true;
+  return false;
+}

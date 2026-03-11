@@ -54,7 +54,7 @@ import {
   ValidationPolicy
 } from './types';
 import { buildCompressedMessages } from './contextMemory';
-import { humanizeApiError } from './utils';
+import { humanizeApiError, isTransientError } from './utils';
 // (Types imported from ./types)
 
 // Webview message types
@@ -93,11 +93,19 @@ interface ToolResult {
   approved?: boolean;
 }
 
+interface ToolCallRecord {
+  tool: string;
+  args: Record<string, unknown>;
+  ok: boolean;
+  message?: string;
+}
+
 interface ToolSessionState {
   hadMutations: boolean;
   mutationTools: string[];
   lastWritePath?: string;
   lastWriteAction?: 'created' | 'updated';
+  toolCallRecords?: ToolCallRecord[];
 }
 
 interface RangeInfo {
@@ -3182,7 +3190,11 @@ PŘÍSTUP K PRÁCI:
       const shouldRetryReward = rewardEnabled && !rewardResult.ok && !rewardResult.unavailable;
       const shouldRetryHhem = hhemEnabled && !hhemResult.ok && !hhemResult.unavailable;
       const shouldRetryRagas = ragasEnabled && !ragasResult.ok && !ragasResult.unavailable;
-      const shouldRetryAny = shouldRetryMini || shouldRetryGuardian || shouldRetryHallucination || shouldRetryReward || shouldRetryHhem || shouldRetryRagas;
+      // In fail-closed mode, unavailable external validators should also trigger retry
+      const failClosedUnavailableReward = rewardEnabled && rewardResult.unavailable && validationPolicy === 'fail-closed';
+      const failClosedUnavailableHhem = hhemEnabled && hhemResult.unavailable && validationPolicy === 'fail-closed';
+      const failClosedUnavailableRagas = ragasEnabled && ragasResult.unavailable && validationPolicy === 'fail-closed';
+      const shouldRetryAny = shouldRetryMini || shouldRetryGuardian || shouldRetryHallucination || shouldRetryReward || shouldRetryHhem || shouldRetryRagas || failClosedUnavailableReward || failClosedUnavailableHhem || failClosedUnavailableRagas;
       const retryBlockedByTools = toolsEnabled && toolSession.hadMutations;
       
       if (shouldRetryAny
@@ -3236,6 +3248,23 @@ PŘÍSTUP K PRÁCI:
         outputChannel?.appendLine('[Retry] Skipping retry because tool edits were applied');
         if (validationPolicy === 'fail-closed') {
           postToAllWebviews({ type: 'responseError', text: 'Publish blocked: fail-closed validation policy.' });
+          return;
+        }
+      }
+
+      // Fail-closed: block publish when external validators are unavailable
+      if (validationPolicy === 'fail-closed') {
+        const unavailableNames: string[] = [];
+        if (failClosedUnavailableReward) unavailableNames.push('Reward');
+        if (failClosedUnavailableHhem) unavailableNames.push('HHEM');
+        if (failClosedUnavailableRagas) unavailableNames.push('RAGAS');
+        if (unavailableNames.length > 0) {
+          const label = unavailableNames.join(', ');
+          outputChannel?.appendLine(`[FailClosed] Blocking publish: ${label} unavailable in fail-closed mode`);
+          postToAllWebviews({
+            type: 'responseError',
+            text: `Publish blocked: validátor ${label} nedostupný (fail-closed režim).`
+          });
           return;
         }
       }
@@ -3301,6 +3330,17 @@ PŘÍSTUP K PRÁCI:
         await saveChatMessages(context, messages);
       }
     } else {
+      // Auto-retry transient API errors (ECONNRESET, ETIMEDOUT, 5xx, etc.)
+      if (isTransientError(error) && retryCount < maxRetries) {
+        const backoffMs = 1000 * Math.pow(2, retryCount); // 1s, 2s, 4s...
+        outputChannel?.appendLine(`[Retry] Transient error detected: ${error.message}. Retrying in ${backoffMs}ms (${retryCount + 1}/${maxRetries})`);
+        postToAllWebviews({
+          type: 'guardianAlert',
+          message: `🔄 Přechodná chyba sítě — zkouším znovu (${retryCount + 1}/${maxRetries})...`
+        });
+        await new Promise(resolve => setTimeout(resolve, backoffMs));
+        return handleChatInternal(panel, context, trimmedPrompt, messages, retryCount + 1);
+      }
       // Remove the user message on error (only if it was our first attempt)
       if (retryCount === 0 && messages.length > 0 && messages[messages.length - 1]?.role === 'user') {
         messages.pop();
@@ -6537,6 +6577,16 @@ async function generateWithTools(
 
     for (const call of calls) {
       const result = await runToolCall(panel, call, confirmEdits, session, autoApprovePolicy);
+      // Track tool call/result pair
+      if (session) {
+        if (!session.toolCallRecords) session.toolCallRecords = [];
+        session.toolCallRecords.push({
+          tool: call.name,
+          args: call.arguments ?? {},
+          ok: result.ok,
+          message: result.message
+        });
+      }
       if (!result.ok) {
         const message = result.message ?? 'unknown error';
         outputChannel?.appendLine(`[Tools] ${call.name} failed: ${message}`);
@@ -6607,6 +6657,23 @@ async function generateWithTools(
       const correctionNote = selfCorrectionCount > 0
         ? ` (auto-corrected ${selfCorrectionCount}x)`
         : '';
+      // Log tool call records summary
+      if (session?.toolCallRecords && session.toolCallRecords.length > 0) {
+        const writes = session.toolCallRecords.filter(r => ['write_file', 'replace_lines'].includes(r.tool));
+        const failedWrites = writes.filter(r => !r.ok);
+        const successfulWrites = writes.filter(r => r.ok);
+        outputChannel?.appendLine(`[ToolTrack] Total calls: ${session.toolCallRecords.length}, writes: ${writes.length}, failed writes: ${failedWrites.length}`);
+        if (failedWrites.length > 0) {
+          for (const fw of failedWrites) {
+            outputChannel?.appendLine(`[ToolTrack] Failed write: ${fw.tool} -> ${fw.message ?? 'unknown'}`);
+          }
+        }
+        // Fabrication detection: model claims mutation but all writes failed
+        if (writes.length > 0 && successfulWrites.length === 0) {
+          outputChannel?.appendLine('[ToolTrack] WARNING: All write operations failed — possible fabricated edit');
+          return 'Chyba: vsechny zapisy selhaly. Soubory nebyly zmeneny.';
+        }
+      }
       return writePath
         ? `Hotovo: zmena souboru provedena (${writePath}).${correctionNote}`
         : `Hotovo: zmena souboru provedena.${correctionNote}`;

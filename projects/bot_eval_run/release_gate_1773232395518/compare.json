@@ -1,0 +1,89 @@
+{
+  "generatedAt": "2026-03-11T13:04:49.935Z",
+  "baselineDir": "C:\\actions-runner\\release_gate_stable_longrunC_20260224_075013",
+  "candidateDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773232395518",
+  "scenarios": [
+    {
+      "scenario": "node-api-oracle",
+      "baseline": {
+        "passRate": 1,
+        "rawRunPassRate": 1,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 98546,
+        "topFailureClusters": []
+      },
+      "candidate": {
+        "passRate": 1,
+        "rawRunPassRate": 1,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 97931,
+        "topFailureClusters": []
+      },
+      "delta": {
+        "passRate": 0,
+        "rawRunPassRate": 0,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": -615
+      }
+    },
+    {
+      "scenario": "python-ai-stdlib-oracle",
+      "baseline": {
+        "passRate": 1,
+        "rawRunPassRate": 1,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 43687,
+        "topFailureClusters": []
+      },
+      "candidate": {
+        "passRate": 1,
+        "rawRunPassRate": 1,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 44621,
+        "topFailureClusters": []
+      },
+      "delta": {
+        "passRate": 0,
+        "rawRunPassRate": 0,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 934
+      }
+    },
+    {
+      "scenario": "ts-todo-oracle",
+      "baseline": {
+        "passRate": 1,
+        "rawRunPassRate": 1,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 44941,
+        "topFailureClusters": []
+      },
+      "candidate": {
+        "passRate": 1,
+        "rawRunPassRate": 1,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 46710,
+        "topFailureClusters": []
+      },
+      "delta": {
+        "passRate": 0,
+        "rawRunPassRate": 0,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 1769
+      }
+    }
+  ],
+  "clusterDelta": [],
+  "gate": {
+    "enabled": true,
+    "passed": true,
+    "thresholds": {
+      "minPassRateDelta": 0,
+      "maxFallbackDependencyRunRate": 0.9,
+      "maxFallbackDependencyRunRateDelta": 0.2,
+      "maxClusterIncreaseRules": [],
+      "scenarioOverrides": {}
+    },
+    "violations": []
+  }
+}

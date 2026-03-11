@@ -2,7 +2,7 @@ const mock = require('mock-require');
 mock('vscode', {});
 
 const { expect } = require('chai');
-const { normalizeTaskWeight, humanizeApiError } = require('../src/utils');
+const { normalizeTaskWeight, humanizeApiError, isTransientError } = require('../src/utils');
 
 describe('normalizeTaskWeight', () => {
   it('should convert 0.1-1.0 scale to 1-10', () => {
@@ -83,5 +83,53 @@ describe('humanizeApiError', () => {
   it('should pass through unknown errors unchanged', () => {
     const msg = 'Something completely unexpected happened';
     expect(humanizeApiError(msg)).to.equal(msg);
+  });
+});
+
+describe('isTransientError', () => {
+  it('should detect ECONNRESET', () => {
+    expect(isTransientError(new Error('read ECONNRESET'))).to.be.true;
+  });
+
+  it('should detect ETIMEDOUT', () => {
+    expect(isTransientError('connect ETIMEDOUT 192.168.1.100:11434')).to.be.true;
+  });
+
+  it('should detect socket hang up', () => {
+    expect(isTransientError(new Error('socket hang up'))).to.be.true;
+  });
+
+  it('should detect network timeout', () => {
+    expect(isTransientError('network timeout at: http://localhost:11434')).to.be.true;
+  });
+
+  it('should detect HTTP 5xx', () => {
+    expect(isTransientError('HTTP 500: Internal Server Error')).to.be.true;
+    expect(isTransientError(new Error('HTTP 502: Bad Gateway'))).to.be.true;
+    expect(isTransientError('HTTP 503')).to.be.true;
+  });
+
+  it('should detect EPIPE', () => {
+    expect(isTransientError(new Error('write EPIPE'))).to.be.true;
+  });
+
+  it('should detect ECONNABORTED', () => {
+    expect(isTransientError('ECONNABORTED')).to.be.true;
+  });
+
+  it('should NOT detect ECONNREFUSED (permanent)', () => {
+    expect(isTransientError('connect ECONNREFUSED 127.0.0.1:11434')).to.be.false;
+  });
+
+  it('should NOT detect model not found', () => {
+    expect(isTransientError('model "qwen2.5" not found')).to.be.false;
+  });
+
+  it('should NOT detect unknown errors', () => {
+    expect(isTransientError('Something weird happened')).to.be.false;
+  });
+
+  it('should handle Error objects with empty message', () => {
+    expect(isTransientError(new Error(''))).to.be.false;
   });
 });

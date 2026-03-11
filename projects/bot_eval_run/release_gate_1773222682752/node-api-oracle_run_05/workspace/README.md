@@ -1,0 +1,1 @@
+This is a simple Node.js project that provides a REST API for managing TODO items. The API is implemented using only Node.js built-in modules and does not rely on any external dependencies. The project includes endpoints for health checks, retrieving the OpenAPI specification, managing TODO items, and more.
