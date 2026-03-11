@@ -50,3 +50,40 @@ export function normalizeScore(value: unknown): number | undefined {
   }
   return undefined;
 }
+
+/**
+ * Translate raw API/network error messages into user-friendly Czech messages
+ * with actionable guidance. Returns the original message if no pattern matches.
+ */
+export function humanizeApiError(raw: string): string {
+  const lower = raw.toLowerCase();
+
+  if (lower.includes('econnrefused') || lower.includes('connect econnrefused')) {
+    return 'Nelze se připojit k Ollama serveru. Zkontrolujte, že Ollama běží (spusťte `ollama serve`).';
+  }
+  if (lower.includes('enotfound') || lower.includes('getaddrinfo')) {
+    return 'Server nenalezen — zkontrolujte URL v nastavení (shumilek.baseUrl).';
+  }
+  if (lower.includes('etimedout') || lower.includes('socket hang up') || lower.includes('network timeout')) {
+    return 'Spojení s modelem vypršelo. Model může být přetížený nebo pomalý — zkuste zmenšit kontext nebo použít menší model.';
+  }
+  if (lower.includes('econnreset')) {
+    return 'Spojení bylo neočekávaně přerušeno. Ollama mohla spadnout — restartujte ji příkazem `ollama serve`.';
+  }
+  if (lower.includes('model') && lower.includes('not found')) {
+    const modelMatch = raw.match(/model\s+['"]?([^\s'"]+)['"]?/i);
+    const modelName = modelMatch?.[1] ?? '';
+    return `Model ${modelName ? `"${modelName}" ` : ''}nenalezen. Stáhněte ho příkazem \`ollama pull ${modelName || '<model>'}\`.`;
+  }
+  if (/http\s+5\d{2}/.test(lower)) {
+    return 'Ollama server vrátil interní chybu (5xx). Restartujte Ollama a zkuste to znovu.';
+  }
+  if (lower.includes('http 404')) {
+    return 'Endpoint nenalezen (404). Zkontrolujte verzi Ollama a baseUrl v nastavení.';
+  }
+  if (lower.includes('aborted') || lower.includes('abort')) {
+    return raw;
+  }
+
+  return raw;
+}
