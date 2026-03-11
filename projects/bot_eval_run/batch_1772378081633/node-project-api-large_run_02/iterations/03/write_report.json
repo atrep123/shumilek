@@ -1,0 +1,15 @@
+{
+  "count": 8,
+  "files": [
+    "README.md",
+    "package.json",
+    "src/app.js",
+    "src/server.js",
+    "src/lib/id.js",
+    "src/lib/errors.js",
+    "src/modules/projects/routes.js",
+    "src/modules/projects/service.js"
+  ],
+  "appliedAsPatch": true,
+  "forcePatchFromIncompleteFull": true
+}

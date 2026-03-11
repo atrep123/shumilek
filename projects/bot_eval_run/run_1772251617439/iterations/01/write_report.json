@@ -1,0 +1,16 @@
+{
+  "count": 9,
+  "files": [
+    "README.md",
+    "package.json",
+    "src/app.js",
+    "src/server.js",
+    "src/modules/projects/router.js",
+    "src/modules/projects/service.js",
+    "src/modules/tasks/router.js",
+    "src/modules/members/router.js",
+    "src/modules/comments/router.js"
+  ],
+  "appliedAsPatch": false,
+  "forcePatchFromIncompleteFull": false
+}

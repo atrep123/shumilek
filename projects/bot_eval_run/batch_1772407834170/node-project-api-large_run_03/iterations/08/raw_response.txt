@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "// src/modules/members/routes.js\nconst express = require('express');\nconst router = express.Router();\nconst membersService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', async (req, res) => {\n  const { userId, role } = req.body;\n\n  if (!userId || !role) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Both userId and role are required.');\n  }\n\n  try {\n    const member = await membersService.addMember(userId, role);\n    res.status(201).json({ member });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Failed to add member.');\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "// src/modules/comments/routes.js\nconst express = require('express');\nconst router = express.Router();\nconst commentsService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', async (req, res) => {\n  const { message } = req.body;\n\n  if (!message) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Message is required.');\n  }\n\n  try {\n    const comment = await commentsService.addComment(message);\n    res.status(201).json({ comment });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Failed to add comment.');\n  }\n});\n\nmodule.exports = router;\n"
+    }
+  ],
+  "notes": "Fixed the members and comments routes to handle validation errors correctly."
+}

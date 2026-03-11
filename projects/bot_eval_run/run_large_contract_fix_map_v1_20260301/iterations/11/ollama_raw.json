@@ -1,0 +1,16 @@
+{
+  "model": "deepseek-coder-v2:16b",
+  "created_at": "2026-03-02T00:12:22.1773808Z",
+  "message": {
+    "role": "assistant",
+    "content": "{ \"files\": [ {\"path\":\"src/modules/projects/routes.js\",\"content\":\"const express = require('express');\\nconst router = express.Router();\\nconst projectsService = require('./service');\\n\\nrouter.post('/', async (req, res) => {\\n  const { name } = req.body;\\n  if (!name) return sendError(res, 400, 'MissingName', 'Project name is required');\\n  try {\\n    const project = await projectsService.createProject({ name });\\n    return res.status(201).json({ project });\\n  } catch (error) {\\n    if (error.code === 'Duplicate') return sendError(res, 409, error.code, error.message);\\n    throw error;\\n  }\\n});\\n\\nmodule.exports = router;\"} ]}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 4551949800,
+  "load_duration": 45544100,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 528112200,
+  "eval_count": 199,
+  "eval_duration": 1484880600
+}

@@ -1,0 +1,8 @@
+{
+  "review": "state-sharing-mismatch, task-status-contract-mismatch, package-json-supertest",
+  "priorityFiles": [
+    "src/modules/projects/service.js",
+    "src/modules/tasks/service.js",
+    "package.json"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Expected at least 12 source files under src/, found 11",
+    "Missing shared helper source file: src/lib/errors.js",
+    "Missing shared helper source file: src/lib/id.js",
+    "Missing route signature for /projects/:projectId/members",
+    "Missing route signature for /projects/:projectId/tasks",
+    "Missing route signature for /projects/:projectId/tasks/:taskId/comments",
+    "Ambiguous shared helper import in src/modules/comments/service.js: import concrete files ../../lib/id or ../../lib/errors",
+    "Ambiguous shared helper import in src/modules/members/service.js: import concrete files ../../lib/id or ../../lib/errors",
+    "Ambiguous shared helper import in src/modules/projects/service.js: import concrete files ../../lib/id or ../../lib/errors",
+    "Ambiguous shared helper import in src/modules/tasks/service.js: import concrete files ../../lib/id or ../../lib/errors",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

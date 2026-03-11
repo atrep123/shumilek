@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5:7b",
+  "created_at": "2026-02-27T17:34:36.5650789Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"plan\": \"- [x] Vytvořit strukturu projektu `mini_ai/` a `tests/`\\n- [x] Implementovat character-level Markov chain generator v souboru `mini_ai/markov_chain.py`\\n- [x] Trenovat model z textu v souboru `mini_ai/cli.py`\\n- [x] Přidat CLI funkce `train` a `generate` v souboru `mini_ai/cli.py`\\n- [x] Napsat unit testy pro `markov_chain.py` v souboru `tests/test_markov_chain.py`\\n- [x] Ujistit se, že testy procházejí pomocí `python -m unittest discover -v -s tests -p \\\"test*.py\\\"`\\n- [x] Přidat pomocník CLI s výpisem možností pomocí `python -m mini_ai.cli --help`\\n- [x] Ujistit se, že `mini_ai/cli.py` má modul `mini_ai.markov` importován\\n- [x] Vytvořit `README.md` s popisem projektu a pokyny pro používání\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 10399298900,
+  "load_duration": 2707080800,
+  "prompt_eval_count": 1487,
+  "prompt_eval_duration": 177199000,
+  "eval_count": 274,
+  "eval_duration": 1717554400
+}

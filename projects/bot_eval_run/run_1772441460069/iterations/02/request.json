@@ -1,0 +1,24 @@
+{
+  "model": "deepseek-coder-v2:16b",
+  "baseUrl": "http://localhost:11434",
+  "transport": "generate",
+  "formatKind": "json",
+  "schemaUsed": false,
+  "fallbackUsed": true,
+  "fallbackReason": "Structured chat returned non-JSON content: Expected ',' or ']' after array element in JSON at position 20000 (line 1 column 20001)",
+  "usedFormatJson": true,
+  "doneReason": "stop",
+  "evalCount": 2180,
+  "promptEvalCount": 4096,
+  "effectiveOptions": {
+    "num_predict": 6000,
+    "seed": 42,
+    "temperature": 0
+  },
+  "options": {
+    "temperature": 0.2,
+    "num_predict": 2400,
+    "seed": 42
+  },
+  "deterministicFallbackMode": "on-fail"
+}

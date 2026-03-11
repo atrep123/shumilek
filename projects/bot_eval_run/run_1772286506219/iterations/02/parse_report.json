@@ -1,0 +1,8 @@
+{
+  "attempts": [],
+  "finalOk": false,
+  "primaryError": "Structured chat failed: The user aborted a request.",
+  "primaryErrorKind": "other",
+  "finalError": "Structured chat failed: The user aborted a request.",
+  "finalErrorKind": "other"
+}

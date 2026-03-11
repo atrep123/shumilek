@@ -1,0 +1,17 @@
+{
+  "name": "project-management-api",
+  "version": "1.0.0",
+  "description": "A simple project management API",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.17.3",
+    "supertest": "^6.2.4"
+  },
+  "devDependencies": {
+    "jest": "^28.1.0"
+  }
+}

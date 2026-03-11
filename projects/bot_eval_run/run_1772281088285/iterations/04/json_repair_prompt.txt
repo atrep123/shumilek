@@ -1,0 +1,51 @@
+Jsi JSON opravovac. Dostanes text, ktery ma byt JEDEN validni JSON objekt.
+Schema kontrakt:
+{ "mode": "full|patch", "files": [ {"path":"...","content":"..."} ], "notes": "optional" }
+Tvuj ukol: vrat JEN validni JSON objekt bez markdownu a bez jineho textu.
+Pravidla:
+- Musi existovat pouze jeden root objekt.
+- Pole "files" musi byt pole OBJEKTU se string "path" a "content".
+- Nepouzivej duplicate root keys (napr. druhe "files").
+- Zachovej obsah souboru; neopravuj logiku, pouze strukturu/escaping JSON.
+- NEVKLADAJ zkratky ani placeholdery.
+
+TEXT:
+<<<
+{
+  "files": [
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst { createProject, getProjects, getProjectById } = require('./service');\n\nconst router = express.Router();\n\nrouter.get('/', (req, res) => {\n  try {\n    const projects = getProjects();\n    res.json({ projects });\n  } catch (error) {\n    res.status(500).json({ error: { code: 'internal_error', message: error.message } });\n  }\n});\n\nrouter.post('/', (req, res) => {\n  try {\n    const { name } = req.body;\n    if (!name) {\n      throw createError('invalid_input', 'Name is required.');\n    }\n    const project = createProject(name);\n    res.status(201).json({ project });\n  } catch (error) {\n    res.status(error.code === 'duplicate' ? 409 : 400).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.get('/:projectId', (req, res) => {\n  try {\n    const project = getProjectById(req.params.projectId);\n    res.json({ project });\n  } catch (error) {\n    res.status(404).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst { getProjectById } = require('../projects/service');\n\nconst router = express.Router();\n\nrouter.get('/:projectId/members', (req, res) => {\n  try {\n    const project = getProjectById(req.params.projectId);\n    res.json({ members: project.members });\n  } catch (error) {\n    res.status(404).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst { getProjectById, createTask, updateTaskStatus, getTasksByStatus } = require('./service');\n\nconst router = express.Router();\n\nrouter.get('/:projectId/tasks', (req, res) => {\n  try {\n    const project = getProjectById(req.params.projectId);\n    res.json({ tasks: project.tasks });\n  } catch (error) {\n    res.status(404).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.post('/:projectId/tasks', (req, res) => {\n  try {\n    const project = getProjectById(req.params.projectId);\n    const { title } = req.body;\n    if (!title) {\n      throw createError('invalid_input', 'Title is required.');\n    }\n    const task = createTask(project, title);\n    res.status(201).json({ task });\n  } catch (error) {\n    res.status(error.code === 'not_found' ? 404 : 400).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.patch('/:projectId/tasks/:taskId', (req, res) => {\n  try {\n    const project = getProjectById(req.params.projectId);\n    const { status } = req.body;\n    if (!status) {\n      throw createError('invalid_input', 'Status is required.');\n    }\n    const task = updateTaskStatus(project, req.params.taskId, status);\n    res.json({ task });\n  } catch (error) {\n    res.status(error.code === 'not_found' ? 404 : 400).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.get('/:projectId/tasks/:status', (req, res) => {\n  try {\n    const project = getProjectById(req.params.projectId);\n    const tasks = getTasksByStatus(project, req.params.status);\n    res.json({ tasks });\n  } catch (error) {\n    res.status(404).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { generateId, createError } = require('../../lib');\n\nfunction createTask(project, title) {\n  const task = { id: generateId(), title, status: 'pending' };\n  project.tasks.push(task);\n  return task;\n}\n\nfunction updateTaskStatus(project, taskId, status) {\n  const task = project.tasks.find(t => t.id === taskId);\n  if (!task) {\n    throw createError('not_found', 'Task not found.');\n  }\n  task.status = status;\n  return task;\n}\n\nfunction getTasksByStatus(project, status) {\n  return project.tasks.filter(task => task.status === status);\n}\n\nmodule.exports = { createTask, updateTaskStatus, getTasksByStatus };\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst { getProjectById, getTaskById, addCommentToTask } = require('../tasks/service');\n\nconst router = express.Router();\n\nrouter.post('/:projectId/tasks/:taskId/comments', (req, res) => {\n  try {\n    const project = getProjectById(req.params.projectId);\n    const task = getTaskById(project, req.params.taskId);\n    const { message } = req.body;\n    if (!message) {\n      throw createError('invalid_input', 'Message is required.');\n    }\n    const comment = addCommentToTask(task, message);\n    res.status(201).json({ comment });\n  } catch (error) {\n    res.status(error.code === 'not_found' ? 404 : 400).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.get('/:projectId/tasks/:taskId/comments', (req, res) => {\n  try {\n    const project = getProjectById(req.params.projectId);\n    const task = getTaskById(project, req.params.taskId);\n    res.json({ comments: task.comments });\n  } catch (error) {\n    res.status(404).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { generateId, createError } = require('../../lib');\n\nfunction createTask(project, title) {\n  const task = { id: generateId(), title, status: 'pending', comments: [] };\n  project.tasks.push(task);\n  return task;\n}\n\nfunction updateTaskStatus(project, taskId, status) {\n  const task = project.tasks.find(t => t.id === taskId);\n  if (!task) {\n    throw createError('not_found', 'Task not found.');\n  }\n  task.status = status;\n  return task;\n}\n\nfunction getTasksByStatus(project, status) {\n  return project.tasks.filter(task => task.status === status);\n}\n\nfunction addCommentToTask(task, message) {\n  const comment = { id: generateId(), message };\n  task.comments.push(comment);\n  return comment;\n}\n\nmodule.exports = { createTask, updateTaskStatus, getTasksByStatus, addCommentToTask };\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { generateId, createError } = require('../../lib/id');\nconst { createProject, getProjects, getProjectById } = require('./service');\n\nconst projects = [];\n\nfunction createProject(name) {\n  if (projects.some(p => p.name === name)) {\n    throw createError('duplicate', 'Project with this name already exists.');\n  }\n  const project = { id: generateId(), name, members: [], tasks: [] };\n  projects.push(project);\n  return project;\n}\n\nfunction getProjects() {\n  return projects;\n}\n\nfunction getProjectById(id) {\n  const project = projects.find(p => p.id === id);\n  if (!project) {\n    throw createError('not_found', 'Project not found.');\n  }\n  return project;\n}\n\nmodule.exports = { createProject, getProjects, getProjectById };\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { addCommentToTask } = require('../tasks/service');\n\nmodule.exports = { addCommentToTask };\n"
+    }
+  ],
+  "notes": "Added missing routes and fixed import issues."
+}
+>>>

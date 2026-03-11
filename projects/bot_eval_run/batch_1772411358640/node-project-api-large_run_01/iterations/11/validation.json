@@ -1,0 +1,12 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Route-service contract mismatch (projects): routes call projectsService.getAllProjects() but service does not export \"getAllProjects\".",
+    "Route-service contract mismatch (projects): routes call projectsService.getProjectById() but service does not export \"getProjectById\".",
+    "Route-service contract mismatch (tasks): routes call tasksService.getTasksByProjectId() but service does not export \"getTasksByProjectId\".",
+    "Route-service contract mismatch (comments): routes call commentsService.addComment() but service does not export \"addComment\".",
+    "Duplicate handling hint: expected 409 conflict handling for duplicate project names.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

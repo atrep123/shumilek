@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing required file: README.md",
+    "Expected at least 12 source files under src/, found 10",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

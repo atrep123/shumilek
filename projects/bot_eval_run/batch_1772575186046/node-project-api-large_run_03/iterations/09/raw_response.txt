@@ -1,0 +1,45 @@
+{
+  "files": [
+    {
+      "path": "src/lib/errors.js",
+      "content": "const sendError = (res, status, code, message) => {\n  res.status(status).json({ error: { code, message } });\n};\n\nmodule.exports = { sendError };\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) {\n    return sendError(res, 400, 'INVALID_INPUT', 'User ID and role are required.');\n  }\n\n  const result = service.addMember(req.projectId, { userId, role });\n  if (result.error) {\n    return sendError(res, result.status, result.error.code, result.error.message);\n  }\n\n  res.status(201).json({ member: result.member });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet membersStore = {};\n\nconst addMember = (projectId, memberData) => {\n  if (!membersStore[projectId]) {\n    membersStore[projectId] = [];\n  }\n\n  const existingMember = membersStore[projectId].find(m => m.userId === memberData.userId);\n  if (existingMember) {\n    return { error: { code: 'DUPLICATE_MEMBER', message: 'Member already exists.' }, status: 409 };\n  }\n\n  const newMember = { id: randomUUID(), ...memberData };\n  membersStore[projectId].push(newMember);\n  return { member: newMember };\n};\n\nmodule.exports = { addMember };\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const { message } = req.body;\n  if (!message) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Message is required.');\n  }\n\n  const result = service.addComment(req.projectId, req.taskId, { message });\n  if (result.error) {\n    return sendError(res, result.status, result.error.code, result.error.message);\n  }\n\n  res.status(201).json({ comment: result.comment });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet commentsStore = {};\n\nconst addComment = (projectId, taskId, commentData) => {\n  if (!commentsStore[projectId]) {\n    commentsStore[projectId] = {};\n  }\n  if (!commentsStore[projectId][taskId]) {\n    commentsStore[projectId][taskId] = [];\n  }\n\n  const newComment = { id: randomUUID(), ...commentData };\n  commentsStore[projectId][taskId].push(newComment);\n  return { comment: newComment };\n};\n\nmodule.exports = { addComment };\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const taskData = req.body;\n  if (!taskData.name) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Task name is required.');\n  }\n\n  const result = service.addTask(req.projectId, { ...taskData, status: 'todo' });\n  if (result.error) {\n    return sendError(res, result.status, result.error.code, result.error.message);\n  }\n\n  res.status(201).json({ task: result.task });\n});\n\nrouter.get('/', (req, res) => {\n  const status = req.query.status;\n  const tasks = service.getTasks(req.projectId, status);\n  res.json({ tasks });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet tasksStore = {};\n\nconst addTask = (projectId, taskData) => {\n  if (!tasksStore[projectId]) {\n    tasksStore[projectId] = [];\n  }\n\n  const newTask = { id: randomUUID(), ...taskData };\n  tasksStore[projectId].push(newTask);\n  return { task: newTask };\n};\n\nconst getTasks = (projectId, status) => {\n  if (!tasksStore[projectId]) {\n    return [];\n  }\n\n  let tasks = tasksStore[projectId];\n  if (status) {\n    tasks = tasks.filter(task => task.status === status);\n  }\n  return tasks;\n};\n\nmodule.exports = { addTask, getTasks };\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.get('/', (req, res) => {\n  const projects = service.getAllProjects();\n  res.json({ projects });\n});\n\nrouter.post('/', (req, res) => {\n  const { name } = req.body;\n  if (!name) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Project name is required.');\n  }\n\n  const result = service.addProject({ name });\n  if (result.error) {\n    return sendError(res, result.status, result.error.code, result.error.message);\n  }\n\n  res.status(201).json({ project: result.project });\n});\n\nrouter.get('/:projectId', (req, res) => {\n  const projectId = req.params.projectId;\n  const project = service.getProjectById(projectId);\n  if (!project) {\n    return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found.');\n  }\n\n  res.json({ project });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet projectsStore = {};\n\nconst addProject = (projectData) => {\n  const newProject = { id: randomUUID(), ...projectData };\n  projectsStore[newProject.id] = newProject;\n  return { project: newProject };\n};\n\nconst getAllProjects = () => {\n  return Object.values(projectsStore);\n};\n\nconst getProjectById = (projectId) => {\n  return projectsStore[projectId];\n};\n\nmodule.exports = { addProject, getAllProjects, getProjectById };\n"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst healthRouter = require('./modules/health/routes');\nconst projectsRouter = require('./modules/projects/routes');\nconst membersRouter = require('./modules/members/routes');\nconst tasksRouter = require('./modules/tasks/routes');\nconst commentsRouter = require('./modules/comments/routes');\n\nconst app = express();\napp.use(express.json());\n\napp.use('/health', healthRouter);\napp.use('/projects', projectsRouter);\n\n// Middleware to set projectId for nested routes\napp.use('/projects/:projectId/members', (req, res, next) => {\n  req.projectId = req.params.projectId;\n  next();\n});\napp.use('/projects/:projectId/tasks', (req, res, next) => {\n  req.projectId = req.params.projectId;\n  next();\n});\n\napp.use('/projects/:projectId/members', membersRouter);\napp.use('/projects/:projectId/tasks', tasksRouter);\n\n// Middleware to set taskId for nested routes\napp.use('/projects/:projectId/tasks/:taskId/comments', (req, res, next) => {\n  req.taskId = req.params.taskId;\n  next();\n});\n\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRouter);\n\nmodule.exports = app;\n"
+    }
+  ],
+  "mode": "patch"
+}

@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst { getTasks, createTask, updateTaskStatus } = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.get('/', (req, res) => {\n  const statusFilter = req.query.status;\n  const tasks = getTasks(statusFilter);\n  if (tasks === null) {\n    return sendError(res, 404, 'NOT_FOUND', 'Project not found');\n  }\n  res.json({ tasks });\n});\n\nrouter.post('/', (req, res) => {\n  const { title } = req.body;\n  if (!title) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Title is required');\n  }\n  const task = createTask(req.projectId, title);\n  res.status(201).json({ task });\n});\n\nrouter.patch('/:taskId', (req, res) => {\n  const { status } = req.body;\n  if (!status || !['todo', 'done'].includes(status)) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Status must be either todo or done');\n  }\n  const task = updateTaskStatus(req.projectId, req.params.taskId, status);\n  if (task === null) {\n    return sendError(res, 404, 'NOT_FOUND', 'Task not found');\n  }\n  res.json({ task });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst projectsStore = require('../projects/store');\n\nfunction getTasks(projectId, statusFilter) {\n  const project = projectsStore.getProjectById(projectId);\n  if (!project) return null;\n  if (statusFilter) {\n    return project.tasks.filter(task => task.status === statusFilter);\n  }\n  return project.tasks;\n}\n\nfunction createTask(projectId, title) {\n  const project = projectsStore.getProjectById(projectId);\n  const newTask = { id: randomUUID(), title, status: 'todo' };\n  project.tasks.push(newTask);\n  return newTask;\n}\n\nfunction updateTaskStatus(projectId, taskId, status) {\n  const project = projectsStore.getProjectById(projectId);\n  if (!project) return null;\n  const task = project.tasks.find(task => task.id === taskId);\n  if (task) {\n    task.status = status;\n  }\n  return task;\n}\n\nmodule.exports = { getTasks, createTask, updateTaskStatus };\n"
+    }
+  ],
+  "notes": "Updated tasks routes and service to handle task creation with 'todo' status by default, updating task status to either 'todo' or 'done', and filtering tasks based on the 'status' query parameter."
+}

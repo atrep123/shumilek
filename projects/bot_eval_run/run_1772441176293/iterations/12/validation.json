@@ -1,0 +1,15 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for project detail endpoint /projects/:projectId",
+    "State-sharing mismatch: members service should reuse shared projects repository, not isolated members map/array",
+    "Route-service contract mismatch (projects): routes call projectsService.createProject() but service does not export \"createProject\".",
+    "Route-service contract mismatch (members): routes call membersService.addMember() but service does not export \"addMember\".",
+    "Route-service contract mismatch (tasks): routes call tasksService.createTask() but service does not export \"createTask\".",
+    "Route-service contract mismatch (tasks): routes call tasksService.updateTaskStatus() but service does not export \"updateTaskStatus\".",
+    "Route-service contract mismatch (tasks): routes call tasksService.getTasksByProjectId() but service does not export \"getTasksByProjectId\".",
+    "Route-service contract mismatch (comments): routes call commentsService.addComment() but service does not export \"addComment\".",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

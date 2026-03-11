@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Route-service contract mismatch (projects): routes call projectsService.getAllProjects() but service does not export \"getAllProjects\".",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

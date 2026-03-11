@@ -1,0 +1,56 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Project Management API\nThis is a simple in-memory project management API built with Node.js and Express.\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"project-management-api\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple in-memory project management API\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.18.2\",\n    \"supertest\": \"^6.3.3\"\n  }\n}\n"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst app = express();\n\napp.use(express.json());\n\n// Health endpoint\napp.get('/health', (req, res) => {\n  res.status(200).json({ ok: true });\n});\n\n// Import project routes\nconst projectRoutes = require('./modules/projects/routes');\napp.use('/projects', projectRoutes);\n\nmodule.exports = { app };\n"
+    },
+    {
+      "path": "src/server.js",
+      "content": "const { app } = require('./app');\n\nconst PORT = process.env.PORT || 3000;\n\napp.listen(PORT, () => {\n  console.log(`Server is running on port ${PORT}`);\n});\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst { createProject, getProjects, getProjectById } = require('./service');\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const project = createProject(req.body);\n  if (!project) {\n    return res.status(400).json({ error: { code: 'INVALID_NAME', message: 'Name is required' } });\n  }\n  res.status(201).json({ project });\n});\n\nrouter.get('/', (req, res) => {\n  const projects = getProjects();\n  res.status(200).json({ projects });\n});\n\nrouter.get('/:projectId', (req, res) => {\n  const project = getProjectById(req.params.projectId);\n  if (!project) {\n    return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Project not found' } });\n  }\n  res.status(200).json({ project });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { generateId, createError } = require('../../lib');\n\nlet projects = [];\n\nfunction createProject(data) {\n  if (!data.name) return null;\n  const project = { id: generateId(), name: data.name, members: [], tasks: [] };\n  projects.push(project);\n  return project;\n}\n\nfunction getProjects() {\n  return projects;\n}\n\nfunction getProjectById(id) {\n  return projects.find(p => p.id === id);\n}\n\nmodule.exports = { createProject, getProjects, getProjectById };\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst { addMemberToProject } = require('./service');\nconst router = express.Router();\n\nrouter.post('/:projectId', (req, res) => {\n  const member = addMemberToProject(req.params.projectId, req.body);\n  if (!member) {\n    return res.status(400).json({ error: { code: 'INVALID_DATA', message: 'Invalid data' } });\n  }\n  if (member.error) {\n    return res.status(member.statusCode).json({ error: member.error });\n  }\n  res.status(201).json({ member });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { createError } = require('../../lib');\nlet projects = require('../projects/service').getProjects();\n\nfunction addMemberToProject(projectId, data) {\n  const project = projects.find(p => p.id === projectId);\n  if (!project) return createError(404, 'NOT_FOUND', 'Project not found');\n  if (!data.userId || !data.role) return null;\n  const memberExists = project.members.some(m => m.userId === data.userId);\n  if (memberExists) return createError(409, 'DUPLICATE_MEMBER', 'Member already exists in the project');\n  const member = { userId: data.userId, role: data.role };\n  project.members.push(member);\n  return member;\n}\n\nmodule.exports = { addMemberToProject };\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst { createTask, getTasksByProjectId, updateTaskStatus } = require('./service');\nconst router = express.Router();\n\nrouter.post('/:projectId', (req, res) => {\n  const task = createTask(req.params.projectId, req.body);\n  if (!task) {\n    return res.status(400).json({ error: { code: 'INVALID_TITLE', message: 'Title is required' } });\n  }\n  if (task.error) {\n    return res.status(task.statusCode).json({ error: task.error });\n  }\n  res.status(201).json({ task });\n});\n\nrouter.get('/:projectId', (req, res) => {\n  const tasks = getTasksByProjectId(req.params.projectId, req.query.status);\n  if (!tasks) {\n    return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Project not found' } });\n  }\n  res.status(200).json({ tasks });\n});\n\nrouter.patch('/:projectId/:taskId', (req, res) => {\n  const task = updateTaskStatus(req.params.projectId, req.params.taskId, req.body);\n  if (!task) {\n    return res.status(400).json({ error: { code: 'INVALID_STATUS', message: 'Invalid status' } });\n  }\n  if (task.error) {\n    return res.status(task.statusCode).json({ error: task.error });\n  }\n  res.status(200).json({ task });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { generateId, createError } = require('../../lib');\nlet projects = require('../projects/service').getProjects();\n\nfunction createTask(projectId, data) {\n  const project = projects.find(p => p.id === projectId);\n  if (!project) return createError(404, 'NOT_FOUND', 'Project not found');\n  if (!data.title) return null;\n  const task = { id: generateId(), title: data.title, status: 'pending' };\n  project.tasks.push(task);\n  return task;\n}\n\nfunction getTasksByProjectId(projectId, status) {\n  const project = projects.find(p => p.id === projectId);\n  if (!project) return null;\n  let tasks = project.tasks;\n  if (status) {\n    tasks = tasks.filter(t => t.status === status);\n  }\n  return tasks;\n}\n\nfunction updateTaskStatus(projectId, taskId, data) {\n  const project = projects.find(p => p.id === projectId);\n  if (!project) return createError(404, 'NOT_FOUND', 'Project not found');\n  const task = project.tasks.find(t => t.id === taskId);\n  if (!task) return createError(404, 'NOT_FOUND', 'Task not found');\n  if (!['pending', 'done'].includes(data.status)) return null;\n  task.status = data.status;\n  return task;\n}\n\nmodule.exports = { createTask, getTasksByProjectId, updateTaskStatus };\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst { addCommentToTask } = require('./service');\nconst router = express.Router();\n\nrouter.post('/:projectId/:taskId', (req, res) => {\n  const comment = addCommentToTask(req.params.projectId, req.params.taskId, req.body);\n  if (!comment) {\n    return res.status(400).json({ error: { code: 'INVALID_MESSAGE', message: 'Message is required' } });\n  }\n  if (comment.error) {\n    return res.status(comment.statusCode).json({ error: comment.error });\n  }\n  res.status(201).json({ comment });\n});\n\nrouter.get('/:projectId/:taskId', (req, res) => {\n  const comments = getCommentsByTaskId(req.params.projectId, req.params.taskId);\n  if (!comments) {\n    return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Task not found' } });\n  }\n  res.status(200).json({ comments });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { generateId, createError } = require('../../lib');\nlet projects = require('../projects/service').getProjects();\n\nfunction addCommentToTask(projectId, taskId, data) {\n  const project = projects.find(p => p.id === projectId);\n  if (!project) return createError(404, 'NOT_FOUND', 'Project not found');\n  const task = project.tasks.find(t => t.id === taskId);\n  if (!task) return createError(404, 'NOT_FOUND', 'Task not found');\n  if (!data.message) return null;\n  const comment = { id: generateId(), message: data.message };\n  task.comments = task.comments || [];\n  task.comments.push(comment);\n  return comment;\n}\n\nfunction getCommentsByTaskId(projectId, taskId) {\n  const project = projects.find(p => p.id === projectId);\n  if (!project) return null;\n  const task = project.tasks.find(t => t.id === taskId);\n  if (!task) return null;\n  return task.comments || [];\n}\n\nmodule.exports = { addCommentToTask, getCommentsByTaskId };\n"
+    },
+    {
+      "path": "src/lib/index.js",
+      "content": "function generateId() {\n  return Math.random().toString(36).substr(2, 9);\n}\n\nfunction createError(statusCode, code, message) {\n  return { statusCode, error: { code, message } };\n}\n\nmodule.exports = { generateId, createError };\n"
+    }
+  ]
+}

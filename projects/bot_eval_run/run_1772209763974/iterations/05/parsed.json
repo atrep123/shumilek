@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Mini AI Project\nA simple character-level Markov chain generator using only the standard Python library.\n\n## Usage\n- Train the model: `python -m mini_ai.cli train <input_text_file>\n- Generate text: `python -m mini_ai.cli generate <length> --seed <optional_seed_string>\n"
+    },
+    {
+      "path": "mini_ai/__init__.py",
+      "content": "from . import cli\n"
+    },
+    {
+      "path": "mini_ai/cli.py",
+      "content": "from __future__ import annotations\n\nimport argparse\nimport json\n\nfrom mini_ai.markov import MarkovChain\n\ndef _save_model(model: MarkovChain, path: str) -> None:\n    with open(path, 'w', encoding='utf-8') as f:\n        json.dump(model.to_dict(), f, ensure_ascii=False)\n\ndef _load_model(path: str) -> MarkovChain:\n    with open(path, 'r', encoding='utf-8') as f:\n        data = json.load(f)\n    return MarkovChain.from_dict(data)\n\ndef main(argv: list[str] | None = None) -> int:\n    parser = argparse.ArgumentParser(description='Character-level Markov chain generator.')\n    sub = parser.add_subparsers(dest='command')\n\n    p_train = sub.add_parser('train', help='Train a model')\n    p_train.add_argument('--input', required=True)\n    p_train.add_argument('--model-out', required=True)\n    p_train.add_argument('--order', type=int, default=1)\n\n    p_generate = sub.add_parser('generate', help='Generate text')\n    p_generate.add_argument('--model', required=True)\n    p_generate.add_argument('--length', type=int, required=True)\n    p_generate.add_argument('--seed', default=None)\n    p_generate.add_argument('--random-seed', type=int, default=None)\n\n    args = parser.parse_args(argv)\n\n    if args.command == 'train':\n        with open(args.input, 'r', encoding='utf-8') as f:\n            text = f.read()\n        model = MarkovChain(order=args.order)\n        model.train(text)\n        _save_model(model, args.model_out)\n        return 0\n\n    if args.command == 'generate':\n        model = _load_model(args.model)\n        print(model.generate(length=args.length, seed=args.seed, random_seed=args.random_seed))\n        return 0\n\n    parser.print_help()\n    return 0\n\nif __name__ == '__main__':\n    raise SystemExit(main())\n"
+    }
+  ],
+  "notes": "Added README.md, mini_ai/__init__.py, and mini_ai/cli.py to address the missing files and command execution issues."
+}

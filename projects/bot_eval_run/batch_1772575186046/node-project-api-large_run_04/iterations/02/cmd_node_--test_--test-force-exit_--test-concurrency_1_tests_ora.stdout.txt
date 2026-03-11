@@ -1,0 +1,31 @@
+✔ health + empty project list (82.6748ms)
+✖ project create/list/get + duplicate + validation (19.0705ms)
+✖ members endpoints (4.9165ms)
+✖ tasks create/list/filter + patch status (25.8879ms)
+✖ comments + not-found and payload contract (4.4212ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 1
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 290.214
+
+✖ failing tests:
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (19.0705ms)
+  { code: 'invalid_input', message: 'Name is required' }
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (4.9165ms)
+  { code: 'invalid_input', message: 'Name is required' }
+
+test at tests\oracle.test.js:122:1
+✖ tasks create/list/filter + patch status (25.8879ms)
+  { code: 'invalid_input', message: 'Name is required' }
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (4.4212ms)
+  { code: 'invalid_input', message: 'Name is required' }

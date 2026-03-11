@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-03-03T01:59:25.501539Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/modules/members/service.js\",\n      \"content\": \"// src/modules/members/service.js\\nconst { randomUUID } = require('node:crypto');\\nconst { sendError } = require('../../lib/errors');\\n\\nlet projectsRepository = {};\\n\\nfunction addProject(projectId) {\\n  if (!projectsRepository[projectId]) {\\n    projectsRepository[projectId] = { members: [] };\\n  }\\n}\\n\\nfunction getMembersByProjectId(projectId) {\\n  return projectsRepository[projectId]?.members || [];\\n}\\n\\nfunction addMemberToProject(projectId, userId, role) {\\n  if (!userId || !role) {\\n    return null;\\n  }\\n\\n  const members = getMembersByProjectId(projectId);\\n  const existingMember = members.find(member => member.userId === userId);\\n\\n  if (existingMember) {\\n    return null;\\n  }\\n\\n  const newMember = { id: randomUUID(), userId, role };\\n  projectsRepository[projectId].members.push(newMember);\\n  return newMember;\\n}\\n\\nmodule.exports = {\\n  addProject,\\n  getMembersByProjectId,\\n  addMemberToProject,\\n};\\n\"\n    }\n  ],\n  \"notes\": \"Updated members service to reuse the shared projects repository and enforce duplicate check per project.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 10806712900,
+  "load_duration": 65777500,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 995089100,
+  "eval_count": 305,
+  "eval_duration": 3675481900
+}

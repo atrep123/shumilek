@@ -1,0 +1,10 @@
+{
+  "model": "qwen2.5:3b",
+  "baseUrl": "http://localhost:11434",
+  "timeoutMs": 90000,
+  "transport": "generate",
+  "formatKind": "json",
+  "schemaUsed": false,
+  "fallbackUsed": true,
+  "fallbackReason": "request to http://localhost:11434/api/chat failed, reason: "
+}

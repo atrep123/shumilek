@@ -1,0 +1,8 @@
+  "dependencies": {
+    "express": "^4.17.1",
+    "crypto": "^1.0.0",
+    "supertest": "^6.3.3"
+  },
+  "devDependencies": {
+    "supertest": "^6.3.3"
+  }

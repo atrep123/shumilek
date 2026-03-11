@@ -1,0 +1,38 @@
+{
+  "generatedAt": "2026-03-06T01:06:21.798Z",
+  "window": 10,
+  "inputs": [
+    "C:\\actions-runner\\bot_eval_run\\release_gate_ci_nightly_22742147951_1",
+    "C:\\actions-runner\\bot_eval_run\\release_gate_ci_nightly_22740585852_1"
+  ],
+  "baselineDir": "C:\\actions-runner\\release_gate_stable_longrunC_20260224_075013",
+  "scenarios": [
+    {
+      "scenario": "node-api-oracle",
+      "latencyRatioP95": 0.9972615897084819,
+      "recommendedLatencyMultiplier": 1.15,
+      "samples": 2
+    },
+    {
+      "scenario": "python-ai-stdlib-oracle",
+      "latencyRatioP95": 1.0224460772694952,
+      "recommendedLatencyMultiplier": 1.18,
+      "samples": 2
+    },
+    {
+      "scenario": "ts-todo-oracle",
+      "latencyRatioP95": 1.008694880667199,
+      "recommendedLatencyMultiplier": 1.16,
+      "samples": 2
+    }
+  ],
+  "readiness": {
+    "ready_to_tighten_pr": false,
+    "reason_if_not_ready": "release_gate_ci_nightly_22739312889_1: nightly run is missing required completion artifacts",
+    "last3NightlyRunIds": [
+      "22742147951",
+      "22740585852",
+      "22739312889"
+    ]
+  }
+}

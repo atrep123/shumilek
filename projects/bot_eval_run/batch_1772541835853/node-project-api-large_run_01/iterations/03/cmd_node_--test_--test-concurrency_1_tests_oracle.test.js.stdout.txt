@@ -1,0 +1,53 @@
+✔ health + empty project list (90.2076ms)
+✔ project create/list/get + duplicate + validation (30.9027ms)
+✖ members endpoints (9.237ms)
+✔ tasks create/list/filter + patch status (21.7309ms)
+✖ comments + not-found and payload contract (9.2413ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 3
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 339.0083
+
+✖ failing tests:
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (9.237ms)
+  AssertionError [ERR_ASSERTION]: {"error":{"code":"INTERNAL_ERROR","message":"Cannot read properties of null (reading 'status')"}}
+  
+  500 !== 400
+  
+      at expectErrorPayload (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772541835853\node-project-api-large_run_01\workspace\tests\oracle.test.js:43:10)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772541835853\node-project-api-large_run_01\workspace\tests\oracle.test.js:102:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 400,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (9.2413ms)
+  AssertionError [ERR_ASSERTION]: {"error":{"code":"INTERNAL_ERROR","message":"Cannot destructure property 'message' of 'undefined' as it is undefined."}}
+  
+  500 !== 400
+  
+      at expectErrorPayload (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772541835853\node-project-api-large_run_01\workspace\tests\oracle.test.js:43:10)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772541835853\node-project-api-large_run_01\workspace\tests\oracle.test.js:176:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 400,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

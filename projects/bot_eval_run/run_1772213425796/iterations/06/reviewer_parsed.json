@@ -1,0 +1,26 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Mini AI Project\n\nThis is a simple Python project for implementing a character-level Markov chain generator. It includes CLI commands to train and generate text, as well as unit tests.\n"
+    },
+    {
+      "path": "mini_ai/__init__.py",
+      "content": "from .markov_chain import MarkovChain\nfrom .cli import cli"
+    },
+    {
+      "path": "mini_ai/markov_chain.py",
+      "content": "import json\n\nfrom typing import Dict, List, Tuple\n\nMARKOV_CHAIN_DEFAULT_ORDER = 1\n\nclass MarkovChain:\n    def __init__(self, order: int = MARKOV_CHAIN_DEFAULT_ORDER):\n        self.order = order\n        self.chain: Dict[Tuple[str, ...], str] = {}\n\n    def train(self, text: str) -> None:\n        words = text.split()\n        for i in range(len(words) - self.order):\n            key = tuple(words[i:i + self.order])\n            value = words[i + self.order]\n            if key not in self.chain:\n                self.chain[key] = []\n            self.chain[key].append(value)\n\n    def generate(self, length: int, seed: str | None = None, random_seed: int | None = None) -> str:\n        words = [seed or ''] if seed else ['a' * self.order]\n        for _ in range(length):\n            key = tuple(words[-self.order:])\n            if key not in self.chain:\n                break\n            choices = self.chain[key]\n            value = choices[random.randint(0, len(choices) - 1)] if random_seed else choices[0]\n            words.append(value)\n        return ''.join(words)\n\n    def to_dict(self) -> Dict[str, str]:\n        return {str(key): value for key, value in self.chain.items()}\n\n    @classmethod\n    def from_dict(cls, data: Dict[str, str]) -> 'MarkovChain':\n        chain = cls()\n        for key, value in data.items():\n            chain.add_key_value(key, value)\n        return chain"
+    },
+    {
+      "path": "mini_ai/cli.py",
+      "content": "import argparse\nfrom typing import List, Tuple\n\nMARKOV_CHAIN_DEFAULT_ORDER = 1\n\ndef cli(argv: List[str] | None = None) -> int:\n    parser = argparse.ArgumentParser(description='Character-level Markov chain generator.')\n    sub = parser.add_subparsers(dest='command')\n\n    p_train = sub.add_parser('train', help='Train a model')\n    p_train.add_argument('--input', required=True)\n    p_train.add_argument('--model-out', required=True)\n    p_train.add_argument('--order', type=int, default=MARKOV_CHAIN_DEFAULT_ORDER)\n\n    p_generate = sub.add_parser('generate', help='Generate text')\n    p_generate.add_argument('--model', required=True)\n    p_generate.add_argument('--length', type=int, required=True)\n    p_generate.add_argument('--seed', default=None)\n    p_generate.add_argument('--random-seed', type=int, default=None)\n\n    args = parser.parse_args(argv)\n\n    if args.command == 'train':\n        with open(args.input, 'r', encoding='utf-8') as f:\n            text = f.read()\n        model = MarkovChain(order=args.order)\n        model.train(text)\n        _save_model(model, args.model_out)\n        return 0\n\n    if args.command == 'generate':\n        model = _load_model(args.model)\n        print(model.generate(length=args.length, seed=args.seed, random_seed=args.random_seed))\n        return 0\n\n    parser.print_help()\n    return 0"
+    },
+    {
+      "path": "tests/test_markov_chain.py",
+      "content": "import unittest\nfrom mini_ai.markov_chain import MarkovChain\n\nMARKOV_CHAIN_DEFAULT_ORDER = 1\n\nclass TestMarkovChain(unittest.TestCase):\n    def test_train(self):\n        mc = MarkovChain(order=2)\n        mc.train('hello world')\n        self.assertIn(('he',), mc.chain)\n        self.assertIn(('lo',), mc.chain)\n        self.assertIn(('or',), mc.chain)\n\n    def test_generate(self):\n        mc = MarkovChain(order=1)\n        mc.train('abracadabra')\n        generated_text = mc.generate(length=10, random_seed=42)\n        self.assertEqual(len(generated_text), 10)\n\n    def test_to_dict_and_from_dict(self):\n        mc = MarkovChain(order=2)\n        mc.train('hello world')\n        data = mc.to_dict()\n        new_mc = MarkovChain.from_dict(data)\n        self.assertEqual(new_mc.order, mc.order)\n        self.assertEqual(new_mc.chain, mc.chain)\n\n    def test_seed(self):\n        mc = MarkovChain(order=1)\n        mc.train('abracadabra')\n        generated_text_1 = mc.generate(length=10, seed='a', random_seed=42)\n        generated_text_2 = mc.generate(length=10, seed='a', random_seed=42)\n        self.assertEqual(generated_text_1, generated_text_2)"
+    }
+  ],
+  "notes": "Add missing files and ensure tests pass."
+}

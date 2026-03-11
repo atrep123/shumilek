@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('../../lib/id');\n\nlet tasksStore = [];\n\nconst createTask = (projectId, title) => {\n  const taskId = randomUUID();\n  const task = { id: taskId, projectId, title, status: 'todo' };\n  tasksStore.push(task);\n  return Promise.resolve(task);\n};\n\nconst getTasks = (projectId) => {\n  const tasks = tasksStore.filter(task => task.projectId === projectId);\n  return Promise.resolve(tasks);\n};\n\nconst updateTaskStatus = (taskId, status) => {\n  if (!['todo', 'done'].includes(status)) {\n    return Promise.reject({ code: 'INVALID_STATUS', message: 'Invalid task status' });\n  }\n  const task = tasksStore.find(task => task.id === taskId);\n  if (!task) {\n    return Promise.reject({ code: 'TASK_NOT_FOUND', message: 'Task not found' });\n  }\n  task.status = status;\n  return Promise.resolve(task);\n};\n\nmodule.exports = { createTask, getTasks, updateTaskStatus };\n"
+    }
+  ],
+  "notes": "Updated the tasks service to use 'todo' as the default status and handle invalid statuses by returning a domain error."
+}

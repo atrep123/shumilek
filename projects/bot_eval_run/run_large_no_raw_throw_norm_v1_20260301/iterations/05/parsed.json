@@ -1,0 +1,29 @@
+{
+  "files": [
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { validateComment } = require('./service');\n\nrouter.post('/:projectId/tasks/:taskId/comments', async (req, res) => {\n  const commentData = req.body;\n  if (!commentData.message) return sendError(res, 400, 'MissingMessage', 'Comment message is required');\n  try {\n    const newComment = await validateComment(commentData);\n    res.status(201).json({ comment: newComment });\n  } catch (error) {\n    sendError(res, error.status || 500, error.code || 'InternalError', error.message);\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst { sendError } = require('../../lib/errors');\n\nconst validateComment = (commentData) => {\n  if (!commentData.message) throw new BadRequestError('Comment message is required');\n  return { id: randomUUID(), ...commentData };\n};\n\nexports.validateComment = validateComment;\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { createProject, getProjects } = require('./service');\n\nrouter.post('/', async (req, res) => {\n  const projectData = req.body;\n  if (!projectData.name) return sendError(res, 400, 'InvalidName', 'Project name is required');\n  try {\n    const newProject = await createProject(projectData);\n    res.status(201).json({ project: newProject });\n  } catch (error) {\n    sendError(res, error.status || 500, error.code || 'InternalError', error.message);\n  }\n});\n\nrouter.get('/', async (req, res) => {\n  try {\n    const projects = await getProjects();\n    res.json({ projects });\n  } catch (error) {\n    sendError(res, error.status || 500, error.code || 'InternalError', error.message);\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst { sendError } = require('../../lib/errors');\nconst projects = [];\n\nexports.createProject = async (projectData) => {\n  if (!projectData.name) throw new BadRequestError('Invalid project data');\n  const newProject = { id: randomUUID(), ...projectData };\n  projects.push(newProject);\n  return newProject;\n};\nexports.getProjects = async () => projects;\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { createTask, getTasksByStatus } = require('./service');\n\nrouter.post('/:projectId/tasks', async (req, res) => {\n  const taskData = req.body;\n  if (!taskData.name) return sendError(res, 400, 'InvalidTaskName', 'Task name is required');\n  try {\n    const newTask = await createTask(taskData);\n    res.status(201).json({ task: newTask });\n  } catch (error) {\n    sendError(res, error.status || 500, error.code || 'InternalError', error.message);\n  }\n});\n\nrouter.patch('/:projectId/tasks/:taskId', async (req, res) => {\n  const taskData = req.body;\n  if (!['todo', 'done'].includes(taskData.status)) return sendError(res, 400, 'InvalidStatus', 'Task status must be todo or done');\n  try {\n    const updatedTask = await updateTaskStatus(req.params.projectId, req.params.taskId, taskData);\n    res.json({ task: updatedTask });\n  } catch (error) {\n    sendError(res, error.status || 500, error.code || 'InternalError', error.message);\n  }\n});\n\nrouter.get('/:projectId/tasks', async (req, res) => {\n  try {\n    const tasks = await getTasksByStatus(req.params.projectId, req.query.status);\n    res.json({ tasks });\n  } catch (error) {\n    sendError(res, error.status || 500, error.code || 'InternalError', error.message);\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst { sendError } = require('../../lib/errors');\nconst projectsTasks = {};\n\nexports.createTask = async (taskData) => {\n  if (!taskData.name) throw new BadRequestError('Invalid task data');\n  const projectId = taskData.projectId;\n  if (!projectsTasks[projectId]) projectsTasks[projectId] = [];\n  const newTask = { id: randomUUID(), status: 'todo', ...taskData };\n  projectsTasks[projectId].push(newTask);\n  return newTask;\n};\nexports.getTasksByStatus = async (projectId, status) => {\n  if (!projectsTasks[projectId]) throw new NotFoundError('Project not found');\n  const tasks = projectsTasks[projectId].filter(task => task.status === status);\n  return tasks;\n};\n"
+    }
+  ],
+  "notes": "Added routes for comments, updated project and task services with validation logic."
+}

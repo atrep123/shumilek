@@ -1,0 +1,32 @@
+{
+  "attempts": [
+    {
+      "stage": "timeout_model_fallback",
+      "model": "qwen2.5-coder:7b",
+      "ok": false,
+      "error": "Structured chat failed: The user aborted a request.",
+      "errorKind": "other"
+    },
+    {
+      "stage": "timeout_model_fallback",
+      "model": "qwen2.5:7b",
+      "ok": false,
+      "error": "request to http://localhost:11434/api/generate failed, reason: ",
+      "errorKind": "other"
+    },
+    {
+      "stage": "timeout_model_fallback",
+      "model": "qwen2.5:3b",
+      "ok": false,
+      "error": "request to http://localhost:11434/api/generate failed, reason: ",
+      "errorKind": "other"
+    }
+  ],
+  "finalOk": false,
+  "appliedFixes": [],
+  "skippedFixes": [],
+  "primaryError": "Structured chat failed: The user aborted a request.; timeout-model-fallback chain failed: qwen2.5-coder:7b: Structured chat failed: The user aborted a request. | qwen2.5:7b: request to http://localhost:11434/api/generate failed, reason:  | qwen2.5:3b: request to http://localhost:11434/api/generate failed, reason: ",
+  "primaryErrorKind": "other",
+  "finalError": "Structured chat failed: The user aborted a request.; timeout-model-fallback chain failed: qwen2.5-coder:7b: Structured chat failed: The user aborted a request. | qwen2.5:7b: request to http://localhost:11434/api/generate failed, reason:  | qwen2.5:3b: request to http://localhost:11434/api/generate failed, reason: ",
+  "finalErrorKind": "other"
+}

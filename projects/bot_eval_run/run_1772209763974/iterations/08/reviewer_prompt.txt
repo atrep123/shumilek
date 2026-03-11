@@ -1,0 +1,129 @@
+Jsi code reviewer (mini-validator). Tvuj ukol: navrhnout MINIMALNI opravy, ktere povedou k tomu, ze validace projde.
+Odpovez JEN JSON bez markdownu: { "review": "text", "priorityFiles": ["path1","path2"] }
+
+SPEC (zkraceno):
+Vytvor maly, ale realisticky Python projekt pro "AI" bez externich zavislosti.
+
+Pozadavky:
+- Pouze standardni knihovna Pythonu (zadne numpy/pandas/sklearn/torch/tensorflow/requests).
+- Struktura projektu jako balicek `mini_ai/` + `tests/` + `README.md`.
+- Implementuj jednoduchy model: napr. character-level Markov chain generator + trenovani z textu.
+- Pridat CLI: `python -m mini_ai.cli --help`, `train`, `generate` (offline).
+- Unit testy pres `unittest` (aspon 8 testu / assertu) a musi prochazet.
+
+VYSTUPNI FORMAT (STRICT): vrat JEN JSON objekt tohoto tvaru:
+{
+  "mode": "full",
+  "files": [
+    {"path": "README.md", "content": "...\n"},
+    {"path": "mini_ai/__init__.py", "content": "...\n"},
+    {"path": "mini_ai/...", "content": "...\n"},
+    {"path": "tests/test_....py", "content": "...\n"}
+  ],
+  "notes": "optional"
+}
+
+Pravidla:
+- Zadny markdown, zadne ``` bloky, zadny text mimo JSON.
+- Cesty jsou relativni, pouzij `/`, bez `..` a bez absolutnich cest.
+- Kazdy soubor ukonci znakem noveho radku.
+- "mode" pouzij "full" pro kompletni projekt (v pripade oprav muzes pouzit "patch").
+- `content` je vzdy kompletni obsah souboru (ne diff/snippet).
+
+---
+PLANNER HINTS (planner: deepseek-r1:8b; non-binding, SPEC wins on conflict):
+- [x] Vytvořit strukturu projektu `mini_ai/` a `tests/`
+- [x] Implementovat `__init__.py` v `mini_ai/` s importem `cli`
+- [x] Implementovat `cli.py` pro příkazovou řádkovou interakci
+- [x] Implementovat `markov.py` pro generaci Markovovy řetězce
+- [x] Vytvořit `train` a `generate` funkce v `cli.py`
+- [x] Napsat jednotkové testy pro `markov.py` v `tests/test_markov.py`
+- [x] Napsat jednotkové testy pro `cli.py` v `tests/test_cli.py`
+- [x] Zkontrolovat, že jsou spuštěny a úspěšné
+- [x] Vytvořit `README.md` s informacemi o projekту
+
+
+CHYBY:
+- Missing required file: mini_ai/cli.py
+- Command failed: python -m unittest discover -v -s tests -p "test*.py" (exit=1, timedOut=false)
+- Command failed: python -m mini_ai.cli --help (exit=1, timedOut=false)
+
+LOGY (zkraceno):
+- python -m unittest discover -v -s tests -p "test*.py"
+  stderr: "Test.test_cli)\r\n----------------------------------------------------------------------\r\nImportError: Failed to import test module: test_cli\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\loader.py\", line 396, in _find_test_path\r\n    module = self._get_module_from_name(name)\r\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\loader.py\", line 339, in _get_module_from_name\r\n    __import__(name)\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\tests\\test_cli.py\", line 4, in <module>\r\n    from mini_ai.cli import main\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\mini_ai\\__init__.py\", line 1, in <module>\r\n    from . import cli\r\nImportError: cannot import name 'cli' from partially initialized module 'mini_ai' (most likely due to a circular import) (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\mini_ai\\__init__.py)\r\n\r\n\r\n======================================================================\r\nERROR: test_markov (unittest.loader._FailedTest.test_markov)\r\n----------------------------------------------------------------------\r\nImportError: Failed to import test module: test_markov\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\loader.py\", line 396, in _find_test_path\r\n    module = self._get_module_from_name(name)\r\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\loader.py\", line 339, in _get_module_from_name\r\n    __import__(name)\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\tests\\test_markov.py\", line 2, in <module>\r\n    from mini_ai.markov import MarkovChain\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\mini_ai\\__init__.py\", line 1, in <module>\r\n    from . import cli\r\nImportError: cannot import name 'cli' from partially initialized module 'mini_ai' (most likely due to a circular import) (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\mini_ai\\__init__.py)\r\n\r\n\r\n----------------------------------------------------------------------\r\nRan 2 tests in 0.000s\r\n\r\nFAILED (errors=2)\r\n"
+- python -m mini_ai.cli --help
+  stderr: "C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\python.exe: Error while finding module specification for 'mini_ai.cli' (ImportError: cannot import name 'cli' from partially initialized module 'mini_ai' (most likely due to a circular import) (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\mini_ai\\__init__.py))\r\n"
+
+SOUBORY (zkraceno):
+- README.md
+- mini_ai/__init__.py
+- mini_ai/__pycache__/__init__.cpython-312.pyc
+- tests/__pycache__/test_cli.cpython-312.pyc
+- tests/__pycache__/test_markov.cpython-312.pyc
+- tests/test_cli.py
+- tests/test_markov.py
+
+KONTEXT SOUBORU (zkraceno):
+--- FILE: tests/test_cli.py ---
+import unittest
+from unittest.mock import patch
+from io import StringIO
+from mini_ai.cli import main
+import os
+from mini_ai.markov import MarkovChain
+
+class TestCLI(unittest.TestCase):
+    @patch('sys.argv', ['script.py', 'train', '--input', 'test.txt', '--model-out', 'model.json'])
+    def test_train_command(self):
+        with open('test.txt', 'w') as f:
+            f.write("hello world")
+        main()
+        self.assertTrue(os.path.exists('model.json'))
+
+    @patch('sys.argv', ['script.py', 'generate', '--model', 'model.json', '--length', '5'])
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_generate_command(self, mock_stdout):
+        with open('model.json', 'w') as f:
+            import json
+            model = MarkovChain(order=1)
+            model.train("hello world")
+            json.dump(model.to_dict(), f)
+        main()
+        output = mock_stdout.getvalue().strip()
+        self.assertEqual(len(output), 5)
+
+--- FILE: mini_ai/__init__.py ---
+from . import cli
+
+--- FILE: tests/test_markov.py ---
+import unittest
+from mini_ai.markov import MarkovChain
+class TestMarkovChain(unittest.TestCase):
+    def test_train_and_generate(self):
+        text = "hello world"
+        model = MarkovChain(order=1)
+        model.train(text)
+        generated_text = model.generate(length=5, random_seed=42)
+        self.assertEqual(len(generated_text), 5)
+
+    def test_to_dict_and_from_dict(self):
+        text = "hello world"
+        model = MarkovChain(order=1)
+        model.train(text)
+        data = model.to_dict()
+        new_model = MarkovChain.from_dict(data)
+        self.assertEqual(model.chain, new_model.chain)
+
+    def test_generate_with_seed(self):
+        text = "hello world"
+        model = MarkovChain(order=1)
+        model.train(text)
+        generated_text = model.generate(length=5, seed="he", random_seed=42)
+        self.assertTrue(generated_text.startswith("he"))
+
+    def test_generate_with_longer_seed(self):
+        text = "hello world"
+        model = MarkovChain(order=1)
+        model.train(text)
+        generated_text = model.generate(length=5, seed="hello", random_seed=42)
+        self.assertTrue(generated_text.startswith("hello"))

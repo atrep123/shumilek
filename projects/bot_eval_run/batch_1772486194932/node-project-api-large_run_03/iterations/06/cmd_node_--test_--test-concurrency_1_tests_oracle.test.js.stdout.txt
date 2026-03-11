@@ -1,0 +1,80 @@
+✔ health + empty project list (84.0956ms)
+✖ project create/list/get + duplicate + validation (30.1115ms)
+✖ members endpoints (11.0986ms)
+✖ tasks create/list/filter + patch status (6.4334ms)
+✖ comments + not-found and payload contract (6.1371ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 1
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 306.4655
+
+✖ failing tests:
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (30.1115ms)
+  AssertionError [ERR_ASSERTION]: {"project":{"id":"0d4abdc7-3793-4e87-9feb-dcb49fe0a442","name":"Alpha","members":[],"tasks":[]}}
+  
+  201 !== 409
+  
+      at expectErrorPayload (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772486194932\node-project-api-large_run_03\workspace\tests\oracle.test.js:43:10)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772486194932\node-project-api-large_run_03\workspace\tests\oracle.test.js:89:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 201,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (11.0986ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  'undefined' !== 'u-1'
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772486194932\node-project-api-large_run_03\workspace\tests\oracle.test.js:108:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'u-1',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:122:1
+✖ tasks create/list/filter + patch status (6.4334ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'Prepare spec'
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772486194932\node-project-api-large_run_03\workspace\tests\oracle.test.js:135:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'Prepare spec',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (6.1371ms)
+  TypeError: Cannot read properties of null (reading 'id')
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772486194932\node-project-api-large_run_03\workspace\tests\oracle.test.js:171:40)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)

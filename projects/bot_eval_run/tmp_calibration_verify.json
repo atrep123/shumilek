@@ -1,0 +1,35 @@
+{
+  "generatedAt": "2026-03-05T23:04:20.895Z",
+  "window": 10,
+  "inputs": [
+    "C:\\actions-runner\\bot_eval_run\\release_gate_ci_nightly_22739312889_1"
+  ],
+  "baselineDir": "C:\\actions-runner\\release_gate_stable_longrunC_20260224_075013",
+  "scenarios": [
+    {
+      "scenario": "node-api-oracle",
+      "latencyRatioP95": 1.0035919903673949,
+      "recommendedLatencyMultiplier": 1.16,
+      "samples": 1
+    },
+    {
+      "scenario": "python-ai-stdlib-oracle",
+      "latencyRatioP95": 1.0226356956624794,
+      "recommendedLatencyMultiplier": 1.18,
+      "samples": 1
+    },
+    {
+      "scenario": "ts-todo-oracle",
+      "latencyRatioP95": 0.895618901855749,
+      "recommendedLatencyMultiplier": 1.03,
+      "samples": 1
+    }
+  ],
+  "readiness": {
+    "ready_to_tighten_pr": false,
+    "reason_if_not_ready": "Need at least 3 nightly runs for readiness, found 1.",
+    "last3NightlyRunIds": [
+      "22739312889"
+    ]
+  }
+}

@@ -1,0 +1,180 @@
+[
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 1,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 202061,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_large_hybrid_14b_v4_autorestart_20260305\\node-project-api-large_run_01",
+    "diagnostics": [
+      "[infra:ollama_unreachable] Cannot reach Ollama preflight endpoint (/api/tags).",
+      "Ollama request failed: request to http://localhost:11434/api/generate failed, reason: "
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 10,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 10
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    },
+    "infraFailure": {
+      "kind": "ollama_unreachable",
+      "message": "Cannot reach Ollama preflight endpoint (/api/tags).",
+      "source": "validation"
+    }
+  },
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 2,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 507471,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_large_hybrid_14b_v4_autorestart_20260305\\node-project-api-large_run_02",
+    "diagnostics": [
+      "JavaScript syntax check failed in src/modules/comments/service.js: C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_large_hybrid_14b_v4_autorestart_20260305\\node-project-api-large_run_02\\workspace\\src\\modules\\comments\\service.js:2",
+      "JavaScript syntax check failed in src/modules/members/service.js: C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_large_hybrid_14b_v4_autorestart_20260305\\node-project-api-large_run_02\\workspace\\src\\modules\\members\\service.js:2",
+      "JavaScript syntax check failed in src/modules/projects/service.js: C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_large_hybrid_14b_v4_autorestart_20260305\\node-project-api-large_run_02\\workspace\\src\\modules\\projects\\service.js:2",
+      "JavaScript syntax check failed in src/modules/tasks/service.js: C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_large_hybrid_14b_v4_autorestart_20260305\\node-project-api-large_run_02\\workspace\\src\\modules\\tasks\\service.js:2",
+      "Skipped oracle command checks because structural contract did not pass."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 0,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    },
+    "infraFailure": null
+  },
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 3,
+    "ok": true,
+    "exitCode": 0,
+    "durationMs": 133520,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_large_hybrid_14b_v4_autorestart_20260305\\node-project-api-large_run_03",
+    "diagnostics": [],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 0,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    },
+    "infraFailure": null
+  }
+]

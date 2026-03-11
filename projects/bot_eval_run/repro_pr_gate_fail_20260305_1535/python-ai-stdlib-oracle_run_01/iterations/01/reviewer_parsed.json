@@ -1,0 +1,21 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md",
+      "content": "...\nThis is a simple AI project for generating text using a character-level Markov chain generator.\n"
+    },
+    {
+      "path": "mini_ai/__init__.py",
+      "content": "...\n"
+    },
+    {
+      "path": "mini_ai/markov.py",
+      "content": "...\nfrom typing import Dict, Optional\n\nclass MarkovChain:\n    def __init__(self, order: int = 1):\n        self.order = order\n        self.transitions: Dict[str, Dict[str, int]] = {}\n\n    def train(self, text: str) -> None:\n        for i in range(len(text) - self.order):\n            context = text[i:i+self.order]\n            next_char = text[i+self.order]\n            if context not in self.transitions:\n                self.transitions[context] = {}\n            if next_char not in self.transitions[context]:\n                self.transitions[context][next_char] = 0\n            self.transitions[context][next_char] += 1\n\n    def generate(self, length: int, seed: str | None = None, random_seed: int | None = None) -> str:\n        if seed is None:\n            seed = self._generate_seed(length)\n        generated_text = seed\n        for _ in range(length - len(seed)):\n            context = generated_text[-self.order:]\n            if context not in self.transitions:\n                break\n            next_char = max(self.transitions[context], key=self.transitions[context].get)\n            generated_text += next_char\n        return generated_text\n\n    def _generate_seed(self, length: int) -> str:\n        seed = chr(random.randint(97, 122))\n        for _ in range(length - 1):\n            seed += chr(random.randint(97, 122))\n        return seed\n\n    def to_dict(self) -> Dict[str, Dict[str, int]]:\n        return self.transitions\n\n    @classmethod\ndef from_dict(cls, d: Dict[str, Dict[str, int]]) -> 'MarkovChain':\n    return cls(order=d['order'], transitions=d)\n"
+    },
+    {
+      "path": "mini_ai/cli.py",
+      "content": "...\nfrom argparse import ArgumentParser, ArgumentDefaultsHelpFormatter\nfrom mini_ai.markov import MarkovChain\n\nparser = ArgumentParser(description='Character-level Markov chain generator.', formatter_class=ArgumentDefaultsHelpFormatter)\nsubparsers = parser.add_subparsers(dest='command')\n\n# Train subcommand\ntrain_parser = subparsers.add_parser('train', help='Train a Markov chain model.')\ntrain_parser.add_argument('--input', required=True, help='Path to the input text file.')\ntrain_parser.add_argument('--model-out', required=True, help='Path to save the trained model.')\ntrain_parser.add_argument('--order', type=int, required=True, help='Order of the Markov chain.')\n\n# Generate subcommand\ngenerate_parser = subparsers.add_parser('generate', help='Generate text using a trained Markov chain model.')\ngenerate_parser.add_argument('--model', required=True, help='Path to the trained model file.')\ngenerate_parser.add_argument('--length', type=int, required=True, help='Length of the generated text.')\ngenerate_parser.add_argument('--seed', help='Seed character(s) to start the generation.')\ngenerate_parser.add_argument('--random-seed', type=int, help='Seed for the random number generator.')\n\nargs = parser.parse_args()\n\nif args.command == 'train':\n    with open(args.input, 'r', encoding='utf-8') as f:\n        text = f.read()\n    mc = MarkovChain(order=args.order)\n    mc.train(text)\n    with open(args.model_out, 'w', encoding='utf-8') as f:\n        json.dump(mc.to_dict(), f)\n    return 0\n\nelif args.command == 'generate':\n    with open(args.model, 'r', encoding='utf-8') as f:\n        d = json.load(f)\n    mc = MarkovChain.from_dict(d)\n    generated_text = mc.generate(length=args.length, seed=args.seed, random_seed=args.random_seed)\n    print(generated_text)\n    return 0\n\nelse:\n    parser.print_help()\n    return 1\n"
+    }
+  ]
+}

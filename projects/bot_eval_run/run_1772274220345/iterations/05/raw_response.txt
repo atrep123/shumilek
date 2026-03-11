@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"node-project\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple Node.js project with Express\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\",\n    \"test\": \"node --test tests/oracle.test.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.18.2\"\n  },\n  \"devDependencies\": {\n    \"supertest\": \"^6.3.3\"\n  }\n}\n"
+    },
+    {
+      "path": "src/lib/id.js",
+      "content": "const crypto = require('node:crypto');\n\nfunction generateId() {\n  return crypto.randomUUID();\n}\n\nmodule.exports = { generateId };\n"
+    }
+  ],
+  "notes": "Added supertest to devDependencies and fixed the id generation in src/lib/id.js."
+}

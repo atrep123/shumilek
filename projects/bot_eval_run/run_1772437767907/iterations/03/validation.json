@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing health endpoint declaration in src/app.*: expected app.get(\"/health\", ...).",
+    "State-sharing mismatch: tasks service should reuse shared projects repository, not a local `projects` map/array",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

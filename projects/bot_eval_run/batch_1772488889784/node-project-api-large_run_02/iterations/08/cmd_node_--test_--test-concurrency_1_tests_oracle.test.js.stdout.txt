@@ -1,0 +1,79 @@
+✔ health + empty project list (81.71ms)
+✔ project create/list/get + duplicate + validation (26.3693ms)
+✖ members endpoints (15.5126ms)
+✖ tasks create/list/filter + patch status (6.1816ms)
+✖ comments + not-found and payload contract (7.1974ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 2
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 294.8873
+
+✖ failing tests:
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (15.5126ms)
+  AssertionError [ERR_ASSERTION]: <!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <title>Error</title>
+  </head>
+  <body>
+  <pre>Cannot GET /projects/6258784a-7479-405a-b83b-27c62ecad777/members</pre>
+  </body>
+  </html>
+  
+  
+  404 !== 200
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772488889784\node-project-api-large_run_02\workspace\tests\oracle.test.js:117:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 404,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:122:1
+✖ tasks create/list/filter + patch status (6.1816ms)
+  AssertionError [ERR_ASSERTION]: {"error":{"code":"INVALID_INPUT","message":"Invalid input data"}}
+  
+  400 !== 201
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772488889784\node-project-api-large_run_02\workspace\tests\oracle.test.js:132:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 400,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (7.1974ms)
+  AssertionError [ERR_ASSERTION]: {"error":{"code":"INVALID_INPUT","message":"Invalid input data"}}
+  
+  400 !== 201
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772488889784\node-project-api-large_run_02\workspace\tests\oracle.test.js:170:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 400,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

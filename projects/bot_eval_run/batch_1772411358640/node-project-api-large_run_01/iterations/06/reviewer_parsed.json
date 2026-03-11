@@ -1,0 +1,7 @@
+{
+  "review": "projects routes: add GET /:projectId handler in src/modules/projects/routes.* (mounted under /projects).",
+  "priorityFiles": [
+    "src/modules/projects/routes.js",
+    "src/app.js"
+  ]
+}

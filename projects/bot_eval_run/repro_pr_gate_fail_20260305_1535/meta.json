@@ -1,0 +1,28 @@
+{
+  "batchId": 1772722504748,
+  "startedAt": "2026-03-05T14:55:04.750Z",
+  "scenarios": [
+    "ts-todo-oracle",
+    "node-api-oracle",
+    "python-ai-stdlib-oracle"
+  ],
+  "runs": 3,
+  "model": "qwen2.5-coder:14b",
+  "plannerModel": "deepseek-r1:8b",
+  "reviewerModel": "qwen2.5:3b",
+  "jsonRepairModel": "qwen2.5:7b",
+  "deterministicFallbackMode": "on-fail",
+  "timeoutSec": 1200,
+  "maxIterations": 6,
+  "hardTimeoutSec": 1200,
+  "stopOnInfraFailure": true,
+  "autoRestartOnInfraFailure": false,
+  "maxInfraRestarts": 2,
+  "infraRestartTimeoutSec": 30,
+  "infraRestartCooldownSec": 5,
+  "infraRestartCommand": null,
+  "ollamaBaseUrl": "http://localhost:11434",
+  "infraRecoveryTimeoutSec": 90,
+  "infraRecoveryPollSec": 5,
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\repro_pr_gate_fail_20260305_1535"
+}

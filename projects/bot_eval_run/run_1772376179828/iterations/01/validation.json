@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for project detail endpoint /projects/:projectId",
+    "Task filtering contract mismatch: support ?status=todo|done and PATCH status updates.",
+    "package.json should include \"supertest\" (dependencies or devDependencies) for oracle execution",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

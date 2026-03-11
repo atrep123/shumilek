@@ -1,0 +1,35 @@
+✔ health + empty project list (80.5934ms)
+✔ project create/list/get + duplicate + validation (42.7416ms)
+✔ members endpoints (92.3152ms)
+✔ tasks create/list/filter + patch status (105.2193ms)
+✖ comments + not-found and payload contract (14.8285ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 4
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 491.0543
+
+✖ failing tests:
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (14.8285ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'undefined'
+  - 'Looks good'
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772504074579\node-project-api-large_run_01\workspace\tests\oracle.test.js:182:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'Looks good',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

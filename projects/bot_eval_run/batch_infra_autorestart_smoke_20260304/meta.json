@@ -1,0 +1,26 @@
+{
+  "batchId": 1772665257656,
+  "startedAt": "2026-03-04T23:00:57.657Z",
+  "scenarios": [
+    "ts-todo-oracle"
+  ],
+  "runs": 1,
+  "model": "qwen2.5-coder:14b",
+  "plannerModel": "deepseek-r1:8b",
+  "reviewerModel": "qwen2.5:3b",
+  "jsonRepairModel": "qwen2.5:7b",
+  "deterministicFallbackMode": "on-fail",
+  "timeoutSec": 60,
+  "maxIterations": 1,
+  "hardTimeoutSec": null,
+  "stopOnInfraFailure": false,
+  "autoRestartOnInfraFailure": true,
+  "maxInfraRestarts": 1,
+  "infraRestartTimeoutSec": 5,
+  "infraRestartCooldownSec": 0,
+  "infraRestartCommand": "echo restart",
+  "ollamaBaseUrl": "http://localhost:9",
+  "infraRecoveryTimeoutSec": 4,
+  "infraRecoveryPollSec": 2,
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_infra_autorestart_smoke_20260304"
+}

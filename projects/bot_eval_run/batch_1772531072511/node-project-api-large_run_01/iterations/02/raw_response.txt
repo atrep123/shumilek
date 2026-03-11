@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"project-management-api\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple project management API\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.18.2\",\n    \"supertest\": \"^6.3.3\"\n  }\n}\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst { sendError } = require('../../lib/errors');\n\nlet projects = {};\n\nfunction getProjectById(projectId) {\n  return projects[projectId] || null;\n}\n\nfunction getProjectByName(name) {\n  const project = Object.values(projects).find(p => p.name === name);\n  return project || null;\n}\n\nfunction createProject(name) {\n  if (!name) {\n    return sendError(null, 400, 'INVALID_NAME', 'Name is required');\n  }\n  const projectId = randomUUID();\n  projects[projectId] = { id: projectId, name, members: [], tasks: [] };\n  return projects[projectId];\n}\n\nfunction addMemberToProject(projectId, userId, role) {\n  const project = getProjectById(projectId);\n  if (!project) {\n    return sendError(null, 404, 'PROJECT_NOT_FOUND', 'Project not found');\n  }\n  if (project.members.some(member => member.userId === userId)) {\n    return sendError(null, 409, 'MEMBER_EXISTS', 'Member already exists in the project');\n  }\n  project.members.push({ userId, role });\n  return project;\n}\n\nmodule.exports = {\n  getProjectById,\n  getProjectByName,\n  createProject,\n  addMemberToProject\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { sendError } = require('../../lib/errors');\n\nfunction updateTask(project, taskId, status) {\n  const task = project.tasks.find(task => task.id === taskId);\n  if (!task) {\n    return sendError(null, 404, 'TASK_NOT_FOUND', 'Task not found');\n  }\n  if (status !== 'todo' && status !== 'done') {\n    return sendError(null, 400, 'INVALID_STATUS', 'Status must be either todo or done');\n  }\n  task.status = status;\n  return project;\n}\n\nmodule.exports = {\n  updateTask\n};\n"
+    }
+  ],
+  "notes": "Added supertest to package.json and fixed the required exports in projects and tasks services."
+}

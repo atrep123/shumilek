@@ -1,0 +1,80 @@
+{
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772546542227\\node-project-api-large_run_01",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772546542227\\node-project-api-large_run_01\\workspace",
+  "deterministicFallback": {
+    "mode": "on-fail",
+    "tsTodo": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "nodeApi": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "totalActivations": 0,
+    "totalRecoveries": 0,
+    "totalTargetedActivations": 0,
+    "totalTargetedRecoveries": 0,
+    "totalCanonicalActivations": 0,
+    "totalCanonicalRecoveries": 0,
+    "totalRawPasses": 0,
+    "totalRawFailures": 0,
+    "totalRecoveredByFallback": 0,
+    "fallbackDependencyRate": 0
+  },
+  "reliability": {
+    "rawPasses": 0,
+    "rawFailures": 0,
+    "recoveredByFallback": 0,
+    "fallbackDependencyRate": 0
+  },
+  "parseStats": {
+    "plannerFailures": 0,
+    "schemaFailures": 0,
+    "jsonRepairFailures": 0,
+    "parseFailures": 0,
+    "jsonParseFailures": 0,
+    "placeholderFailures": 0,
+    "otherFailures": 0
+  },
+  "ok": false,
+  "diagnostics": [
+    "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "npm install --no-audit --fund=false",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772546542227\\node-project-api-large_run_01\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 1358,
+      "stdout": "\nadded 90 packages in 1s\n",
+      "stderr": "npm warn deprecated supertest@6.3.4: Please upgrade to supertest v7.1.3+, see release notes at https://github.com/forwardemail/supertest/releases/tag/v7.1.3 - maintenance is supported by Forward Email @ https://forwardemail.net\nnpm warn deprecated superagent@8.1.2: Please upgrade to superagent v10.2.2+, see release notes at https://github.com/forwardemail/superagent/releases/tag/v10.2.2 - maintenance is supported by Forward Email @ https://forwardemail.net\n"
+    },
+    {
+      "command": "node --test --test-concurrency=1 tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772546542227\\node-project-api-large_run_01\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 395,
+      "stdout": "✔ health + empty project list (87.2614ms)\n✔ project create/list/get + duplicate + validation (26.9817ms)\n✔ members endpoints (17.277ms)\n✔ tasks create/list/filter + patch status (18.7147ms)\n✖ comments + not-found and payload contract (17.7722ms)\nℹ tests 5\nℹ suites 0\nℹ pass 4\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 332.6298\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:160:1\n✖ comments + not-found and payload contract (17.7722ms)\n  AssertionError [ERR_ASSERTION]: {\"task\":null}\n  \n  200 !== 404\n  \n      at expectErrorPayload (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772546542227\\node-project-api-large_run_01\\workspace\\tests\\oracle.test.js:43:10)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772546542227\\node-project-api-large_run_01\\workspace\\tests\\oracle.test.js:196:3)\n      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 200,\n    expected: 404,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+      "stderr": ""
+    }
+  ]
+}

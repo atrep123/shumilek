@@ -1,0 +1,14 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Task status contract mismatch: use `todo` / `done` statuses (not `open` or `pending`)",
+    "Task status contract mismatch: PATCH status must allow only \"todo\" or \"done\" (pending/open are not allowed).",
+    "Task filtering contract mismatch: support ?status=todo|done and PATCH status updates.",
+    "Status code contract mismatch: POST /projects should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/members should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/tasks should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/tasks/:taskId/comments should return HTTP 201 on create.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

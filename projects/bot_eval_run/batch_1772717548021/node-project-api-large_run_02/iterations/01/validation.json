@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "generateId helper export mismatch: services call generateId(...) but src/lib/id.* does not define+export generateId.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

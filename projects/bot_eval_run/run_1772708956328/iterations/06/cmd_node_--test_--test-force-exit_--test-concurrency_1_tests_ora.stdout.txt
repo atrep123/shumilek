@@ -1,0 +1,47 @@
+✔ health + empty project list (72.5145ms)
+✖ project create/list/get + duplicate + validation (11.6109ms)
+✖ members endpoints (4.0903ms)
+✖ tasks create/list/filter + patch status (2.2045ms)
+✖ comments + not-found and payload contract (2.3297ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 1
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 239.8521
+
+✖ failing tests:
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (11.6109ms)
+  TypeError: generateId is not a function
+      at createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772708956328\workspace\src\modules\projects\service.js:9:25)
+      at Object.createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772708956328\workspace\src\modules\projects\service.js:29:63)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772708956328\workspace\src\modules\projects\routes.js:10:41
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (4.0903ms)
+  TypeError: generateId is not a function
+      at createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772708956328\workspace\src\modules\projects\service.js:9:25)
+      at Object.createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772708956328\workspace\src\modules\projects\service.js:29:63)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772708956328\workspace\src\modules\projects\routes.js:10:41
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+test at tests\oracle.test.js:122:1
+✖ tasks create/list/filter + patch status (2.2045ms)
+  TypeError: generateId is not a function
+      at createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772708956328\workspace\src\modules\projects\service.js:9:25)
+      at Object.createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772708956328\workspace\src\modules\projects\service.js:29:63)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772708956328\workspace\src\modules\projects\routes.js:10:41
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (2.3297ms)
+  TypeError: generateId is not a function
+      at createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772708956328\workspace\src\modules\projects\service.js:9:25)
+      at Object.createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772708956328\workspace\src\modules\projects\service.js:29:63)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772708956328\workspace\src\modules\projects\routes.js:10:41
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)

@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const router = require('express').Router();\nconst commentsService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.get('/', async (req, res) => {\n  const comments = await commentsService.getAllComments(req.params.projectId, req.params.taskId);\n  if (!comments) return sendError(res, 404, 'NOT_FOUND', 'Comments not found');\n  res.json({ comments });\n});\n\nrouter.post('/', async (req, res) => {\n  const message = String(req.body?.message || '').trim();\n  if (!message) return sendError(res, 400, 'BAD_REQUEST', 'Message is required');\n  const comment = await commentsService.addComment(req.params.projectId, req.params.taskId, message);\n  if (!comment) return sendError(res, 500, 'INTERNAL_ERROR', 'Failed to add comment');\n  res.status(201).json({ comment });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express').Router();\nconst membersService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nexpress.get('/', async (req, res) => {\n  const members = await membersService.getMembers(req.params.projectId);\n  if (!members) return sendError(res, 404, 'NOT_FOUND', 'Members not found');\n  res.json({ members });\n});\n\nexpress.post('/', async (req, res) => {\n  const userId = String(req.body?.userId || '').trim();\n  const role = String(req.body?.role || '').trim();\n  if (!userId || !role) return sendError(res, 400, 'BAD_REQUEST', 'userId and role are required');\n  const outcome = await membersService.addMember(req.params.projectId, userId, role);\n  if (outcome.duplicate) return sendError(res, 409, 'MEMBER_DUPLICATE', 'Member already exists');\n  if (!outcome.member) return sendError(res, 500, 'INTERNAL_ERROR', 'Failed to add member');\n  res.status(201).json({ member: outcome.member });\n});\n\nmodule.exports = express;\n"
+    }
+  ],
+  "notes": "Minimal changes made to ensure proper error handling and response for comments and members routes."
+}

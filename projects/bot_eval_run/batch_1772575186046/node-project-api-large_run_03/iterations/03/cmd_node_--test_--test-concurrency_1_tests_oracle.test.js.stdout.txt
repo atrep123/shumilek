@@ -1,0 +1,34 @@
+✔ health + empty project list (89.205ms)
+✖ project create/list/get + duplicate + validation (35.1473ms)
+✔ members endpoints (21.9975ms)
+✔ tasks create/list/filter + patch status (21.3395ms)
+✔ comments + not-found and payload contract (20.2376ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 4
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 354.7946
+
+✖ failing tests:
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (35.1473ms)
+  AssertionError [ERR_ASSERTION]: {"project":null}
+  
+  201 !== 409
+  
+      at expectErrorPayload (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772575186046\node-project-api-large_run_03\workspace\tests\oracle.test.js:43:10)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772575186046\node-project-api-large_run_03\workspace\tests\oracle.test.js:89:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 201,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

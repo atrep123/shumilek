@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Duplicate handling hint: expected 409 conflict handling for duplicate project names.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

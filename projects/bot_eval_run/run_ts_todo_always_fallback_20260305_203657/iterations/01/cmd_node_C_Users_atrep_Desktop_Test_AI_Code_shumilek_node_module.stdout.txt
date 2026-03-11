@@ -1,0 +1,2 @@
+src/cli.ts(1,15): error TS2451: Cannot redeclare block-scoped variable 'require'.
+src/cli.ts(2,15): error TS2451: Cannot redeclare block-scoped variable 'process'.

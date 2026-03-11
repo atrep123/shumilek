@@ -1,0 +1,11 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for /health",
+    "Avoid raw throw in src/modules/projects/service.js: return domain errors and map them to JSON payloads in routes.",
+    "Avoid raw throw in src/modules/tasks/service.js: return domain errors and map them to JSON payloads in routes.",
+    "Missing route signature for project detail endpoint /projects/:projectId",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

@@ -1,0 +1,9 @@
+{
+  "strategy": "on-fail",
+  "scenarioId": "node-project-api-large",
+  "triggerIteration": 1,
+  "diagnostics": [
+    "generateId helper export mismatch: services call generateId(...) but src/lib/id.* does not define+export generateId.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ]
+}

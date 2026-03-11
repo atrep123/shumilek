@@ -1,0 +1,50 @@
+{
+  "generatedAt": "2026-02-25T21:35:10.741Z",
+  "root": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run",
+  "dryRun": false,
+  "policies": [
+    {
+      "prefix": "release_gate_local_",
+      "keep": 4
+    },
+    {
+      "prefix": "release_gate_ci_pr_",
+      "keep": 10
+    },
+    {
+      "prefix": "release_gate_ci_nightly_",
+      "keep": 10
+    }
+  ],
+  "results": [
+    {
+      "prefix": "release_gate_local_",
+      "keep": 4,
+      "matched": 6,
+      "kept": [
+        "release_gate_local_confirm2_20260225_202110",
+        "release_gate_local_continue_20260225_121633",
+        "release_gate_local_10x3_after_13a3703_20260224_224441",
+        "release_gate_local_after_node_cmd_retry_20260224_201147"
+      ],
+      "deleted": [
+        "release_gate_local_after_recovery_retry_20260224_192722",
+        "release_gate_local_after_conn_close_20260224_190612"
+      ]
+    },
+    {
+      "prefix": "release_gate_ci_pr_",
+      "keep": 10,
+      "matched": 0,
+      "kept": [],
+      "deleted": []
+    },
+    {
+      "prefix": "release_gate_ci_nightly_",
+      "keep": 10,
+      "matched": 0,
+      "kept": [],
+      "deleted": []
+    }
+  ]
+}

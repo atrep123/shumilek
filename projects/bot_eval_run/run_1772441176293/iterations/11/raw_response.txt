@@ -1,0 +1,7 @@
+{
+  "files": [
+    {"path":"src/modules/projects/routes.js", "content":"const express = require('express');\nconst router = express.Router();\nconst { getProjectById } = require('./service');\n\nrouter.get('/:projectId', async (req, res) => {\n  const project = await getProjectById(req.params.projectId);\n  if (!project) return sendError(res, 404, 'NotFound', 'Project not found');\n  res.json({ project });\n});\n\nexport default router;\n"},
+    {"path":"src/modules/projects/service.js", "content":"const projects = {};\nconst { randomUUID } = require('node:crypto');\n\nmodule.exports.addProject = (name) => {\n  const id = randomUUID();\n  projects[id] = { id, name };\n  return { id, name };\n};\n\nmodule.exports.getProjectById = (projectId) => {\n  return projects[projectId];\n};\n"}
+  ],
+  "notes": "Added route for project detail and updated service to include getProjectById method."
+}

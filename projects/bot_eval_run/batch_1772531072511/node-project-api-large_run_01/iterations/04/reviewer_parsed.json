@@ -1,0 +1,9 @@
+{
+  "review": "Zkontrolujte exporty metod v souborech služeb a ujistěte se, že jsou přesně takové, jak je požadováno. Dodržte konkrétní názvy metod a jejich umístění podle mapy route-service exportů.",
+  "priorityFiles": [
+    "src/modules/comments/service.js",
+    "src/modules/members/service.js",
+    "src/modules/projects/service.js",
+    "src/modules/tasks/service.js"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for /health",
+    "Do not use \"uuid\" package in node-project-api-large; use node:crypto randomUUID instead",
+    "Missing route signature for project detail endpoint /projects/:projectId",
+    "Missing health endpoint declaration in src/app.*: expected app.get(\"/health\", ...).",
+    "State-sharing mismatch: members service should reuse shared projects repository, not isolated members map/array",
+    "Task filtering contract mismatch: support ?status=todo|done and PATCH status updates.",
+    "package.json should include \"supertest\" (dependencies or devDependencies) for oracle execution",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

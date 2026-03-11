@@ -1,0 +1,4 @@
+{
+  "review": "Zkontrolujte, že v službě pro projekty (src/modules/projects/service.js) exportujete metodu getProjectByName a použijte společný repositář pro projekty. Dodržujte přesné názvy metod v exportu služeb. Přidejte 'supertest' do balíčků (dependencies nebo devDependencies) ve souboru package.json.",
+  "priorityFiles": ["src/modules/projects/service.js", "package.json"]
+}

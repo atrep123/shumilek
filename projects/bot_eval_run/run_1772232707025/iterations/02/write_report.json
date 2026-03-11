@@ -1,0 +1,12 @@
+{
+  "count": 5,
+  "files": [
+    "package.json",
+    "src/modules/projects/service.js",
+    "src/modules/tasks/service.js",
+    "src/modules/members/service.js",
+    "src/modules/comments/service.js"
+  ],
+  "appliedAsPatch": true,
+  "forcePatchFromIncompleteFull": true
+}

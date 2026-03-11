@@ -1,0 +1,22 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "mini_ai/cli.py",
+      "content": "import argparse\nfrom mini_ai.markov_chain import MarkovChain, train_model, generate_text\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument('--train', action='store_true')\n    parser.add_argument('--generate', action='store_true')\n    args = parser.parse_args()\n    if args.train:\n        model = MarkovChain(order=2)\n        text = input('Enter text to train the model: ')\n        train_model(model, text)\n    elif args.generate:\n        seed = int(input('Enter random seed for generation (or press Enter for default): ') or 42)\n        length = int(input('Enter length of generated text: '))\n        generate_text(model, length, seed)\ndef train_model(model, text):\n    model.train(text)\ndef generate_text(model, length=10, seed=None):\n    if seed is None:\n        seed = 42\n    return model.generate(length, seed)\nif __name__ == '__main__':\n    main()\n"
+    },
+    {
+      "path": "mini_ai/markov_chain.py",
+      "content": "import random\nfrom collections import defaultdict\n\nclass MarkovChain:\n    def __init__(self, order=1):\n        self.order = order\n        self.chain = defaultdict(lambda: defaultdict(list))\n\n    def train(self, text):\n        words = text.split()\n        for i in range(len(words) - self.order):\n            key = tuple(words[i:i + self.order])\n            value = words[i + self.order]\n            self.chain[key].append(value)\n\n    def generate(self, length=10, seed=None):\n        if not seed:\n            random.seed(42)\n        else:\n            random.seed(seed)\n        generated_text = []\n        current_key = tuple(words[:self.order])\n        for _ in range(length):\n            if not self.chain[current_key]:\n                break\n            next_word = random.choice(self.chain[current_key])\n            generated_text.append(next_word)\n            current_key = tuple(current_key[1:] + (next_word,))\n        return ''.join(generated_text)\n"
+    },
+    {
+      "path": "tests/test_markov_chain.py",
+      "content": "import unittest\nfrom mini_ai.markov_chain import MarkovChain, train_model, generate_text\n\nclass TestMarkovChain(unittest.TestCase):\n    def test_train(self):\n        mc = MarkovChain(order=2)\n        text = 'hello world'\n        train_model(mc, text)\n        self.assertIn(('he',), mc.chain)\n        self.assertIn(('lo',), mc.chain)\n        self.assertIn(('or',), mc.chain)\n\n    def test_generate(self):\n        mc = MarkovChain(order=1)\n        text = 'abracadabra'\n        train_model(mc, text)\n        generated_text = generate_text(mc, length=10, seed=42)\n        self.assertEqual(len(generated_text), 10)\n\n    def test_to_dict_and_from_dict(self):\n        mc = MarkovChain(order=2)\n        text = 'hello world'\n        train_model(mc, text)\n        data = mc.to_dict()\n        new_mc = MarkovChain.from_dict(data)\n        self.assertEqual(new_mc.order, mc.order)\n        self.assertEqual(new_mc.chain, mc.chain)\n\n    def test_seed(self):\n        mc = MarkovChain(order=1)\n        text = 'abracadabra'\n        train_model(mc, text)\n        generated_text_1 = generate_text(mc, length=10, seed=42)\n        generated_text_2 = generate_text(mc, length=10, seed=43)\n        self.assertNotEqual(generated_text_1, generated_text_2)\n\n    def test_random_seed(self):\n        mc = MarkovChain(order=1)\n        text = 'abracadabra'\n        train_model(mc, text)\n        generated_text_1 = generate_text(mc, length=10, seed=42)\n        generated_text_2 = generate_text(mc, length=10, seed=43)\n        self.assertNotEqual(generated_text_1, generated_text_2)\n\n    def test_empty_chain(self):\n        mc = MarkovChain(order=1)\n        with self.assertRaises(KeyError):\n            generate_text(mc, length=10, seed=42)\n"
+    },
+    {
+      "path": "README.md",
+      "content": "# Mini AI Project\n\nThis is a simple project for implementing a character-level Markov chain generator using Python. It includes CLI commands for training the model and generating text.\n"
+    }
+  ],
+  "notes": "Ensure that all tests pass and the CLI commands work as expected."
+}

@@ -1,0 +1,7 @@
+{
+  "review": "修复 comments 相关的测试失败，确保返回正确的错误信息和状态码。",
+  "priorityFiles": [
+    "src/modules/comments/routes.js",
+    "src/modules/comments/service.js"
+  ]
+}

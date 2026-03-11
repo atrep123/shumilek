@@ -1,0 +1,10 @@
+{
+  "files": [
+    {"path":"src/lib/errors.js","content":"const sendError = (res, status, code, message) => {\n  res.status(status).json({ error: { code, message } });\n};\nmodule.exports = { sendError };"},
+    {"path":"src/modules/projects/routes.js","content":"const express = require('express');\nconst router = express.Router();\nconst { getProjects, createProject } = require('./service');\nrouter.get('/', getProjects);\nrouter.post('/', createProject);\nmodule.exports = router;"},
+    {"path":"src/modules/projects/service.js","content":"const { v4: uuidv4 } = require('uuid');\nconst projects = [];\nconst getProjects = (req, res) => {\n  res.json({ projects });\n};\nconst createProject = (req, res) => {\n  if (!req.body.name) return sendError(res, 400, 'BadRequest', 'Name is required');\n  const project = { id: uuidv4(), name: req.body.name };\n  projects.push(project);\n  res.status(201).json({ project });\n};\nmodule.exports = { getProjects, createProject };"},
+    {"path":"src/modules/tasks/routes.js","content":"const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst { updateTaskStatus, getTasksByStatus } = require('./service');\nrouter.patch('/', updateTaskStatus);\nrouter.get('/', getTasksByStatus);\nmodule.exports = router;"},
+    {"path":"src/modules/tasks/service.js","content":"const tasks = [];\nconst updateTaskStatus = (req, res) => {\n  const taskIndex = tasks.findIndex(task => task.id === req.params.taskId);\n  if (taskIndex === -1) return sendError(res, 404, 'NotFound', 'Task not found');\n  tasks[taskIndex].status = req.body.status;\n  res.json({ task: tasks[taskIndex] });\n};\nconst getTasksByStatus = (req, res) => {\n  const doneTasks = tasks.filter(task => task.status === 'done');\n  res.json({ tasks: doneTasks });\n};\nmodule.exports = { updateTaskStatus, getTasksByStatus };"}
+  ],
+  "notes": "Added error handling and fixed project creation validation."
+}

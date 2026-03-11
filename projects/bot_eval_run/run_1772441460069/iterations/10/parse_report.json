@@ -1,0 +1,21 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "deepseek-coder-v2:16b",
+      "ok": true,
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    },
+    {
+      "stage": "scenario_contract",
+      "model": "deepseek-coder-v2:16b",
+      "ok": true,
+      "error": "Large scenario restored missing core files from workspace: README.md, package.json, src/server.js, src/modules/members/routes.js, src/modules/members/service.js, src/modules/comments/routes.js, src/modules/comments/service.js, src/lib/id.js",
+      "errorKind": "schema"
+    }
+  ],
+  "finalOk": true
+}

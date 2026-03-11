@@ -1,0 +1,63 @@
+✔ health + empty project list (96.8717ms)
+✖ project create/list/get + duplicate + validation (8.7624ms)
+✖ members endpoints (7.1828ms)
+✖ tasks create/list/filter + patch status (6.3183ms)
+✖ comments + not-found and payload contract (6.4653ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 1
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 290.3457
+
+✖ failing tests:
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (8.7624ms)
+  Error: connect EADDRINUSE 127.0.0.1:49152
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+    errno: -4091,
+    code: 'EADDRINUSE',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 49152,
+    response: undefined
+  }
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (7.1828ms)
+  Error: connect EADDRINUSE 127.0.0.1:49152
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+    errno: -4091,
+    code: 'EADDRINUSE',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 49152,
+    response: undefined
+  }
+
+test at tests\oracle.test.js:122:1
+✖ tasks create/list/filter + patch status (6.3183ms)
+  Error: connect EADDRINUSE 127.0.0.1:49152
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+    errno: -4091,
+    code: 'EADDRINUSE',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 49152,
+    response: undefined
+  }
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (6.4653ms)
+  Error: connect EADDRINUSE 127.0.0.1:49152
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+    errno: -4091,
+    code: 'EADDRINUSE',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 49152,
+    response: undefined
+  }

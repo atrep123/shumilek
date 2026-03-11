@@ -1,0 +1,19 @@
+{
+  "count": 12,
+  "files": [
+    "README.md",
+    "package.json",
+    "src/app.js",
+    "src/server.js",
+    "src/modules/projects/repository.js",
+    "src/modules/projects/routes.js",
+    "src/modules/tasks/repository.js",
+    "src/modules/tasks/routes.js",
+    "src/modules/members/repository.js",
+    "src/modules/members/routes.js",
+    "src/modules/comments/repository.js",
+    "src/modules/comments/routes.js"
+  ],
+  "appliedAsPatch": false,
+  "forcePatchFromIncompleteFull": false
+}

@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "// src/modules/projects/service.js\nconst { randomUUID } = require('node:crypto');\n\nlet projectsStore = [];\n\nmodule.exports = {\n  listProjects() {\n    return projectsStore;\n  },\n  getProjectById(projectId) {\n    return projectsStore.find(p => p.id === projectId);\n  },\n  createProject(name) {\n    if (!name) return null;\n    const project = { id: randomUUID(), name };\n    projectsStore.push(project);\n    return project;\n  }\n};\n"
+    }
+  ],
+  "notes": "Added listProjects method to projectsService in src/modules/projects/service.js."
+}

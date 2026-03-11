@@ -1,0 +1,56 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Project README\n\nThis is a simple Node.js project with Express for handling API requests.\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"node-project\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple Node.js project with Express\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\",\n    \"test\": \"jest\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.17.3\"\n  },\n  \"devDependencies\": {\n    \"jest\": \"^29.5.0\",\n    \"supertest\": \"^6.3.3\"\n  }\n}\n"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst projectsRoutes = require('./modules/projects/routes');\nconst membersRoutes = require('./modules/members/routes');\nconst tasksRoutes = require('./modules/tasks/routes');\nconst commentsRoutes = require('./modules/comments/routes');\n\nconst app = express();\napp.use(express.json());\n\napp.get('/health', (req, res) => {\n  res.json({ ok: true });\n});\n\napp.use('/projects', projectsRoutes);\napp.use('/projects/:projectId/members', membersRoutes);\napp.use('/projects/:projectId/tasks', tasksRoutes);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRoutes);\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/server.js",
+      "content": "const app = require('./app');\nconst PORT = process.env.PORT || 3000;\n\napp.listen(PORT, () => {\n  console.log(`Server is running on port ${PORT}`);\n});\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst projectsService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.get('/', async (req, res) => {\n  try {\n    const projects = await projectsService.getAllProjects();\n    res.json({ projects });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nrouter.get('/:projectId', async (req, res) => {\n  try {\n    const project = await projectsService.getProjectById(req.params.projectId);\n    if (!project) {\n      return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found');\n    }\n    res.json({ project });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nrouter.post('/', async (req, res) => {\n  const { name } = req.body;\n  if (!name || typeof name !== 'string' || name.trim() === '') {\n    return sendError(res, 400, 'INVALID_NAME', 'Name must be a non-empty string');\n  }\n\n  try {\n    const project = await projectsService.createProject(name);\n    res.status(201).json({ project });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet projectsStore = [];\n\nconst getAllProjects = () => {\n  return Promise.resolve(projectsStore);\n};\n\nconst getProjectById = (projectId) => {\n  return Promise.resolve(projectsStore.find(p => p.id === projectId));\n};\n\nconst createProject = (name) => {\n  const project = { id: randomUUID(), name };\n  projectsStore.push(project);\n  return Promise.resolve(project);\n};\n\nmodule.exports = {\n  getAllProjects,\n  getProjectById,\n  createProject\n};\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst membersService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', async (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || typeof userId !== 'string' || !role || typeof role !== 'string') {\n    return sendError(res, 400, 'INVALID_INPUT', 'Invalid input');\n  }\n\n  try {\n    const member = await membersService.addMember(req.params.projectId, userId, role);\n    res.status(201).json({ member });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet membersStore = [];\n\nconst addMember = (projectId, userId, role) => {\n  const member = { id: randomUUID(), projectId, userId, role };\n  membersStore.push(member);\n  return Promise.resolve(member);\n};\n\nmodule.exports = {\n  addMember\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst tasksService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', async (req, res) => {\n  const { title } = req.body;\n  if (!title || typeof title !== 'string' || title.trim() === '') {\n    return sendError(res, 400, 'INVALID_TITLE', 'Title must be a non-empty string');\n  }\n\n  try {\n    const task = await tasksService.createTask(req.params.projectId, title);\n    res.status(201).json({ task });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nrouter.get('/', async (req, res) => {\n  const { status } = req.query;\n  try {\n    let tasks = await tasksService.getTasksByProjectId(req.params.projectId);\n    if (status === 'done') {\n      tasks = tasks.filter(task => task.status === 'done');\n    }\n    res.json({ tasks });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet tasksStore = [];\n\nconst createTask = (projectId, title) => {\n  const task = { id: randomUUID(), projectId, title, status: 'todo' };\n  tasksStore.push(task);\n  return Promise.resolve(task);\n};\n\nconst getTasksByProjectId = (projectId) => {\n  return Promise.resolve(tasksStore.filter(t => t.projectId === projectId));\n};\n\nmodule.exports = {\n  createTask,\n  getTasksByProjectId\n};\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst commentsService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', async (req, res) => {\n  const { message } = req.body;\n  if (!message || typeof message !== 'string' || message.trim() === '') {\n    return sendError(res, 400, 'INVALID_MESSAGE', 'Message must be a non-empty string');\n  }\n\n  try {\n    const comment = await commentsService.addComment(req.params.projectId, req.params.taskId, message);\n    res.status(201).json({ comment });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nrouter.get('/', async (req, res) => {\n  try {\n    const comments = await commentsService.getCommentsByTaskId(req.params.projectId, req.params.taskId);\n    res.json({ comments });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet commentsStore = [];\n\nconst addComment = (projectId, taskId, message) => {\n  const comment = { id: randomUUID(), projectId, taskId, message };\n  commentsStore.push(comment);\n  return Promise.resolve(comment);\n};\n\nconst getCommentsByTaskId = (projectId, taskId) => {\n  return Promise.resolve(commentsStore.filter(c => c.projectId === projectId && c.taskId === taskId));\n};\n\nmodule.exports = {\n  addComment,\n  getCommentsByTaskId\n};\n"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "const sendError = (res, statusCode, errorCode, message) => {\n  res.status(statusCode).json({ error: { code: errorCode, message } });\n};\n\nmodule.exports = {\n  sendError\n};\n"
+    }
+  ]
+}

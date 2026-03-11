@@ -1,0 +1,52 @@
+✔ health + empty project list (89.622ms)
+✖ project create/list/get + duplicate + validation (51.1879ms)
+✖ members endpoints (12.8969ms)
+✔ tasks create/list/filter + patch status (49.7473ms)
+✔ comments + not-found and payload contract (20.101ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 3
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 386.0882
+
+✖ failing tests:
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (51.1879ms)
+  AssertionError [ERR_ASSERTION]: {"error":{"code":"INTERNAL_ERROR","message":"Failed to create project."}}
+  
+  500 !== 409
+  
+      at expectErrorPayload (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772575186046\node-project-api-large_run_03\workspace\tests\oracle.test.js:43:10)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772575186046\node-project-api-large_run_03\workspace\tests\oracle.test.js:89:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (12.8969ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  'undefined' !== 'u-1'
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772575186046\node-project-api-large_run_03\workspace\tests\oracle.test.js:108:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'u-1',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

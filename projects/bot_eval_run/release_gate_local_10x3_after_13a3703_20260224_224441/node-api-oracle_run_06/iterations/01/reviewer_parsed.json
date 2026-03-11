@@ -1,0 +1,6 @@
+{
+  "review": "Use crypto.randomUUID() instead of require/import for generating unique IDs.",
+  "priorityFiles": [
+    "src/server.js"
+  ]
+}

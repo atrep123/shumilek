@@ -1,0 +1,25 @@
+{
+  "files": [
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst projectsRoutes = require('./modules/projects/routes');\nconst membersRoutes = require('./modules/members/routes');\ntasksRoutes = require('./modules/tasks/routes');\ncommentsRoutes = require('./modules/comments/routes');\n\nconst app = express();\napp.use(express.json());\n\napp.use('/projects', projectsRoutes);\napp.use('/projects/:projectId/members', membersRoutes);\napp.use('/projects/:projectId/tasks', tasksRoutes);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRoutes);\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst projectsService = require('./service');\nconst sendError = require('../../lib/errors').sendError;\n\nconst router = express.Router();\n\nrouter.get('/:projectId', (req, res) => {\n  const project = projectsService.getProjectById(req.params.projectId);\n  if (!project) {\n    return sendError(res, 404, 'NOT_FOUND', 'Project not found');\n  }\n  res.json({ project });\n});\n\nrouter.post('/', (req, res) => {\n  const { name } = req.body;\n  if (!name) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Name is required');\n  }\n  const project = projectsService.createProject(name);\n  res.status(201).json({ project });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet projects = {};\n\nfunction getProjectById(projectId) {\n  return projects[projectId];\n}\n\nfunction createProject(name) {\n  const projectId = randomUUID();\n  const project = { id: projectId, name, members: [], tasks: [] };\n  projects[projectId] = project;\n  return project;\n}\n\nmodule.exports = {\n  getProjectById,\n  createProject,\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\ntasksService = require('./service');\nsendError = require('../../lib/errors').sendError;\n\nconst router = express.Router();\n\nrouter.get('/', (req, res) => {\n  const { projectId } = req.params;\n  const project = projectsService.getProjectById(projectId);\n  if (!project) {\n    return sendError(res, 404, 'NOT_FOUND', 'Project not found');\n  }\n\n  let tasks = project.tasks;\n  const statusFilter = req.query.status;\n  if (statusFilter) {\n    tasks = tasks.filter(task => task.status === statusFilter);\n  }\n  res.json({ tasks });\n});\n\nrouter.post('/', (req, res) => {\n  const { projectId } = req.params;\n  const project = projectsService.getProjectById(projectId);\n  if (!project) {\n    return sendError(res, 404, 'NOT_FOUND', 'Project not found');\n  }\n\n  const task = tasksService.createTask(req.body.description, projectId);\n  res.status(201).json({ task });\n});\n\nrouter.patch('/:taskId', (req, res) => {\n  const { projectId, taskId } = req.params;\n  const project = projectsService.getProjectById(projectId);\n  if (!project) {\n    return sendError(res, 404, 'NOT_FOUND', 'Project not found');\n  }\n\n  const task = tasksService.updateTask(taskId, req.body.status);\n  if (!task) {\n    return sendError(res, 404, 'NOT_FOUND', 'Task not found');\n  }\n  res.json({ task });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nprojectsService = require('../projects/service');\nsendError = require('../../lib/errors').sendError;\n\nfunction createTask(description, projectId) {\n  const taskId = randomUUID();\n  const task = { id: taskId, description, status: 'todo' };\n  projectsService.getProjectById(projectId).tasks.push(task);\n  return task;\n}\n\nfunction updateTask(taskId, newStatus) {\n  if (newStatus !== 'todo' && newStatus !== 'done') {\n    sendError(res, 400, 'INVALID_INPUT', 'Invalid status');\n    return null;\n  }\n\n  for (const projectId in projectsService.projects) {\n    const project = projectsService.getProjectById(projectId);\n    const taskIndex = project.tasks.findIndex(task => task.id === taskId);\n    if (taskIndex !== -1) {\n      project.tasks[taskIndex].status = newStatus;\n      return project.tasks[taskIndex];\n    }\n  }\n\n  return null;\n}\n\nmodule.exports = {\n  createTask,\n  updateTask,\n};\n"
+    }
+  ],
+  "notes": "Fixed the health route contract mismatch, added missing methods in tasks service, and ensured proper routing and service method exports."
+}

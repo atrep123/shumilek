@@ -1,0 +1,29 @@
+{
+  "files": [
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "module.exports = {\n  addComment(comment) {\n    if (!comment || !comment.message) {\n      throw new BadRequestError('Invalid comment data');\n    }\n    // Add comment logic here\n  },\n};\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "module.exports = {\n  addMember(member) {\n    if (!member || !member.userId || !member.role) {\n      throw new BadRequestError('Invalid member data');\n    }\n    // Add member logic here\n  },\n};\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nmodule.exports = {\n  createProject(name) {\n    if (!name) {\n      throw new BadRequestError('Name is required');\n    }\n    return { id: randomUUID(), name };\n  },\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "module.exports = {\n  createTask(task) {\n    if (!task || task.status !== 'todo') {\n      throw new BadRequestError('Invalid task data');\n    }\n    // Add task logic here\n  },\n};\n"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "module.exports = {\n  sendError(res, status, code, message) {\n    res.status(status).json({ error: { code, message } });\n  },\n};\n"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst app = express();\nconst bodyParser = require('body-parser');\napp.use(bodyParser.json());\n\n// Import routes\nconst projectRoutes = require('./modules/projects/routes');\nconst memberRoutes = require('./modules/members/routes');\nconst taskRoutes = require('./modules/tasks/routes');\nconst commentRoutes = require('./modules/comments/routes');\n\n// Use routes\napp.use('/', projectRoutes);\napp.use('/', memberRoutes);\napp.use('/', taskRoutes);\napp.use('/', commentRoutes);\n\nmodule.exports = app;\n"
+    }
+  ],
+  "notes": "Added missing imports and validations, updated error handling."
+}

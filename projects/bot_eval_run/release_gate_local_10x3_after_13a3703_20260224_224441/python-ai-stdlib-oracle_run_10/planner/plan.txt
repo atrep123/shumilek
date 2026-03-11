@@ -1,0 +1,12 @@
+- Implement MarkovChain class in `mini_ai/markov.py`
+- Define train and generate methods
+- Add to_dict method for serialization
+- Implement from_dict class method for deserialization
+- Create CLI entry points in `mini_ai/cli.py`
+- Define subcommands: train and generate
+- Ensure argparse usage is correct
+- Write test cases for MarkovChain class
+- Write test cases for CLI functionality
+- Run tests to ensure everything works as expected
+- Format code according to PEP 8 guidelines
+- Add README.md with project description

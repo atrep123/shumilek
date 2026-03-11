@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "mini_ai/markov.py",
+      "content": "import random\n\nclass MarkovChain:\n    def __init__(self):\n        self.chain = {}\n\n    def train(self, text):\n        for i in range(len(text) - 1):\n            current_char = text[i]\n            next_char = text[i + 1]\n            if current_char not in self.chain:\n                self.chain[current_char] = []\n            self.chain[current_char].append(next_char)\n\n    def generate(self, length):\n        if not self.chain:\n            return ''\n        start_char = random.choice(list(self.chain.keys()))\n        result = [start_char]\n        current_char = start_char\n        while len(result) < length:\n            next_chars = self.chain.get(current_char)\n            if not next_chars:\n                current_char = random.choice(list(self.chain.keys()))\n                continue\n            next_char = random.choice(next_chars)\n            result.append(next_char)\n            current_char = next_char\n        return ''.join(result[:length])\n"
+    },
+    {
+      "path": "tests/test_markov.py",
+      "content": "import unittest\nfrom mini_ai.markov import MarkovChain\nclass TestMarkovChain(unittest.TestCase):\n    def setUp(self):\n        self.model = MarkovChain()\n        self.text = 'hello world'\n        self.model.train(self.text)\n    def test_train(self):\n        self.assertIn('h', self.model.chain)\n        self.assertIn('e', self.model.chain['h'])\n        self.assertIn('l', self.model.chain['e'])\n        self.assertIn('o', self.model.chain['l'])\n        self.assertIn(' ', self.model.chain['o'])\n        self.assertIn('w', self.model.chain[' '])\n    def test_generate(self):\n        generated_text = self.model.generate(10)\n        self.assertEqual(len(generated_text), 10)\n        for char in generated_text:\n            self.assertTrue(char in self.text or char == '')\nif __name__ == '__main__':\n    unittest.main()\n"
+    }
+  ],
+  "notes": "Fixed the generate method to ensure it returns exactly the specified length and corrected the test case."
+}

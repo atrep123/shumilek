@@ -1,0 +1,16 @@
+{
+  "model": "deepseek-coder-v2:16b",
+  "created_at": "2026-03-02T00:20:32.676732Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/modules/projects/routes.js\",\n      \"content\": \"const express = require('express');\\nconst router = express.Router();\\nconst { getProjectById } = require('./service');\\n\\nrouter.get('/:projectId', async (req, res) => {\\n  const project = await getProjectById(req.params.projectId);\\n  if (!project) return sendError(res, 404, 'NOT_FOUND', 'Project not found');\\n  res.json({ project });\\n});\\n\\nexports.router = router;\\n\"\n    },\n    {\n      \"path\": \"src/modules/tasks/routes.js\",\n      \"content\": \"const express = require('express');\\nconst router = express.Router();\\nconst { getTasksByStatus, updateTaskStatus } = require('./service');\\n\\nrouter.get('/:projectId/tasks', async (req, res) => {\\n  const tasks = await getTasksByStatus(req.params.projectId, req.query.status);\\n  if (!tasks) return sendError(res, 404, 'NOT_FOUND', 'Tasks not found');\\n  res.json({ tasks });\\n});\\n\\nrouter.patch('/:projectId/tasks/:taskId', async (req, res) => {\\n  const status = req.body.status;\\n  if (!['todo', 'done'].includes(status)) return sendError(res, 400, 'BAD_REQUEST', 'Invalid task status');\\n  const updatedTask = await updateTaskStatus(req.params.projectId, req.params.taskId, status);\\n  if (!updatedTask) return sendError(res, 404, 'NOT_FOUND', 'Task not found');\\n  res.json({ task: updatedTask });\\n});\\n\\nexports.router = router;\\n\"\n    }\n  ],\n  \"notes\": \"Added routes for project detail and task filtering/updating.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 11024579800,
+  "load_duration": 44548600,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 538101200,
+  "eval_count": 477,
+  "eval_duration": 3626146200
+}

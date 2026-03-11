@@ -1,0 +1,147 @@
+✖ health + empty project list (84.2606ms)
+✖ project create/list/get + duplicate + validation (16.9856ms)
+✖ members endpoints (12.9586ms)
+✖ tasks create/list/filter + patch status (7.5736ms)
+✖ comments + not-found and payload contract (8.9315ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 287.0147
+
+✖ failing tests:
+
+test at tests\oracle.test.js:52:1
+✖ health + empty project list (84.2606ms)
+  AssertionError [ERR_ASSERTION]: <!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <title>Error</title>
+  </head>
+  <body>
+  <pre>Cannot GET /health</pre>
+  </body>
+  </html>
+  
+  
+  404 !== 200
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772237272447\workspace\tests\oracle.test.js:56:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 404,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (16.9856ms)
+  AssertionError [ERR_ASSERTION]: {"project":{"id":"a0941442-ca01-4236-91a9-7c9b024f7a82","tasks":[],"members":[]}}
+  
+  201 !== 400
+  
+      at expectErrorPayload (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772237272447\workspace\tests\oracle.test.js:43:10)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772237272447\workspace\tests\oracle.test.js:69:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 201,
+    expected: 400,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (12.9586ms)
+  AssertionError [ERR_ASSERTION]: <!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <title>Error</title>
+  </head>
+  <body>
+  <pre>Cannot POST /projects/ab67d1da-0fe2-4e52-82d0-c4bd86d952aa/members</pre>
+  </body>
+  </html>
+  
+  
+  404 !== 400
+  
+      at expectErrorPayload (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772237272447\workspace\tests\oracle.test.js:43:10)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772237272447\workspace\tests\oracle.test.js:102:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 404,
+    expected: 400,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:122:1
+✖ tasks create/list/filter + patch status (7.5736ms)
+  AssertionError [ERR_ASSERTION]: <!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <title>Error</title>
+  </head>
+  <body>
+  <pre>Cannot POST /projects/74265246-36ac-4278-ab35-fbd22b413395/tasks</pre>
+  </body>
+  </html>
+  
+  
+  404 !== 201
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772237272447\workspace\tests\oracle.test.js:132:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 404,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (8.9315ms)
+  AssertionError [ERR_ASSERTION]: <!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <title>Error</title>
+  </head>
+  <body>
+  <pre>Cannot POST /projects/48d1ee6a-c4c9-43da-8bed-bf514cdce46e/tasks</pre>
+  </body>
+  </html>
+  
+  
+  404 !== 201
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772237272447\workspace\tests\oracle.test.js:170:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 404,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

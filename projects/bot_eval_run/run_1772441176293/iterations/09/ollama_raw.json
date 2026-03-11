@@ -1,0 +1,16 @@
+{
+  "model": "deepseek-coder-v2:16b",
+  "created_at": "2026-03-02T08:48:39.1775814Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\"path\":\"src/modules/projects/service.js\", \"content\":\"exports.getAllProjects = () => { return []; };\\n\"},\n    {\"path\":\"src/lib/errors.js\", \"content\":\"class BadRequestError extends Error {\\n  constructor(message) { super(message); this.name = 'BadRequestError'; }\\n}\\n\\nclass NotFoundError extends Error {\\n  constructor(message) { super(message); this.name = 'NotFoundError'; }\\n}\\n\\nfunction sendError(res, status, code, message) {\\n  res.status(status).json({ error: { code, message } });\\n}\\n\"},\n    {\"path\":\"src/modules/projects/routes.js\", \"content\":\"const express = require('express');\\nconst router = express.Router();\\nconst projectsService = require('./service');\\n\\nrouter.get('/', (req, res) => {\\n  const projects = projectsService.getAllProjects();\\n  res.json({ projects });\\n});\\n\\nexports.router = router;\\n\"},\n    {\"path\":\"src/modules/members/routes.js\", \"content\":\"const express = require('express');\\nconst router = express.Router({ mergeParams: true });\\nconst membersService = require('./service');\\n\\nrouter.post('/', (req, res) => {\\n  const { userId, role } = req.body;\\n  if (!userId || !role) return sendError(res, 400, 'MissingFields', 'User ID and role are required.');\\n  const member = membersService.addMember(req.params.projectId, { userId, role });\\n  res.status(201).json({ member });\\n});\\n\\nexports.router = router;\\n\"},\n    {\"path\":\"src/modules/tasks/routes.js\", \"content\":\"const express = require('express');\\nconst router = express.Router({ mergeParams: true });\\nconst tasksService = require('./service');\\n\\nrouter.post('/', (req, res) => {\\n  const { status } = req.body;\\n  if (!status || !['todo', 'done'].includes(status)) return sendError(res, 400, 'InvalidStatus', 'Task status must be either \"\n}\n\n    ]\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 12780720600,
+  "load_duration": 58971500,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 530500600,
+  "eval_count": 539,
+  "eval_duration": 4109153000
+}

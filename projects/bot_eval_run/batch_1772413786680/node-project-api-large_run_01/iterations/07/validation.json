@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Uses `new BadRequestError(...)` but src/lib/errors.* does not define/export BadRequestError",
+    "Uses `new NotFoundError(...)` but src/lib/errors.* does not define/export NotFoundError",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

@@ -1,0 +1,99 @@
+✔ health + empty project list (90.3207ms)
+✖ project create/list/get + duplicate + validation (22.8295ms)
+✖ members endpoints (12.7139ms)
+✖ tasks create/list/filter + patch status (13.3238ms)
+✖ comments + not-found and payload contract (46.5488ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 1
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 353.3342
+
+✖ failing tests:
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (22.8295ms)
+  AssertionError [ERR_ASSERTION]: {"error":{"code":"INTERNAL_ERROR","message":"Internal server error"}}
+  
+  500 !== 200
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772438049147\node-project-api-large_run_01\workspace\tests\oracle.test.js:85:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (12.7139ms)
+  AssertionError [ERR_ASSERTION]: {"member":{"id":"cbd32d81-8360-4c63-a43e-39317ed4eefa","userId":"u-1","role":"owner"}}
+  
+  201 !== 409
+  
+      at expectErrorPayload (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772438049147\node-project-api-large_run_01\workspace\tests\oracle.test.js:43:10)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772438049147\node-project-api-large_run_01\workspace\tests\oracle.test.js:114:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 201,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:122:1
+✖ tasks create/list/filter + patch status (13.3238ms)
+  AssertionError [ERR_ASSERTION]: <!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <title>Error</title>
+  </head>
+  <body>
+  <pre>Cannot PATCH /projects/0042974d-34bd-4c35-acb2-5e6b26d289b7/tasks/bac632ed-6db5-47da-90e7-cec6b7dd196c</pre>
+  </body>
+  </html>
+  
+  
+  404 !== 200
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772438049147\node-project-api-large_run_01\workspace\tests\oracle.test.js:150:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 404,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (46.5488ms)
+  AssertionError [ERR_ASSERTION]: {"error":{"code":"INTERNAL_ERROR","message":"Internal server error"}}
+  
+  500 !== 404
+  
+      at expectErrorPayload (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772438049147\node-project-api-large_run_01\workspace\tests\oracle.test.js:43:10)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772438049147\node-project-api-large_run_01\workspace\tests\oracle.test.js:191:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 404,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

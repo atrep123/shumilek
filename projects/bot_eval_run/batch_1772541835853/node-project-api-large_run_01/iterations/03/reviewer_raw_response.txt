@@ -1,0 +1,4 @@
+{
+    "review": "Zkontrolujte, že v `src/lib/errors.js` definujete objekty chyb s klíčem `message`, nebo upravte testy tak, aby čekali na `code`. Všechny chyby vracejte konzistentně jako JSON payload.",
+    "priorityFiles": ["src/lib/errors.js", "tests/oracle.test.js"]
+}

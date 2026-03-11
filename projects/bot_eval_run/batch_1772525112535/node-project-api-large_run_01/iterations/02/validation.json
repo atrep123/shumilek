@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Health route contract mismatch: GET /health should return body { ok: true }.",
+    "Route-service contract mismatch (tasks): routes call tasksService.updateTask() but service does not export \"updateTask\".",
+    "Route-service export map required (tasks): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

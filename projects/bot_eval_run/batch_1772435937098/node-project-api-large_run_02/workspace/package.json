@@ -1,0 +1,16 @@
+{
+  "name": "project-management",
+  "version": "1.0.0",
+  "description": "A simple project management application using Express.js",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node tests/oracle-tests.js"
+  },
+  "dependencies": {
+    "express": "^4.17.3"
+  },
+  "devDependencies": {
+    "supertest": "^6.2.4"
+  }
+}

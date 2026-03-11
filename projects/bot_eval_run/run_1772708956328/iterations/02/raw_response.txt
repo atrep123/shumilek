@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"project-management-api\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A Node.js monolith for a Project Management API\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\",\n    \"test\": \"node --test\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.17.1\"\n  },\n  \"devDependencies\": {\n    \"supertest\": \"^6.2.3\"\n  }\n}\n"
+    }
+  ],
+  "notes": "Removed invalid dependency 'node:crypto' and corrected the test script to use 'node --test'."
+}

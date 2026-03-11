@@ -1,0 +1,28 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "npm install --no-audit --fund=false",
+      "cwd": "projects\\bot_eval_run\\run_1772359117068\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 551,
+      "stdout": "\nup to date in 340ms\n",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "projects\\bot_eval_run\\run_1772359117068\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 444,
+      "stdout": "✔ health + empty project list (97.563ms)\n✖ project create/list/get + duplicate + validation (55.7004ms)\n✖ members endpoints (22.482ms)\n✖ tasks create/list/filter + patch status (13.7369ms)\n✔ comments + not-found and payload contract (33.1111ms)\nℹ tests 5\nℹ suites 0\nℹ pass 2\nℹ fail 3\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 382.7688\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:65:1\n✖ project create/list/get + duplicate + validation (55.7004ms)\n  AssertionError [ERR_ASSERTION]: {\"project\":{\"id\":\"b2737bc5-3d65-4f94-9c19-281801605d56\",\"name\":\"Alpha\"}}\n  \n  201 !== 409\n  \n      at expectErrorPayload (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772359117068\\workspace\\tests\\oracle.test.js:43:10)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772359117068\\workspace\\tests\\oracle.test.js:89:3)\n      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 201,\n    expected: 409,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at tests\\oracle.test.js:92:1\n✖ members endpoints (22.482ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  'undefined' !== 'u-1'\n  \n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772359117068\\workspace\\tests\\oracle.test.js:108:10)\n      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 'undefined',\n    expected: 'u-1',\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at tests\\oracle.test.js:122:1\n✖ tasks create/list/filter + patch status (13.7369ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  + actual - expected\n  \n  + undefined\n  - 'Prepare spec'\n  \n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772359117068\\workspace\\tests\\oracle.test.js:135:10)\n      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: undefined,\n    expected: 'Prepare spec',\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+      "stderr": ""
+    }
+  ]
+}

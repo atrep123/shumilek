@@ -1,0 +1,31 @@
+{
+    "review": "Zkontrolujte, že pro všechny POST endpointy, které vyžadují body (např. /projects, /projects/:projectId/tasks/:taskId/comments), kontrolujete prázdný nebo chybějící input a vracejte odpovídající 400 status s chybovou zprávou. Pro endpointy, které mají mít validní ID (např. /projects/:id), zkontrolujte, že ID je platné a existuje v databázi.",
+    "files": [
+        {
+            "file": "src/routes/projects.js",
+            "changes": [
+                {
+                    "line": 20,
+                    "change": "Add validation for empty or missing body in POST /projects"
+                },
+                {
+                    "line": 35,
+                    "change": "Add validation for existing project ID in GET /projects/:id"
+                }
+            ]
+        },
+        {
+            "file": "src/routes/tasks.js",
+            "changes": [
+                {
+                    "line": 20,
+                    "change": "Add validation for empty or missing body in POST /projects/:projectId/tasks/:taskId/comments"
+                },
+                {
+                    "line": 35,
+                    "change": "Add validation for existing task ID in GET /projects/:projectId/tasks/:id"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Route-service contract mismatch (members): routes call service.create() but service does not export \"create\".",
+    "Route-service contract mismatch (members): routes call service.getAll() but service does not export \"getAll\".",
+    "Route-service export map required (members): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

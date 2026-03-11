@@ -1,0 +1,9 @@
+{
+  "count": 2,
+  "files": [
+    "src/modules/tasks/service.js",
+    "src/modules/projects/routes.js"
+  ],
+  "appliedAsPatch": true,
+  "forcePatchFromIncompleteFull": true
+}

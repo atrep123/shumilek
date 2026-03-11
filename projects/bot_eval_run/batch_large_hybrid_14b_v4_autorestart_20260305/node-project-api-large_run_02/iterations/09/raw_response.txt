@@ -1,0 +1,20 @@
+{
+  "files": [
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { randomUUID } = require('../../lib/id');\n\nlet commentsStore = [];\n\nconst createComment = async (taskId, message) => {\n  const commentId = randomUUID();\n  const comment = { id: commentId, taskId, message };\n  commentsStore.push(comment);\n  return comment;\n};\n\nconst getComments = async (taskId) => {\n  return commentsStore.filter(comment => comment.taskId === taskId);\n};\n\nmodule.exports = { createComment, getComments };\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('../../lib/id');\n\nlet membersStore = [];\n\nconst addMember = async (projectId, userId, role) => {\n  const memberId = randomUUID();\n  const member = { id: memberId, projectId, userId, role };\n  membersStore.push(member);\n  return member;\n};\n\nconst getMembers = async (projectId) => {\n  return membersStore.filter(member => member.projectId === projectId);\n};\n\nmodule.exports = { addMember, getMembers };\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('../../lib/id');\n\nlet projectsStore = [];\n\nconst createProject = async (name) => {\n  const projectId = randomUUID();\n  const project = { id: projectId, name };\n  projectsStore.push(project);\n  return project;\n};\n\nconst getAllProjects = async () => {\n  return projectsStore;\n};\n\nconst getProjectById = async (projectId) => {\n  return projectsStore.find(project => project.id === projectId);\n};\n\nmodule.exports = { createProject, getAllProjects, getProjectById };\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('../../lib/id');\n\nlet tasksStore = [];\n\nconst createTask = async (projectId, description) => {\n  const taskId = randomUUID();\n  const task = { id: taskId, projectId, description, status: 'todo' };\n  tasksStore.push(task);\n  return task;\n};\n\nconst getTasks = async (projectId) => {\n  return tasksStore.filter(task => task.projectId === projectId);\n};\n\nconst getDoneTasks = async (projectId) => {\n  return tasksStore.filter(task => task.projectId === projectId && task.status === 'done');\n};\n\nmodule.exports = { createTask, getTasks, getDoneTasks };\n"
+    }
+  ]
+}

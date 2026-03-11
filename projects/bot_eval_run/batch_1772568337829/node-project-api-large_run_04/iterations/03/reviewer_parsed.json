@@ -1,0 +1,25 @@
+{
+  "review": "Zkontrolujte, že pro všechny POST requesty, kde je požadováno `name`, `title`, `message` nebo `userId` a `role`, zahrnete kontrolu těchto polí v vašem service layer. Změňte metody v souborech `src/services/project.service.js`, `src/services/member.service.js` a `src/services/comment.service.js`. Dodržujte pravidlo, že pokud je pole povinné, musí být zpracováno před uložením objektu do databáze. Toto může zahrnovat kontrolu na null nebo prázdné řetězce a vrácení odpovídajících chybových zpráv.",
+  "files": [
+    {
+      "path": "src/services/project.service.js",
+      "changes": [
+        "Přidejte kontrolu `name` před uložením nového projektu."
+      ]
+    },
+    {
+      "path": "src/services/member.service.js",
+      "changes": [
+        "Přidejte kontrolu `userId` a `role` před uložením nového člena.",
+        "Zkontrolujte, že `userId` není prázdný nebo null."
+      ]
+    },
+    {
+      "path": "src/services/comment.service.js",
+      "changes": [
+        "Přidejte kontrolu `message` před uložením nového komentáře.",
+        "Zkontrolujte, že `message` není prázdný nebo null."
+      ]
+    }
+  ]
+}

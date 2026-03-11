@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-03-02T11:00:53.4383608Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/modules/tasks/service.js\",\n      \"content\": \"// src/modules/tasks/service.js\\nconst { randomUUID } = require('node:crypto');\\nconst tasksStore = [];\\n\\nmodule.exports = {\\n  createTask(projectId, task) {\\n    const newTask = {\\n      id: randomUUID(),\\n      projectId,\\n      ...task,\\n      status: 'todo',\\n    };\\n    tasksStore.push(newTask);\\n    return newTask;\\n  },\\n\\n  getTasksByProjectId(projectId) {\\n    return tasksStore.filter(task => task.projectId === projectId);\\n  },\\n\\n  updateTaskStatus(taskId, status) {\\n    const task = tasksStore.find(t => t.id === taskId);\\n    if (task && ['todo', 'done'].includes(status)) {\\n      task.status = status;\\n      return task;\\n    }\\n    return null;\\n  },\\n\\n  getTasksByStatus(projectId, status) {\\n    return tasksStore.filter(task => task.projectId === projectId && task.status === status);\\n  },\\n};\\n\"\n    }\n  ],\n  \"notes\": \"Added getTasksByStatus method to tasksService in src/modules/tasks/service.js.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 9677929800,
+  "load_duration": 62811600,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 1012011900,
+  "eval_count": 285,
+  "eval_duration": 3460805100
+}

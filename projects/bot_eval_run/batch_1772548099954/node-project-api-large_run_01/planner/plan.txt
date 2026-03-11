@@ -1,0 +1,12 @@
+- Initialize the Node.js project with necessary dependencies.
+- Create the directory structure as specified in the SPEC.
+- Implement the `src/app.*` and `src/server.*` files without starting the HTTP listener.
+- Develop the service layer for each module (projects, tasks, members, comments) under `src/modules/`.
+- Implement the routes for each module ensuring they use relative paths for imports and handle errors consistently.
+- Ensure all endpoints follow the API contract specified in the SPEC.
+- Add error handling to return consistent JSON payloads for 4xx, 404, and 409 status codes.
+- Implement in-memory repositories for data persistence within the process.
+- Include `README.md` with project setup instructions.
+- Ensure `supertest` is included in either dependencies or devDependencies in `package.json`.
+- Write tests to validate the implementation against the SPEC and oracle test cases.
+- Run build and test scripts to ensure everything works as expected.

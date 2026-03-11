@@ -1,0 +1,44 @@
+﻿[
+    {
+        "runIndex":  1,
+        "startedAt":  "2026-03-01T09:02:35.5003683+01:00",
+        "finishedAt":  "2026-03-01T10:58:35.7662306+01:00",
+        "durationSec":  6960,
+        "commandExitCode":  2,
+        "outDir":  "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772352156769",
+        "ok":  false,
+        "parseFailures":  1,
+        "diagnostics":  "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)",
+        "eaddrinuseMentions":  0
+    },
+    {
+        "runIndex":  2,
+        "startedAt":  "2026-03-01T10:58:35.8920296+01:00",
+        "finishedAt":  "2026-03-01T12:44:25.7326648+01:00",
+        "durationSec":  6350,
+        "commandExitCode":  2,
+        "outDir":  "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772359117068",
+        "ok":  false,
+        "parseFailures":  1,
+        "diagnostics":  [
+                            "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)",
+                            "Runtime transport error (EADDRINUSE): avoid auto-listening on fixed ports and export app-only contract for supertest."
+                        ],
+        "eaddrinuseMentions":  8
+    },
+    {
+        "runIndex":  3,
+        "startedAt":  "2026-03-01T12:44:25.7368645+01:00",
+        "finishedAt":  "2026-03-01T13:42:22.0771108+01:00",
+        "durationSec":  3476,
+        "commandExitCode":  2,
+        "outDir":  "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772365466907",
+        "ok":  false,
+        "parseFailures":  1,
+        "diagnostics":  [
+                            "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)",
+                            "App contract failed: export app as module.exports = app / exports.app / default export in src/app.*"
+                        ],
+        "eaddrinuseMentions":  0
+    }
+]

@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { getProjectById } = require('./service');\n\n// GET /projects/:projectId - Get project detail\nrouter.get('/:projectId', getProjectById);\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const projects = {}; // In-memory storage for simplicity\nconst { randomUUID } = require('node:crypto');\nconst { sendError } = require('../../lib/errors');\n\n// Get project by ID\nexports.getProjectById = (req, res) => {\n  const projectId = req.params.projectId;\n  if (!projects[projectId]) return sendError(res, 404, 'E001', 'Project not found');\n  res.json({ project: projects[projectId] });\n};\n\n// Create a new project\nexports.createProject = (req, res) => {\n  const { name } = req.body;\n  if (!name) return sendError(res, 400, 'E002', 'Name is required');\n  if (projects[name]) return sendError(res, 409, 'E003', 'Duplicate project name');\n  const id = randomUUID();\n  projects[id] = { id, name };\n  res.status(201).json({ project: projects[id] });\n};\n"
+    }
+  ],
+  "notes": "Added route and service methods for fetching a project by ID and creating a new project with validation."
+}

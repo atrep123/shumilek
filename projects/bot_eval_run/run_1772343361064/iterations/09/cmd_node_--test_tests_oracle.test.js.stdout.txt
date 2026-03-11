@@ -1,0 +1,75 @@
+✖ health + empty project list (101.0806ms)
+✖ project create/list/get + duplicate + validation (33.0616ms)
+✖ members endpoints (17.6501ms)
+✖ tasks create/list/filter + patch status (14.1416ms)
+✖ comments + not-found and payload contract (13.1791ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 339.0826
+
+✖ failing tests:
+
+test at tests\oracle.test.js:52:1
+✖ health + empty project list (101.0806ms)
+  Error: connect EADDRINUSE 127.0.0.1:49168
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+    errno: -4091,
+    code: 'EADDRINUSE',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 49168,
+    response: undefined
+  }
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (33.0616ms)
+  Error: connect EADDRINUSE 127.0.0.1:49168
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+    errno: -4091,
+    code: 'EADDRINUSE',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 49168,
+    response: undefined
+  }
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (17.6501ms)
+  Error: connect EADDRINUSE 127.0.0.1:49168
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+    errno: -4091,
+    code: 'EADDRINUSE',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 49168,
+    response: undefined
+  }
+
+test at tests\oracle.test.js:122:1
+✖ tasks create/list/filter + patch status (14.1416ms)
+  Error: connect EADDRINUSE 127.0.0.1:49168
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+    errno: -4091,
+    code: 'EADDRINUSE',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 49168,
+    response: undefined
+  }
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (13.1791ms)
+  Error: connect EADDRINUSE 127.0.0.1:49168
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+    errno: -4091,
+    code: 'EADDRINUSE',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 49168,
+    response: undefined
+  }

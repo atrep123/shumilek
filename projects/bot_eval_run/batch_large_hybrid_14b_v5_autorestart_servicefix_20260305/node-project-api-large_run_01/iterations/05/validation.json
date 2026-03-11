@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Route-service contract mismatch (projects): routes call projectsService.listProjects() but service does not export \"listProjects\".",
+    "Route-service export map required (projects): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

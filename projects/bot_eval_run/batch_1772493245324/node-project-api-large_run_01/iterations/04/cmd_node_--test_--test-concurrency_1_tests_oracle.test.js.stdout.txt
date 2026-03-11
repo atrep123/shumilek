@@ -1,0 +1,69 @@
+✔ health + empty project list (115.908ms)
+✔ project create/list/get + duplicate + validation (41.0231ms)
+✖ members endpoints (11.363ms)
+✖ tasks create/list/filter + patch status (8.2365ms)
+✖ comments + not-found and payload contract (6.6903ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 2
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 346.6414
+
+✖ failing tests:
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (11.363ms)
+  AssertionError [ERR_ASSERTION]: {"error":{"code":"MEMBER_DUPLICATE","message":"Member already exists"}}
+  
+  409 !== 201
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772493245324\node-project-api-large_run_01\workspace\tests\oracle.test.js:107:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 409,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:122:1
+✖ tasks create/list/filter + patch status (8.2365ms)
+  AssertionError [ERR_ASSERTION]: {"error":{"code":"INVALID_DESCRIPTION","message":"Description must be a non-empty string"}}
+  
+  400 !== 201
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772493245324\node-project-api-large_run_01\workspace\tests\oracle.test.js:132:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 400,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (6.6903ms)
+  AssertionError [ERR_ASSERTION]: {"error":{"code":"INVALID_DESCRIPTION","message":"Description must be a non-empty string"}}
+  
+  400 !== 201
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772493245324\node-project-api-large_run_01\workspace\tests\oracle.test.js:170:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 400,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

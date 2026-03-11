@@ -1,0 +1,14 @@
+{
+  "generatedAt": "2026-02-24T08:25:22.146Z",
+  "candidateDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_strict_probe_20260224_085404",
+  "stableDir": "C:\\actions-runner\\release_gate_stable_longrunC_20260224_075013",
+  "statePath": "C:\\actions-runner\\release_gate_promotion_state_test.json",
+  "requiredConsecutive": 2,
+  "streakBefore": 0,
+  "streakAfter": 1,
+  "qualified": true,
+  "qualificationReason": "qualified",
+  "promoted": false,
+  "promotionMessage": "qualified but streak 1/2 is below threshold",
+  "lastPromotion": null
+}

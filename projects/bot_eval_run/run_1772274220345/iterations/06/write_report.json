@@ -1,0 +1,9 @@
+{
+  "count": 2,
+  "files": [
+    "package.json",
+    "src/lib/id.js"
+  ],
+  "appliedAsPatch": true,
+  "forcePatchFromIncompleteFull": true
+}

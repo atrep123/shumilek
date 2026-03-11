@@ -1,0 +1,36 @@
+{
+  "review": "Zkontrolujte, že pro všechny POST requesty, kde je požadováno `name`, `title`, `message` nebo `userId` a `role`, zpracováváte prázdné hodnoty jako chybu. Dodatečně ověřte, že pro všechny POST requesty, kde je požadován `id`, používáte správný typ dat (například string).",
+  "files": [
+    {
+      "file": "tests/oracle.test.js",
+      "changes": [
+        {
+          "line": 43,
+          "change": "Změňte expectErrorPayload tak, aby zkontrolovalo, že `code` a `message` jsou stringy s délkou větší než nula."
+        }
+      ]
+    },
+    {
+      "file": "src/app.js",
+      "changes": [
+        {
+          "line": 123,
+          "change": "Zkontrolujte, že pro všechny POST requesty, kde je požadováno `name`, `title` nebo `message`, zpracováváte prázdné hodnoty jako chybu."
+        },
+        {
+          "line": 156,
+          "change": "Zkontrolujte, že pro všechny POST requesty, kde je požadován `userId` a `role`, zpracováváte prázdné hodnoty jako chybu."
+        }
+      ]
+    },
+    {
+      "file": "src/handlers.js",
+      "changes": [
+        {
+          "line": 34,
+          "change": "Zkontrolujte, že pro všechny POST requesty, kde je požadován `id`, používáte správný typ dat (například string)."
+        }
+      ]
+    }
+  ]
+}

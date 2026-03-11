@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Uses `new BadRequestError(...)` but src/lib/errors.* does not define/export BadRequestError",
+    "Task filtering contract mismatch: support ?status=todo|done and PATCH status updates.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

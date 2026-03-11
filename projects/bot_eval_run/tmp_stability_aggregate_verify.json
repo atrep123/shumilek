@@ -1,0 +1,123 @@
+{
+  "generatedAt": "2026-03-05T22:36:39.959Z",
+  "inputs": [
+    "C:\\actions-runner\\bot_eval_run\\release_gate_ci_nightly_22737353882_1",
+    "C:\\actions-runner\\bot_eval_run\\release_gate_ci_nightly_22653528897_1"
+  ],
+  "baselineDir": "C:\\actions-runner\\release_gate_stable_longrunC_20260224_075013",
+  "allGatePassed": true,
+  "gateFailures": [],
+  "scenarios": [
+    {
+      "scenario": "node-api-oracle",
+      "runs": 2,
+      "passRate": {
+        "avg": 1,
+        "min": 1,
+        "max": 1
+      },
+      "rawRunPassRate": {
+        "avg": 1,
+        "min": 1,
+        "max": 1
+      },
+      "fallbackDependencyRunRate": {
+        "avg": 0,
+        "min": 0,
+        "max": 0
+      },
+      "avgMs": {
+        "avg": 138069.5,
+        "min": 105245,
+        "max": 170894
+      },
+      "avgMsDeltaVsBaseline": {
+        "avg": 39238.5,
+        "min": 6414,
+        "max": 72063
+      },
+      "parseErrorRunsTotal": {
+        "planner": 0,
+        "jsonRepair": 0,
+        "schema": 0,
+        "jsonParse": 0,
+        "placeholder": 0,
+        "other": 0
+      }
+    },
+    {
+      "scenario": "python-ai-stdlib-oracle",
+      "runs": 2,
+      "passRate": {
+        "avg": 1,
+        "min": 1,
+        "max": 1
+      },
+      "rawRunPassRate": {
+        "avg": 1,
+        "min": 1,
+        "max": 1
+      },
+      "fallbackDependencyRunRate": {
+        "avg": 0,
+        "min": 0,
+        "max": 0
+      },
+      "avgMs": {
+        "avg": 59701,
+        "min": 45362,
+        "max": 74040
+      },
+      "avgMsDeltaVsBaseline": {
+        "avg": 17511,
+        "min": 3172,
+        "max": 31850
+      },
+      "parseErrorRunsTotal": {
+        "planner": 0,
+        "jsonRepair": 0,
+        "schema": 0,
+        "jsonParse": 0,
+        "placeholder": 0,
+        "other": 0
+      }
+    },
+    {
+      "scenario": "ts-todo-oracle",
+      "runs": 2,
+      "passRate": {
+        "avg": 1,
+        "min": 1,
+        "max": 1
+      },
+      "rawRunPassRate": {
+        "avg": 1,
+        "min": 1,
+        "max": 1
+      },
+      "fallbackDependencyRunRate": {
+        "avg": 0,
+        "min": 0,
+        "max": 0
+      },
+      "avgMs": {
+        "avg": 168776.5,
+        "min": 46339,
+        "max": 291214
+      },
+      "avgMsDeltaVsBaseline": {
+        "avg": 116506.5,
+        "min": -5931,
+        "max": 238944
+      },
+      "parseErrorRunsTotal": {
+        "planner": 0,
+        "jsonRepair": 0,
+        "schema": 0,
+        "jsonParse": 0,
+        "placeholder": 0,
+        "other": 0
+      }
+    }
+  ]
+}

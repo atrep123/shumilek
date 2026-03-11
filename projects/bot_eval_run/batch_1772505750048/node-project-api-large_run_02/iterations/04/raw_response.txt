@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet projects = [];\n\nfunction getAllProjects() {\n  return projects;\n}\n\nfunction getProjectByName(name) {\n  return projects.find(project => project.name === name);\n}\n\nfunction createProject(name) {\n  if (!name) {\n    return null;\n  }\n  const newProject = { id: randomUUID(), name };\n  projects.push(newProject);\n  return newProject;\n}\n\nfunction getProjectById(id) {\n  return projects.find(project => project.id === id);\n}\n\nmodule.exports = {\n  getAllProjects,\n  getProjectByName,\n  createProject,\n  getProjectById\n};\n"
+    }
+  ],
+  "notes": "Added required methods to the projects service."
+}

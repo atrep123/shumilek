@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\n\nrouter.post('/projects/:projectId/tasks/:taskId/comments', (req, res) => {\n  // Validation and service call here\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const projects = require('../projects/service');\n\n// Function to add a member\nfunction addMember(projectId, userId, role) {\n  // Check for duplicate membership\n  const project = projects.getProject(projectId);\n  if (project.members.some(member => member.userId === userId)) {\n    return null;\n  }\n  // Add member to the project\n  project.members.push({ userId, role });\n  return { member: { userId, role } };\n}\n\nmodule.exports = {\n  addMember,\n};\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { v4: uuidv4 } = require('uuid');\nconst projects = [];\n\nfunction createProject(name) {\n  const project = { id: uuidv4(), name, members: [] };\n  projects.push(project);\n  return project;\n}\n\nfunction getProject(id) {\n  return projects.find(project => project.id === id);\n}\n\nmodule.exports = {\n  createProject,\n  getProject,\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const projects = require('../projects/service');\n\nfunction createTask(projectId, title) {\n  const project = projects.getProject(projectId);\n  const task = { id: uuidv4(), projectId, title, status: 'todo' };\n  project.tasks.push(task);\n  return task;\n}\n\nfunction updateTaskStatus(taskId, newStatus) {\n  if (newStatus !== 'todo' && newStatus !== 'done') return null;\n  const task = getTaskById(taskId);\n  if (!task) return null;\n  task.status = newStatus;\n  return { task };\n}\n\nfunction getTasksByStatus(projectId, status) {\n  const project = projects.getProject(projectId);\n  return project.tasks.filter(task => task.status === status);\n}\n\nfunction getTaskById(taskId) {\n  for (const project of projects) {\n    const task = project.tasks.find(task => task.id === taskId);\n    if (task) return task;\n  }\n  return null;\n}\n\nmodule.exports = {\n  createTask,\n  updateTaskStatus,\n  getTasksByStatus,\n};\n"
+    }
+  ],
+  "notes": "Added routes and service functions for comments, members, projects, and tasks; updated project service to manage shared state."
+}

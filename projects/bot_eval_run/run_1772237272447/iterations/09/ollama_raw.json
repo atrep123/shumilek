@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:32b",
+  "created_at": "2026-02-28T01:06:17.4163582Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"package.json\",\n      \"content\": \"{\\n  \\\"name\\\": \\\"project-management-api\\\",\\n  \\\"version\\\": \\\"1.0.0\\\",\\n  \\\"description\\\": \\\"A simple project management API\\\",\\n  \\\"main\\\": \\\"src/app.js\\\",\\n  \\\"scripts\\\": {\\n    \\\"start\\\": \\\"node src/server.js\\\",\\n    \\\"test\\\": \\\"node --test tests/oracle.test.js\\\"\\n  },\\n  \\\"dependencies\\\": {\\n    \\\"express\\\": \\\"^4.18.2\\\",\\n    \\\"uuid\\\": \\\"^9.0.0\\\"\\n  },\\n  \\\"devDependencies\\\": {\\n    \\\"supertest\\\": \\\"^6.3.3\\\"\\n  }\\n}\\n\"\n    },\n    {\n      \"path\": \"src/app.js\",\n      \"content\": \"const express = require('express');\\nconst app = express();\\n\\napp.use(express.json());\\n\\n// Import routes\\nconst projectRoutes = require('./modules/projects/routes');\\nconst taskRoutes = require('./modules/tasks/routes');\\nconst memberRoutes = require('./modules/members/routes');\\nconst commentRoutes = require('./modules/comments/routes');\\n\\n// Use routes\\napp.use('/projects', projectRoutes);\\napp.use('/projects/:projectId/tasks', taskRoutes);\\napp.use('/projects/:projectId/tasks/:taskId/comments', commentRoutes);\\napp.use('/projects/:projectId/members', memberRoutes);\\n\\n// Health check endpoint\\napp.get('/', (req, res) => {\\n  res.status(200).json({ message: 'API is running' });\\n});\\n\\n// Error handling middleware\\napp.use((err, req, res, next) => {\\n  console.error(err.stack);\\n  if (err.code && err.message) {\\n    return res.status(400).json({ error: { code: err.code, message: err.message } });\\n  }\\n  res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Something went wrong!' } });\\n});\\n\\nmodule.exports = app;\\n\"\n    }\n  ],\n  \"notes\": \"Added uuid to dependencies and improved error handling in src/app.js.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 211633216000,
+  "load_duration": 67305900,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 39688645300,
+  "eval_count": 490,
+  "eval_duration": 161338201700
+}

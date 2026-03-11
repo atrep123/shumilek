@@ -1,0 +1,7 @@
+{
+  "review": "Fix the duplicate member add test by ensuring that the POST /projects/:projectId/members endpoint returns a 409 error when adding a member with an existing userId in the same project. Also, ensure that all source files are imported correctly and that no uncaught exceptions occur in route handlers.",
+  "priorityFiles": [
+    "src/modules/projects/routes.js",
+    "src/modules/members/routes.js"
+  ]
+}

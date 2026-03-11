@@ -1,0 +1,1 @@
+{ "review": "text", "priorityFiles": ["src/modules/projects/service.js", "src/modules/tasks/service.js", "src/modules/members/service.js"] }

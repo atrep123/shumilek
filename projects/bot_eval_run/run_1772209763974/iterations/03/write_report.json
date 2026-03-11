@@ -1,0 +1,12 @@
+{
+  "count": 5,
+  "files": [
+    "README.md",
+    "mini_ai/__init__.py",
+    "mini_ai/markov.py",
+    "tests/test_markov.py",
+    "mini_ai/cli.py"
+  ],
+  "appliedAsPatch": false,
+  "forcePatchFromIncompleteFull": false
+}

@@ -1,0 +1,20 @@
+{
+    "review": "Zkontrolujte, že pro všechny POST endpointy, které vyžadují body (např. /projects, /projects/:projectId/tasks/:taskId/comments), kontrolujete prázdný nebo chybějící payload a odpovídajícím způsobem vracejte 400 Bad Request. Pro endpointy, které mohou vracet duplicitní data (např. /projects), zkontrolujte správný zpracování duplicity.",
+    "changes": [
+        {
+            "file": "src/routes/projects.js",
+            "line": 20,
+            "change": "Přidat kontrolu pro prázdný payload v POST endpointu /projects"
+        },
+        {
+            "file": "src/routes/tasks.js",
+            "line": 35,
+            "change": "Přidat kontrolu pro prázdný payload v POST endpointu /projects/:projectId/tasks/:taskId/comments"
+        },
+        {
+            "file": "src/middleware/validation.js",
+            "line": 12,
+            "change": "Zlepšit funkci pro zpracování chybajících nebo prázdných payloadů a vracení odpovídajících chybových kódů"
+        }
+    ]
+}

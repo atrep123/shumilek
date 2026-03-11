@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst { sendError } = require('../../lib/errors');\n\nlet membersStore = {};\n\nfunction addMember(projectId, userId, role) {\n  if (!membersStore[projectId]) {\n    membersStore[projectId] = [];\n  }\n  const existingMember = membersStore[projectId].find(member => member.userId === userId);\n  if (existingMember) {\n    return null;\n  }\n  const newMember = { id: randomUUID(), userId, role };\n  membersStore[projectId].push(newMember);\n  return newMember;\n}\n\nfunction getMembers(projectId) {\n  return membersStore[projectId] || [];\n}\n\nmodule.exports = { addMember, getMembers };\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { addMember, getMembers } = require('./service');\n\nrouter.post('/', (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) {\n    return sendError(res, 400, 'INVALID_INPUT', 'User ID and role are required');\n  }\n  const member = addMember(req.projectId, userId, role);\n  if (!member) {\n    return sendError(res, 409, 'DUPLICATE_MEMBER', 'Member already exists in the project');\n  }\n  res.status(201).json({ member });\n});\n\nrouter.get('/', (req, res) => {\n  const members = getMembers(req.projectId);\n  res.json({ members });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst { sendError } = require('../../lib/errors');\n\nlet projectsStore = {};\n\nfunction addProject(name) {\n  if (!name) {\n    return null;\n  }\n  const newProject = { id: randomUUID(), name, members: [], tasks: [] };\n  projectsStore[newProject.id] = newProject;\n  return newProject;\n}\n\nfunction getProject(projectId) {\n  return projectsStore[projectId] || null;\n}\n\nmodule.exports = { addProject, getProject };\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { addProject, getProject } = require('./service');\n\nrouter.post('/', (req, res) => {\n  const { name } = req.body;\n  const project = addProject(name);\n  if (!project) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Name is required');\n  }\n  res.status(201).json({ project });\n});\n\nrouter.get('/:projectId', (req, res) => {\n  const project = getProject(req.params.projectId);\n  if (!project) {\n    return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found');\n  }\n  res.json({ project });\n});\n\nmodule.exports = router;\n"
+    }
+  ],
+  "notes": "Fixed the duplicate member check and validation in members service and routes. Also fixed the project creation validation in projects service and routes."
+}

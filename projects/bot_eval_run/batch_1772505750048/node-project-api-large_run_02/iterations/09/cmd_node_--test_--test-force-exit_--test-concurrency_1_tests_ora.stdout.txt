@@ -1,0 +1,57 @@
+✔ health + empty project list (84.134ms)
+✖ project create/list/get + duplicate + validation (12.7065ms)
+✖ members endpoints (11.5986ms)
+✔ tasks create/list/filter + patch status (24.8443ms)
+✖ comments + not-found and payload contract (8.4149ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 2
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 297.3545
+
+✖ failing tests:
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (12.7065ms)
+  TypeError: sendError is not a function
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\src\modules\projects\routes.js:7:21
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\route.js:149:13)
+      at Route.dispatch (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\route.js:119:3)
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\index.js:284:15
+      at router.process_params (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\index.js:346:12)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\index.js:280:10)
+      at router.handle (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\index.js:175:3)
+      at router (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\index.js:47:12)
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (11.5986ms)
+  TypeError: sendError is not a function
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\src\modules\members\routes.js:15:26
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\route.js:149:13)
+      at Route.dispatch (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\route.js:119:3)
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\index.js:284:15
+      at router.process_params (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\index.js:346:12)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\index.js:280:10)
+      at router.handle (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\index.js:175:3)
+      at router (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\index.js:47:12)
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (8.4149ms)
+  TypeError: sendError is not a function
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\src\modules\comments\routes.js:17:37
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\route.js:149:13)
+      at Route.dispatch (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\route.js:119:3)
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\index.js:284:15
+      at router.process_params (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\index.js:346:12)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\index.js:280:10)
+      at router.handle (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\index.js:175:3)
+      at router (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_02\workspace\node_modules\express\lib\router\index.js:47:12)

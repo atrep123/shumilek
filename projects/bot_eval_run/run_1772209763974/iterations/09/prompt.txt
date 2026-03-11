@@ -1,0 +1,134 @@
+Vytvor maly, ale realisticky Python projekt pro "AI" bez externich zavislosti.
+
+Pozadavky:
+- Pouze standardni knihovna Pythonu (zadne numpy/pandas/sklearn/torch/tensorflow/requests).
+- Struktura projektu jako balicek `mini_ai/` + `tests/` + `README.md`.
+- Implementuj jednoduchy model: napr. character-level Markov chain generator + trenovani z textu.
+- Pridat CLI: `python -m mini_ai.cli --help`, `train`, `generate` (offline).
+- Unit testy pres `unittest` (aspon 8 testu / assertu) a musi prochazet.
+
+VYSTUPNI FORMAT (STRICT): vrat JEN JSON objekt tohoto tvaru:
+{
+  "mode": "full",
+  "files": [
+    {"path": "README.md", "content": "...\n"},
+    {"path": "mini_ai/__init__.py", "content": "...\n"},
+    {"path": "mini_ai/...", "content": "...\n"},
+    {"path": "tests/test_....py", "content": "...\n"}
+  ],
+  "notes": "optional"
+}
+
+Pravidla:
+- Zadny markdown, zadne ``` bloky, zadny text mimo JSON.
+- Cesty jsou relativni, pouzij `/`, bez `..` a bez absolutnich cest.
+- Kazdy soubor ukonci znakem noveho radku.
+- "mode" pouzij "full" pro kompletni projekt (v pripade oprav muzes pouzit "patch").
+- `content` je vzdy kompletni obsah souboru (ne diff/snippet).
+
+---
+PLANNER HINTS (planner: deepseek-r1:8b; non-binding, SPEC wins on conflict):
+- [x] Vytvořit strukturu projektu `mini_ai/` a `tests/`
+- [x] Implementovat `__init__.py` v `mini_ai/` s importem `cli`
+- [x] Implementovat `cli.py` pro příkazovou řádkovou interakci
+- [x] Implementovat `markov.py` pro generaci Markovovy řetězce
+- [x] Vytvořit `train` a `generate` funkce v `cli.py`
+- [x] Napsat jednotkové testy pro `markov.py` v `tests/test_markov.py`
+- [x] Napsat jednotkové testy pro `cli.py` v `tests/test_cli.py`
+- [x] Zkontrolovat, že jsou spuštěny a úspěšné
+- [x] Vytvořit `README.md` s informacemi o projekту
+
+---
+NEPROSLO VALIDACI. Oprav nasledujici problemy.
+
+CHYBY:
+- Missing required file: mini_ai/cli.py
+- Command failed: python -m unittest discover -v -s tests -p "test*.py" (exit=1, timedOut=false)
+- Command failed: python -m mini_ai.cli --help (exit=1, timedOut=false)
+
+LOGY (zkraceno):
+- python -m unittest discover -v -s tests -p "test*.py"
+  stderr: "e_from_name\r\n    __import__(name)\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\tests\\test_cli.py\", line 4, in <module>\r\n    from mini_ai.cli import main\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\mini_ai\\__init__.py\", line 1, in <module>\r\n    from . import cli\r\nImportError: cannot import name 'cli' from partially initialized module 'mini_ai' (most likely due to a circular import) (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\mini_ai\\__init__.py)\r\n\r\n\r\n======================================================================\r\nERROR: test_markov (unittest.loader._FailedTest.test_markov)\r\n----------------------------------------------------------------------\r\nImportError: Failed to import test module: test_markov\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\loader.py\", line 396, in _find_test_path\r\n    module = self._get_module_from_name(name)\r\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\loader.py\", line 339, in _get_module_from_name\r\n    __import__(name)\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\tests\\test_markov.py\", line 2, in <module>\r\n    from mini_ai.markov import MarkovChain\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\mini_ai\\__init__.py\", line 1, in <module>\r\n    from . import cli\r\nImportError: cannot import name 'cli' from partially initialized module 'mini_ai' (most likely due to a circular import) (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\mini_ai\\__init__.py)\r\n\r\n\r\n----------------------------------------------------------------------\r\nRan 2 tests in 0.000s\r\n\r\nFAILED (errors=2)\r\n"
+- python -m mini_ai.cli --help
+  stderr: "C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\python.exe: Error while finding module specification for 'mini_ai.cli' (ImportError: cannot import name 'cli' from partially initialized module 'mini_ai' (most likely due to a circular import) (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\mini_ai\\__init__.py))\r\n"
+
+AKTUALNI SOUBORY:
+- README.md
+- mini_ai/__init__.py
+- mini_ai/__pycache__/__init__.cpython-312.pyc
+- tests/__pycache__/test_cli.cpython-312.pyc
+- tests/__pycache__/test_markov.cpython-312.pyc
+- tests/test_cli.py
+- tests/test_markov.py
+
+KONTEXT SOUBORU (pro opravu):
+--- FILE: mini_ai/__init__.py ---
+from . import cli
+
+
+DULEZITE: OPRAV SYNTAX/INDENT CHYBY PRESNE NA NIZE UVEDENYCH RADECH.
+KONTEXT SYNTAX CHYB:
+--- SYNTAX FILE: tests/test_cli.py (line 4) ---
+      1 | import unittest
+      2 | from unittest.mock import patch
+      3 | from io import StringIO
+>>    4 | from mini_ai.cli import main
+      5 | import os
+      6 | from mini_ai.markov import MarkovChain
+      7 | 
+      8 | class TestCLI(unittest.TestCase):
+      9 |     @patch('sys.argv', ['script.py', 'train', '--input', 'test.txt', '--model-out', 'model.json'])
+     10 |     def test_train_command(self):
+     11 |         with open('test.txt', 'w') as f:
+     12 |             f.write("hello world")
+     13 |         main()
+     14 |         self.assertTrue(os.path.exists('model.json'))
+     15 | 
+     16 |     @patch('sys.argv', ['script.py', 'generate', '--model', 'model.json', '--length', '5'])
+     17 |     @patch('sys.stdout', new_callable=StringIO)
+     18 |     def test_generate_command(self, mock_stdout):
+     19 |         with open('model.json', 'w') as f:
+     20 |             import json
+     21 |             model = MarkovChain(order=1)
+     22 |             model.train("hello world")
+     23 |             json.dump(model.to_dict(), f)
+     24 |         main()
+     25 |         output = mock_stdout.getvalue().strip()
+     26 |         self.assertEqual(len(output), 5)
+     27 | 
+--- SYNTAX FILE: mini_ai/__init__.py (line 1) ---
+>>    1 | from . import cli
+      2 | 
+--- SYNTAX FILE: tests/test_markov.py (line 2) ---
+      1 | import unittest
+>>    2 | from mini_ai.markov import MarkovChain
+      3 | class TestMarkovChain(unittest.TestCase):
+      4 |     def test_train_and_generate(self):
+      5 |         text = "hello world"
+      6 |         model = MarkovChain(order=1)
+      7 |         model.train(text)
+      8 |         generated_text = model.generate(length=5, random_seed=42)
+      9 |         self.assertEqual(len(generated_text), 5)
+     10 | 
+     11 |     def test_to_dict_and_from_dict(self):
+     12 |         text = "hello world"
+     13 |         model = MarkovChain(order=1)
+     14 |         model.train(text)
+     15 |         data = model.to_dict()
+     16 |         new_model = MarkovChain.from_dict(data)
+     17 |         self.assertEqual(model.chain, new_model.chain)
+     18 | 
+     19 |     def test_generate_with_seed(self):
+     20 |         text = "hello world"
+     21 |         model = MarkovChain(order=1)
+     22 |         model.train(text)
+     23 |         generated_text = model.generate(length=5, seed="he", random_seed=42)
+     24 |         self.assertTrue(generated_text.startswith("he"))
+     25 | 
+     26 |     def test_generate_with_longer_seed(self):
+     27 |         text = "hello world"
+Instrukce: dodrz konzistentni odsazeni (mezery), zadne smichani blokovych urovni.
+
+VYSTUP: vrat JEN platny JSON objekt bez markdownu:
+{ "mode": "patch", "files": [ {"path":"...","content":"...\n"} ], "notes": "optional" }
+Pravidla: udelej jen minimalni nutne zmeny; posli jen soubory ktere menis nebo pridavas; u kazdeho posli VZDY cely obsah souboru.

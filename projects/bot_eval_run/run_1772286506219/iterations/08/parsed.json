@@ -1,0 +1,37 @@
+{
+  "files": [
+    {
+      "path": "src/lib/errors.js",
+      "content": "function createError(status, code, message) {\n  return { error: { code, message } };\n}\n\nmodule.exports = { createError };\n"
+    },
+    {
+      "path": "src/lib/id.js",
+      "content": "const crypto = require('node:crypto');\n\nfunction generateId() {\n  return crypto.randomUUID();\n}\n\nmodule.exports = { generateId };\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { generateId, createError } = require('../../lib/id'), require('../../lib/errors');\nlet projects = require('../projects/service').getProjects();\n\nfunction addCommentToTask(projectId, taskId, data) {\n  const project = projects.find(p => p.id === projectId);\n  if (!project) return createError(404, 'NOT_FOUND', 'Project not found');\n  const task = project.tasks.find(t => t.id === taskId);\n  if (!task) return createError(404, 'NOT_FOUND', 'Task not found');\n  if (!data.message) return createError(400, 'INVALID_DATA', 'Message is required');\n  const comment = { id: generateId(), message: data.message };\n  task.comments = task.comments || [];\n  task.comments.push(comment);\n  return comment;\n}\n\nfunction getCommentsByTaskId(projectId, taskId) {\n  const project = projects.find(p => p.id === projectId);\n  if (!project) return createError(404, 'NOT_FOUND', 'Project not found');\n  const task = project.tasks.find(t => t.id === taskId);\n  if (!task) return createError(404, 'NOT_FOUND', 'Task not found');\n  return task.comments || [];\n}\n\nmodule.exports = { addCommentToTask, getCommentsByTaskId };\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst service = require('./service');\n\nrouter.post('/', (req, res) => {\n  const { projectId } = req.params;\n  const data = req.body;\n  const result = service.addMemberToProject(projectId, data);\n  if (!result || result.error) return res.status(result?.error.code || 500).json(result);\n  res.status(201).json(result);\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { createError } = require('../../lib/errors');\nlet projects = require('../projects/service').getProjects();\n\nfunction addMemberToProject(projectId, data) {\n  const project = projects.find(p => p.id === projectId);\n  if (!project) return createError(404, 'NOT_FOUND', 'Project not found');\n  if (!data.userId || !data.role) return createError(400, 'INVALID_DATA', 'UserId and role are required');\n  const memberExists = project.members.some(m => m.userId === data.userId);\n  if (memberExists) return createError(409, 'DUPLICATE_MEMBER', 'Member already exists in the project');\n  const member = { userId: data.userId, role: data.role };\n  project.members.push(member);\n  return member;\n}\n\nmodule.exports = { addMemberToProject };\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst service = require('./service');\n\nrouter.get('/', (req, res) => {\n  const projects = service.getProjects();\n  res.json(projects);\n});\n\nrouter.post('/', (req, res) => {\n  const data = req.body;\n  const result = service.createProject(data);\n  if (!result || result.error) return res.status(result?.error.code || 500).json(result);\n  res.status(201).json(result);\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst service = require('./service');\n\nrouter.get('/', (req, res) => {\n  const { projectId } = req.params;\n  const status = req.query.status;\n  const tasks = service.getTasksByProjectId(projectId, status);\n  if (!tasks || tasks.error) return res.status(tasks?.error.code || 500).json(tasks);\n  res.json(tasks);\n});\n\nrouter.post('/', (req, res) => {\n  const { projectId } = req.params;\n  const data = req.body;\n  const result = service.createTask(projectId, data);\n  if (!result || result.error) return res.status(result?.error.code || 500).json(result);\n  res.status(201).json(result);\n});\n\nrouter.patch('/:taskId', (req, res) => {\n  const { projectId, taskId } = req.params;\n  const data = req.body;\n  const result = service.updateTaskStatus(projectId, taskId, data);\n  if (!result || result.error) return res.status(result?.error.code || 500).json(result);\n  res.json(result);\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { generateId, createError } = require('../../lib/id'), require('../../lib/errors');\nlet projects = require('../projects/service').getProjects();\n\nfunction createTask(projectId, data) {\n  const project = projects.find(p => p.id === projectId);\n  if (!project) return createError(404, 'NOT_FOUND', 'Project not found');\n  if (!data.title) return createError(400, 'INVALID_DATA', 'Title is required');\n  const task = { id: generateId(), title: data.title, status: 'pending' };\n  project.tasks.push(task);\n  return task;\n}\n\nfunction getTasksByProjectId(projectId, status) {\n  const project = projects.find(p => p.id === projectId);\n  if (!project) return createError(404, 'NOT_FOUND', 'Project not found');\n  let tasks = project.tasks;\n  if (status) {\n    tasks = tasks.filter(t => t.status === status);\n  }\n  return tasks;\n}\n\nfunction updateTaskStatus(projectId, taskId, data) {\n  const project = projects.find(p => p.id === projectId);\n  if (!project) return createError(404, 'NOT_FOUND', 'Project not found');\n  const task = project.tasks.find(t => t.id === taskId);\n  if (!task) return createError(404, 'NOT_FOUND', 'Task not found');\n  if (!['pending', 'done'].includes(data.status)) return createError(400, 'INVALID_DATA', 'Invalid status');\n  task.status = data.status;\n  return task;\n}\n\nmodule.exports = { createTask, getTasksByProjectId, updateTaskStatus };\n"
+    }
+  ],
+  "notes": "Added missing files and corrected imports in services. Implemented routes for members, tasks, and projects."
+}

@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst membersService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', (req, res) => {\n  const { userId, role } = req.body;\n\n  if (!userId || !role) {\n    return sendError(res, 400, 'INVALID_PAYLOAD', 'User ID and role are required.');\n  }\n\n  const member = membersService.createMember(req.projectId, userId, role);\n\n  if (member.error) {\n    return sendError(res, member.status, member.code, member.message);\n  }\n\n  res.status(201).json({ member });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst commentsService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', (req, res) => {\n  const { message } = req.body;\n\n  if (!message) {\n    return sendError(res, 400, 'INVALID_PAYLOAD', 'Message is required.');\n  }\n\n  const comment = commentsService.createComment(req.projectId, req.taskId, message);\n\n  if (comment.error) {\n    return sendError(res, comment.status, comment.code, comment.message);\n  }\n\n  res.status(201).json({ comment });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst projectsService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', (req, res) => {\n  const { name } = req.body;\n\n  if (!name) {\n    return sendError(res, 400, 'INVALID_PAYLOAD', 'Name is required.');\n  }\n\n  const project = projectsService.createProject(name);\n\n  res.status(201).json({ project });\n});\n\nrouter.get('/:projectId', (req, res) => {\n  const project = projectsService.getProject(req.projectId);\n\n  if (!project) {\n    return sendError(res, 404, 'NOT_FOUND', 'Project not found.');\n  }\n\n  res.json({ project });\n});\n\nmodule.exports = router;\n"
+    }
+  ],
+  "notes": "Added validation for required fields in POST requests and ensured proper error handling."
+}

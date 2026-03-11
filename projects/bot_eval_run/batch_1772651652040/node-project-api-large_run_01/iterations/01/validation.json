@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Ollama request failed: Structured chat failed: The user aborted a request.; timeout-model-fallback(qwen2.5-coder:14b) failed: Structured chat failed: The user aborted a request.",
+    "Stopping early after repeated generation timeout(s): 1."
+  ]
+}

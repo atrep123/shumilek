@@ -1,0 +1,5 @@
+{
+  "error": "RequestValidationError",
+  "message": "Invalid request: Missing required parameter 'path' in body or query string.",
+  "data": {}
+}

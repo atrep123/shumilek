@@ -1,0 +1,19 @@
+{
+  "batchId": 1771969484099,
+  "startedAt": "2026-02-24T21:44:44.100Z",
+  "scenarios": [
+    "ts-todo-oracle",
+    "node-api-oracle",
+    "python-ai-stdlib-oracle"
+  ],
+  "runs": 10,
+  "model": "qwen2.5-coder:14b",
+  "plannerModel": "deepseek-r1:8b",
+  "reviewerModel": "qwen2.5:3b",
+  "jsonRepairModel": "qwen2.5:7b",
+  "deterministicFallbackMode": "on-fail",
+  "timeoutSec": 1200,
+  "maxIterations": 6,
+  "hardTimeoutSec": 1200,
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_local_10x3_after_13a3703_20260224_224441"
+}

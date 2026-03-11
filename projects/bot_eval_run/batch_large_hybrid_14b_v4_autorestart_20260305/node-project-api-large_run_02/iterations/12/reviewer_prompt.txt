@@ -1,0 +1,328 @@
+Jsi code reviewer (mini-validator). Tvuj ukol: navrhnout MINIMALNI opravy, ktere povedou k tomu, ze validace projde.
+Odpovez JEN JSON bez markdownu: { "review": "text", "priorityFiles": ["path1","path2"] }
+
+SPEC (zkraceno):
+Vytvor stredne velky Node.js monolit (Project Management API), ktery projde oracle testy.
+
+POZADAVKY / KONTRAKT:
+- Bez persistence mimo proces: pouzij in-memory repozitare/sluzby.
+- Bez fake/mock vysledku; endpointy musi vracet realna data z in-memory stavu.
+- Pouzij domeny: projects, tasks, members, comments.
+- Struktura musi byt modulova pod `src/modules/` a obsahovat min. tyto adresare:
+  - src/modules/projects
+  - src/modules/tasks
+  - src/modules/members
+  - src/modules/comments
+- Projekt musi mit minimalne 12 source souboru pod `src/` (`.js`/`.ts`/`.mjs`/`.cjs`).
+- Musi existovat `src/app.*` (app export pro testy) a `src/server.*` (spousteci vrstva).
+- `src/app.*` / `src/server.*` NESMI automaticky volat `listen()` pri importu (oracle importuje app pres supertest).
+- Vsechny chyby vracej konzistentne: `{ "error": { "code": "<string>", "message": "<string>" } }`.
+- Povolen bezny stack (napr. express, zod).
+- Protoze oracle testy pouzivaji supertest, zajisti `supertest` v dependencies nebo devDependencies.
+- Nepouzivej balicek `uuid`; generovani ID delat pres `node:crypto` + `crypto.randomUUID()`.
+- Nepouzivej neplatny pattern `const { v4: uuidv4 } = require("crypto").randomUUID`; spravne je `const { randomUUID } = require("node:crypto")` a volat `randomUUID()`.
+- Pokud pouzijes express, zapni `app.use(express.json())` a vracej JSON i pro chyby (ne HTML fallback).
+- Nenechavej uncaught vyjimky v route handlerech; 4xx/404/409 chyby vracej jako JSON payload, ne throw bez catcheru.
+- Nepouzivej `new BadRequestError(...)`/`new NotFoundError(...)`, pokud je explicitne nedefinujes a neexportujes v `src/lib/errors.*`.
+- Pri importu helperu z `src/modules/*` pouzij relativni cesty `../../lib/id` a `../../lib/errors` (ne `../lib/*`).
+- API endpointy (minimalni kontrakt):
+  - GET /health -> 200 { ok: true } (presne klic `ok`, ne `status` ani jiny alias)
+  - GET /projects -> 200 { projects: [...] }
+  - POST /projects body { name } -> 201 { project }
+    - body bez `name` (nebo prazdny `name`) -> 400 error payload
+  - GET /projects/:projectId -> 200 { project } nebo 404 error payload
+  - POST /projects/:projectId/members body { userId, role } -> 201 { member }
+    - body bez `userId` nebo `role` -> 400 error payload
+  - GET /projects/:projectId/members -> 200 { members: [...] }
+  - POST /projects/:projectId/tasks body { title } -> 201 { task }
+    - body bez `title` (nebo prazdny `title`) -> 400 error payload
+  - GET /projects/:projectId/tasks?status=todo|done -> 200 { tasks: [...] }
+    - query `status` musi skutecne filtrovat vysledek (ne jen ignorovat)
+  - PATCH /projects/:projectId/tasks/:taskId body { status } -> 200 { task }
+    - povolene statusy: `todo` | `done`; jine hodnoty -> 400 error payload
+  - POST /projects/:projectId/tasks/:taskId/comments body { message } -> 201 { comment }
+    - body bez `message` (nebo prazdny `message`) -> 400 error payload
+  - GET /projects/:projectId/tasks/:taskId/comments -> 200 { comments: [...] }
+- Konfliktni vstupy (napr. duplicate project/member) vracej jako 409 error payload.
+- Member objekt modeluj jako `{ id, userId, role }` (ne `{ id, name }`).
+- Nevalidni vstupy vracej jako 400 error payload, neexistujici entity jako 404 error payload.
+- Route wiring v `src/app.js` musi obsahovat mounty:
+  - app.use("/projects", projectsRoutes)
+  - app.use("/projects/:projectId/members", membersRoutes)
+  - app.use("/projects/:projectId/tasks", tasksRoutes)
+  - app.use("/projects/:projectId/tasks/:taskId/comments", commentsRoutes)
+- Uvnitr `members/tasks/comments` routeru pouzij relativni paths od mountpointu (napr. "/" nebo "/:taskId"), ne znovu cele cesty s projectId/taskId.
+- V tomto scenari se nesmi spoustet HTTP listener na fixnim portu (zadne `app.listen(...)` pri importu).
+- Povinna minimalni sada souboru v prvnim `mode:"full"` vystupu:
+  - README.md
+  - package.json
+  - src/app.js
+  - src/server.js
+  - src/modules/projects/routes.js
+  - src/modules/projects/service.js
+  - src/modules/tasks/routes.js
+  - src/modules/tasks/service.js
+  - src/modules/members/routes.js
+  - src/modules/members/service.js
+  - src/modules/comments/routes.js
+  - src/modules/comments/service.js
+  - src/lib/errors.js
+  - src/lib/id.js
+
+Doporuceni: scenar je zamerne vetsi; pocitej s `--maxIterations 12`.
+
+Poznamka: testy budeme pouzivat tyto (musis projit):
+--- BEGIN ORACLE TESTS (tests/oracle.test.js) ---
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { pathToFileURL } = require('node:url');
+const request = require('supertest');
+
+async function loadApp() {
+  const candidates = [
+    '../src/app.js',
+    '../src/app.cjs',
+    '../src/app.mjs',
+    '../dist/app.js',
+    '../build/app.js',
+    '../src/app.ts',
+  ];
+
+  const errors = [];
+  for (const rel of candidates) {
+    const abs = path.join(__dirname, rel);
+    if (!fs.existsSync(abs)) continue;
+
+    try {
+      let mod;
+      if (rel.endsWith('.mjs')) {
+        mod = await import(pathToFileURL(abs).href);
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        mod = require(abs);
+      }
+      const app = mod?.app || mod?.default || mod;
+      if (typeof app === 'function') return app;
+      errors.push(`${rel}: module loaded, but app export is not a function`);
+    } catch (err) {
+      errors.push(`${rel}: ${String(err?.message || err)}`);
+    }
+  }
+
+  throw new Error(`Expected app export in src/app.* (or dist/build). Details: ${errors.join(' | ') || 'no candidate app file found'}`);
+}
+
+function expectErrorPayload(res, expectedStatus) {
+  assert.equal(res.status, expectedStatus, res.text);
+  assert.ok(res.body && typeof res.body === 'object', 'Expected JSON object body');
+  assert.ok(res.body.error && typeof res.body.error === 'object', 'Expected error object');
+  assert.equal(typeof res.body.error.code, 'string');
+  assert.ok(res.body.error.code.length > 0);
+  assert.equal(typeof res.b
+...<snip>...
+
+
+CHYBY:
+- JavaScript syntax check failed in src/modules/comments/service.js: C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_large_hybrid_14b_v4_autorestart_20260305\node-project-api-large_run_02\workspace\src\modules\comments\service.js:2
+- JavaScript syntax check failed in src/modules/members/service.js: C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_large_hybrid_14b_v4_autorestart_20260305\node-project-api-large_run_02\workspace\src\modules\members\service.js:2
+- JavaScript syntax check failed in src/modules/projects/service.js: C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_large_hybrid_14b_v4_autorestart_20260305\node-project-api-large_run_02\workspace\src\modules\projects\service.js:2
+- JavaScript syntax check failed in src/modules/tasks/service.js: C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_large_hybrid_14b_v4_autorestart_20260305\node-project-api-large_run_02\workspace\src\modules\tasks\service.js:2
+- Skipped oracle command checks because structural contract did not pass.
+
+NODE PROJECT CONTRACT FIX MAP (AUTO-GENERATED)
+- priority: resolve all structural diagnostics first so oracle command phase can run.
+
+SOUBORY (zkraceno):
+- README.md
+- package.json
+- src/app.js
+- src/lib/errors.js
+- src/lib/id.js
+- src/modules/comments/routes.js
+- src/modules/comments/service.js
+- src/modules/members/routes.js
+- src/modules/members/service.js
+- src/modules/projects/routes.js
+- src/modules/projects/service.js
+- src/modules/tasks/routes.js
+- src/modules/tasks/service.js
+- src/server.js
+
+KONTEXT SOUBORU (zkraceno):
+--- FILE: src/modules/comments/service.js ---
+const { randomUUID } = require('../../lib/id');
+const { randomUUID } = require('node:crypto');
+
+let commentsStore = [];
+
+const createComment = async (taskId, message) => {
+  const commentId = randomUUID();
+  const comment = { id: commentId, taskId, message };
+  commentsStore.push(comment);
+  return comment;
+};
+
+const getComments = async (taskId) => {
+  return commentsStore.filter(comment => comment.taskId === taskId);
+};
+
+module.exports = { createComment, getComments };
+module.exports.addComment = async function addCommentBridge(projectId, taskId, message) {
+  const normalizedMessage = String(message || '').trim();
+  const payload = { message: normalizedMessage };
+  let result = await module.exports.createComment(projectId, taskId, payload);
+  let normalized = result && typeof result === 'object' && 'comment' in result ? result.comment : result;
+  if ((!normalized || typeof normalized !== 'object' || typeof normalized.message === 'undefined') && typeof module.exports.createComment === 'function') {
+    const retry = await module.exports.createComment(projectId, taskId, normalizedMessage);
+    const retryNormalized = retry && typeof retry === 'object' && 'comment' in retry ? retry.comment : retry;
+    if (retryNormalized && typeof retryNormalized === 'object') normalized = retryNormalized;
+  }
+  if (!normalized || typeof normalized !== 'object') return { projectId: String(projectId || ''), taskId: String(taskId || ''), message: normalizedMessage };
+  return typeof normalized.message === 'undefined' ? { ...normalized, message: normalizedMessage } : normalized;
+};
+module.exports.getAllComments = module.exports.getComments;
+
+--- FILE: src/modules/members/service.js ---
+const { randomUUID } = require('../../lib/id');
+const { randomUUID } = require('node:crypto');
+
+let membersStore = [];
+
+const addMember = async (projectId, userId, role) => {
+  const memberId = randomUUID();
+  const member = { id: memberId, projectId, userId, role };
+  membersStore.push(member);
+  return member;
+};
+
+const getMembers = async (projectId) => {
+  return membersStore.filter(member => member.projectId === projectId);
+};
+
+module.exports = { addMember, getMembers };
+const __botEvalMembersDupGuard = module.exports.addMember;
+const __botEvalMembersDupStore = [];
+module.exports.addMember = function addMember(projectId, userId, role) {
+  const projectKey = String(projectId || '');
+  const userKey = String(userId || '');
+  const getMembersFn = typeof module.exports.getMembers === 'function' ? module.exports.getMembers : (typeof module.exports.getMembersByProjectId === 'function' ? module.exports.getMembersByProjectId : null);
+  const fromServiceMaybe = getMembersFn ? getMembersFn(projectKey) : undefined;
+  const fromService = fromServiceMaybe && typeof fromServiceMaybe.then === 'function' ? undefined : fromServiceMaybe;
+  const fromFallbackStore = __botEvalMembersDupStore.filter(member => member && String(member.projectId || '') === projectKey);
+  const baseline = Array.isArray(fromService) && fromService.length > 0 ? fromService : fromFallbackStore;
+  const existing = baseline.find(member => member && String(member.userId || '') === userKey);
+  if (existing) return { duplicate: true, member: existing };
+  const normalizeResult = (resolved) => {
+    if (resolved == null) return null;
+    if (resolved && typeof resolved === 'object' && 'duplicate' in resolved && 'member' in resolved) return resolved;
+    if (resolved && typeof resolved === 'object' && 'error' in resolved && resolved.error) {
+      const code = String(resolved.code || resolved.error?.code || '').toUpperCase();
+      const duplicateLike = code.includes('DUPLICATE') || Number(resolved.status || resolved.error?.status || 0) === 409;
+      if (duplicateLike) {
+        const fallbackMember = resolved.member && typeof resolved.member === 'object'
+          ? resolved.member
+          : { projectId: projectKey, userId: userKey, role: String(role || 'member') };
+        return { duplicate: true, member: fallbackMember };
+      }
+      return null;
+    }
+    const normalized = resolved && typeof resolved === 'object' && 'member' in resolved ? resolved.member : resolved;
+    if (normalized && typeof normalized === 'object') {
+      const withProject = 'projectId' in normalized ? normalized : { projectId: projectKey, ...normalized };
+      const withUser = 'userId' in withProject ? withProject : { ...withProject, userId: userKey };
+      const withRole = 'role' in withUser ? withUser : { ...withUser, role: String(role || 'member') };
+      return { duplicate: false, member: withRole };
+    }
+    return { duplicate: false, member: { projectId: projectKey, userId: userKey, role: String(role || 'member') } };
+  };
+  if (typeof __botEvalMembersDupGuard === 'function') {
+    const payload = { userId: userKey, role: String(role || '') };
+    const result = __botEvalMembersDupGuard.length >= 3
+      ? __botEvalMembersDupGuard(projectId, userId, role)
+      : __botEvalMembersDupGuard(projectId, payload);
+    if (result && typeof result.then === 'function') {
+      return result.then((resolved) => {
+        const normalizedResult = normalizeResult(resolved);
+        if (normalizedResult && normalizedResult.member && typeof normalizedResult.member === 'object') __botEvalMembersDupStore.push(normalizedResult.member);
+        return normalizedResult;
+      });
+    }
+    const normalizedResult = normalizeResult(result);
+    if (normalizedResult && normalizedResult.member && typeof normalizedResult.member === 'object') __botEvalMembersDupStore.push(normalizedResult.member);
+    return normalizedResult;
+  }
+  return null;
+};
+
+--- FILE: src/modules/projects/service.js ---
+const { randomUUID } = require('../../lib/id');
+const { randomUUID } = require('node:crypto');
+
+let projectsStore = [];
+
+const createProject = async (name) => {
+  const projectId = randomUUID();
+  const project = { id: projectId, name };
+  projectsStore.push(project);
+  return project;
+};
+
+const getAllProjects = async () => {
+  return projectsStore;
+};
+
+const getProjectById = async (projectId) => {
+  return projectsStore.find(project => project.id === projectId);
+};
+
+module.exports = { createProject, getAllProjects, getProjectById };
+const __botEvalProjectsDupGuard = module.exports.createProject;
+module.exports.createProject = function createProject(name) {
+  const normalized = String(name || '').trim();
+  let existing = null;
+  if (typeof module.exports.getProjectByName === 'function') {
+    const candidate = module.exports.getProjectByName(normalized);
+    if (candidate && typeof candidate.then !== 'function') existing = candidate;
+  }
+  if (!existing && Array.isArray(projectsStore)) {
+    existing = projectsStore.find(project => project && String(project.name || '') === normalized);
+  }
+
+
+  if (existing) return null;
+  if (typeof __botEvalProjectsDupGuard === 'function') return __botEvalProjectsDupGuard(normalized);
+  return null;
+};
+
+--- FILE: src/modules/tasks/service.js ---
+const { randomUUID } = require('../../lib/id');
+const { randomUUID } = require('node:crypto');
+
+let tasksStore = [];
+
+const createTask = async (projectId, description) => {
+  const taskId = randomUUID();
+  const task = { id: taskId, projectId, description, status: 'todo' };
+  tasksStore.push(task);
+  return task;
+};
+
+const getTasks = async (projectId) => {
+  return tasksStore.filter(task => task.projectId === projectId);
+};
+
+const getDoneTasks = async (projectId) => {
+  return tasksStore.filter(task => task.projectId === projectId && task.status === 'done');
+};
+
+module.exports = { createTask, getTasks, getDoneTasks };
+module.exports.getAllTasks = async function getAllTasksBridge(projectId, status) {
+  const result = await module.exports.getTasks(projectId, status);
+  const list = Array.isArray(result) ? result : (result && typeof result === 'object' && Array.isArray(result.tasks) ? result.tasks : []);
+  const normalized = list.map(item => item && typeof item === 'object' && 'task' in item ? item.task : item).filter(Boolean);
+  if (status === 'todo' || status === 'done') return normalized.filter(task => task && task.status === status);
+  return normalized;
+};
+module.exports.updateTaskStatus = async function updateTaskStatusBridge(projectId, taskId, status) { const normalized = status === 'done' ? 'done' : 'todo'; const list = Array.isArray(tasksStore) ? tasksStore : []; const target = list.find(task => task && String(task.id || '') === String(taskId || '') && String(task.projectId || '') === String(projectId || '')); if (!target) return null; target.status = normalized; return target; };

@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst tasks = [];\nconst createTask = (data) => {\n  if (!data.title) return null;\n  const task = { id: randomUUID(), ...data };\ntasks.push(task);\nreturn task;\n};\nmodule.exports = { createTask };"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"project-management-api\",\n  \"version\": \"1.0.0\",\n  \"main\": \"src/app.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.17.1\",\n    \"crypto\": \"^1.0.0\",\n    \"supertest\": \"^6.3.3\"\n  }\n}"
+    }
+  ],
+  "notes": "Added supertest to dependencies and corrected the import of crypto module."
+}

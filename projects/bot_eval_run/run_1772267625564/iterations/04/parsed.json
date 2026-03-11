@@ -1,0 +1,49 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"project-management-api\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple Project Management API\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.18.2\",\n    \"supertest\": \"^6.3.3\"\n  }\n}\n"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst crypto = require('crypto');\n\nconst app = express();\napp.use(express.json());\n\n// In-memory repositories\nconst projectsRepo = {};\nconst membersRepo = {};\nconst tasksRepo = {};\nconst commentsRepo = {};\n\n// Health endpoint\napp.get('/health', (req, res) => {\n  res.status(200).json({ ok: true });\n});\n\n// Projects routes\nconst projectsRoutes = require('./modules/projects/routes');\nprojectsRoutes(app, { projectsRepo, membersRepo, tasksRepo, commentsRepo, crypto });\n\n// Tasks routes\nconst tasksRoutes = require('./modules/tasks/routes');\ntasksRoutes(app, { projectsRepo, membersRepo, tasksRepo, commentsRepo, crypto });\n\n// Members routes\nconst membersRoutes = require('./modules/members/routes');\nmembersRoutes(app, { projectsRepo, membersRepo, tasksRepo, commentsRepo, crypto });\n\n// Comments routes\nconst commentsRoutes = require('./modules/comments/routes');\ncommentsRoutes(app, { projectsRepo, membersRepo, tasksRepo, commentsRepo, crypto });\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/server.js",
+      "content": "const app = require('./app');\nconst PORT = process.env.PORT || 3000;\n\napp.listen(PORT, () => {\n  console.log(`Server is running on port ${PORT}`);\n});\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "module.exports = (app, { projectsRepo, crypto }) => {\n  // Create a new project\n  app.post('/projects', (req, res) => {\n    const { name } = req.body;\n    if (!name) return res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'Name is required' } });\n    if (Object.values(projectsRepo).some(p => p.name === name)) return res.status(409).json({ error: { code: 'DUPLICATE_PROJECT', message: 'Project with this name already exists' } });\n\n    const projectId = crypto.randomUUID();\n    projectsRepo[projectId] = { id: projectId, name };\n    res.status(201).json({ project: projectsRepo[projectId] });\n  });\n\n  // Get all projects\n  app.get('/projects', (req, res) => {\n    const projects = Object.values(projectsRepo);\n    res.status(200).json({ projects });\n  });\n\n  // Get a project by ID\n  app.get('/projects/:projectId', (req, res) => {\n    const { projectId } = req.params;\n    if (!projectsRepo[projectId]) return res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });\n\n    res.status(200).json({ project: projectsRepo[projectId] });\n  });\n};\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "// Placeholder for any additional service logic related to projects\nmodule.exports = {};\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "module.exports = (app, { projectsRepo, tasksRepo, crypto }) => {\n  // Create a new task for a project\n  app.post('/projects/:projectId/tasks', (req, res) => {\n    const { projectId } = req.params;\n    if (!projectsRepo[projectId]) return res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });\n\n    const { title } = req.body;\n    if (!title) return res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'Title is required' } });\n\n    const taskId = crypto.randomUUID();\n    tasksRepo[taskId] = { id: taskId, projectId, title, status: 'pending' };\n    res.status(201).json({ task: tasksRepo[taskId] });\n  });\n\n  // Get all tasks for a project\n  app.get('/projects/:projectId/tasks', (req, res) => {\n    const { projectId } = req.params;\n    if (!projectsRepo[projectId]) return res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });\n\n    const tasks = Object.values(tasksRepo).filter(task => task.projectId === projectId);\n    res.status(200).json({ tasks });\n  });\n\n  // Get tasks by status for a project\n  app.get('/projects/:projectId/tasks', (req, res) => {\n    const { projectId } = req.params;\n    const { status } = req.query;\n    if (!projectsRepo[projectId]) return res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });\n\n    const tasks = Object.values(tasksRepo).filter(task => task.projectId === projectId && task.status === status);\n    res.status(200).json({ tasks });\n  });\n\n  // Update a task's status\n  app.patch('/projects/:projectId/tasks/:taskId', (req, res) => {\n    const { projectId, taskId } = req.params;\n    if (!projectsRepo[projectId]) return res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });\n    if (!tasksRepo[taskId] || tasksRepo[taskId].projectId !== projectId) return res.status(404).json({ error: { code: 'TASK_NOT_FOUND', message: 'Task not found' } });\n\n    const { status } = req.body;\n    if (status && ['pending', 'done'].includes(status)) {\n      tasksRepo[taskId].status = status;\n      res.status(200).json({ task: tasksRepo[taskId] });\n    } else {\n      return res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'Invalid status' } });\n    }\n  });\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "// Placeholder for any additional service logic related to tasks\nmodule.exports = {};\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "module.exports = (app, { projectsRepo, membersRepo, crypto }) => {\n  // Add a member to a project\n  app.post('/projects/:projectId/members', (req, res) => {\n    const { projectId } = req.params;\n    if (!projectsRepo[projectId]) return res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });\n\n    const { name } = req.body;\n    if (!name) return res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'Name is required' } });\n\n    const memberId = crypto.randomUUID();\n    membersRepo[memberId] = { id: memberId, projectId, name };\n    res.status(201).json({ member: membersRepo[memberId] });\n  });\n\n  // Get all members for a project\n  app.get('/projects/:projectId/members', (req, res) => {\n    const { projectId } = req.params;\n    if (!projectsRepo[projectId]) return res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });\n\n    const members = Object.values(membersRepo).filter(member => member.projectId === projectId);\n    res.status(200).json({ members });\n  });\n};\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "// Placeholder for any additional service logic related to members\nmodule.exports = {};\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "module.exports = (app, { projectsRepo, tasksRepo, commentsRepo, crypto }) => {\n  // Add a comment to a task\n  app.post('/projects/:projectId/tasks/:taskId/comments', (req, res) => {\n    const { projectId, taskId } = req.params;\n    if (!projectsRepo[projectId]) return res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });\n    if (!tasksRepo[taskId] || tasksRepo[taskId].projectId !== projectId) return res.status(404).json({ error: { code: 'TASK_NOT_FOUND', message: 'Task not found' } });\n\n    const { message } = req.body;\n    if (!message) return res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'Message is required' } });\n\n    const commentId = crypto.randomUUID();\n    commentsRepo[commentId] = { id: commentId, taskId, message };\n    res.status(201).json({ comment: commentsRepo[commentId] });\n  });\n\n  // Get all comments for a task\n  app.get('/projects/:projectId/tasks/:taskId/comments', (req, res) => {\n    const { projectId, taskId } = req.params;\n    if (!projectsRepo[projectId]) return res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });\n    if (!tasksRepo[taskId] || tasksRepo[taskId].projectId !== projectId) return res.status(404).json({ error: { code: 'TASK_NOT_FOUND', message: 'Task not found' } });\n\n    const comments = Object.values(commentsRepo).filter(comment => comment.taskId === taskId);\n    res.status(200).json({ comments });\n  });\n};\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "// Placeholder for any additional service logic related to comments\nmodule.exports = {};\n"
+    }
+  ],
+  "notes": "Added necessary routes and service files for projects, tasks, members, and comments. Ensured consistent error handling and in-memory storage."
+}

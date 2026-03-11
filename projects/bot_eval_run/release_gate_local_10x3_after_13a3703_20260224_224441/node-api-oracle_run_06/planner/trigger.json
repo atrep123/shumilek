@@ -1,0 +1,10 @@
+{
+  "strategy": "on-fail",
+  "scenarioId": "node-api-oracle",
+  "triggerIteration": 1,
+  "diagnostics": [
+    "Deterministic fallback activated (node-api-oracle, mode=on-fail, tier=canonical) but validation still failed.",
+    "Retried node-api oracle command 2x after transient transport failure.",
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)"
+  ]
+}

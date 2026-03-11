@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst { sendError } = require('../../lib/errors');\n\nlet membersStore = {};\n\nfunction create(projectId, memberData) {\n  if (!membersStore[projectId]) {\n    membersStore[projectId] = [];\n  }\n  const newMember = { id: randomUUID(), ...memberData };\n  membersStore[projectId].push(newMember);\n  return newMember;\n}\n\nfunction getAll(projectId) {\n  return membersStore[projectId] || [];\n}\n\nmodule.exports = {\n  create,\n  getAll\n};\n"
+    }
+  ],
+  "notes": "Added missing exports for 'create' and 'getAll' methods in src/modules/members/service.js."
+}

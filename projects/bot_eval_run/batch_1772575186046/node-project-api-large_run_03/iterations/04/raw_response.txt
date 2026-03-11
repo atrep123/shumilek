@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst { sendError } = require('../../lib/errors');\n\nlet projects = {};\n\nfunction getProject(projectId) {\n  return projects[projectId] || null;\n}\n\nfunction createProject(name) {\n  if (!name) {\n    return null;\n  }\n  const projectId = randomUUID();\n  projects[projectId] = { id: projectId, name, members: [], tasks: [] };\n  return projects[projectId];\n}\n\nmodule.exports = {\n  getProject,\n  createProject,\n};\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { sendError } = require('../../lib/errors');\n\nfunction addMember(project, userId, role) {\n  if (!userId || !role) {\n    return null;\n  }\n  const existingMember = project.members.find(member => member.userId === userId);\n  if (existingMember) {\n    return 'duplicate';\n  }\n  project.members.push({ userId, role });\n  return project;\n}\n\nmodule.exports = {\n  addMember,\n};\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst { sendError } = require('../../lib/errors');\nconst projectsService = require('../projects/service');\nconst membersService = require('./service');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const projectId = req.params.projectId;\n  const { userId, role } = req.body;\n  const project = projectsService.getProject(projectId);\n  if (!project) {\n    return sendError(res, 404, 'NOT_FOUND', `Project with id ${projectId} not found`);\n  }\n  const result = membersService.addMember(project, userId, role);\n  if (result === null) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Invalid input');\n  } else if (result === 'duplicate') {\n    return sendError(res, 409, 'DUPLICATE_MEMBER', `Member with userId ${userId} already exists in project`);\n  }\n  res.status(201).json({ member: { userId, role } });\n});\n\nmodule.exports = router;\n"
+    }
+  ],
+  "notes": "Fixed the duplicate member add issue to return HTTP 409 with error payload and ensured proper validation in members service."
+}

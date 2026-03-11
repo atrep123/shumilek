@@ -1,0 +1,25 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"node-project\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A Node.js project with projects, tasks, members, and comments modules.\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\",\n    \"test\": \"node --test tests/oracle.test.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.18.2\"\n  },\n  \"devDependencies\": {\n    \"supertest\": \"^6.3.3\"\n  }\n}\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst projectService = require('./service');\n\nrouter.get('/', (req, res) => {\n  const projects = projectService.getAllProjects();\n  res.status(200).json({ projects });\n});\n\nrouter.post('/', (req, res) => {\n  try {\n    const project = projectService.createProject(req.body.name);\n    res.status(201).json({ project });\n  } catch (error) {\n    res.status(error.statusCode || 500).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.get('/:projectId', (req, res) => {\n  try {\n    const project = projectService.getProjectById(req.params.projectId);\n    res.status(200).json({ project });\n  } catch (error) {\n    res.status(error.statusCode || 500).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nmodule.exports = (app) => app.use('/projects', router);\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst taskService = require('./service');\n\nrouter.get('/:projectId/tasks', (req, res) => {\n  try {\n    const tasks = taskService.getAllTasksByProjectId(req.params.projectId);\n    res.status(200).json({ tasks });\n  } catch (error) {\n    res.status(error.statusCode || 500).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.post('/:projectId/tasks', (req, res) => {\n  try {\n    const task = taskService.createTask(req.params.projectId, req.body.name);\n    res.status(201).json({ task });\n  } catch (error) {\n    res.status(error.statusCode || 500).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nmodule.exports = (app) => app.use('/projects', router);\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst memberService = require('./service');\n\nrouter.get('/:projectId/members', (req, res) => {\n  try {\n    const members = memberService.getAllMembersByProjectId(req.params.projectId);\n    res.status(200).json({ members });\n  } catch (error) {\n    res.status(error.statusCode || 500).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.post('/:projectId/members', (req, res) => {\n  try {\n    const member = memberService.createMember(req.params.projectId, req.body.name);\n    res.status(201).json({ member });\n  } catch (error) {\n    res.status(error.statusCode || 500).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nmodule.exports = (app) => app.use('/projects', router);\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst commentService = require('./service');\n\nrouter.get('/:projectId/tasks/:taskId/comments', (req, res) => {\n  try {\n    const comments = commentService.getAllCommentsByTaskId(req.params.projectId, req.params.taskId);\n    res.status(200).json({ comments });\n  } catch (error) {\n    res.status(error.statusCode || 500).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.post('/:projectId/tasks/:taskId/comments', (req, res) => {\n  try {\n    const comment = commentService.createComment(req.params.projectId, req.params.taskId, req.body.text);\n    res.status(201).json({ comment });\n  } catch (error) {\n    res.status(error.statusCode || 500).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nmodule.exports = (app) => app.use('/projects', router);\n"
+    }
+  ],
+  "notes": "Added supertest to devDependencies and fixed error handling in routes."
+}

@@ -1,0 +1,11 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for project detail endpoint /projects/:projectId",
+    "Status code contract mismatch: POST /projects/:projectId/tasks should return HTTP 201 on create.",
+    "JavaScript syntax check failed in src/modules/tasks/routes.js: C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772441176293\\workspace\\src\\modules\\tasks\\routes.js:7",
+    "Likely truncated/incomplete JS content in src/modules/tasks/routes.js; regenerate full file content with closed strings and braces.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

@@ -1,0 +1,19 @@
+{
+  "runId": 1772708956328,
+  "scenario": "node-project-api-large",
+  "model": "qwen2.5-coder:32b",
+  "plannerModel": null,
+  "plannerStrategy": "disabled",
+  "reviewerModel": null,
+  "jsonRepairModel": null,
+  "timeoutFallbackModel": null,
+  "deterministicFallbackMode": "on-fail",
+  "baseUrl": "http://localhost:11434",
+  "ollamaOptions": {
+    "temperature": 0.05,
+    "num_predict": 4800,
+    "seed": 42
+  },
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772708956328\\workspace",
+  "startedAt": "2026-03-05T11:09:16.330Z"
+}

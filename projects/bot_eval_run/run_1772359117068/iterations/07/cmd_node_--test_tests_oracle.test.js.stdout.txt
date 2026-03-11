@@ -1,0 +1,67 @@
+✖ health + empty project list (395.7315ms)
+✖ project create/list/get + duplicate + validation (321.9486ms)
+✖ members endpoints (13.2788ms)
+✖ tasks create/list/filter + patch status (323.4556ms)
+✖ comments + not-found and payload contract (326.4131ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1538.9706
+
+✖ failing tests:
+
+test at tests\oracle.test.js:52:1
+✖ health + empty project list (395.7315ms)
+  Error: ETIMEDOUT: Operation timed out
+      at Test.assert (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772359117068\workspace\node_modules\supertest\lib\test.js:156:20)
+      at Server.localAssert (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772359117068\workspace\node_modules\supertest\lib\test.js:120:14)
+      at Object.onceWrapper (node:events:622:28)
+      at Server.emit (node:events:508:28)
+      at emitCloseNT (node:net:2419:8)
+      at process.processTicksAndRejections (node:internal/process/task_queues:88:21)
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (321.9486ms)
+  Error: ETIMEDOUT: Operation timed out
+      at Test.assert (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772359117068\workspace\node_modules\supertest\lib\test.js:156:20)
+      at Server.localAssert (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772359117068\workspace\node_modules\supertest\lib\test.js:120:14)
+      at Object.onceWrapper (node:events:622:28)
+      at Server.emit (node:events:508:28)
+      at emitCloseNT (node:net:2419:8)
+      at process.processTicksAndRejections (node:internal/process/task_queues:88:21)
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (13.2788ms)
+  Error: connect EADDRINUSE 127.0.0.1:49172
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+    errno: -4091,
+    code: 'EADDRINUSE',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 49172,
+    response: undefined
+  }
+
+test at tests\oracle.test.js:122:1
+✖ tasks create/list/filter + patch status (323.4556ms)
+  Error: ETIMEDOUT: Operation timed out
+      at Test.assert (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772359117068\workspace\node_modules\supertest\lib\test.js:156:20)
+      at Server.localAssert (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772359117068\workspace\node_modules\supertest\lib\test.js:120:14)
+      at Object.onceWrapper (node:events:622:28)
+      at Server.emit (node:events:508:28)
+      at emitCloseNT (node:net:2419:8)
+      at process.processTicksAndRejections (node:internal/process/task_queues:88:21)
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (326.4131ms)
+  Error: ETIMEDOUT: Operation timed out
+      at Test.assert (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772359117068\workspace\node_modules\supertest\lib\test.js:156:20)
+      at Server.localAssert (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772359117068\workspace\node_modules\supertest\lib\test.js:120:14)
+      at Object.onceWrapper (node:events:622:28)
+      at Server.emit (node:events:508:28)
+      at emitCloseNT (node:net:2419:8)
+      at process.processTicksAndRejections (node:internal/process/task_queues:88:21)

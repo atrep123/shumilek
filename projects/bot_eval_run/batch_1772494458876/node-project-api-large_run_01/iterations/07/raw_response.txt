@@ -1,0 +1,29 @@
+{
+  "files": [
+    {
+      "path": "src/lib/errors.js",
+      "content": "// src/lib/errors.js\nconst sendError = (res, status, code, message) => {\n  res.status(status).json({ error: { code, message } });\n};\n\nmodule.exports = { sendError };\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "// src/modules/members/routes.js\nconst express = require('express');\nconst router = express.Router();\nconst service = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', async (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Invalid input data');\n  }\n  try {\n    const member = await service.addMember(userId, role);\n    res.status(201).json({ member });\n  } catch (error) {\n    if (error.code === 'MEMBER_DUPLICATE') {\n      return sendError(res, 409, 'MEMBER_DUPLICATE', error.message);\n    }\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "// src/modules/comments/routes.js\nconst express = require('express');\nconst router = express.Router();\nconst service = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', async (req, res) => {\n  const { message } = req.body;\n  if (!message) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Invalid input data');\n  }\n  try {\n    const comment = await service.addComment(message);\n    res.status(201).json({ comment });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "// src/modules/tasks/routes.js\nconst express = require('express');\nconst router = express.Router();\nconst service = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', async (req, res) => {\n  const { description } = req.body;\n  if (!description) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Invalid input data');\n  }\n  try {\n    const task = await service.addTask(description);\n    res.status(201).json({ task });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nrouter.patch('/:taskId', async (req, res) => {\n  const { status } = req.body;\n  if (!['todo', 'done'].includes(status)) {\n    return sendError(res, 400, 'INVALID_STATUS', 'Invalid task status');\n  }\n  try {\n    const updatedTask = await service.updateTaskStatus(req.params.taskId, status);\n    res.json({ task: updatedTask });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "// src/modules/projects/routes.js\nconst express = require('express');\nconst router = express.Router();\nconst service = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.get('/:projectId', async (req, res) => {\n  try {\n    const project = await service.getProjectById(req.params.projectId);\n    if (!project) {\n      return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found');\n    }\n    res.json({ project });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nrouter.post('/', async (req, res) => {\n  const { name } = req.body;\n  if (!name) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Invalid input data');\n  }\n  try {\n    const project = await service.createProject(name);\n    res.status(201).json({ project });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/app.js",
+      "content": "// src/app.js\nconst express = require('express');\nconst projectsRouter = require('./modules/projects/routes');\nconst membersRouter = require('./modules/members/routes');\nconst tasksRouter = require('./modules/tasks/routes');\nconst commentsRouter = require('./modules/comments/routes');\n\nconst app = express();\napp.use(express.json());\n\napp.get('/health', (req, res) => {\n  res.json({ ok: true });\n});\n\napp.use('/projects', projectsRouter);\napp.use('/projects/:projectId/members', membersRouter);\napp.use('/projects/:projectId/tasks', tasksRouter);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRouter);\n\nmodule.exports = app;\n"
+    }
+  ],
+  "notes": "Minimal changes made to ensure the correct behavior of endpoints as per oracle tests. Added error handling and validation checks."
+}

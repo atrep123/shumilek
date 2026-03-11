@@ -1,0 +1,16 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Route-service contract mismatch (projects): routes call projectsService.getAllProjects() but service does not export \"getAllProjects\".",
+    "Route-service export map required (projects): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+    "Route-service contract mismatch (members): routes call membersService.getMembers() but service does not export \"getMembers\".",
+    "Route-service export map required (members): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+    "Route-service contract mismatch (tasks): routes call taskService.updateTask() but service does not export \"updateTask\".",
+    "Route-service export map required (tasks): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+    "Route-service contract mismatch (comments): routes call commentsService.getAllComments() but service does not export \"getAllComments\".",
+    "Route-service contract mismatch (comments): routes call commentsService.addComment() but service does not export \"addComment\".",
+    "Route-service export map required (comments): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

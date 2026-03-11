@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/lib/errors.js",
+      "content": "module.exports = {\n  sendError: (res, status, code, message) => {\n    res.status(status).json({ error: { code, message } });\n  }\n};\n"
+    },
+    {
+      "path": "src/lib/id.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nmodule.exports = {\n  generateId: () => randomUUID()\n};\n"
+    }
+  ],
+  "notes": "Added src/lib/errors.js and src/lib/id.js as required by the checklist."
+}

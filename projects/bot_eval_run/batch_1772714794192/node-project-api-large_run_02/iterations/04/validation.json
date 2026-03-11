@@ -1,0 +1,40 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Oracle command timed out once; collected actionable failure details via --test-force-exit rerun.",
+    "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=null, timedOut=true)",
+    "Command failed: node --test --test-force-exit --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "npm install --no-audit --fund=false",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_02\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 952,
+      "stdout": "\nadded 90 packages in 749ms\n",
+      "stderr": "npm warn deprecated supertest@6.3.4: Please upgrade to supertest v7.1.3+, see release notes at https://github.com/forwardemail/supertest/releases/tag/v7.1.3 - maintenance is supported by Forward Email @ https://forwardemail.net\nnpm warn deprecated superagent@8.1.2: Please upgrade to superagent v10.2.2+, see release notes at https://github.com/forwardemail/superagent/releases/tag/v10.2.2 - maintenance is supported by Forward Email @ https://forwardemail.net\n"
+    },
+    {
+      "command": "node --test --test-concurrency=1 tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_02\\workspace",
+      "ok": false,
+      "exitCode": null,
+      "timedOut": true,
+      "durationMs": 120006,
+      "stdout": "✔ health + empty project list (83.4837ms)\n✔ project create/list/get + duplicate + validation (21.0386ms)\n✔ members endpoints (11.5102ms)\n✔ tasks create/list/filter + patch status (12.5601ms)\n✖ comments + not-found and payload contract (7.0301ms)\n",
+      "stderr": ""
+    },
+    {
+      "command": "node --test --test-force-exit --test-concurrency=1 tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_02\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 321,
+      "stdout": "✔ health + empty project list (72.3533ms)\n✔ project create/list/get + duplicate + validation (19.639ms)\n✔ members endpoints (10.9059ms)\n✔ tasks create/list/filter + patch status (11.7391ms)\n✖ comments + not-found and payload contract (6.7651ms)\nℹ tests 5\nℹ suites 0\nℹ pass 4\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 266.9458\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:160:1\n✖ comments + not-found and payload contract (6.7651ms)\n  TypeError: Cannot destructure property 'message' of 'req.body' as it is undefined.\n      at Object.addComment (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_02\\workspace\\src\\modules\\comments\\service.js:5:11)\n      at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_02\\workspace\\src\\modules\\comments\\routes.js:8:41\n      at Layer.handle [as handle_request] (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_02\\workspace\\node_modules\\express\\lib\\router\\layer.js:95:5)\n      at next (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_02\\workspace\\node_modules\\express\\lib\\router\\route.js:149:13)\n      at Route.dispatch (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_02\\workspace\\node_modules\\express\\lib\\router\\route.js:119:3)\n      at Layer.handle [as handle_request] (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_02\\workspace\\node_modules\\express\\lib\\router\\layer.js:95:5)\n      at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_02\\workspace\\node_modules\\express\\lib\\router\\index.js:284:15\n      at router.process_params (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_02\\workspace\\node_modules\\express\\lib\\router\\index.js:346:12)\n      at next (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_02\\workspace\\node_modules\\express\\lib\\router\\index.js:280:10)\n      at router.handle (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_02\\workspace\\node_modules\\express\\lib\\router\\index.js:175:3)\n",
+      "stderr": ""
+    }
+  ]
+}

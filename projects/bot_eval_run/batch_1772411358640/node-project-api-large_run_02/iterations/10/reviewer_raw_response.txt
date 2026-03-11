@@ -1,0 +1,4 @@
+{
+ "review": "Avoid raw throws in service files and map domain errors to JSON payloads.",
+ "priorityFiles": ["src/modules/comments/service.js", "src/modules/members/service.js", "src/modules/projects/service.js", "src/modules/tasks/service.js"]
+}

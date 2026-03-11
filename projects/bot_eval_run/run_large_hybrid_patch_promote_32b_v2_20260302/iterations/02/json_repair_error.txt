@@ -1,0 +1,1 @@
+Large scenario requires mode "full" after structural contract failures; unable to build full output because workspace is missing: src/lib/id.js

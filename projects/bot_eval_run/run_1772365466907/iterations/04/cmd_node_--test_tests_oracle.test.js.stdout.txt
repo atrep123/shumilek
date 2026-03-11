@@ -1,0 +1,90 @@
+✔ health + empty project list (99.882ms)
+✖ project create/list/get + duplicate + validation (52.6015ms)
+✖ members endpoints (22.9034ms)
+✔ tasks create/list/filter + patch status (35.9014ms)
+TypeError: taskService.getTasksByProject is not a function
+    at Object.addComment (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772365466907\workspace\src\modules\comments\service.js:7:29)
+    at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772365466907\workspace\src\modules\comments\routes.js:13:34
+    at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772365466907\workspace\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772365466907\workspace\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772365466907\workspace\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772365466907\workspace\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772365466907\workspace\node_modules\express\lib\router\index.js:284:15
+    at router.process_params (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772365466907\workspace\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772365466907\workspace\node_modules\express\lib\router\index.js:280:10)
+    at router.handle (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772365466907\workspace\node_modules\express\lib\router\index.js:175:3)
+✖ comments + not-found and payload contract (24.2602ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 2
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 396.4828
+
+✖ failing tests:
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (52.6015ms)
+  AssertionError [ERR_ASSERTION]: <!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <title>Error</title>
+  </head>
+  <body>
+  <pre>Cannot GET /projects/0864d31e-6dcf-4b15-aa01-bdc55cfcda5d</pre>
+  </body>
+  </html>
+  
+  
+  404 !== 200
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772365466907\workspace\tests\oracle.test.js:85:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 404,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (22.9034ms)
+  AssertionError [ERR_ASSERTION]: {"error":{"code":"PROJECT_NOT_FOUND","message":"Project not found"}}
+  
+  404 !== 201
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772365466907\workspace\tests\oracle.test.js:107:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 404,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (24.2602ms)
+  AssertionError [ERR_ASSERTION]: {"error":{"code":"INTERNAL_ERROR","message":"Internal server error"}}
+  
+  500 !== 201
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772365466907\workspace\tests\oracle.test.js:181:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

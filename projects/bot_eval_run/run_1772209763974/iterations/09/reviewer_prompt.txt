@@ -1,0 +1,94 @@
+Jsi code reviewer (mini-validator). Tvuj ukol: navrhnout MINIMALNI opravy, ktere povedou k tomu, ze validace projde.
+Odpovez JEN JSON bez markdownu: { "review": "text", "priorityFiles": ["path1","path2"] }
+
+SPEC (zkraceno):
+Vytvor maly, ale realisticky Python projekt pro "AI" bez externich zavislosti.
+
+Pozadavky:
+- Pouze standardni knihovna Pythonu (zadne numpy/pandas/sklearn/torch/tensorflow/requests).
+- Struktura projektu jako balicek `mini_ai/` + `tests/` + `README.md`.
+- Implementuj jednoduchy model: napr. character-level Markov chain generator + trenovani z textu.
+- Pridat CLI: `python -m mini_ai.cli --help`, `train`, `generate` (offline).
+- Unit testy pres `unittest` (aspon 8 testu / assertu) a musi prochazet.
+
+VYSTUPNI FORMAT (STRICT): vrat JEN JSON objekt tohoto tvaru:
+{
+  "mode": "full",
+  "files": [
+    {"path": "README.md", "content": "...\n"},
+    {"path": "mini_ai/__init__.py", "content": "...\n"},
+    {"path": "mini_ai/...", "content": "...\n"},
+    {"path": "tests/test_....py", "content": "...\n"}
+  ],
+  "notes": "optional"
+}
+
+Pravidla:
+- Zadny markdown, zadne ``` bloky, zadny text mimo JSON.
+- Cesty jsou relativni, pouzij `/`, bez `..` a bez absolutnich cest.
+- Kazdy soubor ukonci znakem noveho radku.
+- "mode" pouzij "full" pro kompletni projekt (v pripade oprav muzes pouzit "patch").
+- `content` je vzdy kompletni obsah souboru (ne diff/snippet).
+
+---
+PLANNER HINTS (planner: deepseek-r1:8b; non-binding, SPEC wins on conflict):
+- [x] Vytvořit strukturu projektu `mini_ai/` a `tests/`
+- [x] Implementovat `__init__.py` v `mini_ai/` s importem `cli`
+- [x] Implementovat `cli.py` pro příkazovou řádkovou interakci
+- [x] Implementovat `markov.py` pro generaci Markovovy řetězce
+- [x] Vytvořit `train` a `generate` funkce v `cli.py`
+- [x] Napsat jednotkové testy pro `markov.py` v `tests/test_markov.py`
+- [x] Napsat jednotkové testy pro `cli.py` v `tests/test_cli.py`
+- [x] Zkontrolovat, že jsou spuštěny a úspěšné
+- [x] Vytvořit `README.md` s informacemi o projekту
+
+
+CHYBY:
+- Missing required file: README.md
+- Missing required file: mini_ai/__init__.py
+- Command failed: python -m unittest discover -v -s tests -p "test*.py" (exit=1, timedOut=false)
+
+LOGY (zkraceno):
+- python -m unittest discover -v -s tests -p "test*.py"
+  stderr: "test_generate_command (test_cli.TestCLI.test_generate_command) ... FAIL\r\ntest_train_command (test_cli.TestCLI.test_train_command) ... ok\r\ntest_generate_with_longer_seed (test_markov.TestMarkovChain.test_generate_with_longer_seed) ... ok\r\ntest_generate_with_seed (test_markov.TestMarkovChain.test_generate_with_seed) ... ok\r\ntest_to_dict_and_from_dict (test_markov.TestMarkovChain.test_to_dict_and_from_dict) ... ok\r\ntest_train_and_generate (test_markov.TestMarkovChain.test_train_and_generate) ... ok\r\n\r\n======================================================================\r\nFAIL: test_generate_command (test_cli.TestCLI.test_generate_command)\r\n----------------------------------------------------------------------\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\mock.py\", line 1396, in patched\r\n    return func(*newargs, **newkeywargs)\r\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\tests\\test_cli.py\", line 26, in test_generate_command\r\n    self.assertEqual(len(output), 5)\r\nAssertionError: 2 != 5\r\n\r\n----------------------------------------------------------------------\r\nRan 6 tests in 0.004s\r\n\r\nFAILED (failures=1)\r\n"
+
+SOUBORY (zkraceno):
+- mini_ai/__pycache__/cli.cpython-312.pyc
+- mini_ai/__pycache__/markov.cpython-312.pyc
+- mini_ai/cli.py
+- mini_ai/markov.py
+- model.json
+- test.txt
+- tests/__pycache__/test_cli.cpython-312.pyc
+- tests/__pycache__/test_markov.cpython-312.pyc
+- tests/test_cli.py
+- tests/test_markov.py
+
+KONTEXT SOUBORU (zkraceno):
+--- FILE: tests/test_cli.py ---
+import unittest
+from unittest.mock import patch
+from io import StringIO
+from mini_ai.cli import main
+import os
+from mini_ai.markov import MarkovChain
+
+class TestCLI(unittest.TestCase):
+    @patch('sys.argv', ['script.py', 'train', '--input', 'test.txt', '--model-out', 'model.json'])
+    def test_train_command(self):
+        with open('test.txt', 'w') as f:
+            f.write("hello world")
+        main()
+        self.assertTrue(os.path.exists('model.json'))
+
+    @patch('sys.argv', ['script.py', 'generate', '--model', 'model.json', '--length', '5'])
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_generate_command(self, mock_stdout):
+        with open('model.json', 'w') as f:
+            import json
+            model = MarkovChain(order=1)
+            model.train("hello world")
+            json.dump(model.to_dict(), f)
+        main()
+        output = mock_stdout.getvalue().strip()
+        self.assertEqual(len(output), 5)

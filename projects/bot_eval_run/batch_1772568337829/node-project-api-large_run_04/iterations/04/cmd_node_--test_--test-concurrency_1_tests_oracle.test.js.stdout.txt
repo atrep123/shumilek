@@ -1,0 +1,53 @@
+✔ health + empty project list (88.707ms)
+✔ project create/list/get + duplicate + validation (32.0122ms)
+✖ members endpoints (8.7769ms)
+✔ tasks create/list/filter + patch status (22.8409ms)
+✖ comments + not-found and payload contract (9.5864ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 3
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 325.9417
+
+✖ failing tests:
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (8.7769ms)
+  AssertionError [ERR_ASSERTION]: {"error":{"code":"MEMBER_DUPLICATE","message":"Member already exists"}}
+  
+  409 !== 400
+  
+      at expectErrorPayload (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772568337829\node-project-api-large_run_04\workspace\tests\oracle.test.js:43:10)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772568337829\node-project-api-large_run_04\workspace\tests\oracle.test.js:102:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 409,
+    expected: 400,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (9.5864ms)
+  AssertionError [ERR_ASSERTION]: {"comment":{"id":"ac44055f-d42b-4f3d-96ad-67c3883ebae2","projectId":"ddcdd5d2-9f15-4467-ac10-c6db79c68cb1","taskId":"87488a1f-17be-4402-a675-9035150f8661","message":""}}
+  
+  201 !== 400
+  
+      at expectErrorPayload (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772568337829\node-project-api-large_run_04\workspace\tests\oracle.test.js:43:10)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772568337829\node-project-api-large_run_04\workspace\tests\oracle.test.js:176:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 201,
+    expected: 400,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

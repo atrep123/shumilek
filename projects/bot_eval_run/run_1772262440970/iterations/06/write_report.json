@@ -1,0 +1,14 @@
+{
+  "count": 7,
+  "files": [
+    "package.json",
+    "src/app.js",
+    "src/server.js",
+    "src/modules/projects/index.js",
+    "src/modules/members/index.js",
+    "src/modules/tasks/index.js",
+    "src/modules/comments/index.js"
+  ],
+  "appliedAsPatch": true,
+  "forcePatchFromIncompleteFull": true
+}

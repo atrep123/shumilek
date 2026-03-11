@@ -1,0 +1,16 @@
+{
+  "model": "deepseek-coder-v2:16b",
+  "created_at": "2026-03-02T08:48:45.098733Z",
+  "message": {
+    "role": "assistant",
+    "content": "{ \"files\": [ {\"path\":\"src/modules/tasks/routes.js\",\"content\":\"const express = require('express');\\nconst router = express.Router({ mergeParams: true });\\nconst tasksService = require('./service');\\n\\nrouter.post('/', (req, res) => {\\n  const { status } = req.body;\\n  if (!status || !['todo', 'done'].includes(status)) return sendError(res, 400, 'InvalidStatus', 'Task status must be either todo or done.');\\n  tasksService.createTask(req.params.projectId, { ...req.body, status }).then(task => res.status(201).json({ task })).catch(err => sendError(res, 400, 'BadRequest', err.message));\\n});\\n\\nmodule.exports = router;\\n\"} ] }"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 5263814300,
+  "load_duration": 46456100,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 566274400,
+  "eval_count": 201,
+  "eval_duration": 1534351600
+}

@@ -1,0 +1,25 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"project-management-api\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A Node.js monolithic application for managing projects, tasks, members, and comments.\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.17.1\"\n  },\n  \"devDependencies\": {\n    \"supertest\": \"^6.2.4\"\n  }\n}\n"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "const sendError = (res, status, code, message) => {\n  res.status(status).json({ error: { code, message } });\n};\n\nmodule.exports = {\n  sendError,\n};\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst errors = require('../../lib/errors');\n\nlet projects = {};\n\nconst addMemberToProject = (projectId, userId, role) => {\n  if (!projects[projectId]) {\n    return null; // Project not found\n  }\n\n  const project = projects[projectId];\n  const existingMember = project.members.find(member => member.userId === userId);\n\n  if (existingMember) {\n    return null; // Member already exists in the project\n  }\n\n  const newMember = { id: randomUUID(), userId, role };\n  project.members.push(newMember);\n  return newMember;\n};\n\nconst getMembersByProjectId = (projectId) => {\n  if (!projects[projectId]) {\n    return null; // Project not found\n  }\n  return projects[projectId].members;\n};\n\nmodule.exports = {\n  addMemberToProject,\n  getMembersByProjectId,\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst errors = require('../../lib/errors');\n\nlet projects = {};\n\nconst addTaskToProject = (projectId, title) => {\n  if (!projects[projectId]) {\n    return null; // Project not found\n  }\n\n  const project = projects[projectId];\n  const newTask = { id: randomUUID(), title, status: 'todo' };\n  project.tasks.push(newTask);\n  return newTask;\n};\n\nconst getTasksByProjectId = (projectId) => {\n  if (!projects[projectId]) {\n    return null; // Project not found\n  }\n  return projects[projectId].tasks;\n};\n\nconst updateTaskStatus = (projectId, taskId, status) => {\n  if (!projects[projectId]) {\n    return null; // Project not found\n  }\n\n  const project = projects[projectId];\n  const task = project.tasks.find(task => task.id === taskId);\n\n  if (!task) {\n    return null; // Task not found\n  }\n\n  if (status !== 'todo' && status !== 'done') {\n    return null; // Invalid status\n  }\n\n  task.status = status;\n  return task;\n};\n\nmodule.exports = {\n  addTaskToProject,\n  getTasksByProjectId,\n  updateTaskStatus,\n};\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst errors = require('../../lib/errors');\n\nlet projects = {};\n\nconst addCommentToTask = (projectId, taskId, message) => {\n  if (!projects[projectId]) {\n    return null; // Project not found\n  }\n\n  const project = projects[projectId];\n  const task = project.tasks.find(task => task.id === taskId);\n\n  if (!task) {\n    return null; // Task not found\n  }\n\n  const newComment = { id: randomUUID(), message };\n  task.comments.push(newComment);\n  return newComment;\n};\n\nconst getCommentsByTaskId = (projectId, taskId) => {\n  if (!projects[projectId]) {\n    return null; // Project not found\n  }\n\n  const project = projects[projectId];\n  const task = project.tasks.find(task => task.id === taskId);\n\n  if (!task) {\n    return null; // Task not found\n  }\n\n  return task.comments;\n};\n\nmodule.exports = {\n  addCommentToTask,\n  getCommentsByTaskId,\n};\n"
+    }
+  ],
+  "notes": "Updated package.json to include supertest as a devDependency. Added error handling in services and routes to ensure consistent error payloads."
+}

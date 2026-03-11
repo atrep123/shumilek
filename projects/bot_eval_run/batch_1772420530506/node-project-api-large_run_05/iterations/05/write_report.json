@@ -1,0 +1,23 @@
+{
+  "count": 16,
+  "files": [
+    "README.md",
+    "package.json",
+    "src/app.js",
+    "src/server.js",
+    "src/lib/errors.js",
+    "src/lib/id.js",
+    "src/modules/projects/routes.js",
+    "src/modules/projects/service.js",
+    "src/modules/members/routes.js",
+    "src/modules/members/service.js",
+    "src/modules/tasks/routes.js",
+    "src/modules/tasks/service.js",
+    "src/modules/comments/routes.js",
+    "src/modules/comments/service.js",
+    "jest.config.js",
+    "setupTests.js"
+  ],
+  "appliedAsPatch": false,
+  "forcePatchFromIncompleteFull": false
+}

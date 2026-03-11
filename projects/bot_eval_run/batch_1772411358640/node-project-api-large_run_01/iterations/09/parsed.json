@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('../../lib/id');\n\nlet tasksStore = [];\n\nconst createTask = (projectId, title) => {\n  const taskId = randomUUID();\n  const task = { id: taskId, projectId, title, status: 'todo' };\n  tasksStore.push(task);\n  return task;\n};\n\nconst getTasks = (projectId) => {\n  return tasksStore.filter(task => task.projectId === projectId);\n};\n\nconst updateTaskStatus = (projectId, taskId, status) => {\n  const task = tasksStore.find(t => t.id === taskId && t.projectId === projectId);\n  if (!task) {\n    return null;\n  }\n  task.status = status;\n  return task;\n};\n\nmodule.exports = { createTask, getTasks, updateTaskStatus };\n"
+    }
+  ],
+  "notes": "Updated the `updateTaskStatus` function in `src/modules/tasks/service.js` to return `null` instead of throwing an error when a task is not found. This allows the route handler to map this result to a JSON error payload."
+}

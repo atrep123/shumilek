@@ -1,0 +1,6 @@
+{
+  "review": "members service should reuse shared projects repository to ensure state consistency. Update the members service to use the same project repository for member management and enforce duplicate checks per project.",
+  "priorityFiles": [
+    "src/modules/members/service.js"
+  ]
+}

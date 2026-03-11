@@ -1,0 +1,29 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"project-management-api\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple Project Management API using Node.js\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.18.2\",\n    \"supertest\": \"^6.3.3\"\n  }\n}\n"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst crypto = require('node:crypto');\n\nconst app = express();\napp.use(express.json());\n\n// In-memory repositories\nconst projectsRepo = {};\nconst tasksRepo = {};\nconst membersRepo = {};\nconst commentsRepo = {};\n\n// Health endpoint\napp.get('/health', (req, res) => {\n  res.status(200).json({ ok: true });\n});\n\n// Projects routes\nconst projectsRoutes = require('./modules/projects/routes');\nprojectsRoutes(app, { projectsRepo, tasksRepo, membersRepo, commentsRepo, crypto });\n\n// Tasks routes\nconst tasksRoutes = require('./modules/tasks/routes');\ntasksRoutes(app, { projectsRepo, tasksRepo, membersRepo, commentsRepo, crypto });\n\n// Members routes\nconst membersRoutes = require('./modules/members/routes');\nmembersRoutes(app, { projectsRepo, tasksRepo, membersRepo, commentsRepo, crypto });\n\n// Comments routes\nconst commentsRoutes = require('./modules/comments/routes');\ncommentsRoutes(app, { projectsRepo, tasksRepo, membersRepo, commentsRepo, crypto });\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "function createProject({ name }, { projectsRepo, crypto }) {\n  const id = crypto.randomUUID();\n  if (Object.values(projectsRepo).some(p => p.name === name)) {\n    throw { code: 'duplicate_project', message: 'Project with this name already exists' };\n  }\n  projectsRepo[id] = { id, name, tasks: [], members: [] };\n  return projectsRepo[id];\n}\n\nfunction getProjects({ projectsRepo }) {\n  return Object.values(projectsRepo);\n}\n\nfunction getProjectById(id, { projectsRepo }) {\n  const project = projectsRepo[id];\n  if (!project) throw { code: 'not_found', message: 'Project not found' };\n  return project;\n}\n\nmodule.exports = { createProject, getProjects, getProjectById };\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "function createTask(projectId, { title }, { projectsRepo, tasksRepo, crypto }) {\n  const project = projectsRepo[projectId];\n  if (!project) throw { code: 'not_found', message: 'Project not found' };\n\n  const taskId = crypto.randomUUID();\n  tasksRepo[taskId] = { id: taskId, title, status: 'pending', comments: [] };\n  project.tasks.push(taskId);\n  return tasksRepo[taskId];\n}\n\nfunction getTasks(projectId, status, { projectsRepo, tasksRepo }) {\n  const project = projectsRepo[projectId];\n  if (!project) throw { code: 'not_found', message: 'Project not found' };\n\n  let tasks = project.tasks.map(id => tasksRepo[id]);\n  if (status) {\n    tasks = tasks.filter(task => task.status === status);\n  }\n  return tasks;\n}\n\nfunction updateTaskStatus(projectId, taskId, { status }, { projectsRepo, tasksRepo }) {\n  const project = projectsRepo[projectId];\n  if (!project) throw { code: 'not_found', message: 'Project not found' };\n\n  const task = tasksRepo[taskId];\n  if (!task || !project.tasks.includes(taskId)) throw { code: 'not_found', message: 'Task not found' };\n\n  task.status = status;\n  return task;\n}\n\nmodule.exports = { createTask, getTasks, updateTaskStatus };\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "function addMember(projectId, member, { projectsRepo }) {\n  const project = projectsRepo[projectId];\n  if (!project) throw { code: 'not_found', message: 'Project not found' };\n\n  if (project.members.includes(member)) {\n    throw { code: 'duplicate_member', message: 'Member already added to the project' };\n  }\n\n  project.members.push(member);\n  return project;\n}\n\nfunction getMembers(projectId, { projectsRepo }) {\n  const project = projectsRepo[projectId];\n  if (!project) throw { code: 'not_found', message: 'Project not found' };\n\n  return project.members;\n}\n\nmodule.exports = { addMember, getMembers };\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "function createComment(projectId, taskId, { message }, { projectsRepo, tasksRepo, commentsRepo, crypto }) {\n  const project = projectsRepo[projectId];\n  if (!project) throw { code: 'not_found', message: 'Project not found' };\n\n  const task = tasksRepo[taskId];\n  if (!task || !project.tasks.includes(taskId)) throw { code: 'not_found', message: 'Task not found' };\n\n  const commentId = crypto.randomUUID();\n  commentsRepo[commentId] = { id: commentId, message };\n  task.comments.push(commentId);\n  return commentsRepo[commentId];\n}\n\nfunction getComments(projectId, taskId, { projectsRepo, tasksRepo, commentsRepo }) {\n  const project = projectsRepo[projectId];\n  if (!project) throw { code: 'not_found', message: 'Project not found' };\n\n  const task = tasksRepo[taskId];\n  if (!task || !project.tasks.includes(taskId)) throw { code: 'not_found', message: 'Task not found' };\n\n  return task.comments.map(id => commentsRepo[id]);\n}\n\nmodule.exports = { createComment, getComments };\n"
+    }
+  ],
+  "notes": "Added missing service functions and ensured all required files are present."
+}

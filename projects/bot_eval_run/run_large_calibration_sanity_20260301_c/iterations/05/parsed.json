@@ -1,0 +1,8 @@
+{
+  "files": [
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const tasks = [];\nexports.createTask = ({ status, projectId }) => {\n  const task = { id: crypto.randomUUID(), status };\n  tasks.push(task);\n  return task;\n};\n\nexports.updateTaskStatus = ({ taskId, newStatus }) => {\n  const taskIndex = tasks.findIndex(t => t.id === taskId);\n  if (taskIndex === -1) throw new Error('NotFound');\n  tasks[taskIndex].status = newStatus;\n  return tasks[taskIndex];\n};\n\nexports.getTasksByStatus = status => {\n  return tasks.filter(t => t.status === status);\n};"
+    }
+  ]
+}

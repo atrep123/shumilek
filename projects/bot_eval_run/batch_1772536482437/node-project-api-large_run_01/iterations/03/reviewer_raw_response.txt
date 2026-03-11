@@ -1,0 +1,4 @@
+{
+    "review": "Zkontrolujte, že v souboru src/modules/members/service.js je funkce pro generování ID a že v souboru src/lib/id.js je implementace funkce pro generování ID. Zároveň zkontrolujte, že v souboru src/modules/members/routes.js jsou správně nastaveny route wiring a že používají relativní cesty k importům.",
+    "priorityFiles": ["src/modules/members/service.js", "src/lib/id.js", "src/modules/members/routes.js"]
+}

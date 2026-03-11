@@ -1,0 +1,12 @@
+{
+  "files": [
+    {
+      "path": "src/lib/id.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nfunction generateId() {\n  return randomUUID();\n}\n\nmodule.exports = { generateId };"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { generateId } = require('../../lib/id');\nconst projects = [];\n\nasync function getAllProjects() { return [...projects]; }\n\nasync function getProjectById(projectId) { return projects.find(project => String(project.id) === String(projectId)) || null; }\n\nasync function getProjectByName(name) { return projects.find(project => String(project.name) === String(name)) || null; }\n\nasync function createProject(name) {\n  const project = { id: generateId(), name: String(name || \"\").trim() };\n  projects.push(project);\n  return project;\n}\n\nmodule.exports = { getAllProjects, getProjectById, getProjectByName, createProject, projects };"
+    }
+  ]
+}

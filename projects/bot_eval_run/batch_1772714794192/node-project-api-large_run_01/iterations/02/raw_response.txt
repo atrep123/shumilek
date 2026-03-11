@@ -1,0 +1,11 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"project-management-api\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A Node.js monolithic API for managing projects, tasks, members, and comments.\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.18.2\"\n  },\n  \"devDependencies\": {\n    \"supertest\": \"^6.2.4\"\n  }\n}\n"
+    },
+    {
+      "path": "src/lib/validation.js",
+      "content": "const { sendError } = require('../lib/errors');\n\nfunction validateProjectName(name) {\n  if (!name || typeof name !== 'string' || name.trim() === '') {\n    sendError(res, 400, 'INVALID_NAME', 'Project name is required and must be a non-empty string.');\n    return false;\n  }\n  return true;\n}\n\nfunction validateMemberPayload(payload) {\n  if (!payload || typeof payload !== 'object' || !payload.userId || !payload.role) {\n    sendError(res, 400, 'INVALID_PAYLOAD', 'Member payload must include userId and role.');\n    return false;\n  }\n  return true;\n}\n\nfunction validateCommentPayload(payload) {\n  if (!payload || typeof payload !== 'object' || !payload.message) {\n    sendError(res, 400, 'INVALID_PAYLOAD', 'Comment payload must include message.');\n    return false;\n  }\n  return true;\n}\n\nfunction validateTaskStatus(status) {\n  if (status !== 'todo' && status !== 'done') {\n    sendError(res, 400, 'INVALID_STATUS', 'Task status must be either " } ],
+  "notes": "Updated package.json to include supertest as a devDependency. Added validation functions for project name, member payload, comment payload, and task status in src/lib/validation.js."
+}

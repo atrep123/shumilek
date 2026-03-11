@@ -1,0 +1,10 @@
+{
+  "count": 3,
+  "files": [
+    "src/app.js",
+    "src/lib/errors.js",
+    "src/lib/id.js"
+  ],
+  "appliedAsPatch": true,
+  "forcePatchFromIncompleteFull": true
+}

@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "// src/modules/projects/service.js\nconst { randomUUID } = require('node:crypto');\n\nlet projectsStore = [];\n\nmodule.exports = {\n  getProjectById(id) {\n    return projectsStore.find(project => project.id === id);\n  },\n  createProject(name) {\n    if (!name || typeof name !== 'string' || name.trim() === '') {\n      return null;\n    }\n    const newProject = {\n      id: randomUUID(),\n      name: name.trim()\n    };\n    projectsStore.push(newProject);\n    return newProject;\n  },\n  getProjectByName(name) {\n    return projectsStore.find(project => project.name === name);\n  }\n};\n"
+    }
+  ],
+  "notes": "Added the missing 'getProjectByName' method to the projects service."
+}

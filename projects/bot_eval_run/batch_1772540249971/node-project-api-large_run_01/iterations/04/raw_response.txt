@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "src/lib/errors.js",
+      "content": "const sendError = (res, status, code, message) => {\n  res.status(status).json({ error: { code, message } });\n};\n\nmodule.exports = {\n  sendError,\n  BadRequestError: class BadRequestError extends Error {\n    constructor(message) {\n      super(message);\n      this.code = 'BAD_REQUEST';\n    }\n  },\n  NotFoundError: class NotFoundError extends Error {\n    constructor(message) {\n      super(message);\n      this.code = 'NOT_FOUND';\n    }\n  },\n  ConflictError: class ConflictError extends Error {\n    constructor(message) {\n      super(message);\n      this.code = 'CONFLICT';\n    }\n  }\n};\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst { BadRequestError, NotFoundError } = require('../../lib/errors');\nconst service = require('./service');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) {\n    return sendError(res, 400, 'BAD_REQUEST', 'Invalid request body');\n  }\n\n  const member = service.addMember(req.projectId, { userId, role });\n  if (!member) {\n    return sendError(res, 500, 'INTERNAL_ERROR', 'Failed to add member');\n  }\n\n  res.status(201).json({ member });\n});\n\nrouter.get('/', (req, res) => {\n  const members = service.getMembers(req.projectId);\n  if (!members) {\n    return sendError(res, 500, 'INTERNAL_ERROR', 'Failed to fetch members');\n  }\n\n  res.json({ members });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst { BadRequestError, NotFoundError } = require('../../lib/errors');\nconst service = require('./service');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const { message } = req.body;\n  if (!message) {\n    return sendError(res, 400, 'BAD_REQUEST', 'Invalid request body');\n  }\n\n  const comment = service.addComment(req.taskId, { message });\n  if (!comment) {\n    return sendError(res, 500, 'INTERNAL_ERROR', 'Failed to add comment');\n  }\n\n  res.status(201).json({ comment });\n});\n\nrouter.get('/', (req, res) => {\n  const comments = service.getComments(req.taskId);\n  if (!comments) {\n    return sendError(res, 500, 'INTERNAL_ERROR', 'Failed to fetch comments');\n  }\n\n  res.json({ comments });\n});\n\nmodule.exports = router;\n"
+    }
+  ],
+  "notes": "Added error classes in src/lib/errors.js and updated members and comments routes to handle errors properly."
+}

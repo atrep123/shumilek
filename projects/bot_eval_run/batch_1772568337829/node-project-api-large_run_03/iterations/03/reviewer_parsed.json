@@ -1,0 +1,57 @@
+{
+  "review": "Zkontrolujte, že pro všechny POST requesty, kde je požadováno nějaké pole (např. name, userId, role, message), kontrolujete, zda je toto pole prázdné nebo chybí a odpovídajícím způsobem vracejte 400 Bad Request. Pro testy byste měli zajistit, že pro všechny validní POST requesty, kde se očekává nový objekt (např. project nebo member), kontrolujete, zda je odpověď s status code 201 a obsahuje správné pole id.",
+  "files": [
+    {
+      "file": "tests/oracle.test.js",
+      "changes": [
+        {
+          "line": 43,
+          "change": "Změňte expectErrorPayload funkci tak, aby kontrolovala, zda je message pole prázdné a v případě potřeby vrátila 400 Bad Request."
+        },
+        {
+          "line": 160,
+          "change": "Zkontrolujte, že pro všechny POST requesty kontrolujete, zda je požadované pole prázdné nebo chybí a odpovídajícím způsobem vracejte 400 Bad Request."
+        }
+      ]
+    },
+    {
+      "file": "src/app.js",
+      "changes": [
+        {
+          "line": 12,
+          "change": "Zkontrolujte, že pro všechny POST requesty kontrolujete, zda je požadované pole prázdné nebo chybí a odpovídajícím způsobem vracejte 400 Bad Request."
+        },
+        {
+          "line": 25,
+          "change": "Zkontrolujte, že pro všechny POST requesty kontrolujete, zda je požadované pole prázdné nebo chybí a odpovídajícím způsobem vracejte 400 Bad Request."
+        }
+      ]
+    },
+    {
+      "file": "src/projects.js",
+      "changes": [
+        {
+          "line": 32,
+          "change": "Zkontrolujte, že pro všechny POST requesty kontrolujete, zda je požadované pole prázdné nebo chybí a odpovídajícím způsobem vracejte 400 Bad Request."
+        },
+        {
+          "line": 52,
+          "change": "Zkontrolujte, že pro všechny POST requesty kontrolujete, zda je požadované pole prázdné nebo chybí a odpovídajícím způsobem vracejte 400 Bad Request."
+        }
+      ]
+    },
+    {
+      "file": "src/members.js",
+      "changes": [
+        {
+          "line": 28,
+          "change": "Zkontrolujte, že pro všechny POST requesty kontrolujete, zda je požadované pole prázdné nebo chybí a odpovídajícím způsobem vracejte 400 Bad Request."
+        },
+        {
+          "line": 52,
+          "change": "Zkontrolujte, že pro všechny POST requesty kontrolujete, zda je požadované pole prázdné nebo chybí a odpovídajícím způsobem vracející 400 Bad Request."
+        }
+      ]
+    }
+  ]
+}

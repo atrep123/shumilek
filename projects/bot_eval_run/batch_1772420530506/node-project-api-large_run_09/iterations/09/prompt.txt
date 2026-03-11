@@ -1,0 +1,370 @@
+Vytvor stredne velky Node.js monolit (Project Management API), ktery projde oracle testy.
+
+POZADAVKY / KONTRAKT:
+- Bez persistence mimo proces: pouzij in-memory repozitare/sluzby.
+- Bez fake/mock vysledku; endpointy musi vracet realna data z in-memory stavu.
+- Pouzij domeny: projects, tasks, members, comments.
+- Struktura musi byt modulova pod `src/modules/` a obsahovat min. tyto adresare:
+  - src/modules/projects
+  - src/modules/tasks
+  - src/modules/members
+  - src/modules/comments
+- Projekt musi mit minimalne 12 source souboru pod `src/` (`.js`/`.ts`/`.mjs`/`.cjs`).
+- Musi existovat `src/app.*` (app export pro testy) a `src/server.*` (spousteci vrstva).
+- `src/app.*` / `src/server.*` NESMI automaticky volat `listen()` pri importu (oracle importuje app pres supertest).
+- Vsechny chyby vracej konzistentne: `{ "error": { "code": "<string>", "message": "<string>" } }`.
+- Povolen bezny stack (napr. express, zod).
+- Protoze oracle testy pouzivaji supertest, zajisti `supertest` v dependencies nebo devDependencies.
+- Nepouzivej balicek `uuid`; generovani ID delat pres `node:crypto` + `crypto.randomUUID()`.
+- Nepouzivej neplatny pattern `const { v4: uuidv4 } = require("crypto").randomUUID`; spravne je `const { randomUUID } = require("node:crypto")` a volat `randomUUID()`.
+- Pokud pouzijes express, zapni `app.use(express.json())` a vracej JSON i pro chyby (ne HTML fallback).
+- Nenechavej uncaught vyjimky v route handlerech; 4xx/404/409 chyby vracej jako JSON payload, ne throw bez catcheru.
+- Nepouzivej `new BadRequestError(...)`/`new NotFoundError(...)`, pokud je explicitne nedefinujes a neexportujes v `src/lib/errors.*`.
+- Pri importu helperu z `src/modules/*` pouzij relativni cesty `../../lib/id` a `../../lib/errors` (ne `../lib/*`).
+- API endpointy (minimalni kontrakt):
+  - GET /health -> 200 { ok: true } (presne klic `ok`, ne `status` ani jiny alias)
+  - GET /projects -> 200 { projects: [...] }
+  - POST /projects body { name } -> 201 { project }
+    - body bez `name` (nebo prazdny `name`) -> 400 error payload
+  - GET /projects/:projectId -> 200 { project } nebo 404 error payload
+  - POST /projects/:projectId/members body { userId, role } -> 201 { member }
+    - body bez `userId` nebo `role` -> 400 error payload
+  - GET /projects/:projectId/members -> 200 { members: [...] }
+  - POST /projects/:projectId/tasks body { title } -> 201 { task }
+    - body bez `title` (nebo prazdny `title`) -> 400 error payload
+  - GET /projects/:projectId/tasks?status=todo|done -> 200 { tasks: [...] }
+    - query `status` musi skutecne filtrovat vysledek (ne jen ignorovat)
+  - PATCH /projects/:projectId/tasks/:taskId body { status } -> 200 { task }
+    - povolene statusy: `todo` | `done`; jine hodnoty -> 400 error payload
+  - POST /projects/:projectId/tasks/:taskId/comments body { message } -> 201 { comment }
+    - body bez `message` (nebo prazdny `message`) -> 400 error payload
+  - GET /projects/:projectId/tasks/:taskId/comments -> 200 { comments: [...] }
+- Konfliktni vstupy (napr. duplicate project/member) vracej jako 409 error payload.
+- Member objekt modeluj jako `{ id, userId, role }` (ne `{ id, name }`).
+- Nevalidni vstupy vracej jako 400 error payload, neexistujici entity jako 404 error payload.
+- Route wiring v `src/app.js` musi obsahovat mounty:
+  - app.use("/projects", projectsRoutes)
+  - app.use("/projects/:projectId/members", membersRoutes)
+  - app.use("/projects/:projectId/tasks", tasksRoutes)
+  - app.use("/projects/:projectId/tasks/:taskId/comments", commentsRoutes)
+- Uvnitr `members/tasks/comments` routeru pouzij relativni paths od mountpointu (napr. "/" nebo "/:taskId"), ne znovu cele cesty s projectId/taskId.
+- V tomto scenari se nesmi spoustet HTTP listener na fixnim portu (zadne `app.listen(...)` pri importu).
+- Povinna minimalni sada souboru v prvnim `mode:"full"` vystupu:
+  - README.md
+  - package.json
+  - src/app.js
+  - src/server.js
+  - src/modules/projects/routes.js
+  - src/modules/projects/service.js
+  - src/modules/tasks/routes.js
+  - src/modules/tasks/service.js
+  - src/modules/members/routes.js
+  - src/modules/members/service.js
+  - src/modules/comments/routes.js
+  - src/modules/comments/service.js
+  - src/lib/errors.js
+  - src/lib/id.js
+
+Doporuceni: scenar je zamerne vetsi; pocitej s `--maxIterations 12`.
+
+Poznamka: testy budeme pouzivat tyto (musis projit):
+--- BEGIN ORACLE TESTS (tests/oracle.test.js) ---
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { pathToFileURL } = require('node:url');
+const request = require('supertest');
+
+async function loadApp() {
+  const candidates = [
+    '../src/app.js',
+    '../src/app.cjs',
+    '../src/app.mjs',
+    '../dist/app.js',
+    '../build/app.js',
+    '../src/app.ts',
+  ];
+
+  const errors = [];
+  for (const rel of candidates) {
+    const abs = path.join(__dirname, rel);
+    if (!fs.existsSync(abs)) continue;
+
+    try {
+      let mod;
+      if (rel.endsWith('.mjs')) {
+        mod = await import(pathToFileURL(abs).href);
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        mod = require(abs);
+      }
+      const app = mod?.app || mod?.default || mod;
+      if (typeof app === 'function') return app;
+      errors.push(`${rel}: module loaded, but app export is not a function`);
+    } catch (err) {
+      errors.push(`${rel}: ${String(err?.message || err)}`);
+    }
+  }
+
+  throw new Error(`Expected app export in src/app.* (or dist/build). Details: ${errors.join(' | ') || 'no candidate app file found'}`);
+}
+
+function expectErrorPayload(res, expectedStatus) {
+  assert.equal(res.status, expectedStatus, res.text);
+  assert.ok(res.body && typeof res.body === 'object', 'Expected JSON object body');
+  assert.ok(res.body.error && typeof res.body.error === 'object', 'Expected error object');
+  assert.equal(typeof res.body.error.code, 'string');
+  assert.ok(res.body.error.code.length > 0);
+  assert.equal(typeof res.body.error.message, 'string');
+  assert.ok(res.body.error.message.length > 0);
+}
+
+test('health + empty project list', async () => {
+  const app = await loadApp();
+
+  const health = await request(app).get('/health');
+  assert.equal(health.status, 200, health.text);
+  assert.equal(health.body?.ok, true);
+
+  const list = await request(app).get('/projects');
+  assert.equal(list.status, 200, list.text);
+  assert.ok(Array.isArray(list.body?.projects));
+  assert.equal(list.body.projects.length, 0);
+});
+
+test('project create/list/get + duplicate + validation', async () => {
+  const app = await loadApp();
+
+  const badCreate = await request(app).post('/projects').send({});
+  expectErrorPayload(badCreate, 400);
+
+  const created = await request(app).post('/projects').send({ name: 'Alpha' });
+  assert.equal(created.status, 201, created.text);
+  assert.ok(created.body?.project);
+  assert.equal(typeof created.body.project.id, 'string');
+  assert.ok(created.body.project.id.length > 0);
+  assert.equal(created.body.project.name, 'Alpha');
+
+  const list = await request(app).get('/projects');
+  assert.equal(list.status, 200, list.text);
+  assert.ok(Array.isArray(list.body?.projects));
+  assert.equal(list.body.projects.length, 1);
+  assert.equal(String(list.body.projects[0].id), String(created.body.project.id));
+
+  const getOne = await request(app).get(`/projects/${encodeURIComponent(created.body.project.id)}`);
+  assert.equal(getOne.status, 200, getOne.text);
+  assert.equal(String(getOne.body?.project?.id), String(created.body.project.id));
+
+  const duplicate = await request(app).post('/projects').send({ name: 'Alpha' });
+  expectErrorPayload(duplicate, 409);
+});
+
+test('members endpoints', async () => {
+  const app = await loadApp();
+
+  const created = await request(app).post('/projects').send({ name: 'Members Project' });
+  assert.equal(created.status, 201, created.text);
+  const projectId = String(created.body.project.id);
+
+  const badMember = await request(app)
+    .post(`/projects/${encodeURIComponent(projectId)}/members`)
+    .send({ userId: '', role: 'owner' });
+  expectErrorPayload(badMember, 400);
+
+  const added = await request(app)
+    .post(`/projects/${encodeURIComponent(projectId)}/members`)
+    .send({ userId: 'u-1', role: 'owner' });
+  assert.equal(added.status, 201, added.text);
+  assert.equal(String(added.body?.member?.userId), 'u-1');
+  assert.equal(String(added.body?.member?.role), 'owner');
+
+  const duplicate = await request(app)
+    .post(`/projects/${encodeURIComponent(projectId)}/members`)
+    .send({ userId: 'u-1', role: 'owner' });
+  expectErrorPayload(duplicate, 409);
+
+  const list = await request(app).get(`/projects/${encodeURIComponent(projectId)}/members`);
+  assert.equal(list.status, 200, list.text);
+  assert.ok(Array.isArray(list.body?.members));
+  assert.equal(list.body.members.length, 1);
+});
+
+test('tasks create/list/filter + patch status', async () => {
+  const app = await loadApp();
+
+  const created = await request(app).post('/projects').send({ name: 'Tasks Project' });
+  assert.equal(created.status, 201, created.text);
+  const projectId = String(created.body.project.id);
+
+  const t1 = await request(app)
+    .post(`/projects/${encodeURIComponent(projectId)}/tasks`)
+    .send({ title: 'Prepare spec' });
+  assert.equal(t1.status, 201, t1.text);
+  const taskId = String(t1.body?.task?.id);
+  assert.ok(taskId.length > 0);
+  assert.equal(t1.body?.task?.title, 'Prepare spec');
+
+  const t2 = await request(app)
+    .post(`/projects/${encodeURIComponent(projectId)}/tasks`)
+    .send({ title: 'Ship release' });
+  assert.equal(t2.status, 201, t2.text);
+
+  const listAll = await request(app).get(`/projects/${encodeURIComponent(projectId)}/tasks`);
+  assert.equal(listAll.status, 200, listAll.text);
+  assert.ok(Array.isArray(listAll.body?.tasks));
+  assert.equal(listAll.body.tasks.length, 2);
+
+  const patchDone = await request(app)
+    .patch(`/projects/${encodeURIComponent(projectId)}/tasks/${encodeURIComponent(taskId)}`)
+    .send({ status: 'done' });
+  assert.equal(patchDone.status, 200, patchDone.text);
+  assert.equal(String(patchDone.body?.task?.status), 'done');
+
+  const listDone = await request(app).get(`/projects/${encodeURIComponent(projectId)}/tasks?status=done`);
+  assert.equal(listDone.status, 200, listDone.text);
+  assert.ok(Array.isArray(listDone.body?.tasks));
+  assert.equal(listDone.body.tasks.length, 1);
+  assert.equal(String(listDone.body.tasks[0].id), taskId);
+});
+
+test('comments + not-found and payload contract', async () => {
+  const app = await loadApp();
+
+  const created = await request(app).post('/projects').send({ name: 'Comments Project' });
+  assert.equal(created.status, 201, created.text);
+  const projectId = String(created.body.project.id);
+
+  const task = await request(app)
+    .post(`/projects/${encodeURIComponent(projectId)}/tasks`)
+    .send({ title: 'Document API' });
+  assert.equal(task.status, 201, task.text);
+  const taskId = String(task.body.task.id);
+
+  const badComment = await request(app)
+    .post(`/projects/${encodeURIComponent(projectId)}/tasks/${encodeURIComponent(taskId)}/comments`)
+    .send({});
+  expectErrorPayload(badComment, 400);
+
+  const comment = await request(app)
+    .post(`/projects/${encodeURIComponent(projectId)}/tasks/${encodeURIComponent(taskId)}/comments`)
+    .send({ message: 'Looks good' });
+  assert.equal(comment.status, 201, comment.text);
+  assert.equal(String(comment.body?.comment?.message), 'Looks good');
+
+  const commentList = await request(app)
+    .get(`/projects/${encodeURIComponent(projectId)}/tasks/${encodeURIComponent(taskId)}/comments`);
+  assert.equal(commentList.status, 200, commentList.text);
+  assert.ok(Array.isArray(commentList.body?.comments));
+  assert.equal(commentList.body.comments.length, 1);
+
+  const missingProject = await request(app).get('/projects/does-not-exist');
+  expectErrorPayload(missingProject, 404);
+
+  const missingTask = await request(app)
+    .patch(`/projects/${encodeURIComponent(projectId)}/tasks/does-not-exist`)
+    .send({ status: 'done' });
+  expectErrorPayload(missingTask, 404);
+});
+--- END ORACLE TESTS ---
+
+VYSTUPNI FORMAT (STRICT): vrat JEN JSON objekt tohoto tvaru:
+{
+  "mode": "full",
+  "files": [
+    {"path": "README.md", "content": "...\n"},
+    {"path": "package.json", "content": "...\n"},
+    {"path": "src/app.js", "content": "...\n"},
+    {"path": "src/server.js", "content": "...\n"},
+    {"path": "src/modules/projects/...", "content": "...\n"}
+  ],
+  "notes": "optional"
+}
+
+Pravidla:
+- Zadny markdown, zadne ``` bloky, zadny text mimo JSON.
+- Cesty jsou relativni, pouzij `/`, bez `..` a bez absolutnich cest.
+- Nezahrnuj vlastni `tests/` (pouziji se oracle testy).
+- `content` je vzdy kompletni obsah souboru (ne diff/snippet).
+
+---
+PLANNER HINTS (planner: deepseek-r1:8b; non-binding, SPEC wins on conflict):
+- Initialize project with `npm init -y`, create `README.md`, and set up directory structure.
+- Install dependencies: `npm install express supertest node:crypto`.
+- Create `src/app.js` and `src/server.js` with proper exports.
+- Implement `src/lib/id.js` for generating unique IDs.
+- Create `src/lib/errors.js` for error handling.
+- Implement projects module routes and service.
+- Implement tasks module routes and service.
+- Implement members module routes and service.
+- Implement comments module routes and (if needed) service.
+- Add health check endpoint in `src/app.js`.
+- Write oracle tests using Supertest.
+- Run tests and fix any issues to ensure oracle tests pass.
+
+---
+NEPROSLO VALIDACI. Oprav nasledujici problemy.
+
+CHYBY:
+- Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)
+- App contract failed: export app as module.exports = app / exports.app / default export in src/app.*
+
+HARD CHECKLIST (NODE PROJECT LARGE):
+- V `mode:"full"` zahrn README.md + package.json + src/app.js + src/server.js.
+- Pro kazdy modul projects/tasks/members/comments vytvor minim. routes.js + service.js.
+- Pridat sdilene utility: src/lib/errors.js a src/lib/id.js.
+- V modulech (`src/modules/*`) importuj utility pres `../../lib/id` a `../../lib/errors`.
+- Udrz modulovou strukturu: src/modules/projects,tasks,members,comments.
+- Dodrz min. 12 source souboru pod src/.
+- Chybovy payload udrz konzistentni: { error: { code, message } }.
+- Oracle testy pouzivaji supertest: zajisti supertest v dependencies/devDependencies.
+- Nepouzivej `uuid`; pro ID pouzij `node:crypto` + `crypto.randomUUID()`.
+- Nepouzivej anti-pattern `const { v4: uuidv4 } = require("crypto").randomUUID`; pouzij `const { randomUUID } = require("node:crypto")`.
+- Implementuj endpointy: /health, /projects, /projects/:projectId/members, /projects/:projectId/tasks, /projects/:projectId/tasks/:taskId/comments.
+- GET /health musi vracet presne `{ ok: true }`.
+- POST /projects vyzaduje neprazdne `name`; jinak 400 error payload.
+- POST /projects/:projectId/members pouziva body `{ userId, role }` (ne `{ name }`).
+- GET /projects/:projectId/tasks?status=done musi realne filtrovat pouze done tasky.
+- V `src/app.js` explicitne mountni routes na: /projects, /projects/:projectId/members, /projects/:projectId/tasks, /projects/:projectId/tasks/:taskId/comments.
+- V `members/tasks/comments` routes nepouzivej znovu cele cesty s :projectId/:taskId; pouzij relativni paths od mountpointu.
+- Zakaz auto-listen: `src/app.*` a `src/server.*` nesmi volat `listen()` pri importu.
+- Nehazej necachovane vyjimky v route handlerech; jinak express vrati HTML 500 a oracle failne.
+- Nehazej raw `throw new Error(...)` ani v services; vrat domain chybu nebo `null` a mapuj ji na JSON error payload.
+- Pokud pouzivas custom Error classy (BadRequestError/NotFoundError), MUSIS je definovat a exportovat v src/lib/errors.*.
+
+STRICT IMPLEMENTATION TEMPLATE (NODE PROJECT LARGE):
+- Definuj `src/lib/errors.js` s helperem `sendError(res, status, code, message)` a pouzivej ho ve vsech route handlerech.
+- V route handlerech nepouzivej uncaught `throw`; validacni/not-found/duplicate vetve vracej JSON error payload hned.
+- V services nepouzivej `throw new Error(...)`; route vrstva musi dostat predvidatelny vysledek a vratit JSON chybu.
+- Nespoustej `listen()` pri importu; server startup logic nech oddelenou od app exportu.
+- Udrz sdileny stav projektu centralne (projects service/store) a tasks/comments/members sluzby na nej odkazuj.
+- ID generuj pomoci `const { randomUUID } = require("node:crypto")` a volani `randomUUID()`.
+- `members`: validuj body `{ userId, role }`; `comments`: validuj `{ message }`.
+- `tasks`: vytvarej status `todo`, PATCH povol `todo|done`, filtr `?status=done` musi vratit jen done tasky.
+- Odpovedi drzet na shape: `{ project }`, `{ projects }`, `{ member }`, `{ members }`, `{ task }`, `{ tasks }`, `{ comment }`, `{ comments }`.
+
+LOGY (zkraceno):
+- node --test --test-concurrency=1 tests/oracle.test.js
+  stdout: "      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)\n\ntest at tests\\oracle.test.js:122:1\n✖ tasks create/list/filter + patch status (0.7843ms)\n  Error: Expected app export in src/app.* (or dist/build). Details: ../src/app.js: Invalid or unexpected token\n      at loadApp (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772420530506\\node-project-api-large_run_09\\workspace\\tests\\oracle.test.js:39:9)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772420530506\\node-project-api-large_run_09\\workspace\\tests\\oracle.test.js:123:21)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)\n\ntest at tests\\oracle.test.js:160:1\n✖ comments + not-found and payload contract (0.7211ms)\n  Error: Expected app export in src/app.* (or dist/build). Details: ../src/app.js: Invalid or unexpected token\n      at loadApp (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772420530506\\node-project-api-large_run_09\\workspace\\tests\\oracle.test.js:39:9)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772420530506\\node-project-api-large_run_09\\workspace\\tests\\oracle.test.js:161:21)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)\n"
+
+AKTUALNI SOUBORY:
+- README.md
+- package-lock.json
+- package.json
+- src/app.js
+- src/lib/errors.js
+- src/lib/id.js
+- src/modules/comments/routes.js
+- src/modules/comments/service.js
+- src/modules/members/routes.js
+- src/modules/members/service.js
+- src/modules/projects/routes.js
+- src/modules/projects/service.js
+- src/modules/tasks/routes.js
+- src/modules/tasks/service.js
+- src/server.js
+- tests/oracle.test.js
+
+VYSTUP: vrat JEN platny JSON objekt bez markdownu:
+{ "mode": "patch", "files": [ {"path":"...","content":"...\n"} ], "notes": "optional" }
+Pravidla: udelej jen minimalni nutne zmeny; posli jen soubory ktere menis nebo pridavas; u kazdeho posli VZDY cely obsah souboru.

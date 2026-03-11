@@ -1,0 +1,14 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Expected at least 12 source files under src/, found 11",
+    "Missing shared helper source file: src/lib/id.js",
+    "Missing route signature for project detail endpoint /projects/:projectId",
+    "Status code contract mismatch: POST /projects should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/members should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/tasks should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/tasks/:taskId/comments should return HTTP 201 on create.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

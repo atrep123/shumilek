@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Parse/write failed: First iteration must use mode \"full\" with all core files. Missing: src/modules/tasks/routes.js, src/modules/tasks/service.js, src/modules/comments/routes.js, src/modules/comments/service.js"
+  ]
+}

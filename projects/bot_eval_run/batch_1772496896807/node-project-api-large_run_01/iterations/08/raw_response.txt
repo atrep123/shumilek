@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/server.js",
+      "content": "// src/server.js\nconst app = require('./app');\nconst http = require('http');\n\n// Start server without calling listen()\nmodule.exports.startServer = (port) => {\n  const server = http.createServer(app);\n  return new Promise((resolve, reject) => {\n    server.listen(port, () => {\n      resolve(server);\n    }).on('error', (err) => {\n      reject(err);\n    });\n  });\n};"
+    }
+  ],
+  "notes": "Fixed the syntax issues in src/server.js by closing strings and braces."
+}

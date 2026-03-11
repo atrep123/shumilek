@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-03-01T23:48:27.3650853Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/modules/comments/service.js\",\n      \"content\": \"// src/modules/comments/service.js\\nconst { randomUUID } = require('node:crypto');\\nconst tasksService = require('../tasks/service');\\nconst commentsStore = {};\\n\\nasync function createComment(projectId, taskId, message) {\\n  const task = await tasksService.getCommentsForTask(projectId, taskId);\\n  if (!task) return null;\\n  const commentId = randomUUID();\\n  const comment = { id: commentId, message };\\n  commentsStore[taskId] = [...(commentsStore[taskId] || []), comment];\\n  return comment;\\n}\\n\\nmodule.exports = {\\n  createComment,\\n};\"\n    },\n    {\n      \"path\": \"src/modules/tasks/service.js\",\n      \"content\": \"// src/modules/tasks/service.js\\nconst { randomUUID } = require('node:crypto');\\nconst projectsService = require('../projects/service');\\nconst tasksStore = {};\\n\\nasync function getAllTasks(projectId) {\\n  const project = await projectsService.getProjectById(projectId);\\n  if (!project) return null;\\n  return tasksStore[projectId] || [];\\n}\\n\\nasync function getCommentsForTask(projectId, taskId) {\\n  const project = await projectsService.getProjectById(projectId);\\n  if (!project) return null;\\n  const task = tasksStore[projectId]?.find(t => t.id === taskId);\\n  if (!task) return null;\\n  return task.comments || [];\\n}\\n\\nasync function createTask(projectId, title, description) {\\n  const project = await projectsService.getProjectById(projectId);\\n  if (!project) return null;\\n  const taskId = randomUUID();\\n  const task = { id: taskId, title, description, status: 'todo', comments: [] };\\n  tasksStore[projectId] = [...(tasksStore[projectId] || []), task];\\n  return task;\\n}\\n\\nasync function updateTaskStatus(projectId, taskId, status) {\\n  const project = await projectsService.getProjectById(projectId);\\n  if (!project) return null;\\n  const taskIndex = tasksStore[projectId]?.findIndex(t => t.id === taskId);\\n  if (taskIndex === -1) return null;\\n  if (status !== 'todo' && status !== 'done') return null;\\n  tasksStore[projectId][taskIndex].status = status;\\n  return tasksStore[projectId][taskIndex];\\n}\\n\\nmodule.exports = {\\n  getAllTasks,\\n  getCommentsForTask,\\n  createTask,\\n  updateTaskStatus,\\n};\"\n    }\n  ],\n  \"notes\": \"Updated services to return null instead of throwing errors for domain issues.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 19424397100,
+  "load_duration": 62584300,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 974669200,
+  "eval_count": 611,
+  "eval_duration": 7346001800
+}

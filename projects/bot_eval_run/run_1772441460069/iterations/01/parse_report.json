@@ -1,0 +1,23 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "deepseek-coder-v2:16b",
+      "ok": true,
+      "transport": "generate",
+      "formatKind": "json",
+      "schemaUsed": false,
+      "fallbackUsed": true
+    },
+    {
+      "stage": "scenario_contract",
+      "model": "deepseek-coder-v2:16b",
+      "ok": false,
+      "error": "First iteration must use mode \"full\" with all core files. Missing: src/modules/tasks/routes.js, src/modules/tasks/service.js, src/modules/comments/routes.js, src/modules/comments/service.js",
+      "errorKind": "schema"
+    }
+  ],
+  "finalOk": false,
+  "finalError": "First iteration must use mode \"full\" with all core files. Missing: src/modules/tasks/routes.js, src/modules/tasks/service.js, src/modules/comments/routes.js, src/modules/comments/service.js",
+  "finalErrorKind": "schema"
+}

@@ -1,0 +1,38 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Command failed: python -m unittest discover -v -s tests -p \"test*.py\" (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "python -m compileall -q mini_ai tests",
+      "cwd": "projects\\bot_eval_run\\run_1772209763974\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 84,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "python -m unittest discover -v -s tests -p \"test*.py\"",
+      "cwd": "projects\\bot_eval_run\\run_1772209763974\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 85,
+      "stdout": "",
+      "stderr": "test_generate (test_markov.TestMarkovChain.test_generate) ... FAIL\r\ntest_train (test_markov.TestMarkovChain.test_train) ... ok\r\n\r\n======================================================================\r\nFAIL: test_generate (test_markov.TestMarkovChain.test_generate)\r\n----------------------------------------------------------------------\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\tests\\test_markov.py\", line 19, in test_generate\r\n    self.assertEqual(len(generated_text), 10)\r\nAssertionError: 8 != 10\r\n\r\n----------------------------------------------------------------------\r\nRan 2 tests in 0.001s\r\n\r\nFAILED (failures=1)\r\n"
+    },
+    {
+      "command": "python -m mini_ai.cli --help",
+      "cwd": "projects\\bot_eval_run\\run_1772209763974\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 62,
+      "stdout": "usage: cli.py [-h] {train,generate} ...\r\n\r\nCharacter-level Markov chain generator.\r\n\r\npositional arguments:\r\n  {train,generate}\r\n    train           Train a model\r\n    generate        Generate text\r\n\r\noptions:\r\n  -h, --help        show this help message and exit\r\n",
+      "stderr": "<frozen runpy>:128: RuntimeWarning: 'mini_ai.cli' found in sys.modules after import of package 'mini_ai', but prior to execution of 'mini_ai.cli'; this may result in unpredictable behaviour\r\n"
+    }
+  ]
+}

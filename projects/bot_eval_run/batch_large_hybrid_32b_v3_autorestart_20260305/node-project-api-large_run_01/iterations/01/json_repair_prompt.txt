@@ -1,0 +1,62 @@
+Jsi JSON opravovac. Dostanes text, ktery ma byt JEDEN validni JSON objekt.
+Schema kontrakt:
+{ "mode": "full|patch", "files": [ {"path":"...","content":"..."} ], "notes": "optional" }
+Tvuj ukol: vrat JEN validni JSON objekt bez markdownu a bez jineho textu.
+Pravidla:
+- Musi existovat pouze jeden root objekt.
+- Pole "files" musi byt pole OBJEKTU se string "path" a "content".
+- Nepouzivej duplicate root keys (napr. druhe "files").
+- Zachovej obsah souboru; neopravuj logiku, pouze strukturu/escaping JSON.
+- NEVKLADAJ zkratky ani placeholdery.
+
+TEXT:
+<<<
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md"
+    },
+    {
+      "path": "package.json"
+    },
+    {
+      "path": "src/app.js"
+    },
+    {
+      "path": "src/server.js"
+    },
+    {
+      "path": "src/modules/projects/routes.js"
+    },
+    {
+      "path": "src/modules/projects/service.js"
+    },
+    {
+      "path": "src/modules/tasks/routes.js"
+    },
+    {
+      "path": "src/modules/tasks/service.js"
+    },
+    {
+      "path": "src/modules/members/routes.js"
+    },
+    {
+      "path": "src/modules/members/service.js"
+    },
+    {
+      "path": "src/modules/comments/routes.js"
+    },
+    {
+      "path": "src/modules/comments/service.js"
+    },
+    {
+      "path": "src/lib/errors.js"
+    },
+    {
+      "path": "src/lib/id.js"
+    }
+  ],
+  "notes": "Ensure all required files and directories are included. The modular structure under src/modules/projects, tasks, members, comments should be maintained."
+}
+>>>

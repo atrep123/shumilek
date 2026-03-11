@@ -1,0 +1,67 @@
+✔ health + empty project list (79.6475ms)
+✖ project create/list/get + duplicate + validation (32.0373ms)
+✖ members endpoints (33.0226ms)
+✔ tasks create/list/filter + patch status (19.916ms)
+✖ comments + not-found and payload contract (10.8008ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 2
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 328.4112
+
+✖ failing tests:
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (32.0373ms)
+  AssertionError [ERR_ASSERTION]: {"project":null}
+  
+  201 !== 409
+  
+      at expectErrorPayload (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772548099954\node-project-api-large_run_01\workspace\tests\oracle.test.js:43:10)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772548099954\node-project-api-large_run_01\workspace\tests\oracle.test.js:89:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 201,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (33.0226ms)
+  AssertionError [ERR_ASSERTION]: {"member":{"id":"6be5d724-991a-44d1-be94-a1fe7b91cd46","userId":"u-1","role":"owner"}}
+  
+  201 !== 409
+  
+      at expectErrorPayload (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772548099954\node-project-api-large_run_01\workspace\tests\oracle.test.js:43:10)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772548099954\node-project-api-large_run_01\workspace\tests\oracle.test.js:114:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 201,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (10.8008ms)
+  TypeError: tasksService.getTasksByProjectId(...)?.find is not a function
+      at Object.addCommentToTask (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772548099954\node-project-api-large_run_01\workspace\src\modules\comments\service.js:5:61)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772548099954\node-project-api-large_run_01\workspace\src\modules\comments\routes.js:8:41
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772548099954\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772548099954\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:149:13)
+      at Route.dispatch (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772548099954\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:119:3)
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772548099954\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772548099954\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:284:15
+      at router.process_params (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772548099954\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:346:12)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772548099954\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:280:10)
+      at router.handle (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772548099954\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:175:3)

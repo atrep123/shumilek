@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst app = express();\nconst { randomUUID } = require('node:crypto');\nconst { sendError } = require('../../lib/errors');\n\n// Middleware to parse JSON bodies\napp.use(express.json());\n\n// Health check endpoint\napp.get('/health', (req, res) => {\n  res.json({ ok: true });\n});\n\n// Project routes\nconst projectsRouter = require('./modules/projects/routes');\napp.use('/projects', projectsRouter);\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { getProjectById } = require('./service');\n\n// Get project by ID\nrouter.get('/:projectId', async (req, res) => {\n  const project = await getProjectById(req.params.projectId);\n  if (!project) return sendError(res, 404, 'E_NOTFOUND', 'Project not found');\n  res.json({ project });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst projects = {}; // In-memory storage for simplicity\n\n// Get project by ID\nexports.getProjectById = (projectId) => {\n  return projects[projectId];\n};\n\n// Add new project\nexports.addProject = ({ name }) => {\n  if (!name) throw new Error('E_BADREQUEST', 'Name is required');\n  const id = randomUUID();\n  projects[id] = { id, name };\n  return { id, name };\n};\n"
+    }
+  ],
+  "notes": "Added routes and service methods for project management. Updated app to include health check endpoint and mount project routes."
+}

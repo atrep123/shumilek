@@ -1,0 +1,12 @@
+{
+  "strategy": "on-fail",
+  "scenarioId": "node-project-api-large",
+  "triggerIteration": 1,
+  "diagnostics": [
+    "State-sharing mismatch: members service should reuse shared projects repository, not isolated members map/array",
+    "Task status contract mismatch: use `todo` / `done` statuses (not `open` or `pending`)",
+    "Task status contract mismatch: PATCH status must allow only \"todo\" or \"done\" (pending/open are not allowed).",
+    "package.json should include \"supertest\" (dependencies or devDependencies) for oracle execution",
+    "Skipped oracle command checks because structural contract did not pass."
+  ]
+}

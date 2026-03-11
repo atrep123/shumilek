@@ -1,0 +1,36 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "qwen2.5-coder:14b",
+      "ok": true,
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    },
+    {
+      "stage": "scenario_contract",
+      "model": "qwen2.5-coder:14b",
+      "ok": true,
+      "error": "Large scenario restored missing core files from workspace: README.md, package.json, src/server.js, src/lib/id.js",
+      "errorKind": "schema"
+    }
+  ],
+  "finalOk": true,
+  "appliedFixes": [],
+  "skippedFixes": [
+    "src/modules/projects/routes.js: detail route unchanged (detail route already present)",
+    "src/modules/projects/routes.js: POST / status unchanged (POST / already returns 201 or no res.json success branch)",
+    "src/modules/projects/routes.js: no custom-error class normalization needed",
+    "src/modules/tasks/routes.js: POST / status unchanged (POST / route block not detected)",
+    "src/modules/tasks/routes.js: task status/filter unchanged (tasks status/filter already aligned or pattern not detected)",
+    "src/modules/tasks/routes.js: no custom-error class normalization needed",
+    "src/modules/members/routes.js: POST / status unchanged (POST / already returns 201 or no res.json success branch)",
+    "src/modules/members/routes.js: members payload unchanged (members payload already aligned or pattern not detected)",
+    "src/modules/members/routes.js: no custom-error class normalization needed",
+    "src/modules/comments/routes.js: POST / status unchanged (POST / already returns 201 or no res.json success branch)",
+    "src/modules/comments/routes.js: comments payload unchanged (comments payload already aligned or pattern not detected)",
+    "src/modules/comments/routes.js: no custom-error class normalization needed"
+  ]
+}

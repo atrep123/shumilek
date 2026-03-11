@@ -1,0 +1,16 @@
+{
+  "model": "deepseek-coder-v2:16b",
+  "created_at": "2026-03-02T01:01:14.3527978Z",
+  "message": {
+    "role": "assistant",
+    "content": "{ \"files\": [ {\"path\":\"src/modules/projects/service.js\",\"content\":\"export function addProject(name) {\\n  if (!name) throw new Error('Name is required');\\n  const id = randomUUID();\\n  projects.set(id, { id, name });\\n  return { id, name };\\n}\\n\\nexport function getProject(projectId) {\\n  const project = projects.get(projectId);\\n  if (!project) throw new Error('Project not found');\\n  return project;\\n}\\n\"}, {\"path\":\"src/modules/tasks/service.js\",\"content\":\"export function addTask(projectId, data) {\\n  const id = randomUUID();\\n  tasks.set(id, { projectId, ...data });\\n  return { id, ...data };\\n}\\n\\nexport function getTasks(projectId, status) {\\n  if (status && !['todo', 'done'].includes(status)) throw new Error('Invalid task status');\\n  const filteredTasks = Array.from(tasks.values()).filter(task => task.projectId === projectId);\\n  return status ? filteredTasks.filter(task => task.status === status) : filteredTasks;\\n}\\n\\nexport function updateTaskStatus(taskId, newStatus) {\\n  const task = tasks.get(taskId);\\n  if (!task) throw new Error('Task not found');\\n  task.status = newStatus;\\n  return { ...task };\\n}\\n\"} ]}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 7452517100,
+  "load_duration": 42850300,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 528458400,
+  "eval_count": 345,
+  "eval_duration": 2572143600
+}

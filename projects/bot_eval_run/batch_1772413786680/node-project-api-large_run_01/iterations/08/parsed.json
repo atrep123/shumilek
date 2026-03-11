@@ -1,0 +1,20 @@
+{
+  "files": [
+    {
+      "path": "src/lib/errors.js",
+      "content": "export function sendError(res, status, code, message) {\n  res.status(status).json({ error: { code, message } });\n}\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "import express from 'express';\nimport * as projectsService from './service.js';\nimport { sendError } from '../../lib/errors.js';\n\nconst router = express.Router();\n\nrouter.get('/', async (req, res) => {\n  const projects = await projectsService.getAllProjects();\n  if (!projects) return sendError(res, 500, 'INTERNAL_ERROR', 'Failed to fetch projects');\n  res.json({ projects });\n});\n\nrouter.post('/', async (req, res) => {\n  const { name } = req.body;\n  if (!name || typeof name !== 'string' || name.trim() === '') {\n    return sendError(res, 400, 'INVALID_INPUT', 'Name must be a non-empty string');\n  }\n\n  const project = await projectsService.createProject(name);\n  if (!project) return sendError(res, 500, 'INTERNAL_ERROR', 'Failed to create project');\n  res.status(201).json({ project });\n});\n\nexport default router;\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "import express from 'express';\nimport * as membersService from './service.js';\nimport { sendError } from '../../lib/errors.js';\n\nconst router = express.Router();\n\nrouter.post('/', async (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || typeof userId !== 'string' || !role || typeof role !== 'string') {\n    return sendError(res, 400, 'INVALID_INPUT', 'Both userId and role must be non-empty strings');\n  }\n\n  const member = await membersService.addMember(req.params.projectId, userId, role);\n  if (!member) return sendError(res, 500, 'INTERNAL_ERROR', 'Failed to add member');\n  res.status(201).json({ member });\n});\n\nexport default router;\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "import express from 'express';\nimport * as tasksService from './service.js';\nimport { sendError } from '../../lib/errors.js';\n\nconst router = express.Router();\n\nrouter.get('/', async (req, res) => {\n  const status = req.query.status;\n  if (status && status !== 'done') {\n    return sendError(res, 400, 'INVALID_INPUT', 'Status must be either "
+    }
+  ]
+}

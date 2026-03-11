@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Expected at least 12 source files under src/, found 5",
+    "Missing required server entrypoint: src/server.*",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

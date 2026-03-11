@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-03-02T21:14:29.438602Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/modules/tasks/routes.js\",\n      \"content\": \"// src/modules/tasks/routes.js\\nconst express = require('express');\\nconst tasksService = require('./service');\\nconst { sendError } = require('../../lib/errors');\\n\\nconst router = express.Router();\\n\\nrouter.get('/', async (req, res) => {\\n  const status = req.query.status;\\n  try {\\n    let tasks;\\n    if (status === 'todo' || status === 'done') {\\n      tasks = await tasksService.getTasksByStatus(req.params.projectId, status);\\n    } else {\\n      tasks = await tasksService.getAllTasks(req.params.projectId);\\n    }\\n    res.json({ tasks });\\n  } catch (error) {\\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\\n  }\\n});\\n\\nrouter.post('/', async (req, res) => {\\n  const { description } = req.body;\\n  if (!description || typeof description !== 'string' || description.trim() === '') {\\n    return sendError(res, 400, 'INVALID_DESCRIPTION', 'Description must be a non-empty string');\\n  }\\n\\n  try {\\n    const task = await tasksService.createTask(req.params.projectId, description);\\n    res.status(201).json({ task });\\n  } catch (error) {\\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\\n  }\\n});\\n\\nrouter.patch('/:taskId', async (req, res) => {\\n  const { status } = req.body;\\n  if (!['todo', 'done'].includes(status)) {\\n    return sendError(res, 400, 'INVALID_STATUS', 'Status must be either \"\n\n      }\n    ]\n  }\n"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 14160185100,
+  "load_duration": 59216200,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 986066000,
+  "eval_count": 411,
+  "eval_duration": 5181085200
+}

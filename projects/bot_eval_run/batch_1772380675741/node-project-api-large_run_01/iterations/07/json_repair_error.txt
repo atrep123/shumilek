@@ -1,0 +1,1 @@
+Large scenario requires mode "full" after structural contract failures; mode "patch" is not allowed for this iteration.

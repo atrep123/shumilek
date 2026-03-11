@@ -1,0 +1,12 @@
+usage: cli.py [-h] {train,generate} ...
+
+Simple AI CLI for training and generating text using a character-level Markov
+chain.
+
+positional arguments:
+  {train,generate}
+    train           Train the model on a given text file.
+    generate        Generate text using a pre-trained model.
+
+options:
+  -h, --help        show this help message and exit

@@ -1,0 +1,13 @@
+{
+  "name": "multi-module-project",
+  "version": "1.0.0",
+  "description": "A multi-module project structure for managing projects, tasks, members, and comments.",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "supertest": "^6.0.0"
+  }
+}

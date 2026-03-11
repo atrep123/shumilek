@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Parse/write failed: Duplicate file paths in files[]: src/modules/projects/routes.js"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "State-sharing mismatch: members service should reuse shared projects repository, not isolated members map/array",
+    "JavaScript syntax check failed in src/modules/tasks/routes.js: C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772447177364\\node-project-api-large_run_01\\workspace\\src\\modules\\tasks\\routes.js:24",
+    "Likely truncated/incomplete JS content in src/modules/tasks/routes.js; regenerate full file content with closed strings and braces.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

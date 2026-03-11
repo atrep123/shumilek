@@ -1,0 +1,104 @@
+Vytvor maly, ale realisticky Python projekt pro "AI" bez externich zavislosti.
+
+Pozadavky:
+- Pouze standardni knihovna Pythonu (zadne numpy/pandas/sklearn/torch/tensorflow/requests).
+- Struktura projektu jako balicek `mini_ai/` + `tests/` + `README.md`.
+- Implementuj jednoduchy model: napr. character-level Markov chain generator + trenovani z textu.
+- Pridat CLI: `python -m mini_ai.cli --help`, `train`, `generate` (offline).
+- Unit testy pres `unittest` (aspon 8 testu / assertu) a musi prochazet.
+
+VYSTUPNI FORMAT (STRICT): vrat JEN JSON objekt tohoto tvaru:
+{
+  "mode": "full",
+  "files": [
+    {"path": "README.md", "content": "...\n"},
+    {"path": "mini_ai/__init__.py", "content": "...\n"},
+    {"path": "mini_ai/...", "content": "...\n"},
+    {"path": "tests/test_....py", "content": "...\n"}
+  ],
+  "notes": "optional"
+}
+
+Pravidla:
+- Zadny markdown, zadne ``` bloky, zadny text mimo JSON.
+- Cesty jsou relativni, pouzij `/`, bez `..` a bez absolutnich cest.
+- Kazdy soubor ukonci znakem noveho radku.
+- "mode" pouzij "full" pro kompletni projekt (v pripade oprav muzes pouzit "patch").
+- `content` je vzdy kompletni obsah souboru (ne diff/snippet).
+
+---
+PLANNER HINTS (planner: deepseek-r1:8b; non-binding, SPEC wins on conflict):
+- [x] Vytvořit strukturu projektu `mini_ai/` a `tests/`
+- [x] Implementovat character-level Markov chain generator v souboru `mini_ai/markov_chain.py`
+- [x] Trenovat model z textu v souboru `mini_ai/cli.py`
+- [x] Přidat CLI funkce `train` a `generate` v souboru `mini_ai/cli.py`
+- [x] Napsat unit testy pro `markov_chain.py` v souboru `tests/test_markov_chain.py`
+- [x] Ujistit se, že testy procházejí pomocí `python -m unittest discover -v -s tests -p "test*.py"`
+- [x] Přidat pomocník CLI s výpisem možností pomocí `python -m mini_ai.cli --help`
+- [x] Ujistit se, že `mini_ai/cli.py` má modul `mini_ai.markov` importován
+- [x] Vytvořit `README.md` s popisem projektu a pokyny pro používání
+
+---
+NEPROSLO VALIDACI. Oprav nasledujici problemy.
+
+CHYBY:
+- Missing required file: mini_ai/cli.py
+- Command failed: python -m unittest discover -v -s tests -p "test*.py" (exit=1, timedOut=false)
+- Command failed: python -m mini_ai.cli --help (exit=1, timedOut=false)
+
+LOGY (zkraceno):
+- python -m unittest discover -v -s tests -p "test*.py"
+  stderr: "test_empty_chain (test_markov_chain.TestMarkovChain.test_empty_chain) ... ok\r\ntest_generate (test_markov_chain.TestMarkovChain.test_generate) ... ok\r\ntest_random_seed (test_markov_chain.TestMarkovChain.test_random_seed) ... ok\r\ntest_seed (test_markov_chain.TestMarkovChain.test_seed) ... ok\r\ntest_to_dict_and_from_dict (test_markov_chain.TestMarkovChain.test_to_dict_and_from_dict) ... ok\r\ntest_train (test_markov_chain.TestMarkovChain.test_train) ... FAIL\r\n\r\n======================================================================\r\nFAIL: test_train (test_markov_chain.TestMarkovChain.test_train)\r\n----------------------------------------------------------------------\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772213425796\\workspace\\tests\\test_markov_chain.py\", line 8, in test_train\r\n    self.assertIn(('he',), mc.chain)\r\nAssertionError: ('he',) not found in {('h', 'e'): ['l'], ('e', 'l'): ['l'], ('l', 'l'): ['o'], ('l', 'o'): [' '], ('o', ' '): ['w'], (' ', 'w'): ['o'], ('w', 'o'): ['r'], ('o', 'r'): ['l'], ('r', 'l'): ['d']}\r\n\r\n----------------------------------------------------------------------\r\nRan 6 tests in 0.001s\r\n\r\nFAILED (failures=1)\r\n"
+- python -m mini_ai.cli --help
+  stderr: "C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\python.exe: No module named mini_ai.cli\r\n"
+
+AKTUALNI SOUBORY:
+- README.md
+- mini_ai/__init__.py
+- mini_ai/__pycache__/__init__.cpython-312.pyc
+- mini_ai/__pycache__/markov_chain.cpython-312.pyc
+- mini_ai/markov_chain.py
+- tests/__pycache__/test_markov_chain.cpython-312.pyc
+- tests/test_markov_chain.py
+
+DULEZITE: OPRAV SYNTAX/INDENT CHYBY PRESNE NA NIZE UVEDENYCH RADECH.
+KONTEXT SYNTAX CHYB:
+--- SYNTAX FILE: tests/test_markov_chain.py (line 8) ---
+      1 | import unittest
+      2 | from mini_ai.markov_chain import MarkovChain
+      3 | 
+      4 | class TestMarkovChain(unittest.TestCase):
+      5 |     def test_train(self):
+      6 |         mc = MarkovChain(order=2)
+      7 |         mc.train('hello world')
+>>    8 |         self.assertIn(('he',), mc.chain)
+      9 |         self.assertIn(('lo',), mc.chain)
+     10 |         self.assertIn(('or',), mc.chain)
+     11 | 
+     12 |     def test_generate(self):
+     13 |         mc = MarkovChain(order=1)
+     14 |         mc.train('abracadabra')
+     15 |         generated_text = mc.generate(length=10, random_seed=42)
+     16 |         self.assertEqual(len(generated_text), 10)
+     17 | 
+     18 |     def test_to_dict_and_from_dict(self):
+     19 |         mc = MarkovChain(order=2)
+     20 |         mc.train('hello world')
+     21 |         data = mc.to_dict()
+     22 |         new_mc = MarkovChain.from_dict(data)
+     23 |         self.assertEqual(new_mc.order, mc.order)
+     24 |         self.assertEqual(new_mc.chain, mc.chain)
+     25 | 
+     26 |     def test_seed(self):
+     27 |         mc = MarkovChain(order=1)
+     28 |         mc.train('abracadabra')
+     29 |         generated_text_1 = mc.generate(length=10, seed='a', random_seed=42)
+     30 |         generated_text_2 = mc.generate(length=10, seed='a', random_seed=42)
+     31 |         self.assertEqual(generated_text_1, generated_text_2)
+     32 | 
+     33 |     def test_random_seed(self):
+Instrukce: dodrz konzistentni odsazeni (mezery), zadne smichani blokovych urovni.
+
+VYSTUP: vrat JEN platny JSON objekt bez markdownu:
+{ "mode": "patch", "files": [ {"path":"...","content":"...\n"} ], "notes": "optional" }
+Pravidla: udelej jen minimalni nutne zmeny; posli jen soubory ktere menis nebo pridavas; u kazdeho posli VZDY cely obsah souboru.

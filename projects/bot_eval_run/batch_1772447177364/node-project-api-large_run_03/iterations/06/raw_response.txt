@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "src/lib/errors.js",
+      "content": "// src/lib/errors.js\nconst sendError = (res, status, code, message) => {\n  res.status(status).json({ error: { code, message } });\n};\n\nmodule.exports = { sendError };\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "// src/modules/members/routes.js\nconst express = require('express');\nconst router = express.Router();\nconst service = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', async (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Both userId and role are required.');\n  }\n  try {\n    const member = await service.addMember(req.params.projectId, { userId, role });\n    res.status(201).json({ member });\n  } catch (error) {\n    if (error.code === 'DUPLICATE') {\n      return sendError(res, 409, 'DUPLICATE', error.message);\n    }\n    sendError(res, 500, 'INTERNAL_ERROR', 'An unexpected error occurred.');\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "// src/modules/comments/routes.js\nconst express = require('express');\nconst router = express.Router();\nconst service = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', async (req, res) => {\n  const { message } = req.body;\n  if (!message) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Message is required.');\n  }\n  try {\n    const comment = await service.addComment(req.params.projectId, req.params.taskId, { message });\n    res.status(201).json({ comment });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'An unexpected error occurred.');\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "// src/modules/tasks/routes.js\nconst express = require('express');\nconst router = express.Router();\nconst service = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.get('/', async (req, res) => {\n  const status = req.query.status;\n  try {\n    const tasks = await service.getTasks(req.params.projectId, status);\n    res.json({ tasks });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'An unexpected error occurred.');\n  }\n});\n\nrouter.patch('/:taskId', async (req, res) => {\n  const { status } = req.body;\n  if (!['todo', 'done'].includes(status)) {\n    return sendError(res, 400, 'INVALID_STATUS', 'Status must be either "
+      }
+    ]
+  }
+  

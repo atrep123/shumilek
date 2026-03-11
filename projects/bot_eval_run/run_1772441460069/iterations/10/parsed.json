@@ -1,0 +1,61 @@
+{
+  "files": [
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst app = express();\nconst { randomUUID } = require('node:crypto');\nconst { sendError } = require('./lib/errors');\n\n// Middleware to parse JSON bodies\napp.use(express.json());\n\n// Health endpoint\napp.get('/health', (req, res) => {\n  res.send({ ok: true });\n});\n\n// Project routes\nconst projectsRouter = require('./modules/projects/routes');\napp.use('/projects', projectsRouter);\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "module.exports.sendError = function(res, status, code, message) {\n  res.status(status).json({ error: { code, message } });\n};\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { createProject, getProjects } = require('./service');\n\n// Create a new project\nrouter.post('/', async (req, res) => {\n  if (!req.body.name) return sendError(res, 400, 'BadRequest', 'Name is required');\n  const project = await createProject({ id: randomUUID(), name: req.body.name });\n  res.status(201).send({ project });\n});\n\n// Get all projects\nrouter.get('/', async (req, res) => {\n  const projects = await getProjects();\n  res.send({ projects });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst db = []; // In-memory database for simplicity\n\nexports.createProject = function(project) {\n  db.push(project);\n  return project;\n};\n\nexports.getProjects = function() {\n  return db;\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst { createTask, updateTaskStatus, getTasksByStatus } = require('./service');\n\n// Create a new task\nrouter.post('/', async (req, res) => {\n  const task = await createTask({ id: randomUUID(), status: 'todo', ...req.body });\n  res.status(201).send({ task });\n});\n\n// Update task status\nrouter.patch('/:taskId', async (req, res) => {\n  const { taskId } = req.params;\n  if (!['todo', 'done'].includes(req.body.status)) return sendError(res, 400, 'BadRequest', 'Invalid status');\n  const task = await updateTaskStatus(taskId, req.body.status);\n  res.send({ task });\n});\n\n// Get tasks by status\nrouter.get('/', async (req, res) => {\n  const { status } = req.query;\n  if (!status || !['todo', 'done'].includes(status)) return sendError(res, 400, 'BadRequest', 'Invalid status filter');\n  const tasks = await getTasksByStatus(status);\n  res.send({ tasks });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const db = { tasks: [] }; // In-memory database for simplicity\n\nexports.createTask = function(task) {\n  db.tasks.push(task);\n  return task;\n};\n\nexports.updateTaskStatus = function(taskId, newStatus) {\n  const taskIndex = db.tasks.findIndex(task => task.id === taskId);\n  if (taskIndex === -1) return null;\n  db.tasks[taskIndex].status = newStatus;\n  return db.tasks[taskIndex];\n};\n\nexports.getTasksByStatus = function(status) {\n  return db.tasks.filter(task => task.status === status);\n};\n"
+    },
+    {
+      "path": "README.md",
+      "content": "# My Project\n\nThis is a sample project for demonstration purposes.\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"my-project\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A sample Node.js project\",\n  \"main\": \"src/app.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\"\n  },\n  \"dependencies\": {},\n  \"devDependencies\": {\n    \"supertest\": \"^6.0.0\"\n  }\n}"
+    },
+    {
+      "path": "src/server.js",
+      "content": "const http = require('http');\nconst app = require('./app');\n\nconst server = http.createServer(app);\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst { getMembers, createMember } = require('./service');\n\nrouter.get('/', getMembers);\nrouter.post('/', createMember);\n\nexport default router;"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const membersMap = require('../../lib/sharedState').members; // Assuming shared state management\n\nfunction addMember(projectId, userId, role) {\n  if (!userId || !role) throw new BadRequestError('Missing required fields');\n  if (membersMap.has(projectId) && membersMap.get(projectId).some(member => member.userId === userId)) {\n    throw new ConflictError('User already a member of this project');\n  }\n  // Add member logic here\n}\n\nmodule.exports = { addMember };\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\n\nrouter.post('/projects/:projectId/tasks/:taskId/comments', (req, res) => {\n  // Implement comment creation logic here\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { v4: uuidv4 } = require('uuid');\nconst projects = {};\nconst comments = {};\nexport function createComment(projectId, taskId, commentData) {\n  if (!commentData.message) throw new BadRequestError('Message is required');\n  const commentId = uuidv4();\n  if (!projects[projectId] || !projects[projectId].tasks?.[taskId]) return null;\n  comments[commentId] = { id: commentId, ...commentData };\n  projects[projectId].tasks[taskId].comments = projects[projectId].tasks[taskId].comments || {};\n  projects[projectId].tasks[taskId].comments[commentId] = comments[commentId];\n  return comments[commentId];\n}\n"
+    },
+    {
+      "path": "src/lib/id.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nfunction generateId() {\n  return randomUUID();\n}\n\nmodule.exports = { generateId };\n"
+    }
+  ],
+  "notes": "optional"
+}

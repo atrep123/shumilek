@@ -1,0 +1,61 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "...\n"
+    },
+    {
+      "path": "package.json",
+      "content": "...\n"
+    },
+    {
+      "path": "src/app.js",
+      "content": "...\n"
+    },
+    {
+      "path": "src/server.js",
+      "content": "...\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "...\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "...\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "...\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "...\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "...\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "...\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "...\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "...\n"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "...\n"
+    },
+    {
+      "path": "src/lib/id.js",
+      "content": "...\n"
+    }
+  ],
+  "notes": "optional"
+}

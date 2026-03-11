@@ -1,0 +1,6 @@
+- Create full files: README.md, mini_ai/__init__.py, mini_ai/markov.py, mini_ai/cli.py.
+- Implement MarkovChain with train/generate/to_dict/from_dict and ValueError for order <= 0.
+- Ensure generate(length, seed, random_seed) returns exactly `length` chars for trained model.
+- In cli, define main(argv=None)->int with train/generate argparse subcommands.
+- Save/load model JSON via to_dict()/from_dict() and avoid undefined load_model/save_model imports.
+- Verify with compileall, oracle unittest, and python -m mini_ai.cli --help.

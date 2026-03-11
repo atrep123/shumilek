@@ -1,0 +1,7 @@
+{
+  "review": "text",
+  "priorityFiles": [
+    "src/modules/comments/service.js",
+    "src/lib/errors.js"
+  ]
+}

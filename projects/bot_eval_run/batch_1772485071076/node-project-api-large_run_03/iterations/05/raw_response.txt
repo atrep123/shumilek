@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "src/lib/errors.js",
+      "content": "// src/lib/errors.js\nconst sendError = (res, status, code, message) => {\n  res.status(status).json({ error: { code, message } });\n};\n\nmodule.exports = {\n  sendError,\n};\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "// src/modules/projects/routes.js\nconst express = require('express');\nconst router = express.Router();\nconst projectsService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.get('/', async (req, res) => {\n  try {\n    const projects = await projectsService.getAllProjects();\n    res.json({ projects });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nrouter.get('/:projectId', async (req, res) => {\n  try {\n    const project = await projectsService.getProjectById(req.params.projectId);\n    if (!project) {\n      return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found');\n    }\n    res.json({ project });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nrouter.post('/', async (req, res) => {\n  const { name } = req.body;\n  if (!name || typeof name !== 'string' || name.trim() === '') {\n    return sendError(res, 400, 'INVALID_NAME', 'Name must be a non-empty string');\n  }\n\n  try {\n    const project = await projectsService.createProject(name);\n    res.status(201).json({ project });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "// src/modules/tasks/routes.js\nconst express = require('express');\nconst router = express.Router();\nconst tasksService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.get('/', async (req, res) => {\n  const statusFilter = req.query.status;\n  try {\n    let tasks = await tasksService.getAllTasks(req.params.projectId);\n    if (statusFilter === 'done') {\n      tasks = tasks.filter(task => task.status === 'done');\n    }\n    res.json({ tasks });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nrouter.post('/', async (req, res) => {\n  const { title, description } = req.body;\n  if (!title || typeof title !== 'string' || title.trim() === '') {\n    return sendError(res, 400, 'INVALID_TITLE', 'Title must be a non-empty string');\n  }\n\n  try {\n    const task = await tasksService.createTask(req.params.projectId, title, description);\n    res.status(201).json({ task });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nrouter.patch('/:taskId', async (req, res) => {\n  const { status } = req.body;\n  if (!['todo', 'done'].includes(status)) {\n    return sendError(res, 400, 'INVALID_STATUS', 'Status must be either "
+      }
+    ]
+  }
+  

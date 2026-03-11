@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "// src/modules/projects/service.js\nconst { randomUUID } = require('node:crypto');\nconst projectsStore = {};\n\nmodule.exports = {\n  getProjectById(id) {\n    return projectsStore[id];\n  },\n  getProjectByName(name) {\n    for (const id in projectsStore) {\n      if (projectsStore[id].name === name) {\n        return projectsStore[id];\n      }\n    }\n    return null;\n  },\n  createProject(name) {\n    const projectId = randomUUID();\n    projectsStore[projectId] = { id: projectId, name: name, members: [], tasks: [] };\n    return projectsStore[projectId];\n  }\n};\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "// src/modules/members/service.js\nconst projectsService = require('../../modules/projects/service');\n\nmodule.exports = {\n  addMember(projectId, userId, role) {\n    const project = projectsService.getProjectById(projectId);\n    if (!project) return null;\n    const existingMember = project.members.find(member => member.userId === userId);\n    if (existingMember) return null;\n    project.members.push({ userId: userId, role: role });\n    return project;\n  }\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "// src/modules/tasks/service.js\nconst projectsService = require('../../modules/projects/service');\n\nmodule.exports = {\n  createTask(projectId, description) {\n    const project = projectsService.getProjectById(projectId);\n    if (!project) return null;\n    const taskId = randomUUID();\n    project.tasks.push({ id: taskId, description: description, status: 'todo' });\n    return project;\n  },\n  updateTaskStatus(projectId, taskId, newStatus) {\n    const project = projectsService.getProjectById(projectId);\n    if (!project) return null;\n    const task = project.tasks.find(task => task.id === taskId);\n    if (!task || (newStatus !== 'todo' && newStatus !== 'done')) return null;\n    task.status = newStatus;\n    return project;\n  }\n};\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "// src/modules/comments/service.js\nconst projectsService = require('../../modules/projects/service');\n\nmodule.exports = {\n  addComment(projectId, taskId, message) {\n    const project = projectsService.getProjectById(projectId);\n    if (!project) return null;\n    const task = project.tasks.find(task => task.id === taskId);\n    if (!task) return null;\n    const commentId = randomUUID();\n    task.comments.push({ id: commentId, message: message });\n    return project;\n  }\n};\n"
+    }
+  ],
+  "notes": "Updated services to include required methods and fixed state-sharing issues."
+}

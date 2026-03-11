@@ -1,0 +1,92 @@
+{
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace",
+  "deterministicFallback": {
+    "mode": "on-fail",
+    "tsTodo": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "nodeApi": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "totalActivations": 0,
+    "totalRecoveries": 0,
+    "totalTargetedActivations": 0,
+    "totalTargetedRecoveries": 0,
+    "totalCanonicalActivations": 0,
+    "totalCanonicalRecoveries": 0,
+    "totalRawPasses": 0,
+    "totalRawFailures": 0,
+    "totalRecoveredByFallback": 0,
+    "fallbackDependencyRate": 0
+  },
+  "reliability": {
+    "rawPasses": 0,
+    "rawFailures": 0,
+    "recoveredByFallback": 0,
+    "fallbackDependencyRate": 0
+  },
+  "parseStats": {
+    "plannerFailures": 1,
+    "schemaFailures": 0,
+    "jsonRepairFailures": 0,
+    "parseFailures": 1,
+    "jsonParseFailures": 0,
+    "placeholderFailures": 0,
+    "otherFailures": 1
+  },
+  "ok": false,
+  "diagnostics": [
+    "Oracle command timed out once; collected actionable failure details via --test-force-exit rerun.",
+    "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=null, timedOut=true)",
+    "Command failed: node --test --test-force-exit --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "npm install --no-audit --fund=false",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 940,
+      "stdout": "\nadded 90 packages in 731ms\n",
+      "stderr": "npm warn deprecated supertest@6.3.4: Please upgrade to supertest v7.1.3+, see release notes at https://github.com/forwardemail/supertest/releases/tag/v7.1.3 - maintenance is supported by Forward Email @ https://forwardemail.net\nnpm warn deprecated superagent@8.1.2: Please upgrade to superagent v10.2.2+, see release notes at https://github.com/forwardemail/superagent/releases/tag/v10.2.2 - maintenance is supported by Forward Email @ https://forwardemail.net\n"
+    },
+    {
+      "command": "node --test --test-concurrency=1 tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace",
+      "ok": false,
+      "exitCode": null,
+      "timedOut": true,
+      "durationMs": 120007,
+      "stdout": "✔ health + empty project list (80.1846ms)\n✔ project create/list/get + duplicate + validation (25.8341ms)\n✖ members endpoints (10.1992ms)\n✖ tasks create/list/filter + patch status (6.1167ms)\n✖ comments + not-found and payload contract (5.9284ms)\n",
+      "stderr": ""
+    },
+    {
+      "command": "node --test --test-force-exit --test-concurrency=1 tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 334,
+      "stdout": "✔ health + empty project list (78.1171ms)\n✔ project create/list/get + duplicate + validation (26.1517ms)\n✖ members endpoints (11.0754ms)\n✖ tasks create/list/filter + patch status (6.4539ms)\n✖ comments + not-found and payload contract (4.9998ms)\nℹ tests 5\nℹ suites 0\nℹ pass 2\nℹ fail 3\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 274.6268\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:92:1\n✖ members endpoints (11.0754ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  'undefined' !== 'u-1'\n  \n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\tests\\oracle.test.js:108:10)\n      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 'undefined',\n    expected: 'u-1',\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at tests\\oracle.test.js:122:1\n✖ tasks create/list/filter + patch status (6.4539ms)\n  TypeError: Cannot read properties of undefined (reading 'push')\n      at Object.createTask (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\src\\modules\\tasks\\service.js:22:17)\n      at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\src\\modules\\tasks\\routes.js:16:35\n      at Layer.handle [as handle_request] (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\layer.js:95:5)\n      at next (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\route.js:149:13)\n      at Route.dispatch (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\route.js:119:3)\n      at Layer.handle [as handle_request] (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\layer.js:95:5)\n      at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:284:15\n      at router.process_params (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:346:12)\n      at next (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:280:10)\n      at router.handle (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:175:3)\n\ntest at tests\\oracle.test.js:160:1\n✖ comments + not-found and payload contract (4.9998ms)\n  TypeError: Cannot read properties of undefined (reading 'push')\n      at Object.createTask (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\src\\modules\\tasks\\service.js:22:17)\n      at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\src\\modules\\tasks\\routes.js:16:35\n      at Layer.handle [as handle_request] (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\layer.js:95:5)\n      at next (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\route.js:149:13)\n      at Route.dispatch (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\route.js:119:3)\n      at Layer.handle [as handle_request] (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\layer.js:95:5)\n      at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:284:15\n      at router.process_params (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:346:12)\n      at next (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:280:10)\n      at router.handle (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772502394046\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:175:3)\n",
+      "stderr": ""
+    }
+  ]
+}

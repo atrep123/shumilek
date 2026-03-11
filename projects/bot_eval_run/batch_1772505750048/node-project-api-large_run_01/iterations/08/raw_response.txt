@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet projects = {};\n\nfunction getAllProjects() {\n  return Object.values(projects);\n}\n\nfunction getProjectById(id) {\n  return projects[id] || null;\n}\n\nfunction addProject(name) {\n  const id = randomUUID();\n  projects[id] = { id, name };\n  return projects[id];\n}\n\nmodule.exports = {\n  getAllProjects,\n  getProjectById,\n  addProject\n};\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "let membersByProject = {};\n\nfunction getMembers(projectId) {\n  return membersByProject[projectId] || [];\n}\n\nfunction addMember(projectId, userId, role) {\n  if (!membersByProject[projectId]) {\n    membersByProject[projectId] = [];\n  }\n  const member = { userId, role };\n  membersByProject[projectId].push(member);\n  return member;\n}\n\nmodule.exports = {\n  getMembers,\n  addMember\n};\n"
+    }
+  ],
+  "notes": "Updated projects and members services to export required methods."
+}

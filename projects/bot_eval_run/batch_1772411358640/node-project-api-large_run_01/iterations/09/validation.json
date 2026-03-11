@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for project detail endpoint /projects/:projectId",
+    "Duplicate handling hint: expected 409 conflict handling for duplicate project names.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

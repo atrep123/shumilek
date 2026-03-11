@@ -1,0 +1,15 @@
+const router = require('express').Router({ mergeParams: true });
+const membersService = require('./service');
+const { sendError } = require('../../lib/errors');
+router.get('/', async (req, res) => res.json({ members: await membersService.getMembers(req.params.projectId) }));
+router.post('/', async (req, res) => {
+  const userId = String(req.body?.userId || '').trim();
+  const role = String(req.body?.role || '').trim();
+  if (!userId || !role) return sendError(res, 400, 'BAD_REQUEST', 'userId and role are required');
+  const outcome = await membersService.addMember(req.params.projectId, userId, role);
+  if (!outcome) return sendError(res, 409, 'MEMBER_DUPLICATE', 'Member already exists');
+  if (outcome.duplicate) return sendError(res, 409, 'MEMBER_DUPLICATE', 'Member already exists');
+  const __memberValue = outcome && typeof outcome === 'object' && 'member' in outcome ? outcome.member : outcome;
+    return res.status(201).json({ member: __memberValue });
+});
+module.exports = router;

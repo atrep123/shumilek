@@ -1,0 +1,18 @@
+{
+  "batchId": 1772659712482,
+  "startedAt": "2026-03-04T21:28:32.483Z",
+  "scenarios": [
+    "ts-todo-oracle"
+  ],
+  "runs": 3,
+  "model": "qwen2.5-coder:14b",
+  "plannerModel": "deepseek-r1:8b",
+  "reviewerModel": "qwen2.5:3b",
+  "jsonRepairModel": "qwen2.5:7b",
+  "deterministicFallbackMode": "on-fail",
+  "timeoutSec": 60,
+  "maxIterations": 1,
+  "hardTimeoutSec": null,
+  "stopOnInfraFailure": true,
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_infra_abort_smoke_20260304"
+}

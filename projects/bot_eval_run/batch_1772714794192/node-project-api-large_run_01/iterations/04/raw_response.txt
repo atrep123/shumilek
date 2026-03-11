@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "src/lib/validation.js",
+      "content": "module.exports = {\n  validateProjectName(name) {\n    if (!name || typeof name !== 'string' || name.trim() === '') {\n      return false;\n    }\n    return true;\n  },\n  validateMemberPayload(payload) {\n    return payload && typeof payload.userId === 'string' && typeof payload.role === 'string';\n  },\n  validateCommentPayload(payload) {\n    return payload && typeof payload.message === 'string';\n  },\n  validateTaskStatus(status) {\n    return ['todo', 'done'].includes(status);\n  }\n};\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst { sendError } = require('../../lib/errors');\nconst { validateMemberPayload } = require('../../lib/validation');\n\nconst projects = {};\n\nmodule.exports = {\n  addMember(projectId, member) {\n    if (!projects[projectId]) {\n      projects[projectId] = { id: projectId, members: [] };\n    }\n    if (!validateMemberPayload(member)) {\n      return null;\n    }\n    const existingMember = projects[projectId].members.find(m => m.userId === member.userId);\n    if (existingMember) {\n      return null;\n    }\n    projects[projectId].members.push({ id: randomUUID(), ...member });\n    return projects[projectId].members;\n  },\n  getMembers(projectId) {\n    return projects[projectId] ? projects[projectId].members : null;\n  }\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst { sendError } = require('../../lib/errors');\nconst { validateTaskStatus } = require('../../lib/validation');\n\nconst projects = {};\n\nmodule.exports = {\n  addTask(projectId, task) {\n    if (!projects[projectId]) {\n      projects[projectId] = { id: projectId, tasks: [] };\n    }\n    task.status = 'todo';\n    projects[projectId].tasks.push({ id: randomUUID(), ...task });\n    return projects[projectId].tasks;\n  },\n  updateTaskStatus(projectId, taskId, status) {\n    if (!validateTaskStatus(status)) {\n      return null;\n    }\n    const project = projects[projectId];\n    if (!project) {\n      return null;\n    }\n    const task = project.tasks.find(t => t.id === taskId);\n    if (!task) {\n      return null;\n    }\n    task.status = status;\n    return project.tasks;\n  },\n  getTasks(projectId, status) {\n    const project = projects[projectId];\n    if (!project) {\n      return null;\n    }\n    if (status) {\n      return project.tasks.filter(t => t.status === status);\n    }\n    return project.tasks;\n  }\n};\n"
+    }
+  ],
+  "notes": "Updated validation logic and service implementations to address state-sharing mismatch and task status contract mismatch."
+}

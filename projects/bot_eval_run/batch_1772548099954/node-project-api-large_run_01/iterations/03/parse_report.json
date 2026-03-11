@@ -1,0 +1,59 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "qwen2.5-coder:32b",
+      "ok": true,
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    },
+    {
+      "stage": "scenario_contract",
+      "model": "qwen2.5-coder:32b",
+      "ok": true,
+      "error": "Large scenario restored missing core files from workspace: README.md, package.json, src/app.js, src/server.js, src/lib/id.js",
+      "errorKind": "schema"
+    }
+  ],
+  "finalOk": true,
+  "appliedFixes": [
+    "src/modules/tasks/routes.js: enabled express Router({ mergeParams: true }) for nested project params",
+    "src/modules/tasks/routes.js: canonicalized tasks route contract (enforce TASK_NOT_FOUND 404 + todo|done patch)",
+    "src/modules/members/routes.js: enabled express Router({ mergeParams: true }) for nested project params",
+    "src/modules/members/routes.js: canonicalized members route contract (missing GET / list endpoint)",
+    "src/modules/comments/routes.js: enabled express Router({ mergeParams: true }) for nested project params",
+    "src/modules/comments/routes.js: canonicalized comments route contract (missing GET / list endpoint)"
+  ],
+  "skippedFixes": [
+    "src/lib/errors.js: sendError helper unchanged (sendError helper contract already valid)",
+    "src/modules/projects/routes.js: detail route unchanged (detail route already present)",
+    "src/modules/projects/routes.js: projects duplicate guard unchanged (createProject call shape not patchable)",
+    "src/modules/projects/routes.js: projects route canonicalization not required",
+    "src/modules/projects/routes.js: POST / status unchanged (POST / already returns 201 or no res.json success branch)",
+    "src/modules/projects/routes.js: no custom-error class normalization needed",
+    "src/modules/projects/routes.js: no errorHandler catch normalization needed",
+    "src/modules/projects/routes.js: sendError binding unchanged (sendError binding already present)",
+    "src/modules/tasks/routes.js: POST / status unchanged (POST / already returns 201 or no res.json success branch)",
+    "src/modules/tasks/routes.js: task create payload unchanged (tasks create payload already aligned or pattern not detected)",
+    "src/modules/tasks/routes.js: task status/filter unchanged (tasks status/filter already aligned or pattern not detected)",
+    "src/modules/tasks/routes.js: no custom-error class normalization needed",
+    "src/modules/tasks/routes.js: no errorHandler catch normalization needed",
+    "src/modules/tasks/routes.js: sendError binding unchanged (sendError binding already present)",
+    "src/modules/members/routes.js: POST / status unchanged (POST / already returns 201 or no res.json success branch)",
+    "src/modules/members/routes.js: members payload unchanged (members payload already aligned or pattern not detected)",
+    "src/modules/members/routes.js: members duplicate guard unchanged (addMember assignment not detected)",
+    "src/modules/members/routes.js: members response shape unchanged (members response already aligned or pattern not detected)",
+    "src/modules/members/routes.js: no custom-error class normalization needed",
+    "src/modules/members/routes.js: no errorHandler catch normalization needed",
+    "src/modules/members/routes.js: sendError binding unchanged (sendError binding already present)",
+    "src/modules/comments/routes.js: POST / status unchanged (POST / already returns 201 or no res.json success branch)",
+    "src/modules/comments/routes.js: comments payload unchanged (comments payload already aligned or pattern not detected)",
+    "src/modules/comments/routes.js: comments response shape unchanged (comments response already aligned or pattern not detected)",
+    "src/modules/comments/routes.js: no custom-error class normalization needed",
+    "src/modules/comments/routes.js: no errorHandler catch normalization needed",
+    "src/modules/comments/routes.js: sendError binding unchanged (sendError binding already present)",
+    "src/app.js: app mount contract unchanged (app mount signatures already present)"
+  ]
+}

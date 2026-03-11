@@ -1,0 +1,8 @@
+{
+  "strategy": "on-fail",
+  "scenarioId": "python-ai-stdlib-oracle",
+  "triggerIteration": 1,
+  "diagnostics": [
+    "Ollama request failed: request to http://localhost:11434/api/generate failed, reason: "
+  ]
+}

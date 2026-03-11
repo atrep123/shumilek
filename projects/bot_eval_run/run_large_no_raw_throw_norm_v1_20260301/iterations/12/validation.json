@@ -1,0 +1,15 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for /projects/:projectId/members",
+    "Missing route signature for /projects/:projectId/tasks",
+    "Missing route signature for /projects/:projectId/tasks/:taskId/comments",
+    "Status code contract mismatch: POST /projects should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/members should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/tasks should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/tasks/:taskId/comments should return HTTP 201 on create.",
+    "Cross-module contract mismatch: comments service calls taskService.getTaskById() but tasks service does not define/export it",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

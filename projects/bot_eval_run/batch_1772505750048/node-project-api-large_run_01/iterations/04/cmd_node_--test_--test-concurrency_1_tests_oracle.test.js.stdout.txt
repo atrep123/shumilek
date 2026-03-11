@@ -1,0 +1,16 @@
+✔ health + empty project list (80.2553ms)
+TypeError: sendError is not a function
+    at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_01\workspace\src\modules\projects\routes.js:15:12
+    at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:284:15
+    at router.process_params (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:280:10)
+    at router.handle (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772505750048\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:47:12)
+✖ project create/list/get + duplicate + validation (11.4544ms)
+✖ members endpoints (11.5587ms)
+✔ tasks create/list/filter + patch status (19.9235ms)
+✖ comments + not-found and payload contract (8.5306ms)

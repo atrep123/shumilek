@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst { sendError } = require('../../lib/errors');\nconst membersService = require('../service');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) {\n    return sendError(res, 400, 'BAD_REQUEST', 'Invalid request body');\n  }\n\n  const project = membersService.getProject(req.params.projectId);\n  if (!project) {\n    return sendError(res, 404, 'NOT_FOUND', 'Project not found');\n  }\n\n  const member = membersService.addMember(req.params.projectId, { userId, role });\n  if (!member) {\n    return sendError(res, 409, 'CONFLICT', 'Member already exists in the project');\n  }\n\n  res.status(201).json({ member });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst projectsService = require('../projects/service');\n\nconst addMember = (projectId, memberData) => {\n  const project = projectsService.getProject(projectId);\n  if (!project) {\n    return null;\n  }\n\n  const existingMember = project.members.find(member => member.userId === memberData.userId);\n  if (existingMember) {\n    return null;\n  }\n\n  const newMember = { id: randomUUID(), ...memberData };\n  project.members.push(newMember);\n  projectsService.updateProject(projectId, project);\n  return newMember;\n};\n\nconst getProject = (projectId) => {\n  return projectsService.getProject(projectId);\n};\n\nmodule.exports = { addMember, getProject };\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst { sendError } = require('../../lib/errors');\nconst projectsService = require('./service');\n\nconst router = express.Router();\n\nrouter.get('/:projectId', (req, res) => {\n  const project = projectsService.getProject(req.params.projectId);\n  if (!project) {\n    return sendError(res, 404, 'NOT_FOUND', 'Project not found');\n  }\n  res.json({ project });\n});\n\nrouter.post('/', (req, res) => {\n  const { name } = req.body;\n  if (!name) {\n    return sendError(res, 400, 'BAD_REQUEST', 'Invalid request body');\n  }\n  const newProject = projectsService.addProject({ name });\n  res.status(201).json({ project: newProject });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet projects = [];\n\nconst addProject = (projectData) => {\n  const newProject = { id: randomUUID(), name: projectData.name, members: [], tasks: [] };\n  projects.push(newProject);\n  return newProject;\n};\n\nconst getProject = (projectId) => {\n  return projects.find(project => project.id === projectId);\n};\n\nconst updateProject = (projectId, updatedProject) => {\n  const index = projects.findIndex(project => project.id === projectId);\n  if (index !== -1) {\n    projects[index] = updatedProject;\n  }\n};\n\nmodule.exports = { addProject, getProject, updateProject };\n"
+    }
+  ],
+  "notes": "Fixed members service to reuse shared projects repository and enforced duplicate check per project."
+}

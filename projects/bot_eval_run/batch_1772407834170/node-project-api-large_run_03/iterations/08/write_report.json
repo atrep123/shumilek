@@ -1,0 +1,9 @@
+{
+  "count": 2,
+  "files": [
+    "src/modules/members/routes.js",
+    "src/modules/comments/routes.js"
+  ],
+  "appliedAsPatch": true,
+  "forcePatchFromIncompleteFull": true
+}

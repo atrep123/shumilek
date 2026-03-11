@@ -1,0 +1,4 @@
+{
+  "review": "Zkontrolujte, že v souboru `src/modules/members/service.js` používáte společný repositář pro projekty i členy a nevytvořujete oddělenou mapu členů. Změňte kontrakt API tak, aby vyžadoval `userId` a `role`. Upravte soubor `src/modules/tasks/service.js`, abyste používali `todo` a `done` jako statusy úkolů. V souboru `src/modules/tasks/routes.js` přizpůsobte PATCH endpoint tak, aby povoloval pouze `todo` nebo `done`. Přidejte `supertest` do pole `devDependencies` v souboru `package.json`. Tyto změny zlepší konzistenci a splní požadavky specifikace.",
+  "priorityFiles": ["src/modules/members/service.js", "src/modules/tasks/service.js", "src/modules/tasks/routes.js", "package.json"]
+}

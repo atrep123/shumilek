@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Health route contract mismatch: GET /health should return body { ok: true }.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

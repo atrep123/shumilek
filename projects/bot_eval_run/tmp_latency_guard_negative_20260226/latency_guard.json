@@ -1,0 +1,15 @@
+﻿{
+    "generatedAt":  "2026-02-26T10:09:16.0473753+01:00",
+    "comparePath":  "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\tmp_latency_guard_negative_20260226\\compare.json",
+    "maxAllowedMultiplier":  1.25,
+    "passed":  false,
+    "violations":  [
+                       {
+                           "scenario":  "node-api-oracle",
+                           "baselineAvgMs":  95228,
+                           "candidateAvgMs":  190456,
+                           "limitAvgMs":  119035,
+                           "reason":  "candidate avgMs exceeds 1.25x baseline"
+                       }
+                   ]
+}

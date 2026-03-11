@@ -1,0 +1,4 @@
+{
+    "review": "Zkontrolujte, že v souboru src/modules/members/service.js je funkce pro generování ID používá `crypto.randomUUID()` a ne `uuidv4`. Zkontrolujte také, že v souboru src/modules/projects/routes.js je správně nastavený middleware pro zpracování JSON dat. Ujistěte se, že v souboru src/app.js není voláno `app.listen()` při importu.",
+    "priorityFiles": ["src/modules/members/service.js", "src/modules/projects/routes.js", "src/app.js"]
+}

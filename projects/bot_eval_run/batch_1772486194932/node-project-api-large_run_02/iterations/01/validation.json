@@ -1,0 +1,12 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for /projects/:projectId/members",
+    "Missing route signature for /projects/:projectId/tasks",
+    "Missing route signature for /projects/:projectId/tasks/:taskId/comments",
+    "State-sharing mismatch: members service should reuse shared projects repository, not isolated members map/array",
+    "package.json should include \"supertest\" (dependencies or devDependencies) for oracle execution",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

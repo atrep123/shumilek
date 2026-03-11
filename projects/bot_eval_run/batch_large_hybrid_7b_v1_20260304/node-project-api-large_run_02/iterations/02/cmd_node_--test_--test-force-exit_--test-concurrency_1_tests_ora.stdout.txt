@@ -1,0 +1,47 @@
+✔ health + empty project list (93.3037ms)
+✖ project create/list/get + duplicate + validation (30.0743ms)
+✖ members endpoints (7.6835ms)
+✖ tasks create/list/filter + patch status (6.4557ms)
+✖ comments + not-found and payload contract (6.2275ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 1
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 297.2976
+
+✖ failing tests:
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (30.0743ms)
+  TypeError: generateId is not a function
+      at createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_large_hybrid_7b_v1_20260304\node-project-api-large_run_02\workspace\src\modules\projects\service.js:7:25)
+      at Object.createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_large_hybrid_7b_v1_20260304\node-project-api-large_run_02\workspace\src\modules\projects\service.js:26:63)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_large_hybrid_7b_v1_20260304\node-project-api-large_run_02\workspace\src\modules\projects\routes.js:10:41
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (7.6835ms)
+  TypeError: generateId is not a function
+      at createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_large_hybrid_7b_v1_20260304\node-project-api-large_run_02\workspace\src\modules\projects\service.js:7:25)
+      at Object.createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_large_hybrid_7b_v1_20260304\node-project-api-large_run_02\workspace\src\modules\projects\service.js:26:63)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_large_hybrid_7b_v1_20260304\node-project-api-large_run_02\workspace\src\modules\projects\routes.js:10:41
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+test at tests\oracle.test.js:122:1
+✖ tasks create/list/filter + patch status (6.4557ms)
+  TypeError: generateId is not a function
+      at createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_large_hybrid_7b_v1_20260304\node-project-api-large_run_02\workspace\src\modules\projects\service.js:7:25)
+      at Object.createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_large_hybrid_7b_v1_20260304\node-project-api-large_run_02\workspace\src\modules\projects\service.js:26:63)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_large_hybrid_7b_v1_20260304\node-project-api-large_run_02\workspace\src\modules\projects\routes.js:10:41
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (6.2275ms)
+  TypeError: generateId is not a function
+      at createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_large_hybrid_7b_v1_20260304\node-project-api-large_run_02\workspace\src\modules\projects\service.js:7:25)
+      at Object.createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_large_hybrid_7b_v1_20260304\node-project-api-large_run_02\workspace\src\modules\projects\service.js:26:63)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_large_hybrid_7b_v1_20260304\node-project-api-large_run_02\workspace\src\modules\projects\routes.js:10:41
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)

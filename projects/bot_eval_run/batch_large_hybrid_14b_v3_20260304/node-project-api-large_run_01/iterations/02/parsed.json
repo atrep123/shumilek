@@ -1,0 +1,61 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"dependencies\": {\n    \"express\": \"^4.17.3\",\n    \"supertest\": \"^6.2.4\"\n  }\n}\n"
+    },
+    {
+      "path": "README.md",
+      "content": ""
+    },
+    {
+      "path": "src/app.js",
+      "content": ""
+    },
+    {
+      "path": "src/server.js",
+      "content": ""
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": ""
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": ""
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": ""
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": ""
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": ""
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": ""
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": ""
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": ""
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": ""
+    },
+    {
+      "path": "src/lib/id.js",
+      "content": ""
+    }
+  ],
+  "notes": "Added 'express' and 'supertest' to dependencies in package.json."
+}

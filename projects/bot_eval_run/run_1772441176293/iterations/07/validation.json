@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "JavaScript syntax check failed in src/modules/projects/routes.js: C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772441176293\\workspace\\src\\modules\\projects\\routes.js:3",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

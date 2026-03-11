@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Do not use \"uuid\" package in node-project-api-large; use node:crypto randomUUID instead",
+    "Uses `new BadRequestError(...)` but src/lib/errors.* does not define/export BadRequestError",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

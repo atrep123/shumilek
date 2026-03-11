@@ -1,0 +1,12 @@
+- [src/app.js] - Implement minimal app export
+- [src/server.js] - Implement server setup without listener
+- [src/modules/projects/routes.js] - Define project routes
+- [src/modules/projects/service.js] - Implement in-memory project service
+- [src/modules/tasks/routes.js] - Define task routes
+- [src/modules/tasks/service.js] - Implement in-memory task service
+- [src/modules/members/routes.js] - Define member routes
+- [src/modules/members/service.js] - Implement in-memory member service
+- [src/modules/comments/routes.js] - Define comment routes
+- [src/modules/comments/service.js] - Implement in-memory comment service
+- [src/lib/errors.js] - Define error handling
+- [README.md] - Add project documentation

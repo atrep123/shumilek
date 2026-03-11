@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5:7b",
+  "created_at": "2026-03-05T15:04:41.5711125Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"plan\": \"- Vytvořit soubor `mini_ai/__init__.py` s prázdným obsahem\\n- Vytvořit soubor `mini_ai/markov.py` s třídou `MarkovChain` a metodami `train`, `generate` a `to_dict`\\n- Vytvořit soubor `mini_ai/cli.py` s funkcí `main` pro zpracování argumentů a volání metody `generate` z `markov.py`\\n- Zapsat do `README.md` základní informace o projektu\\n- Zkontrolovat, že `main` funkce v `cli.py` funguje správně\\n- Zkontrolovat, že metoda `generate` v `markov.py` funguje správně\\n- Zkontrolovat, že metoda `to_dict` v `markov.py` funguje správně\\n- Zkontrolovat, že metoda `train` v `markov.py` funguje správně\\n- Zkontrolovat, že třída `MarkovChain` v `markov.py` funguje správně\\n- Zkontrolovat, že testy v `tests/test_oracle.py` probíhají úspěšně\\n- Zkontrolovat, že `python -m mini_ai.cli --help` vypíše správnou pomoc\\n- Zkontrolovat, že `python -m unittest discover -v -s tests -p \\\"test*.py\\\"` probíhá úspěšně\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 13624681300,
+  "load_duration": 3022741900,
+  "prompt_eval_count": 2241,
+  "prompt_eval_duration": 270957400,
+  "eval_count": 368,
+  "eval_duration": 2371196900
+}

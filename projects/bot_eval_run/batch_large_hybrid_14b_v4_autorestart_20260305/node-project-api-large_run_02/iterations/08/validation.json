@@ -1,0 +1,11 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "JavaScript syntax check failed in src/modules/comments/service.js: C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_large_hybrid_14b_v4_autorestart_20260305\\node-project-api-large_run_02\\workspace\\src\\modules\\comments\\service.js:2",
+    "JavaScript syntax check failed in src/modules/members/service.js: C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_large_hybrid_14b_v4_autorestart_20260305\\node-project-api-large_run_02\\workspace\\src\\modules\\members\\service.js:2",
+    "JavaScript syntax check failed in src/modules/projects/service.js: C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_large_hybrid_14b_v4_autorestart_20260305\\node-project-api-large_run_02\\workspace\\src\\modules\\projects\\service.js:2",
+    "JavaScript syntax check failed in src/modules/tasks/service.js: C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_large_hybrid_14b_v4_autorestart_20260305\\node-project-api-large_run_02\\workspace\\src\\modules\\tasks\\service.js:2",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

@@ -1,0 +1,18 @@
+{
+  "attempts": [
+    {
+      "stage": "timeout_model_fallback",
+      "model": "qwen2.5-coder:14b",
+      "ok": false,
+      "error": "Structured chat failed: The user aborted a request.",
+      "errorKind": "other"
+    }
+  ],
+  "finalOk": false,
+  "appliedFixes": [],
+  "skippedFixes": [],
+  "primaryError": "Structured chat failed: The user aborted a request.; timeout-model-fallback(qwen2.5-coder:14b) failed: Structured chat failed: The user aborted a request.",
+  "primaryErrorKind": "other",
+  "finalError": "Structured chat failed: The user aborted a request.; timeout-model-fallback(qwen2.5-coder:14b) failed: Structured chat failed: The user aborted a request.",
+  "finalErrorKind": "other"
+}

@@ -1,0 +1,3 @@
+{
+  "plan": "- [src/app.js] Implement minimal app export\n- [src/server.js] Implement server setup without listener\n- [src/modules/projects/routes.js] Define project routes\n- [src/modules/projects/service.js] Implement project service logic\n- [src/modules/tasks/routes.js] Define task routes\n- [src/modules/tasks/service.js] Implement task service logic\n- [src/modules/members/routes.js] Define member routes\n- [src/modules/members/service.js] Implement member service logic\n- [src/modules/comments/routes.js] Define comment routes\n- [src/modules/comments/service.js] Implement comment service logic\n- [src/lib/errors.js] Define error handling structure\n- [tests/oracle.test.js] Write oracle tests for all endpoints"
+}

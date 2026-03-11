@@ -1,0 +1,6 @@
+{
+  "review": "Route-service contract mismatch (members): routes call membersService.getMembers() but service does not export \"getMembers\". Route-service export map required (members): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+  "priorityFiles": [
+    "src/modules/members/service.js"
+  ]
+}

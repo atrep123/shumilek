@@ -1,0 +1,20 @@
+const express = require('express');
+const commentsService = require('./service');
+const sendError = require('../../lib/errors');
+
+const router = express.Router();
+
+router.post('/', async (req, res) => {
+  const { message } = req.body;
+  if (!message) {
+    return sendError(res, 400, 'INVALID_INPUT', 'Message is required');
+  }
+  try {
+    const comment = await commentsService.createComment(req.params.taskId, message);
+    res.status(201).json({ comment });
+  } catch (error) {
+    sendError(res, 500, 'INTERNAL_ERROR', error.message);
+  }
+});
+
+module.exports = router;

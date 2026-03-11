@@ -1,0 +1,4 @@
+{
+    "review": "Zkontrolujte, že v souboru src/lib/errors.js definujete objekt error s vlastnostmi code a message. Všimněte si, že v souboru tests/oracle.test.js je očekáván specifický formát chybového odpovědi, zejména v souboru src/lib/errors.js musí být definována funkce `expectErrorPayload` pro kontrolu stavu a obsahu odpovědí.",
+    "priorityFiles": ["src/lib/errors.js", "tests/oracle.test.js"]
+}

@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "// src/modules/projects/service.js\nconst { randomUUID } = require('node:crypto');\n\nlet projectsStore = {};\n\nmodule.exports = {\n  getProject(projectId) {\n    const project = projectsStore[projectId];\n    if (!project) return null;\n    return project;\n  },\n\n  createProject(name) {\n    if (!name) return null;\n    const projectId = randomUUID();\n    projectsStore[projectId] = { id: projectId, name };\n    return projectsStore[projectId];\n  }\n};\n"
+    }
+  ],
+  "notes": "Added getProject method to projectsService in src/modules/projects/service.js."
+}

@@ -1,0 +1,8 @@
+{
+  "review": "do NOT use undefined BadRequestError/NotFoundError; either define/export them in src/lib/errors.* or replace with sendError(res, status, code, message)",
+  "priorityFiles": [
+    "src/lib/errors.js",
+    "src/modules/tasks/service.js",
+    "src/modules/members/service.js"
+  ]
+}

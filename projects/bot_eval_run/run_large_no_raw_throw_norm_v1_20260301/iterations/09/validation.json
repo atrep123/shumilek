@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Do not use \"uuid\" package in node-project-api-large; use node:crypto randomUUID instead",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

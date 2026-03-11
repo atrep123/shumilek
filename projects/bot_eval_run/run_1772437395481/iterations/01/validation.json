@@ -1,0 +1,14 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for project detail endpoint /projects/:projectId",
+    "Task filtering contract mismatch: support ?status=todo|done and PATCH status updates.",
+    "Status code contract mismatch: POST /projects should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/members should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/tasks should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/tasks/:taskId/comments should return HTTP 201 on create.",
+    "package.json should include \"supertest\" (dependencies or devDependencies) for oracle execution",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

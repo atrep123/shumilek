@@ -1,0 +1,61 @@
+{
+  "files": [
+    {
+      "path": "src/lib/errors.js",
+      "content": "const sendError = (res, status, code, message) => {\n  res.status(status).json({ error: { code, message } });\n};\nmodule.exports = { sendError };"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { getProjects, createProject } = require('./service');\nrouter.get('/', getProjects);\nrouter.post('/', createProject);\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { v4: uuidv4 } = require('uuid');\nconst projects = [];\nconst getProjects = (req, res) => {\n  res.json({ projects });\n};\nconst createProject = (req, res) => {\n  if (!req.body.name) return sendError(res, 400, 'BadRequest', 'Name is required');\n  const project = { id: uuidv4(), name: req.body.name };\n  projects.push(project);\n  res.status(201).json({ project });\n};\nmodule.exports = { getProjects, createProject };"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst { updateTaskStatus, getTasksByStatus } = require('./service');\nrouter.patch('/', updateTaskStatus);\nrouter.get('/', getTasksByStatus);\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const tasks = [];\nconst updateTaskStatus = (req, res) => {\n  const taskIndex = tasks.findIndex(task => task.id === req.params.taskId);\n  if (taskIndex === -1) return sendError(res, 404, 'NotFound', 'Task not found');\n  tasks[taskIndex].status = req.body.status;\n  res.json({ task: tasks[taskIndex] });\n};\nconst getTasksByStatus = (req, res) => {\n  const doneTasks = tasks.filter(task => task.status === 'done');\n  res.json({ tasks: doneTasks });\n};\nmodule.exports = { updateTaskStatus, getTasksByStatus };"
+    },
+    {
+      "path": "README.md",
+      "content": "# My Project\n\nThis is a sample project for demonstration purposes.\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"my-project\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A sample Node.js project\",\n  \"main\": \"src/app.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\"\n  },\n  \"dependencies\": {},\n  \"devDependencies\": {\n    \"supertest\": \"^6.0.0\"\n  }\n}"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst app = express();\nconst bodyParser = require('body-parser');\nconst { addProject } = require('./modules/projects/service');\nconst { sendError } = require('./lib/errors');\n\napp.use(bodyParser.json());\n\n// Add routes for projects, members, tasks, and comments\napp.use('/projects', require('./modules/projects/routes'));\napp.use('/projects/:projectId/members', require('./modules/members/routes'));\napp.use('/projects/:projectId/tasks', require('./modules/tasks/routes'));\napp.use('/projects/:projectId/tasks/:taskId/comments', require('./modules/comments/routes'));\n\n// Health check endpoint\napp.get('/health', (req, res) => {\n  res.json({ ok: true });\n});\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/server.js",
+      "content": "const app = require('./src/app');\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { addMember } = require('./service');\n\nrouter.post('/:projectId/members', async (req, res) => {\n  if (!req.body.userId || !req.body.role) return sendError(res, 400, 'BAD_REQUEST', 'Invalid member data');\n  const member = await addMember(req.params.projectId, req.body);\n  res.status(201).json({ member });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const membersMap = require('../../lib/sharedState').members; // Assuming shared state management\n\nfunction addMember(projectId, userId, role) {\n  if (!userId || !role) throw new BadRequestError('Missing required fields');\n  if (membersMap.has(projectId) && membersMap.get(projectId).some(member => member.userId === userId)) {\n    throw new ConflictError('User already a member of this project');\n  }\n  // Add member logic here\n}\n\nmodule.exports = { addMember };\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\n\nrouter.post('/projects/:projectId/tasks/:taskId/comments', (req, res) => {\n  // Implement comment creation logic here\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { v4: uuidv4 } = require('uuid');\nconst projects = {};\nconst comments = {};\nexport function createComment(projectId, taskId, commentData) {\n  if (!commentData.message) throw new BadRequestError('Message is required');\n  const commentId = uuidv4();\n  if (!projects[projectId] || !projects[projectId].tasks?.[taskId]) return null;\n  comments[commentId] = { id: commentId, ...commentData };\n  projects[projectId].tasks[taskId].comments = projects[projectId].tasks[taskId].comments || {};\n  projects[projectId].tasks[taskId].comments[commentId] = comments[commentId];\n  return comments[commentId];\n}\n"
+    },
+    {
+      "path": "src/lib/id.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nfunction generateId() {\n  return randomUUID();\n}\n\nmodule.exports = { generateId };\n"
+    }
+  ],
+  "notes": "Added error handling and fixed project creation validation."
+}

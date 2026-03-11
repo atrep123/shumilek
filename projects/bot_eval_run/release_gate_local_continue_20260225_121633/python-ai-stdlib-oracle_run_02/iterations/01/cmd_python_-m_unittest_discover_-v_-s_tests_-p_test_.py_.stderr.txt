@@ -1,0 +1,10 @@
+test_train_and_generate_smoke (test_oracle.TestCliOracle.test_train_and_generate_smoke) ... ok
+test_generate_deterministic (test_oracle.TestMarkovOracle.test_generate_deterministic) ... ok
+test_order_validation (test_oracle.TestMarkovOracle.test_order_validation) ... ok
+test_round_trip_serialization (test_oracle.TestMarkovOracle.test_round_trip_serialization) ... ok
+test_train_and_to_dict (test_oracle.TestMarkovOracle.test_train_and_to_dict) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.004s
+
+OK

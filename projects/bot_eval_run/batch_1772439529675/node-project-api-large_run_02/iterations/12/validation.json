@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Route import contract mismatch in src/modules/comments/routes.js: import local service via \"./service\" (not \"../service\").",
+    "Route import contract mismatch in src/modules/members/routes.js: import local service via \"./service\" (not \"../service\").",
+    "Route import contract mismatch in src/modules/tasks/routes.js: import local service via \"./service\" (not \"../service\").",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

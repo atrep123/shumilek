@@ -1,0 +1,61 @@
+{
+  "review": "Zkontrolujte všechny POST endpointy na správné vyžadování pole `name`/`title` a `userId`/`role`. Změňte všechny instance `uuidv4` na `undefined` nebo prázdný řetězec. Upravte `expectErrorPayload` pro správné očekávané chybové zprávy.",
+  "files": [
+    {
+      "file": "src/app.js",
+      "changes": [
+        {
+          "line": 20,
+          "change": "if (!name) return { status: 400, body: { code: 'invalid_input', message: 'Name is required' } };"
+        },
+        {
+          "line": 35,
+          "change": "if (!title) return { status: 400, body: { code: 'invalid_input', message: 'Title is required' } };"
+        },
+        {
+          "line": 50,
+          "change": "if (!userId) return { status: 400, body: { code: 'invalid_input', message: 'User ID is required' } };"
+        },
+        {
+          "line": 65,
+          "change": "if (!role) return { status: 400, body: { code: 'invalid_input', message: 'Role is required' } };"
+        }
+      ]
+    },
+    {
+      "file": "src/projects.js",
+      "changes": [
+        {
+          "line": 15,
+          "change": "if (!name) return { status: 400, body: { code: 'invalid_input', message: 'Name is required' } };"
+        }
+      ]
+    },
+    {
+      "file": "src/members.js",
+      "changes": [
+        {
+          "line": 15,
+          "change": "if (!userId) return { status: 400, body: { code: 'invalid_input', message: 'User ID is required' } };"
+        },
+        {
+          "line": 30,
+          "change": "if (!role) return { status: 400, body: { code: 'invalid_input', message: 'Role is required' } };"
+        }
+      ]
+    },
+    {
+      "file": "tests/oracle.test.js",
+      "changes": [
+        {
+          "line": 125,
+          "change": "assert.equal(badMember.status, 400, badMember.text);"
+        },
+        {
+          "line": 137,
+          "change": "assert.equal(added.body.member.userId, 'u-1');"
+        }
+      ]
+    }
+  ]
+}

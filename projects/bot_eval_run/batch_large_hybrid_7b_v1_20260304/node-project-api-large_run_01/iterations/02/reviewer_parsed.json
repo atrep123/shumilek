@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": "PROJECT_DUPLICATE",
+    "message": "Project already exists"
+  }
+}

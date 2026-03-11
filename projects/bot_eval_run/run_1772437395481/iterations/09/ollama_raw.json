@@ -1,0 +1,16 @@
+{
+  "model": "deepseek-coder-v2:16b",
+  "created_at": "2026-03-02T07:46:32.7052688Z",
+  "message": {
+    "role": "assistant",
+    "content": "{ \"files\": [ {\"path\":\"src/app.js\",\"content\":\"import express from 'express';\\nimport { randomUUID } from 'node:crypto';\\nimport { sendError } from './lib/errors';\\nimport projectsRouter from './modules/projects/routes';\\nimport membersRouter from './modules/members/routes';\\nimport tasksRouter from './modules/tasks/routes';\\nimport commentsRouter from './modules/comments/routes';\\n\\nconst app = express();\\napp.use(express.json());\\n\\n// Health endpoint\\napp.get('/health', (req, res) => {\\n  res.json({ ok: true });\\n});\\n\\n// Routes\\napp.use('/projects', projectsRouter);\\napp.use('/projects/:projectId/members', membersRouter);\\napp.use('/projects/:projectId/tasks', tasksRouter);\\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRouter);\\n\\n// Error handling middleware\\napp.use((err, req, res, next) => {\\n  if (err) {\\n    sendError(res, err.status || 500, err.code || 'INTERNAL_ERROR', err.message || 'Internal Server Error');\\n  } else {\\n    next();\\n  }\\n});\\n\\nexport default app;\\n\"} ]}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 6969410600,
+  "load_duration": 69155400,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 583857000,
+  "eval_count": 315,
+  "eval_duration": 2336444800
+}

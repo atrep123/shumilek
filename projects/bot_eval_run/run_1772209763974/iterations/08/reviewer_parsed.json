@@ -1,0 +1,18 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "mini_ai/cli.py",
+      "content": "...\nfrom mini_ai import cli\n...\n"
+    },
+    {
+      "path": "tests/test_cli.py",
+      "content": "...\ndef test_train_command(self):\n    with open('test.txt', 'w') as f:\n        f.write(\"hello world\")\n    cli.train()\n    self.assertTrue(os.path.exists('model.json'))\n...\n"
+    },
+    {
+      "path": "tests/test_markov.py",
+      "content": "...\ndef test_train_and_generate(self):\n    text = \"hello world\"\n    model = MarkovChain(order=1)\n    model.train(text)\n    generated_text = model.generate(length=5, random_seed=42)\n    self.assertEqual(len(generated_text), 5)\n...\n"
+    }
+  ],
+  "notes": "Added import of cli from mini_ai in cli.py. Adjusted test_train_command to use cli.train(). Added assert for existence of 'model.json' file. Updated test_train_and_generate in tests/test_markov.py to use random_seed parameter."
+}

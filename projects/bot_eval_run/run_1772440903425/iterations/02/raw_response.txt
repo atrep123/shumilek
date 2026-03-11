@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { getProjectById } = require('./service');\n\nrouter.get('/:projectId', getProjectById); // Add this line\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true }); // Use mergeParams to include projectId in path\nconst { getTasksByStatus, updateTaskStatus } = require('./service');\n\nrouter.get('/', getTasksByStatus); // Add this line\nrouter.patch('/:taskId/status', updateTaskStatus); // Add this line\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"project-management-api\",\n  \"version\": \"1.0.0\",\n  \"main\": \"src/app.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.17.1\",\n    \"crypto\": \"^1.0.0\",\n    \"supertest\": \"^6.3.3\" // Add this line\n  }\n}\n"
+    }
+  ],
+  "notes": "Added routes for projects and tasks, and updated package.json to include supertest."
+}

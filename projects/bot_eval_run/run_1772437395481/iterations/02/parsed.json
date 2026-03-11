@@ -1,0 +1,61 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst projectsService = require('./service');\n\nrouter.get('/:projectId', (req, res) => {\n  const projectId = req.params.projectId;\n  const project = projectsService.getProject(projectId);\n  if (!project) return sendError(res, 404, 'NOT_FOUND', 'Project not found');\n  res.json({ project });\n});\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst tasksService = require('./service');\n\nrouter.get('/:projectId/tasks', (req, res) => {\n  const { status } = req.query;\n  const tasks = tasksService.getTasks(req.params.projectId, status);\n  if (!tasks) return sendError(res, 404, 'NOT_FOUND', 'Tasks not found');\n  res.json({ tasks });\n});\n\nrouter.patch('/:projectId/tasks/:taskId', (req, res) => {\n  const { status } = req.body;\n  if (!['todo', 'done'].includes(status)) return sendError(res, 400, 'BAD_REQUEST', 'Invalid task status');\n  const updatedTask = tasksService.updateTaskStatus(req.params.projectId, req.params.taskId, status);\n  if (!updatedTask) return sendError(res, 404, 'NOT_FOUND', 'Task not found');\n  res.json({ task: updatedTask });\n});\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const projects = new Map();\n\nexport function addProject(name) {\n  if (!name) return null;\n  const id = randomUUID();\n  projects.set(id, { id, name });\n  return { id, name };\n}\n\nexport function getProject(projectId) {\n  return projects.get(projectId);\n}\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const tasks = new Map();\n\nexport function addTask(projectId, data) {\n  const id = randomUUID();\n  tasks.set(id, { projectId, ...data });\n  return { id, ...data };\n}\n\nexport function getTasks(projectId, status) {\n  if (status && !['todo', 'done'].includes(status)) return null;\n  const filteredTasks = Array.from(tasks.values()).filter(task => task.projectId === projectId);\n  return status ? filteredTasks.filter(task => task.status === status) : filteredTasks;\n}\n\nexport function updateTaskStatus(taskId, newStatus) {\n  const task = tasks.get(taskId);\n  if (!task) return null;\n  task.status = newStatus;\n  return { ...task };\n}\n"
+    },
+    {
+      "path": "README.md",
+      "content": "# Project Management API\n\nThis is a simple project management API built using Node.js with Express for handling HTTP requests.\nIt includes endpoints for managing projects, tasks, and comments."
+    },
+    {
+      "path": "package.json",
+      "content": "{ \"name\": \"project-management-api\", \"version\": \"1.0.0\", \"main\": \"src/app.js\", \"scripts\": { \"start\": \"node src/server.js\" }, \"dependencies\": { \"express\": \"^4.17.1\", \"crypto\": \"^1.0.0\" } }"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst app = express();\nconst crypto = require('crypto');\nconst { randomUUID } = require('crypto');\nconst projectsRouter = require('./modules/projects/routes');\nconst tasksRouter = require('./modules/tasks/routes');\nconst membersRouter = require('./modules/members/routes');\nconst commentsRouter = require('./modules/comments/routes');\napp.use(express.json());\napp.get('/health', (req, res) => { res.json({ ok: true }); });\napp.use('/projects', projectsRouter);\napp.use('/projects/:projectId/members', membersRouter);\napp.use('/projects/:projectId/tasks', tasksRouter);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRouter);\nmodule.exports = app;"
+    },
+    {
+      "path": "src/server.js",
+      "content": "const app = require('./app');\nconst port = process.env.PORT || 3000;\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst service = require('./service');\nrouter.post('/', (req, res) => { service.addMember(req, res); });\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const addMember = (req, res) => { const memberId = randomUUID(); res.json({ member: { userId: req.body.userId, role: req.body.role } }); };\nmodule.exports = { addMember };"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst service = require('./service');\nrouter.post('/', (req, res) => { service.addComment(req, res); });\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const addComment = (req, res) => { const commentId = randomUUID(); res.json({ comment: { message: req.body.message } }); };\nmodule.exports = { addComment };"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "class CustomError extends Error {\n  constructor(code, message) { super(message); this.code = code; }\n}\nmodule.exports = { CustomError };"
+    },
+    {
+      "path": "src/lib/id.js",
+      "content": "const { randomUUID } = require('crypto');\nmodule.exports = { randomUUID };"
+    }
+  ],
+  "notes": "Added routes and service functions to handle projects, tasks, and their interactions according to the oracle contract."
+}

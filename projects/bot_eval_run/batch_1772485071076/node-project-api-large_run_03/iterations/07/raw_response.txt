@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "// src/modules/tasks/service.js\nconst { randomUUID } = require('node:crypto');\n\nmodule.exports = {\n  createTask(projectId, task) {\n    // Implement task creation logic here\n    return { id: randomUUID(), projectId, ...task, status: 'todo' };\n  },\n  updateTask(taskId, updatedTask) {\n    // Implement task update logic here\n    return { id: taskId, ...updatedTask };\n  }\n};\n"
+    }
+  ],
+  "notes": "Added the missing `updateTask` method to the tasks service."
+}

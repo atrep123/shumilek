@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\n\nconst router = express.Router();\n\nrouter.get('/', (req, res) => {\n  const projects = service.getAllProjects();\n  res.json({ projects });\n});\n\nrouter.post('/', (req, res) => {\n  try {\n    const project = service.createProject(req.body.name);\n    res.status(201).json({ project });\n  } catch (error) {\n    res.status(error.code === 'duplicate' ? 409 : 400).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.get('/:projectId', (req, res) => {\n  const project = service.getProjectById(req.params.projectId);\n  if (!project) {\n    return res.status(404).json({ error: { code: 'not_found', message: 'Project not found' } });\n  }\n  res.json({ project });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\n\nconst router = express.Router();\n\nrouter.post('/:projectId', (req, res) => {\n  try {\n    const member = service.addMember(req.params.projectId, req.body);\n    res.status(201).json({ member });\n  } catch (error) {\n    res.status(error.code === 'not_found' ? 404 : 400).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\n\nconst router = express.Router();\n\nrouter.post('/:projectId', (req, res) => {\n  try {\n    const task = service.createTask(req.params.projectId, req.body.title);\n    res.status(201).json({ task });\n  } catch (error) {\n    res.status(error.code === 'not_found' ? 404 : 400).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.get('/:projectId', (req, res) => {\n  const tasks = service.getTasksByProjectId(req.params.projectId);\n  res.json({ tasks });\n});\n\nrouter.patch('/:projectId/:taskId', (req, res) => {\n  try {\n    const task = service.updateTaskStatus(req.params.projectId, req.params.taskId, req.body.status);\n    res.json({ task });\n  } catch (error) {\n    res.status(error.code === 'not_found' ? 404 : 400).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\n\nconst router = express.Router();\n\nrouter.post('/:projectId/:taskId', (req, res) => {\n  try {\n    const comment = service.addComment(req.params.projectId, req.params.taskId, req.body.message);\n    res.status(201).json({ comment });\n  } catch (error) {\n    res.status(error.code === 'not_found' ? 404 : 400).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.get('/:projectId/:taskId', (req, res) => {\n  const comments = service.getCommentsByTaskId(req.params.projectId, req.params.taskId);\n  res.json({ comments });\n});\n\nmodule.exports = router;\n"
+    }
+  ],
+  "notes": "Fixed routes to ensure they handle errors and return the correct status codes."
+}

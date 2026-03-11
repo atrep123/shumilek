@@ -1,0 +1,8 @@
+{
+  "attempts": [],
+  "finalOk": false,
+  "primaryError": "request to http://localhost:11434/api/generate failed, reason: ",
+  "primaryErrorKind": "other",
+  "finalError": "request to http://localhost:11434/api/generate failed, reason: ",
+  "finalErrorKind": "other"
+}

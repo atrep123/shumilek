@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-03-02T21:11:00.1986028Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/modules/tasks/service.js\",\n      \"content\": \"// src/modules/tasks/service.js\\nconst { randomUUID } = require('node:crypto');\\nconst projectsStore = require('../../lib/id').projectsStore;\\n\\nmodule.exports = {\\n  getTasksByStatus(projectId, status) {\\n    const project = projectsStore.get(projectId);\\n    if (!project) return null;\\n    return project.tasks.filter(task => task.status === status);\\n  },\\n\\n  createTask(projectId, { message }) {\\n    const project = projectsStore.get(projectId);\\n    if (!project) return null;\\n    const taskId = randomUUID();\\n    const newTask = { id: taskId, message, status: 'todo' };\\n    project.tasks.push(newTask);\\n    return newTask;\\n  },\\n\\n  updateTaskStatus(projectId, taskId, status) {\\n    if (status !== 'todo' && status !== 'done') return null;\\n    const project = projectsStore.get(projectId);\\n    if (!project) return null;\\n    const task = project.tasks.find(t => t.id === taskId);\\n    if (!task) return null;\\n    task.status = status;\\n    return task;\\n  }\\n};\\n\"\n    }\n  ],\n  \"notes\": \"Added getTasksByStatus method to tasksService in src/modules/tasks/service.js.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 11337911500,
+  "load_duration": 60353600,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 974013500,
+  "eval_count": 313,
+  "eval_duration": 3805678300
+}

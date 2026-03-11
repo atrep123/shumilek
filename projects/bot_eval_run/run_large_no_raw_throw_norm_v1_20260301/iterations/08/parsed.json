@@ -1,0 +1,36 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "import express from 'express';\nconst router = express.Router();\n\n// GET /projects/:projectId - Get project details\nrouter.get('/:projectId', (req, res) => {\n  const { projectId } = req.params;\n  // Fetch and return project details from the service\n  const project = projectsService.getProjectById(projectId);\n  if (!project) {\n    sendError(res, 404, 'Not Found', 'Project not found');\n  } else {\n    res.json({ project });\n  }\n});\n\nexport default router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "import { randomUUID } from 'node:crypto';\nimport errors from '../../lib/errors';\n\nconst projects = [];\n\nexport const getProjectById = (projectId) => {\n  return projects.find(p => p.id === projectId);\n};\n\nexport const createProject = ({ name }) => {\n  if (!name) throw new errors.BadRequestError('Name is required');\n  const id = randomUUID();\n  const project = { id, name };\n  projects.push(project);\n  return project;\n};\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "import express from 'express';\nconst router = express.Router({ mergeParams: true });\n\n// POST /projects/:projectId/members - Create a new member\nrouter.post('/', (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) {\n    sendError(res, 400, 'Bad Request', 'User ID and role are required');\n  } else {\n    const member = membersService.createMember({ projectId: req.params.projectId, userId, role });\n    res.status(201).json({ member });\n  }\n});\n\nexport default router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "import { randomUUID } from 'node:crypto';\nimport errors from '../../lib/errors';\n\nconst members = [];\n\nexport const createMember = ({ projectId, userId, role }) => {\n  if (!userId || !role) throw new errors.BadRequestError('User ID and role are required');\n  const id = randomUUID();\n  const member = { id, projectId, userId, role };\n  members.push(member);\n  return member;\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "import express from 'express';\nconst router = express.Router({ mergeParams: true });\n\n// POST /projects/:projectId/tasks - Create a new task\nrouter.post('/', (req, res) => {\n  const { title, description } = req.body;\n  if (!title || !description) {\n    sendError(res, 400, 'Bad Request', 'Title and description are required');\n  } else {\n    const task = tasksService.createTask({ projectId: req.params.projectId, title, description });\n    res.status(201).json({ task });\n  }\n});\n\n// PATCH /projects/:projectId/tasks/:taskId - Update a task status\nrouter.patch('/:taskId', (req, res) => {\n  const { taskId } = req.params;\n  const { status } = req.body;\n  if (!['todo', 'done'].includes(status)) {\n    sendError(res, 400, 'Bad Request', 'Invalid status');\n  } else {\n    const updatedTask = tasksService.updateTaskStatus({ taskId, status });\n    res.json({ task: updatedTask });\n  }\n});\n\nexport default router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "import { randomUUID } from 'node:crypto';\nimport errors from '../../lib/errors';\n\nconst tasks = [];\n\nexport const createTask = ({ projectId, title, description }) => {\n  if (!title || !description) throw new errors.BadRequestError('Title and description are required');\n  const id = randomUUID();\n  const task = { id, projectId, title, description, status: 'todo' };\n  tasks.push(task);\n  return task;\n};\n\nexport const updateTaskStatus = ({ taskId, status }) => {\n  const task = tasks.find(t => t.id === taskId);\n  if (!task) throw new errors.NotFoundError('Task not found');\n  task.status = status;\n  return task;\n};\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "import express from 'express';\nconst router = express.Router({ mergeParams: true });\n\n// POST /projects/:projectId/comments - Create a new comment\nrouter.post('/', (req, res) => {\n  const { message } = req.body;\n  if (!message) {\n    sendError(res, 400, 'Bad Request', 'Message is required');\n  } else {\n    const comment = commentsService.createComment({ projectId: req.params.projectId, taskId: req.params.taskId, message });\n    res.status(201).json({ comment });\n  }\n});\n\nexport default router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "import { randomUUID } from 'node:crypto';\nimport errors from '../../lib/errors';\n\nconst comments = [];\n\nexport const createComment = ({ projectId, taskId, message }) => {\n  if (!message) throw new errors.BadRequestError('Message is required');\n  const id = randomUUID();\n  const comment = { id, projectId, taskId, message };\n  comments.push(comment);\n  return comment;\n};\n"
+    }
+  ]
+}

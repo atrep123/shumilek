@@ -1,0 +1,12 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for /health",
+    "Missing route signature for project detail endpoint /projects/:projectId",
+    "Missing health endpoint declaration in src/app.*: expected app.get(\"/health\", ...).",
+    "Comments contract mismatch: use payload field `message` (not `content`) in comments endpoints",
+    "Comments contract mismatch: comments routes/services should validate and persist `message`",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

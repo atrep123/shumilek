@@ -1,0 +1,20 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for /health",
+    "Missing route signature for /projects",
+    "Missing route signature for /projects/:projectId/members",
+    "Missing route signature for /projects/:projectId/tasks",
+    "Missing route signature for /projects/:projectId/tasks/:taskId/comments",
+    "Missing route signature for project detail endpoint /projects/:projectId",
+    "Missing health endpoint declaration in src/app.*: expected app.get(\"/health\", ...).",
+    "Members contract mismatch: src/modules/members/* should validate/use both `userId` and `role` fields",
+    "Comments contract mismatch: comments routes/services should validate and persist `message`",
+    "Task filtering contract mismatch: support ?status=todo|done and PATCH status updates.",
+    "Error payload contract likely missing: expected { error: { code, message } } handling in API responses",
+    "src/app.* must export app (module.exports / exports.app / default export)",
+    "package.json should include \"supertest\" (dependencies or devDependencies) for oracle execution",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

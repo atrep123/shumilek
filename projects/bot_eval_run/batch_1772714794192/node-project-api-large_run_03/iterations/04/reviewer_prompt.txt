@@ -1,0 +1,612 @@
+Jsi code reviewer (mini-validator). Tvuj ukol: navrhnout MINIMALNI opravy, ktere povedou k tomu, ze validace projde.
+Odpovez JEN JSON bez markdownu: { "review": "text", "priorityFiles": ["path1","path2"] }
+
+SPEC (zkraceno):
+Vytvor stredne velky Node.js monolit (Project Management API), ktery projde oracle testy.
+
+POZADAVKY / KONTRAKT:
+- Bez persistence mimo proces: pouzij in-memory repozitare/sluzby.
+- Bez fake/mock vysledku; endpointy musi vracet realna data z in-memory stavu.
+- Pouzij domeny: projects, tasks, members, comments.
+- Struktura musi byt modulova pod `src/modules/` a obsahovat min. tyto adresare:
+  - src/modules/projects
+  - src/modules/tasks
+  - src/modules/members
+  - src/modules/comments
+- Projekt musi mit minimalne 12 source souboru pod `src/` (`.js`/`.ts`/`.mjs`/`.cjs`).
+- Musi existovat `src/app.*` (app export pro testy) a `src/server.*` (spousteci vrstva).
+- `src/app.*` / `src/server.*` NESMI automaticky volat `listen()` pri importu (oracle importuje app pres supertest).
+- Vsechny chyby vracej konzistentne: `{ "error": { "code": "<string>", "message": "<string>" } }`.
+- Povolen bezny stack (napr. express, zod).
+- Protoze oracle testy pouzivaji supertest, zajisti `supertest` v dependencies nebo devDependencies.
+- Nepouzivej balicek `uuid`; generovani ID delat pres `node:crypto` + `crypto.randomUUID()`.
+- Nepouzivej neplatny pattern `const { v4: uuidv4 } = require("crypto").randomUUID`; spravne je `const { randomUUID } = require("node:crypto")` a volat `randomUUID()`.
+- Pokud pouzijes express, zapni `app.use(express.json())` a vracej JSON i pro chyby (ne HTML fallback).
+- Nenechavej uncaught vyjimky v route handlerech; 4xx/404/409 chyby vracej jako JSON payload, ne throw bez catcheru.
+- Nepouzivej `new BadRequestError(...)`/`new NotFoundError(...)`, pokud je explicitne nedefinujes a neexportujes v `src/lib/errors.*`.
+- Pri importu helperu z `src/modules/*` pouzij relativni cesty `../../lib/id` a `../../lib/errors` (ne `../lib/*`).
+- API endpointy (minimalni kontrakt):
+  - GET /health -> 200 { ok: true } (presne klic `ok`, ne `status` ani jiny alias)
+  - GET /projects -> 200 { projects: [...] }
+  - POST /projects body { name } -> 201 { project }
+    - body bez `name` (nebo prazdny `name`) -> 400 error payload
+  - GET /projects/:projectId -> 200 { project } nebo 404 error payload
+  - POST /projects/:projectId/members body { userId, role } -> 201 { member }
+    - body bez `userId` nebo `role` -> 400 error payload
+  - GET /projects/:projectId/members -> 200 { members: [...] }
+  - POST /projects/:projectId/tasks body { title } -> 201 { task }
+    - body bez `title` (nebo prazdny `title`) -> 400 error payload
+  - GET /projects/:projectId/tasks?status=todo|done -> 200 { tasks: [...] }
+    - query `status` musi skutecne filtrovat vysledek (ne jen ignorovat)
+  - PATCH /projects/:projectId/tasks/:taskId body { status } -> 200 { task }
+    - povolene statusy: `todo` | `done`; jine hodnoty -> 400 error payload
+  - POST /projects/:projectId/tasks/:taskId/comments body { message } -> 201 { comment }
+    - body bez `message` (nebo prazdny `message`) -> 400 error payload
+  - GET /projects/:projectId/tasks/:taskId/comments -> 200 { comments: [...] }
+- Konfliktni vstupy (napr. duplicate project/member) vracej jako 409 error payload.
+- Member objekt modeluj jako `{ id, userId, role }` (ne `{ id, name }`).
+- Nevalidni vstupy vracej jako 400 error payload, neexistujici entity jako 404 error payload.
+- Route wiring v `src/app.js` musi obsahovat mounty:
+  - app.use("/projects", projectsRoutes)
+  - app.use("/projects/:projectId/members", membersRoutes)
+  - app.use("/projects/:projectId/tasks", tasksRoutes)
+  - app.use("/projects/:projectId/tasks/:taskId/comments", commentsRoutes)
+- Uvnitr `members/tasks/comments` routeru pouzij relativni paths od mountpointu (napr. "/" nebo "/:taskId"), ne znovu cele cesty s projectId/taskId.
+- V tomto scenari se nesmi spoustet HTTP listener na fixnim portu (zadne `app.listen(...)` pri importu).
+- Povinna minimalni sada souboru v prvnim `mode:"full"` vystupu:
+  - README.md
+  - package.json
+  - src/app.js
+  - src/server.js
+  - src/modules/projects/routes.js
+  - src/modules/projects/service.js
+  - src/modules/tasks/routes.js
+  - src/modules/tasks/service.js
+  - src/modules/members/routes.js
+  - src/modules/members/service.js
+  - src/modules/comments/routes.js
+  - src/modules/comments/service.js
+  - src/lib/errors.js
+  - src/lib/id.js
+
+Doporuceni: scenar je zamerne vetsi; pocitej s `--maxIterations 12`.
+
+Poznamka: testy budeme pouzivat tyto (musis projit):
+--- BEGIN ORACLE TESTS (tests/oracle.test.js) ---
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { pathToFileURL } = require('node:url');
+const request = require('supertest');
+
+async function loadApp() {
+  const candidates = [
+    '../src/app.js',
+    '../src/app.cjs',
+    '../src/app.mjs',
+    '../dist/app.js',
+    '../build/app.js',
+    '../src/app.ts',
+  ];
+
+  const errors = [];
+  for (const rel of candidates) {
+    const abs = path.join(__dirname, rel);
+    if (!fs.existsSync(abs)) continue;
+
+    try {
+      let mod;
+      if (rel.endsWith('.mjs')) {
+        mod = await import(pathToFileURL(abs).href);
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        mod = require(abs);
+      }
+      const app = mod?.app || mod?.default || mod;
+      if (typeof app === 'function') return app;
+      errors.push(`${rel}: module loaded, but app export is not a function`);
+    } catch (err) {
+      errors.push(`${rel}: ${String(err?.message || err)}`);
+    }
+  }
+
+  throw new Error(`Expected app export in src/app.* (or dist/build). Details: ${errors.join(' | ') || 'no candidate app file found'}`);
+}
+
+function expectErrorPayload(res, expectedStatus) {
+  assert.equal(res.status, expectedStatus, res.text);
+  assert.ok(res.body && typeof res.body === 'object', 'Expected JSON object body');
+  assert.ok(res.body.error && typeof res.body.error === 'object', 'Expected error object');
+  assert.equal(typeof res.body.error.code, 'string');
+  assert.ok(res.body.error.code.length > 0);
+  assert.equal(typeof res.b
+...<snip>...
+
+
+CHYBY:
+- Oracle command timed out once; collected actionable failure details via --test-force-exit rerun.
+- Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=null, timedOut=true)
+- Command failed: node --test --test-force-exit --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)
+
+LOGY (zkraceno):
+- node --test --test-concurrency=1 tests/oracle.test.js
+  stdout: "✔ health + empty project list (77.5282ms)\n✔ project create/list/get + duplicate + validation (21.8634ms)\n✔ members endpoints (11.5506ms)\n✔ tasks create/list/filter + patch status (13.0727ms)\n✖ comments + not-found and payload contract (7.0045ms)\n"
+- node --test --test-force-exit --test-concurrency=1 tests/oracle.test.js
+  stdout: "\n      at Route.dispatch (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_03\\workspace\\node_modules\\express\\lib\\router\\route.js:119:3)\n      at Layer.handle [as handle_request] (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_03\\workspace\\node_modules\\express\\lib\\router\\layer.js:95:5)\n      at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_03\\workspace\\node_modules\\express\\lib\\router\\index.js:284:15\n      at router.process_params (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_03\\workspace\\node_modules\\express\\lib\\router\\index.js:346:12)\n      at next (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_03\\workspace\\node_modules\\express\\lib\\router\\index.js:280:10)\n      at router.handle (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_03\\workspace\\node_modules\\express\\lib\\router\\index.js:175:3)\n"
+
+SOUBORY (zkraceno):
+- README.md
+- node_modules/.bin/mime
+- node_modules/.bin/mime.cmd
+- node_modules/.bin/mime.ps1
+- node_modules/.bin/semver
+- node_modules/.bin/semver.cmd
+- node_modules/.bin/semver.ps1
+- node_modules/.package-lock.json
+- node_modules/@noble/hashes/LICENSE
+- node_modules/@noble/hashes/README.md
+- node_modules/@noble/hashes/_assert.d.ts
+- node_modules/@noble/hashes/_assert.d.ts.map
+- node_modules/@noble/hashes/_assert.js
+- node_modules/@noble/hashes/_assert.js.map
+- node_modules/@noble/hashes/_blake.d.ts
+- node_modules/@noble/hashes/_blake.d.ts.map
+- node_modules/@noble/hashes/_blake.js
+- node_modules/@noble/hashes/_blake.js.map
+- node_modules/@noble/hashes/_md.d.ts
+- node_modules/@noble/hashes/_md.d.ts.map
+- node_modules/@noble/hashes/_md.js
+- node_modules/@noble/hashes/_md.js.map
+- node_modules/@noble/hashes/_u64.d.ts
+- node_modules/@noble/hashes/_u64.d.ts.map
+- node_modules/@noble/hashes/_u64.js
+- node_modules/@noble/hashes/_u64.js.map
+- node_modules/@noble/hashes/argon2.d.ts
+- node_modules/@noble/hashes/argon2.d.ts.map
+- node_modules/@noble/hashes/argon2.js
+- node_modules/@noble/hashes/argon2.js.map
+- node_modules/@noble/hashes/blake1.d.ts
+- node_modules/@noble/hashes/blake1.d.ts.map
+- node_modules/@noble/hashes/blake1.js
+- node_modules/@noble/hashes/blake1.js.map
+- node_modules/@noble/hashes/blake2.d.ts
+- node_modules/@noble/hashes/blake2.d.ts.map
+- node_modules/@noble/hashes/blake2.js
+- node_modules/@noble/hashes/blake2.js.map
+- node_modules/@noble/hashes/blake2b.d.ts
+- node_modules/@noble/hashes/blake2b.d.ts.map
+
+KONTEXT SOUBORU (zkraceno):
+--- FILE: src/modules/comments/service.js ---
+const { randomUUID } = require('node:crypto');
+const comments = [];
+
+const addComment = (req, res) => {
+  const { message } = req.body;
+  const commentId = randomUUID();
+  comments.push({ id: commentId, message });
+  res.status(201).json({ comment: { id: commentId, message } });
+};
+
+const getComments = (req, res) => {
+  res.json({ comments });
+};
+
+module.exports = { addComment, getComments };
+module.exports.getAllComments = module.exports.getComments;
+
+--- FILE: src/modules/comments/routes.js ---
+const router = require('express').Router({ mergeParams: true });
+const commentsService = require('./service');
+const { sendError } = require('../../lib/errors');
+router.get('/', async (req, res) => res.json({ comments: await commentsService.getAllComments(req.params.projectId, req.params.taskId) }));
+router.post('/', async (req, res) => {
+  const message = String(req.body?.message || '').trim();
+  if (!message) return sendError(res, 400, 'BAD_REQUEST', 'Message is required');
+  const comment = await commentsService.addComment(req.params.projectId, req.params.taskId, message);
+  const __commentValue = comment && typeof comment === 'object' && !('message' in comment) && 'content' in comment
+      ? { ...comment, message: comment.content }
+      : comment;
+    return res.status(201).json({ comment: __commentValue });
+});
+module.exports = router;
+
+--- FILE: node_modules/express/lib/router/layer.js ---
+/*!
+ * express
+ * Copyright(c) 2009-2013 TJ Holowaychuk
+ * Copyright(c) 2013 Roman Shtylman
+ * Copyright(c) 2014-2015 Douglas Christopher Wilson
+ * MIT Licensed
+ */
+
+'use strict';
+
+/**
+ * Module dependencies.
+ * @private
+ */
+
+var pathRegexp = require('path-to-regexp');
+var debug = require('debug')('express:router:layer');
+
+/**
+ * Module variables.
+ * @private
+ */
+
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+
+/**
+ * Module exports.
+ * @public
+ */
+
+module.exports = Layer;
+
+function Layer(path, options, fn) {
+  if (!(this instanceof Layer)) {
+    return new Layer(path, options, fn);
+  }
+
+  debug('new %o', path)
+  var opts = options || {};
+
+  this.handle = fn;
+  this.name = fn.name || '<anonymous>';
+  this.params = undefined;
+  this.path = undefined;
+  this.regexp = pathRegexp(path, this.keys = [], opts);
+
+  // set fast path flags
+  this.regexp.fast_star = path === '*'
+  this.regexp.fast_slash = path === '/' && opts.end === false
+}
+
+/**
+ * Handle the error for the layer.
+ *
+ * @param {Error} error
+ * @param {Request} req
+ * @param {Response} res
+ * @param {function} next
+ * @api private
+ */
+
+Layer.prototype.handle_error = function handle_error(error, req, res, next) {
+  var fn = this.handle;
+
+  if (fn.length !== 4) {
+    // not a standard error handler
+    return next(error);
+  }
+
+  try {
+    fn(error, req, res, next);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Handle the request for the layer.
+ *
+ * @param {Request} req
+ * @param {Response} res
+ * @param {function} next
+ * @api private
+ */
+
+Layer.prototype.handle_request = function handle(req, res, next) {
+  var fn = this.handle;
+
+  if (fn.length > 3) {
+    // not a standard request handler
+    return next();
+  }
+
+  try {
+    fn(req, res, next);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Check if this route matches `path`, if so
+ * populate `.params`.
+ *
+ * @param {String} path
+ * @return {Boolean}
+ * @api private
+ */
+
+Layer.prototype.match = function match(path) {
+  var match
+
+  if (path != null) {
+    // fast path non-ending match for / (any path matches)
+    if (this.regexp.fast_slash) {
+      this.params = {}
+      this.path = ''
+      return true
+    }
+
+    // fast path for * (everything matched in a param)
+    if (this.regexp.fast_star) {
+      this.params = {'0': decode_param(path)}
+      this.path = path
+      return true
+    }
+
+    // match the path
+    match = this.regexp.exec(path)
+  }
+
+  if (!match) {
+    this.params = undefined;
+    this.path = undefined;
+    return false;
+  }
+
+  // store values
+  this.params = {};
+  this.path = match[0]
+
+  var keys = this.keys;
+  var params = this.params;
+
+  for (var i = 1; i < match.length; i++) {
+    var key = keys[i - 1];
+    var prop = key.name;
+    var val = decode_param(match[i])
+
+    if (val !== undefined || !(hasOwnProperty.call(params, prop))) {
+      params[prop] = val;
+    }
+  }
+
+  return true;
+};
+
+/**
+ * Decode param value.
+ *
+ * @param {string} val
+ * @return {string}
+ * @private
+ */
+
+function decode_param(val) {
+  if (typeof val !== 'string' || val.length === 0) {
+    return val;
+  }
+
+  try {
+    return decodeURIComponent(val);
+  } catch (err) {
+    if (err instanceof URIError) {
+      err.message = 'Failed to decode param \'' + val + '\'';
+      err.status = err.statusCode = 400;
+    }
+
+    throw err;
+  }
+}
+
+--- FILE: node_modules/express/lib/router/route.js ---
+/*!
+ * express
+ * Copyright(c) 2009-2013 TJ Holowaychuk
+ * Copyright(c) 2013 Roman Shtylman
+ * Copyright(c) 2014-2015 Douglas Christopher Wilson
+ * MIT Licensed
+ */
+
+'use strict';
+
+/**
+ * Module dependencies.
+ * @private
+ */
+
+var debug = require('debug')('express:router:route');
+var flatten = require('array-flatten');
+var Layer = require('./layer');
+var methods = require('methods');
+
+/**
+ * Module variables.
+ * @private
+ */
+
+var slice = Array.prototype.slice;
+var toString = Object.prototype.toString;
+
+/**
+ * Module exports.
+ * @public
+ */
+
+module.exports = Route;
+
+/**
+ * Initialize `Route` with the given `path`,
+ *
+ * @param {String} path
+ * @public
+ */
+
+function Route(path) {
+  this.path = path;
+  this.stack = [];
+
+  debug('new %o', path)
+
+  // route handlers for various http methods
+  this.methods = {};
+}
+
+/**
+ * Determine if the route handles a given method.
+ * @private
+ */
+
+Route.prototype._handles_method = function _handles_method(method) {
+  if (this.methods._all) {
+    return true;
+  }
+
+  // normalize name
+  var name = typeof method === 'string'
+    ? method.toLowerCase()
+    : method
+
+  if (name === 'head' && !this.methods['head']) {
+    name = 'get';
+  }
+
+  return Boolean(this.methods[name]);
+};
+
+/**
+ * @return {Array} supported HTTP methods
+ * @private
+ */
+
+Route.prototype._options = function _options() {
+  var methods = Object.keys(this.methods);
+
+  // append automatic head
+  if (this.methods.get && !this.methods.head) {
+    methods.push('head');
+  }
+
+  for (var i = 0; i < methods.length; i++) {
+    // make upper case
+    methods[i] = methods[i].toUpperCase();
+  }
+
+  return methods;
+};
+
+/**
+ * dispatch req, res into this route
+ * @private
+ */
+
+Route.prototype.dispatch = function dispatch(req, res, done) {
+  var idx = 0;
+  var stack = this.stack;
+  var sync = 0
+
+  if (stack.length === 0) {
+    return done();
+  }
+  var method = typeof req.method === 'string'
+    ? req.method.toLowerCase()
+    : req.method
+
+  if (method === 'head' && !this.methods['head']) {
+    method = 'get';
+  }
+
+  req.route = this;
+
+  next();
+
+  function next(err) {
+    // signal to exit route
+    if (err && err === 'route') {
+      return done();
+    }
+
+    // signal to exit router
+    if (err && err === 'router') {
+      return done(err)
+    }
+
+    // max sync stack
+    if (++sync > 100) {
+      return setImmediate(next, err)
+    }
+
+    var layer = stack[idx++]
+
+    // end of layers
+    if (!layer) {
+      return done(err)
+    }
+
+    if (layer.method && layer.method !== method) {
+      next(err)
+    } else if (err) {
+      layer.handle_error(err, req, res, next);
+    } else {
+      layer.handle_request(req, res, next);
+    }
+
+    sync = 0
+  }
+};
+
+/**
+ * Add a handler for all HTTP verbs to this route.
+ *
+ * Behaves just like middleware and can respond or call `next`
+ * to continue processing.
+ *
+ * You can use multiple `.all` call to add multiple handlers.
+ *
+ *   function check_something(req, res, next){
+ *     next();
+ *   };
+ *
+ *   function validate_user(req, res, next){
+ *     next();
+ *   };
+ *
+ *   route
+ *   .all(validate_user)
+ *   .all(check_something)
+ *   .get(function(req, res, next){
+ *     res.send('hello world');
+ *   });
+ *
+ * @param {function} handler
+ * @return {Route} for chaining
+ * @api public
+ */
+
+Route.prototype.all = function all() {
+  var handles = flatten(slice.call(arguments));
+
+  for (var i = 0; i < handles.length; i++) {
+    var handle = handles[i];
+
+    if (typeof handle !== 'function') {
+      var type = toString.call(handle);
+      var msg = 'Route.all() requires a callback function but got a ' + type
+      throw new TypeError(msg);
+    }
+
+    var layer = Layer('/', {}, handle);
+    layer.method = undefined;
+
+    this.methods._all = true;
+    this.stack.push(layer);
+  }
+
+  return this;
+};
+
+methods.forEach(function(method){
+  Route.prototype[method] = function(){
+    var handles = flatten(slice.call(arguments));
+
+    for (var i = 0; i < handles.length; i++) {
+      var handle = handles[i];
+
+      if (typeof handle !
+...<snip>...

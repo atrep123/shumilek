@@ -1,0 +1,19 @@
+{
+  "runId": 1772738145656,
+  "scenario": "ts-todo-oracle",
+  "model": "deepseek-coder-v2:16b",
+  "plannerModel": null,
+  "plannerStrategy": "disabled",
+  "reviewerModel": null,
+  "jsonRepairModel": null,
+  "timeoutFallbackModel": null,
+  "deterministicFallbackMode": "on-fail",
+  "baseUrl": "http://localhost:11434",
+  "ollamaOptions": {
+    "temperature": 0.05,
+    "num_predict": 4800,
+    "seed": 42
+  },
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_ts_todo_globals_fix_20260305_201544\\workspace",
+  "startedAt": "2026-03-05T19:15:45.658Z"
+}

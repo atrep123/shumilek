@@ -1,0 +1,47 @@
+✔ health + empty project list (79.4502ms)
+✖ project create/list/get + duplicate + validation (20.7082ms)
+✖ members endpoints (4.6272ms)
+✖ tasks create/list/filter + patch status (3.3791ms)
+✖ comments + not-found and payload contract (2.683ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 1
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 263.0152
+
+✖ failing tests:
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (20.7082ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'Alpha'
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772557025894\node-project-api-large_run_02\workspace\tests\oracle.test.js:76:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'Alpha',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (4.6272ms)
+  { code: 'duplicate', message: 'Project already exists' }
+
+test at tests\oracle.test.js:122:1
+✖ tasks create/list/filter + patch status (3.3791ms)
+  { code: 'duplicate', message: 'Project already exists' }
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (2.683ms)
+  { code: 'duplicate', message: 'Project already exists' }

@@ -1,0 +1,11 @@
+{
+  "count": 4,
+  "files": [
+    "README.md",
+    "package.json",
+    "src/app.js",
+    "src/server.js"
+  ],
+  "appliedAsPatch": true,
+  "forcePatchFromIncompleteFull": true
+}

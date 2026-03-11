@@ -1,0 +1,10 @@
+{
+  "model": "qwen2.5-coder:7b",
+  "baseUrl": "http://localhost:11434",
+  "timeoutMs": 150000,
+  "transport": "chat",
+  "formatKind": "schema",
+  "schemaUsed": true,
+  "fallbackUsed": false,
+  "fallbackReason": null
+}

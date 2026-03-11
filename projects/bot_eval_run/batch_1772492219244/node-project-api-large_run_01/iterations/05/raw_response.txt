@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "src/lib/errors.js",
+      "content": "// src/lib/errors.js\nconst sendError = (res, status, code, message) => {\n  res.status(status).json({ error: { code, message } });\n};\n\nmodule.exports = {\n  sendError,\n};"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "// src/modules/members/routes.js\nconst express = require('express');\nconst router = express.Router();\nconst service = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', async (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) {\n    return sendError(res, 400, 'INVALID_PAYLOAD', 'Payload must include userId and role');\n  }\n  try {\n    const member = await service.createMember(userId, role);\n    res.status(201).json({ member });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', error.message);\n  }\n});\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "// src/modules/members/service.js\nconst { randomUUID } = require('node:crypto');\n\nlet membersStore = [];\n\nconst createMember = (userId, role) => {\n  const member = { id: randomUUID(), userId, role };\n  membersStore.push(member);\n  return member;\n};\n\nmodule.exports = {\n  createMember,\n};"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "// src/modules/tasks/routes.js\nconst express = require('express');\nconst router = express.Router();\nconst service = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', async (req, res) => {\n  const { description } = req.body;\n  if (!description || typeof description !== 'string' || description.trim() === '') {\n    return sendError(res, 400, 'INVALID_DESCRIPTION', 'Description must be a non-empty string');\n  }\n  try {\n    const task = await service.createTask(description);\n    res.status(201).json({ task });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', error.message);\n  }\n});\n\nrouter.get('/', async (req, res) => {\n  const { status } = req.query;\n  try {\n    const tasks = await service.getTasks(status);\n    res.json({ tasks });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', error.message);\n  }\n});\n\nrouter.patch('/:taskId', async (req, res) => {\n  const { taskId } = req.params;\n  const { status } = req.body;\n  if (!['todo', 'done'].includes(status)) {\n    return sendError(res, 400, 'INVALID_STATUS', 'Status must be either "
+      }
+    ]
+  }
+ 

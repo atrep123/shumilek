@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "// src/modules/comments/service.js\nconst { randomUUID } = require('node:crypto');\n\nconst commentsService = {\n  createComment(projectId, taskId, message) {\n    if (!message) {\n      return null;\n    }\n    const comment = {\n      id: randomUUID(),\n      projectId,\n      taskId,\n      message,\n    };\n    // Simulate storing the comment in a database\n    comments.push(comment);\n    return comment;\n  },\n};\n\nmodule.exports = commentsService;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "// src/modules/tasks/service.js\nconst { randomUUID } = require('node:crypto');\n\nlet tasks = [];\n\nconst tasksService = {\n  getTasksByProjectId(projectId) {\n    return tasks.filter(task => task.projectId === projectId);\n  },\n};\n\nmodule.exports = tasksService;\n"
+    }
+  ],
+  "notes": "Updated comments and tasks services to include the required methods."
+}

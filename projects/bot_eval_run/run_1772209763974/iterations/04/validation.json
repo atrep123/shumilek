@@ -1,0 +1,41 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing required file: README.md",
+    "Missing required file: mini_ai/__init__.py",
+    "Missing required file: mini_ai/cli.py",
+    "Command failed: python -m mini_ai.cli --help (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "python -m compileall -q mini_ai tests",
+      "cwd": "projects\\bot_eval_run\\run_1772209763974\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 99,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "python -m unittest discover -v -s tests -p \"test*.py\"",
+      "cwd": "projects\\bot_eval_run\\run_1772209763974\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 77,
+      "stdout": "",
+      "stderr": "test_generate (test_markov.TestMarkovChain.test_generate) ... ok\r\ntest_train (test_markov.TestMarkovChain.test_train) ... ok\r\n\r\n----------------------------------------------------------------------\r\nRan 2 tests in 0.000s\r\n\r\nOK\r\n"
+    },
+    {
+      "command": "python -m mini_ai.cli --help",
+      "cwd": "projects\\bot_eval_run\\run_1772209763974\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 41,
+      "stdout": "",
+      "stderr": "C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\python.exe: No module named mini_ai.cli\r\n"
+    }
+  ]
+}

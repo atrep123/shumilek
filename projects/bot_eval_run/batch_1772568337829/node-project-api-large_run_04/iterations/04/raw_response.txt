@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst projectsService = require('../projects/service');\n\nlet membersStore = {};\n\nfunction addMember(projectId, userId, role) {\n  if (!userId || !role) {\n    return null;\n  }\n\n  const project = projectsService.getProjectById(projectId);\n  if (!project) {\n    return null;\n  }\n\n  const memberId = randomUUID();\n  membersStore[memberId] = { projectId, userId, role };\n  return membersStore[memberId];\n}\n\nfunction getMembersByProjectId(projectId) {\n  return Object.values(membersStore).filter(member => member.projectId === projectId);\n}\n\nmodule.exports = {\n  addMember,\n  getMembersByProjectId,\n};\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst tasksService = require('../tasks/service');\n\nlet commentsStore = {};\n\nfunction addComment(taskId, message) {\n  if (!message) {\n    return null;\n  }\n\n  const task = tasksService.getTaskById(taskId);\n  if (!task) {\n    return null;\n  }\n\n  const commentId = randomUUID();\n  commentsStore[commentId] = { taskId, message };\n  return commentsStore[commentId];\n}\n\nfunction getCommentsByTaskId(taskId) {\n  return Object.values(commentsStore).filter(comment => comment.taskId === taskId);\n}\n\nmodule.exports = {\n  addComment,\n  getCommentsByTaskId,\n};\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nlet projectsStore = {};\n\nfunction createProject(name) {\n  if (!name) {\n    return null;\n  }\n\n  const projectId = randomUUID();\n  projectsStore[projectId] = { id: projectId, name };\n  return projectsStore[projectId];\n}\n\nfunction getProjectById(projectId) {\n  return projectsStore[projectId];\n}\n\nmodule.exports = {\n  createProject,\n  getProjectById,\n};\n"
+    }
+  ],
+  "notes": "Added validation for required fields in members, comments, and projects services."
+}

@@ -1,0 +1,7 @@
+{
+  "review": "Task status contract mismatch: use `todo` / `done` statuses (not `open` or `pending`). PATCH status must allow only \"todo\" or \"done\" (pending/open are not allowed). Task filtering contract mismatch: support ?status=todo|done and PATCH status updates.",
+  "priorityFiles": [
+    "src/modules/tasks/routes.js",
+    "src/modules/tasks/service.js"
+  ]
+}

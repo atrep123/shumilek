@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "// src/modules/projects/service.js\nconst { randomUUID } = require('node:crypto');\n\nlet projectsStore = [];\n\nmodule.exports = {\n  getAllProjects() {\n    return projectsStore;\n  },\n\n  getProjectById(id) {\n    return projectsStore.find(project => project.id === id);\n  }\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "// src/modules/tasks/service.js\nconst { randomUUID } = require('node:crypto');\n\nlet tasksStore = [];\n\nmodule.exports = {\n  getTasksByProjectId(projectId) {\n    return tasksStore.filter(task => task.projectId === projectId);\n  }\n};\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "// src/modules/comments/service.js\nconst { randomUUID } = require('node:crypto');\n\nlet commentsStore = [];\n\nmodule.exports = {\n  addComment(taskId, message) {\n    const comment = { id: randomUUID(), taskId, message };\n    commentsStore.push(comment);\n    return comment;\n  }\n};\n"
+    }
+  ],
+  "notes": "Updated service files to include required methods and fixed route-service contract mismatches."
+}

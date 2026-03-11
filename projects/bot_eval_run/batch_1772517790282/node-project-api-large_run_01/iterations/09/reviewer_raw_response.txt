@@ -1,0 +1,1 @@
+{ "review": "Route-service contract mismatch (tasks): routes call service.updateTask() but service does not export \"updateTask\". Route-service export map required (tasks): ensure service exports every route-called method (exact names) or add adapter wrappers.", "priorityFiles": ["src/modules/tasks/service.js"] }

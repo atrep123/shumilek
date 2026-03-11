@@ -1,0 +1,92 @@
+{
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace",
+  "deterministicFallback": {
+    "mode": "on-fail",
+    "tsTodo": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "nodeApi": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "totalActivations": 0,
+    "totalRecoveries": 0,
+    "totalTargetedActivations": 0,
+    "totalTargetedRecoveries": 0,
+    "totalCanonicalActivations": 0,
+    "totalCanonicalRecoveries": 0,
+    "totalRawPasses": 0,
+    "totalRawFailures": 0,
+    "totalRecoveredByFallback": 0,
+    "fallbackDependencyRate": 0
+  },
+  "reliability": {
+    "rawPasses": 0,
+    "rawFailures": 0,
+    "recoveredByFallback": 0,
+    "fallbackDependencyRate": 0
+  },
+  "parseStats": {
+    "plannerFailures": 0,
+    "schemaFailures": 0,
+    "jsonRepairFailures": 0,
+    "parseFailures": 0,
+    "jsonParseFailures": 0,
+    "placeholderFailures": 0,
+    "otherFailures": 0
+  },
+  "ok": false,
+  "diagnostics": [
+    "Missing required file: mini_ai/cli.py",
+    "Command failed: python -m unittest discover -v -s tests -p \"test*.py\" (exit=1, timedOut=false)",
+    "Command failed: python -m mini_ai.cli --help (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "python -m compileall -q mini_ai tests",
+      "cwd": "projects\\bot_eval_run\\run_1772209763974\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 104,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "python -m unittest discover -v -s tests -p \"test*.py\"",
+      "cwd": "projects\\bot_eval_run\\run_1772209763974\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 147,
+      "stdout": "",
+      "stderr": "test_cli (unittest.loader._FailedTest.test_cli) ... ERROR\r\n\r\n======================================================================\r\nERROR: test_cli (unittest.loader._FailedTest.test_cli)\r\n----------------------------------------------------------------------\r\nImportError: Failed to import test module: test_cli\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\loader.py\", line 396, in _find_test_path\r\n    module = self._get_module_from_name(name)\r\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\loader.py\", line 339, in _get_module_from_name\r\n    __import__(name)\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\tests\\test_cli.py\", line 4, in <module>\r\n    from mini_ai.cli import main\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\mini_ai\\__init__.py\", line 1, in <module>\r\n    from . import cli\r\nImportError: cannot import name 'cli' from partially initialized module 'mini_ai' (most likely due to a circular import) (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\mini_ai\\__init__.py)\r\n\r\n\r\n----------------------------------------------------------------------\r\nRan 1 test in 0.000s\r\n\r\nFAILED (errors=1)\r\n"
+    },
+    {
+      "command": "python -m mini_ai.cli --help",
+      "cwd": "projects\\bot_eval_run\\run_1772209763974\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 51,
+      "stdout": "",
+      "stderr": "C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\python.exe: Error while finding module specification for 'mini_ai.cli' (ImportError: cannot import name 'cli' from partially initialized module 'mini_ai' (most likely due to a circular import) (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\mini_ai\\__init__.py))\r\n"
+    }
+  ]
+}

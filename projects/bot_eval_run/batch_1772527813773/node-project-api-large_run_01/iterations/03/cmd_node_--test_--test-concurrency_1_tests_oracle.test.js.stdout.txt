@@ -1,0 +1,71 @@
+✔ health + empty project list (93.7286ms)
+✖ project create/list/get + duplicate + validation (18.0968ms)
+✖ members endpoints (5.6692ms)
+✖ tasks create/list/filter + patch status (6.5571ms)
+✖ comments + not-found and payload contract (7.7402ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 1
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 306.5099
+
+✖ failing tests:
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (18.0968ms)
+  ReferenceError: randomUUID is not defined
+      at createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\src\modules\projects\service.js:4:21)
+      at Object.createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\src\modules\projects\service.js:30:63)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\src\modules\projects\routes.js:12:35
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:149:13)
+      at Route.dispatch (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:119:3)
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:284:15
+      at router.process_params (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:346:12)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:280:10)
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (5.6692ms)
+  ReferenceError: randomUUID is not defined
+      at createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\src\modules\projects\service.js:4:21)
+      at Object.createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\src\modules\projects\service.js:30:63)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\src\modules\projects\routes.js:12:35
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:149:13)
+      at Route.dispatch (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:119:3)
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:284:15
+      at router.process_params (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:346:12)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:280:10)
+
+test at tests\oracle.test.js:122:1
+✖ tasks create/list/filter + patch status (6.5571ms)
+  ReferenceError: randomUUID is not defined
+      at createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\src\modules\projects\service.js:4:21)
+      at Object.createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\src\modules\projects\service.js:30:63)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\src\modules\projects\routes.js:12:35
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:149:13)
+      at Route.dispatch (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:119:3)
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:284:15
+      at router.process_params (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:346:12)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:280:10)
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (7.7402ms)
+  ReferenceError: randomUUID is not defined
+      at createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\src\modules\projects\service.js:4:21)
+      at Object.createProject (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\src\modules\projects\service.js:30:63)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\src\modules\projects\routes.js:12:35
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:149:13)
+      at Route.dispatch (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:119:3)
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:284:15
+      at router.process_params (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:346:12)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772527813773\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:280:10)

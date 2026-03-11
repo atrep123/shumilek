@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "// src/modules/comments/service.js\nconst { randomUUID } = require('node:crypto');\n\nlet commentsStore = [];\n\nmodule.exports = {\n  addComment(projectId, taskId, comment) {\n    const newComment = {\n      id: randomUUID(),\n      projectId,\n      taskId,\n      message: comment.message,\n    };\n    commentsStore.push(newComment);\n    return newComment;\n  },\n\n  getAllComments(projectId, taskId) {\n    return commentsStore.filter(comment => comment.projectId === projectId && comment.taskId === taskId);\n  }\n};\n"
+    }
+  ],
+  "notes": "Added missing methods addComment and getAllComments to the comments service."
+}

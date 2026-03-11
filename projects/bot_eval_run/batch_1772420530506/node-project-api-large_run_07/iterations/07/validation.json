@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for project detail endpoint /projects/:projectId",
+    "Route-service contract mismatch (tasks): routes call tasksService.getTasksByStatus() but service does not export \"getTasksByStatus\".",
+    "Route-service contract mismatch (tasks): routes call tasksService.updateTaskStatus() but service does not export \"updateTaskStatus\".",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

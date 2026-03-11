@@ -1,0 +1,27 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "qwen2.5-coder:32b",
+      "ok": false,
+      "error": "Duplicate file paths in files[]: src/modules/tasks/service.js",
+      "errorKind": "schema",
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    },
+    {
+      "stage": "repair_syntax",
+      "model": "qwen2.5-coder:32b",
+      "ok": false,
+      "error": "The user aborted a request.",
+      "errorKind": "other"
+    }
+  ],
+  "finalOk": false,
+  "primaryError": "Duplicate file paths in files[]: src/modules/tasks/service.js",
+  "primaryErrorKind": "schema",
+  "finalError": "The user aborted a request.",
+  "finalErrorKind": "other"
+}

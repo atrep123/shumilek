@@ -1,0 +1,18 @@
+{
+  "review": "Zkontrolujte, že pro všechny POST endpointy, které vyžadují body (např. /projects, /projects/:projectId/tasks/:taskId/comments), kontrolujete prázdný nebo chybějící payload a odpovídajícím způsobem vracíte 400 Bad Request. Pro endpointy, které mohou vracet duplicitní data (např. /projects), zkontrolujte správný zpracování duplicitně vytvořených dat a odpovídající způsobem vracejte 409 Conflict.",
+  "files": [
+    {
+      "file": "tests/oracle.test.js",
+      "changes": [
+        {
+          "line": 160,
+          "change": "Zkontrolujte, že pro endpoint /projects/:projectId/tasks/:taskId/comments kontrolujete prázdný nebo chybějící payload a odpovídajícím způsobem vracíte 400 Bad Request."
+        },
+        {
+          "line": 176,
+          "change": "Zkontrolujte, že pro endpoint /projects kontrolujete prázdný nebo chybějící payload a odpovídajícím způsobem vracíte 400 Bad Request."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for project detail endpoint /projects/:projectId",
+    "Route-service contract mismatch (members): routes call membersService.createMember() but service does not export \"createMember\".",
+    "Route-service contract mismatch (tasks): routes call tasksService.getAllTasks() but service does not export \"getAllTasks\".",
+    "Route-service contract mismatch (comments): routes call commentsService.createComment() but service does not export \"createComment\".",
+    "Route-service contract mismatch (comments): routes call commentsService.getAllComments() but service does not export \"getAllComments\".",
+    "Duplicate handling hint: expected 409 conflict handling for duplicate project names.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

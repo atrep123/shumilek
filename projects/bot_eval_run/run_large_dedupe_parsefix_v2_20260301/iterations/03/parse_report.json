@@ -1,0 +1,21 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "deepseek-coder-v2:16b",
+      "ok": true,
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    },
+    {
+      "stage": "scenario_contract",
+      "model": "deepseek-coder-v2:16b",
+      "ok": true,
+      "error": "Large scenario full output missing required files (README.md, package.json, src/app.js, src/server.js, src/modules/projects/routes.js, src/modules/tasks/routes.js, src/modules/tasks/service.js, src/modules/members/routes.js, src/modules/members/service.js, src/modules/comments/routes.js, src/modules/comments/service.js, src/lib/errors.js, src/lib/id.js); applying as patch to preserve workspace continuity",
+      "errorKind": "schema"
+    }
+  ],
+  "finalOk": true
+}

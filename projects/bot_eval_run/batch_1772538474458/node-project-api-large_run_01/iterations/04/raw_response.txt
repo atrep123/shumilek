@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst projectsService = require('../projects/service');\n\nlet membersStore = {};\n\nfunction addMember(projectId, userId, role) {\n  const project = projectsService.getProjectById(projectId);\n  if (!project) return null;\n\n  if (membersStore[projectId] && membersStore[projectId].some(member => member.userId === userId)) {\n    return 'duplicate';\n  }\n\n  const newMember = { id: randomUUID(), userId, role };\n  if (!membersStore[projectId]) {\n    membersStore[projectId] = [];\n  }\n  membersStore[projectId].push(newMember);\n  return newMember;\n}\n\nfunction getMembersByProjectId(projectId) {\n  return membersStore[projectId] || [];\n}\n\nmodule.exports = { addMember, getMembersByProjectId };\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst membersService = require('./service');\nconst errors = require('../../lib/errors');\n\nrouter.post('/', (req, res) => {\n  const { projectId } = req.params;\n  const { userId, role } = req.body;\n\n  if (!userId || !role) {\n    return errors.sendError(res, 400, 'invalid_input', 'User ID and role are required');\n  }\n\n  const member = membersService.addMember(projectId, userId, role);\n  if (member === null) {\n    return errors.sendError(res, 404, 'project_not_found', 'Project not found');\n  } else if (member === 'duplicate') {\n    return errors.sendError(res, 409, 'duplicate_member', 'Member already exists in the project');\n  }\n\n  res.status(201).json({ member });\n});\n\nrouter.get('/', (req, res) => {\n  const { projectId } = req.params;\n  const members = membersService.getMembersByProjectId(projectId);\n  res.json({ members });\n});\n\nmodule.exports = router;\n"
+    }
+  ],
+  "notes": "Fixed the duplicate member add test by ensuring that the POST /projects/:projectId/members endpoint returns a 409 error when adding a member with an existing userId in the same project."
+}

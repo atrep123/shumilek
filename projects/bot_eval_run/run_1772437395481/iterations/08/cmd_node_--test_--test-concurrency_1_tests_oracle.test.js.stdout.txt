@@ -1,0 +1,73 @@
+✖ health + empty project list (6.6902ms)
+✖ project create/list/get + duplicate + validation (1.049ms)
+✖ members endpoints (0.9077ms)
+✖ tasks create/list/filter + patch status (1.012ms)
+✖ comments + not-found and payload contract (0.8861ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 171.8154
+
+✖ failing tests:
+
+test at tests\oracle.test.js:52:1
+✖ health + empty project list (6.6902ms)
+  Error: Expected app export in src/app.* (or dist/build). Details: ../src/app.js: Cannot find module 'C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\src\lib\errors' imported from C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\src\app.js
+      at loadApp (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\tests\oracle.test.js:39:9)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\tests\oracle.test.js:53:21)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17)
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (1.049ms)
+  Error: Expected app export in src/app.* (or dist/build). Details: ../src/app.js: Cannot find module 'C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\src\lib\errors' imported from C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\src\app.js
+      at loadApp (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\tests\oracle.test.js:39:9)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\tests\oracle.test.js:66:21)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3)
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (0.9077ms)
+  Error: Expected app export in src/app.* (or dist/build). Details: ../src/app.js: Cannot find module 'C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\src\lib\errors' imported from C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\src\app.js
+      at loadApp (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\tests\oracle.test.js:39:9)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\tests\oracle.test.js:93:21)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at tests\oracle.test.js:122:1
+✖ tasks create/list/filter + patch status (1.012ms)
+  Error: Expected app export in src/app.* (or dist/build). Details: ../src/app.js: Cannot find module 'C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\src\lib\errors' imported from C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\src\app.js
+      at loadApp (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\tests\oracle.test.js:39:9)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\tests\oracle.test.js:123:21)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (0.8861ms)
+  Error: Expected app export in src/app.* (or dist/build). Details: ../src/app.js: Cannot find module 'C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\src\lib\errors' imported from C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\src\app.js
+      at loadApp (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\tests\oracle.test.js:39:9)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772437395481\workspace\tests\oracle.test.js:161:21)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)

@@ -1,0 +1,53 @@
+✔ health + empty project list (91.7006ms)
+✔ project create/list/get + duplicate + validation (38.3282ms)
+✖ members endpoints (9.6976ms)
+✔ tasks create/list/filter + patch status (21.6495ms)
+✖ comments + not-found and payload contract (9.7948ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 3
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 347.3207
+
+✖ failing tests:
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (9.6976ms)
+  AssertionError [ERR_ASSERTION]: {"member":{"duplicate":false,"member":{"projectId":"78ee4f6f-0383-431f-8fc3-fd6e47a6a7a9","userId":"","role":"owner"}}}
+  
+  201 !== 400
+  
+      at expectErrorPayload (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772568337829\node-project-api-large_run_02\workspace\tests\oracle.test.js:43:10)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772568337829\node-project-api-large_run_02\workspace\tests\oracle.test.js:102:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 201,
+    expected: 400,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (9.7948ms)
+  AssertionError [ERR_ASSERTION]: {"comment":{"id":"cfd82f4d-a3d1-4bd7-bb2b-417ba4ce08d3","projectId":"9a866b55-e108-47a5-909f-9dd662ee2203","taskId":"32224a4d-6380-4bc4-9758-6d504884d5b5","message":""}}
+  
+  201 !== 400
+  
+      at expectErrorPayload (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772568337829\node-project-api-large_run_02\workspace\tests\oracle.test.js:43:10)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772568337829\node-project-api-large_run_02\workspace\tests\oracle.test.js:176:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 201,
+    expected: 400,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

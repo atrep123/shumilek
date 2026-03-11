@@ -1,0 +1,57 @@
+test_generate_from_empty_model (test_markov_chain.TestMarkovChain.test_generate_from_empty_model) ... ERROR
+test_generate_from_repeated_characters_model (test_markov_chain.TestMarkovChain.test_generate_from_repeated_characters_model) ... ok
+test_generate_from_single_character_model (test_markov_chain.TestMarkovChain.test_generate_from_single_character_model) ... ERROR
+test_generate_text (test_markov_chain.TestMarkovChain.test_generate_text) ... ok
+test_train_empty_text (test_markov_chain.TestMarkovChain.test_train_empty_text) ... ok
+test_train_model (test_markov_chain.TestMarkovChain.test_train_model) ... FAIL
+test_train_repeated_characters (test_markov_chain.TestMarkovChain.test_train_repeated_characters) ... ok
+test_train_single_character (test_markov_chain.TestMarkovChain.test_train_single_character) ... FAIL
+
+======================================================================
+ERROR: test_generate_from_empty_model (test_markov_chain.TestMarkovChain.test_generate_from_empty_model)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772213425796\workspace\tests\test_markov_chain.py", line 28, in test_generate_from_empty_model
+    generated_text = generate_text(model, length=5)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772213425796\workspace\mini_ai\markov_chain.py", line 15, in generate_text
+    start_char = random.choice(list(model.keys()))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\AppData\Local\Programs\Python\Python312\Lib\random.py", line 347, in choice
+    raise IndexError('Cannot choose from an empty sequence')
+IndexError: Cannot choose from an empty sequence
+
+======================================================================
+ERROR: test_generate_from_single_character_model (test_markov_chain.TestMarkovChain.test_generate_from_single_character_model)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772213425796\workspace\tests\test_markov_chain.py", line 40, in test_generate_from_single_character_model
+    generated_text = generate_text(model, length=5)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772213425796\workspace\mini_ai\markov_chain.py", line 15, in generate_text
+    start_char = random.choice(list(model.keys()))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\AppData\Local\Programs\Python\Python312\Lib\random.py", line 347, in choice
+    raise IndexError('Cannot choose from an empty sequence')
+IndexError: Cannot choose from an empty sequence
+
+======================================================================
+FAIL: test_train_model (test_markov_chain.TestMarkovChain.test_train_model)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772213425796\workspace\tests\test_markov_chain.py", line 13, in test_train_model
+    self.assertEqual(model['l']['l'], 2)
+AssertionError: 1 != 2
+
+======================================================================
+FAIL: test_train_single_character (test_markov_chain.TestMarkovChain.test_train_single_character)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772213425796\workspace\tests\test_markov_chain.py", line 34, in test_train_single_character
+    self.assertIn('a', model)
+AssertionError: 'a' not found in {}
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.004s
+
+FAILED (failures=2, errors=2)

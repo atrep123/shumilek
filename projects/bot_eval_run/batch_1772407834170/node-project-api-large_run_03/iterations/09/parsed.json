@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "// src/modules/comments/service.js\nconst { randomUUID } = require('node:crypto');\n\nmodule.exports = {\n  addComment(projectId, taskId, commentData) {\n    // Implement logic to add a comment to a task in a project\n    // Return the added comment or null if there was an error\n    return {\n      id: randomUUID(),\n      message: commentData.message,\n      createdAt: new Date().toISOString()\n    };\n  }\n};\n"
+    }
+  ],
+  "notes": "Added addComment method to commentsService in src/modules/comments/service.js."
+}

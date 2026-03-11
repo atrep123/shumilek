@@ -1,0 +1,6 @@
+{
+  "review": "Avoid raw throw in src/modules/tasks/service.js: return domain errors and map them to JSON payloads in routes.",
+  "priorityFiles": [
+    "src/modules/tasks/service.js"
+  ]
+}

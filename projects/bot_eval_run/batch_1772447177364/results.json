@@ -1,0 +1,297 @@
+[
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 1,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 348236,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772447177364\\node-project-api-large_run_01",
+    "diagnostics": [
+      "State-sharing mismatch: members service should reuse shared projects repository, not isolated members map/array",
+      "JavaScript syntax check failed in src/modules/tasks/routes.js: C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772447177364\\node-project-api-large_run_01\\workspace\\src\\modules\\tasks\\routes.js:24",
+      "Likely truncated/incomplete JS content in src/modules/tasks/routes.js; regenerate full file content with closed strings and braces.",
+      "Skipped oracle command checks because structural contract did not pass."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 1,
+      "schemaFailures": 1,
+      "jsonRepairFailures": 1,
+      "parseFailures": 2,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 1
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 2,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 579301,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772447177364\\node-project-api-large_run_02",
+    "diagnostics": [
+      "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)",
+      "Contract mismatch: POST /projects/:projectId/members must accept { userId, role } and return 201 for valid payload.",
+      "Contract mismatch: Duplicate member (same userId in one project) must return 409 error payload.",
+      "Contract mismatch: Duplicate member add (same userId in one project) must return HTTP 409 with error payload."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 1,
+      "jsonRepairFailures": 1,
+      "parseFailures": 1,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 3,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 344333,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772447177364\\node-project-api-large_run_03",
+    "diagnostics": [
+      "Route-service contract mismatch (tasks): routes call service.getTasks() but service does not export \"getTasks\".",
+      "Route-service export map required (tasks): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+      "JavaScript syntax check failed in src/modules/tasks/routes.js: C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772447177364\\node-project-api-large_run_03\\workspace\\src\\modules\\tasks\\routes.js:20",
+      "Likely truncated/incomplete JS content in src/modules/tasks/routes.js; regenerate full file content with closed strings and braces.",
+      "Skipped oracle command checks because structural contract did not pass."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 1,
+      "jsonRepairFailures": 1,
+      "parseFailures": 1,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 4,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 618528,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772447177364\\node-project-api-large_run_04",
+    "diagnostics": [
+      "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)",
+      "Contract mismatch: POST /projects/:projectId/members must accept { userId, role } and return 201 for valid payload.",
+      "Contract mismatch: Duplicate member (same userId in one project) must return 409 error payload.",
+      "Contract mismatch: Duplicate member add (same userId in one project) must return HTTP 409 with error payload."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 1,
+      "jsonRepairFailures": 1,
+      "parseFailures": 1,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 5,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 560752,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772447177364\\node-project-api-large_run_05",
+    "diagnostics": [
+      "Missing route signature for /health",
+      "Missing health endpoint declaration in src/app.*: expected app.get(\"/health\", ...).",
+      "Skipped oracle command checks because structural contract did not pass."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 1,
+      "jsonRepairFailures": 1,
+      "parseFailures": 1,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  }
+]

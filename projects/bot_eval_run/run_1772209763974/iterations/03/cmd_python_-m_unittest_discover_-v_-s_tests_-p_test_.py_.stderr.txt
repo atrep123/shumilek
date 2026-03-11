@@ -1,0 +1,15 @@
+test_generate (test_markov.TestMarkovChain.test_generate) ... FAIL
+test_train (test_markov.TestMarkovChain.test_train) ... ok
+
+======================================================================
+FAIL: test_generate (test_markov.TestMarkovChain.test_generate)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772209763974\workspace\tests\test_markov.py", line 19, in test_generate
+    self.assertEqual(len(generated_text), 10)
+AssertionError: 8 != 10
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+FAILED (failures=1)

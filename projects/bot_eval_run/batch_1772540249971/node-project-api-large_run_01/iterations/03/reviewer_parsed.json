@@ -1,0 +1,7 @@
+{
+  "review": "Zkontrolujte, že v souboru src/lib/errors.js definujete objekty error pro 400 a 409 chyby. V soubore tests/oracle.test.js zkontrolujte, že všechny očekávané chybové body mají správně definované pole 'message'.",
+  "priorityFiles": [
+    "src/lib/errors.js",
+    "tests/oracle.test.js"
+  ]
+}

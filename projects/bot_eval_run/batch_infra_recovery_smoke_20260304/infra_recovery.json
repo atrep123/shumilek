@@ -1,0 +1,12 @@
+[
+  {
+    "scenario": "ts-todo-oracle",
+    "runIndex": 2,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_infra_recovery_smoke_20260304\\ts-todo-oracle_run_02",
+    "kind": "ollama_unreachable",
+    "recovered": false,
+    "attempts": 3,
+    "elapsedMs": 6011,
+    "occurredAt": "2026-03-04T22:06:14.842Z"
+  }
+]

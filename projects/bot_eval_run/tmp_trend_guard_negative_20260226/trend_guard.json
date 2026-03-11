@@ -1,0 +1,49 @@
+﻿{
+    "generatedAt":  "2026-02-26T10:18:47.8470867+01:00",
+    "aggregatePath":  "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\tmp_trend_guard_negative_20260226\\stability_aggregate.json",
+    "passed":  false,
+    "violations":  [
+                       {
+                           "scope":  "aggregate",
+                           "message":  "allGatePassed is false"
+                       },
+                       {
+                           "scope":  "scenario",
+                           "scenario":  "node-api-oracle",
+                           "metric":  "rawRunPassRate.min",
+                           "actual":  0.5,
+                           "expected":  1
+                       },
+                       {
+                           "scope":  "scenario",
+                           "scenario":  "node-api-oracle",
+                           "metric":  "fallbackDependencyRunRate.max",
+                           "actual":  0.4,
+                           "expected":  0
+                       },
+                       {
+                           "scope":  "scenario",
+                           "scenario":  "node-api-oracle",
+                           "metric":  "parseErrorRunsTotal",
+                           "planner":  0,
+                           "jsonRepair":  0,
+                           "schema":  0,
+                           "jsonParse":  0,
+                           "placeholder":  0,
+                           "other":  3,
+                           "expectedAllZero":  true
+                       },
+                       {
+                           "scope":  "scenario",
+                           "scenario":  "python-ai-stdlib-oracle",
+                           "metric":  "parseErrorRunsTotal",
+                           "planner":  0,
+                           "jsonRepair":  0,
+                           "schema":  0,
+                           "jsonParse":  0,
+                           "placeholder":  0,
+                           "other":  2,
+                           "expectedAllZero":  true
+                       }
+                   ]
+}

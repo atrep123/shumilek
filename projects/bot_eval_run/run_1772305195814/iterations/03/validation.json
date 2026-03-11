@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Expected at least 12 source files under src/, found 11",
+    "Missing required app entrypoint: src/app.*",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

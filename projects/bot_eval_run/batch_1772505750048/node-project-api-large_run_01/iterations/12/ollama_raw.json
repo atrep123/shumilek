@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:32b",
+  "created_at": "2026-03-03T04:05:18.9922619Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/modules/projects/service.js\",\n      \"content\": \"const { randomUUID } = require('node:crypto');\\n\\nlet projects = {};\\n\\nfunction getAllProjects() {\\n  return Object.values(projects);\\n}\\n\\nfunction getProjectById(id) {\\n  return projects[id] || null;\\n}\\n\\nfunction addProject(name) {\\n  const id = randomUUID();\\n  projects[id] = { id, name };\\n  return projects[id];\\n}\\n\\nmodule.exports = {\\n  getAllProjects,\\n  getProjectById,\\n  addProject\\n};\\n\"\n    },\n    {\n      \"path\": \"src/modules/members/service.js\",\n      \"content\": \"let membersByProject = {};\\n\\nfunction getMembers(projectId) {\\n  return membersByProject[projectId] || [];\\n}\\n\\nfunction addMember(projectId, userId, role) {\\n  if (!membersByProject[projectId]) {\\n    membersByProject[projectId] = [];\\n  }\\n  const member = { userId, role };\\n  membersByProject[projectId].push(member);\\n  return member;\\n}\\n\\nmodule.exports = {\\n  getMembers,\\n  addMember\\n};\\n\"\n    }\n  ],\n  \"notes\": \"Updated projects and members services to export required methods.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 139948902600,
+  "load_duration": 55566730700,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 3844928000,
+  "eval_count": 304,
+  "eval_duration": 74219053700
+}

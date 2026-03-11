@@ -1,0 +1,17 @@
+{
+  "batchId": 1772646608393,
+  "startedAt": "2026-03-04T17:50:08.394Z",
+  "scenarios": [
+    "node-project-api-large"
+  ],
+  "runs": 1,
+  "model": "qwen2.5-coder:32b",
+  "plannerModel": "deepseek-r1:8b",
+  "reviewerModel": "qwen2.5:3b",
+  "jsonRepairModel": "qwen2.5:7b",
+  "deterministicFallbackMode": "on-fail",
+  "timeoutSec": 1200,
+  "maxIterations": 8,
+  "hardTimeoutSec": 1500,
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772646608393"
+}

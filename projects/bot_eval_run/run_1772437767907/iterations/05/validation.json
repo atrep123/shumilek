@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Do not use \"uuid\" package in node-project-api-large; use node:crypto randomUUID instead",
+    "Do not call listen() in src/app.* or src/server.* for node-project-api-large; oracle imports app directly via supertest",
+    "src/app.* must export app (module.exports / exports.app / default export)",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

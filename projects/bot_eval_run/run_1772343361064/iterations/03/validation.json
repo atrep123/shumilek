@@ -1,0 +1,29 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)",
+    "Runtime transport error (EADDRINUSE): avoid auto-listening on fixed ports and export app-only contract for supertest."
+  ],
+  "commands": [
+    {
+      "command": "npm install --no-audit --fund=false",
+      "cwd": "projects\\bot_eval_run\\run_1772343361064\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 3137,
+      "stdout": "\nadded 90 packages in 3s\n",
+      "stderr": "npm warn deprecated supertest@6.3.4: Please upgrade to supertest v7.1.3+, see release notes at https://github.com/forwardemail/supertest/releases/tag/v7.1.3 - maintenance is supported by Forward Email @ https://forwardemail.net\nnpm warn deprecated superagent@8.1.2: Please upgrade to superagent v10.2.2+, see release notes at https://github.com/forwardemail/superagent/releases/tag/v10.2.2 - maintenance is supported by Forward Email @ https://forwardemail.net\n"
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "projects\\bot_eval_run\\run_1772343361064\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 376,
+      "stdout": "✖ health + empty project list (85.6993ms)\n✖ project create/list/get + duplicate + validation (11.1148ms)\n✖ members endpoints (7.7001ms)\n✖ tasks create/list/filter + patch status (7.0432ms)\n✖ comments + not-found and payload contract (6.9132ms)\nℹ tests 5\nℹ suites 0\nℹ pass 0\nℹ fail 5\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 298.727\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:52:1\n✖ health + empty project list (85.6993ms)\n  Error: connect EADDRINUSE 127.0.0.1:49168\n      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {\n    errno: -4091,\n    code: 'EADDRINUSE',\n    syscall: 'connect',\n    address: '127.0.0.1',\n    port: 49168,\n    response: undefined\n  }\n\ntest at tests\\oracle.test.js:65:1\n✖ project create/list/get + duplicate + validation (11.1148ms)\n  Error: connect EADDRINUSE 127.0.0.1:49168\n      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {\n    errno: -4091,\n    code: 'EADDRINUSE',\n    syscall: 'connect',\n    address: '127.0.0.1',\n    port: 49168,\n    response: undefined\n  }\n\ntest at tests\\oracle.test.js:92:1\n✖ members endpoints (7.7001ms)\n  Error: connect EADDRINUSE 127.0.0.1:49168\n      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {\n    errno: -4091,\n    code: 'EADDRINUSE',\n    syscall: 'connect',\n    address: '127.0.0.1',\n    port: 49168,\n    response: undefined\n  }\n\ntest at tests\\oracle.test.js:122:1\n✖ tasks create/list/filter + patch status (7.0432ms)\n  Error: connect EADDRINUSE 127.0.0.1:49168\n      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {\n    errno: -4091,\n    code: 'EADDRINUSE',\n    syscall: 'connect',\n    address: '127.0.0.1',\n    port: 49168,\n    response: undefined\n  }\n\ntest at tests\\oracle.test.js:160:1\n✖ comments + not-found and payload contract (6.9132ms)\n  Error: connect EADDRINUSE 127.0.0.1:49168\n      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {\n    errno: -4091,\n    code: 'EADDRINUSE',\n    syscall: 'connect',\n    address: '127.0.0.1',\n    port: 49168,\n    response: undefined\n  }\n",
+      "stderr": ""
+    }
+  ]
+}

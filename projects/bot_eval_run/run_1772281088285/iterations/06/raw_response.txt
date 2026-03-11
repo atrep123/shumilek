@@ -1,0 +1,37 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"project-management\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple project management API\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\",\n    \"test\": \"node --test tests/oracle.test.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.18.2\"\n  },\n  \"devDependencies\": {\n    \"supertest\": \"^6.3.3\"\n  }\n}\n"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst projectsRoutes = require('./modules/projects/routes');\nconst tasksRoutes = require('./modules/tasks/routes');\nconst membersRoutes = require('./modules/members/routes');\nconst commentsRoutes = require('./modules/comments/routes');\n\nconst app = express();\napp.use(express.json());\n\napp.get('/health', (req, res) => {\n  res.status(200).json({ status: 'ok' });\n});\n\napp.use('/projects', projectsRoutes);\napp.use('/projects/:projectId/tasks', tasksRoutes);\napp.use('/projects/:projectId/members', membersRoutes);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRoutes);\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\nconst { createError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.get('/', async (req, res) => {\n  try {\n    const projects = await service.getAllProjects();\n    res.status(200).json({ projects });\n  } catch (error) {\n    res.status(500).json(createError('internal_error', 'Internal server error'));\n  }\n});\n\nrouter.post('/', async (req, res) => {\n  try {\n    const project = await service.createProject(req.body);\n    res.status(201).json({ project });\n  } catch (error) {\n    res.status(400).json(createError('invalid_data', 'Invalid data provided'));\n  }\n});\n\nrouter.get('/:projectId', async (req, res) => {\n  try {\n    const project = await service.getProjectById(req.params.projectId);\n    if (!project) {\n      return res.status(404).json(createError('not_found', 'Project not found'));\n    }\n    res.status(200).json({ project });\n  } catch (error) {\n    res.status(500).json(createError('internal_error', 'Internal server error'));\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { generateId } = require('../../lib/id');\nlet projects = [];\n\nfunction getAllProjects() {\n  return projects;\n}\n\nasync function createProject(data) {\n  const project = { id: generateId(), ...data };\n  projects.push(project);\n  return project;\n}\n\nfunction getProjectById(id) {\n  return projects.find(p => p.id === id);\n}\n\nmodule.exports = {\n  getAllProjects,\n  createProject,\n  getProjectById\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\nconst { createError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.get('/', async (req, res) => {\n  try {\n    const tasks = await service.getAllTasks(req.params.projectId);\n    if (!tasks) {\n      return res.status(404).json(createError('not_found', 'Project not found'));\n    }\n    res.status(200).json({ tasks });\n  } catch (error) {\n    res.status(500).json(createError('internal_error', 'Internal server error'));\n  }\n});\n\nrouter.post('/', async (req, res) => {\n  try {\n    const task = await service.createTask(req.params.projectId, req.body);\n    if (!task) {\n      return res.status(404).json(createError('not_found', 'Project not found'));\n    }\n    res.status(201).json({ task });\n  } catch (error) {\n    res.status(400).json(createError('invalid_data', 'Invalid data provided'));\n  }\n});\n\nrouter.patch('/:taskId', async (req, res) => {\n  try {\n    const task = await service.updateTask(req.params.projectId, req.params.taskId, req.body);\n    if (!task) {\n      return res.status(404).json(createError('not_found', 'Task not found'));\n    }\n    res.status(200).json({ task });\n  } catch (error) {\n    res.status(500).json(createError('internal_error', 'Internal server error'));\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { generateId } = require('../../lib/id');\nlet tasksByProject = {};\n\nfunction getAllTasks(projectId) {\n  return tasksByProject[projectId] || [];\n}\n\nasync function createTask(projectId, data) {\n  if (!tasksByProject[projectId]) {\n    tasksByProject[projectId] = [];\n  }\n  const task = { id: generateId(), ...data };\n  tasksByProject[projectId].push(task);\n  return task;\n}\n\nfunction updateTask(projectId, taskId, data) {\n  const tasks = tasksByProject[projectId];\n  if (!tasks) {\n    return null;\n  }\n  const taskIndex = tasks.findIndex(t => t.id === taskId);\n  if (taskIndex === -1) {\n    return null;\n  }\n  tasks[taskIndex] = { ...tasks[taskIndex], ...data };\n  return tasks[taskIndex];\n}\n\nmodule.exports = {\n  getAllTasks,\n  createTask,\n  updateTask\n};\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\nconst { createError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.get('/', async (req, res) => {\n  try {\n    const comments = await service.getAllComments(req.params.projectId, req.params.taskId);\n    if (!comments) {\n      return res.status(404).json(createError('not_found', 'Task not found'));\n    }\n    res.status(200).json({ comments });\n  } catch (error) {\n    res.status(500).json(createError('internal_error', 'Internal server error'));\n  }\n});\n\nrouter.post('/', async (req, res) => {\n  try {\n    const comment = await service.createComment(req.params.projectId, req.params.taskId, req.body);\n    if (!comment) {\n      return res.status(404).json(createError('not_found', 'Task not found'));\n    }\n    res.status(201).json({ comment });\n  } catch (error) {\n    res.status(400).json(createError('invalid_data', 'Invalid data provided'));\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { generateId } = require('../../lib/id');\nlet commentsByTask = {};\n\nfunction getAllComments(projectId, taskId) {\n  const taskKey = `${projectId}-${taskId}`;\n  return commentsByTask[taskKey] || [];\n}\n\nasync function createComment(projectId, taskId, data) {\n  const taskKey = `${projectId}-${taskId}`;\n  if (!commentsByTask[taskKey]) {\n    commentsByTask[taskKey] = [];\n  }\n  const comment = { id: generateId(), ...data };\n  commentsByTask[taskKey].push(comment);\n  return comment;\n}\n\nmodule.exports = {\n  getAllComments,\n  createComment\n};\n"
+    }
+  ],
+  "notes": "Added necessary routes and services for projects, tasks, and comments. Ensured consistent error handling and project/task/comment management."
+}

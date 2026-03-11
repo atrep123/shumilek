@@ -1,0 +1,1 @@
+{ "error": "INVALID_PAYLOAD", "message": "Payload must include both userId and role" }

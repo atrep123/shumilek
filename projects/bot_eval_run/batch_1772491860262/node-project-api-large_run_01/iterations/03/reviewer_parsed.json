@@ -1,0 +1,83 @@
+{
+  "src/modules/projects/service.js": {
+    "__botEvalProjectsDupGuard": {
+      "createProject": [
+        {
+          "name": "Alpha",
+          "id": "608f5b91-4c73-42a4-bd8e-05f89370782f"
+        }
+      ]
+    },
+    "createProject": [
+      {
+        "name": "Beta",
+        "id": "c1e6a3b0-0f9d-476f-a144-f3d7f59b501c"
+      },
+      {
+        "name": "Gamma",
+        "id": "826f45d4-8512-47e9-ba8c-55037003565c"
+      }
+    ]
+  },
+  "src/modules/projects/routes.js": {},
+  "src/app.js": {
+    "projectsRoutes": [
+      {
+        "path": "/projects",
+        "method": "POST",
+        "handler": "createProject"
+      },
+      {
+        "path": "/projects/:projectId/members",
+        "method": "POST",
+        "handler": "addMemberToProject"
+      },
+      {
+        "path": "/projects/:projectId/tasks",
+        "method": "GET",
+        "handler": "getTasksForProject"
+      },
+      {
+        "path": "/projects/:projectId/tasks/:taskId/comments",
+        "method": "POST",
+        "handler": "addCommentToTask"
+      }
+    ],
+    "membersRoutes": [
+      {
+        "path": "/projects/:projectId/members",
+        "method": "GET",
+        "handler": "getMembersForProject"
+      },
+      {
+        "path": "/projects/:projectId/tasks/:taskId/comments",
+        "method": "POST",
+        "handler": "addCommentToTask"
+      }
+    ],
+    "tasksRoutes": [
+      {
+        "path": "/projects/:projectId/tasks",
+        "method": "GET",
+        "handler": "getTasksForProject"
+      },
+      {
+        "path": "/projects/:projectId/tasks/:taskId/comments",
+        "method": "POST",
+        "handler": "addCommentToTask"
+      }
+    ],
+    "commentsRoutes": [
+      {
+        "path": "/projects/:projectId/tasks/:taskId/comments",
+        "method": "GET",
+        "handler": "getCommentsForTask"
+      },
+      {
+        "path": "/projects/:projectId/tasks/:taskId/comments/:commentId",
+        "method": "DELETE",
+        "handler": "deleteCommentFromTask"
+      }
+    ]
+  }
+}

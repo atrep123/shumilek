@@ -1,0 +1,1 @@
+src/cli.ts(5,22): error TS2307: Cannot find module 'node:readline' or its corresponding type declarations.

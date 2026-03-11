@@ -1,0 +1,20 @@
+{
+  "mode": "full",
+  "files": [
+    {"path":"README.md","content":""},
+    {"path":"package.json","content":""},
+    {"path":"src/app.js","content":""},
+    {"path":"src/server.js","content":""},
+    {"path":"src/modules/projects/routes.js","content":""},
+    {"path":"src/modules/projects/service.js","content":""},
+    {"path":"src/modules/tasks/routes.js","content":""},
+    {"path":"src/modules/tasks/service.js","content":""},
+    {"path":"src/modules/members/routes.js","content":""},
+    {"path":"src/modules/members/service.js","content":""},
+    {"path":"src/modules/comments/routes.js","content":""},
+    {"path":"src/modules/comments/service.js","content":""},
+    {"path":"src/lib/errors.js","content":""},
+    {"path":"src/lib/id.js","content":""}
+  ],
+  "notes": "Ensure all required files and directories are included. The modular structure under src/modules/projects, tasks, members, comments should be maintained."
+}

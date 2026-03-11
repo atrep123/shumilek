@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing required file: README.md",
+    "Missing route signature for /projects/:projectId/tasks/:taskId/comments",
+    "Error payload contract likely missing: expected { error: { code, message } } handling in API responses",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

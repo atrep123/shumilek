@@ -1,0 +1,5 @@
+
+> shumilek@0.1.0 bot:eval:batch
+> ts-node scripts/botEvalBatch.ts --scenario node-project-api-large --runs 3 --maxIterations 12 --model qwen2.5-coder:14b --plannerModel deepseek-r1:8b --reviewerModel qwen2.5:3b --jsonRepairModel qwen2.5:7b --timeoutSec 1200 --hardTimeoutSec 2400 --outDir projects/bot_eval_run/batch_large_20260301_155906
+
+Running node-project-api-large (1/3)...

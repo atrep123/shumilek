@@ -1,0 +1,4 @@
+{
+  "review": "state-sharing mismatch: members service should reuse shared projects repository, not isolated members map/array",
+  "priorityFiles": ["src/modules/members/service.js", "src/modules/projects/members/routes.js"]
+}

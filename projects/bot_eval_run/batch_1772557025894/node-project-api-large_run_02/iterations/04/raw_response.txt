@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) {\n    return sendError(res, 400, 'INVALID_PAYLOAD', 'Missing userId or role');\n  }\n  const member = service.addMember(req.projectId, { userId, role });\n  if (!member) {\n    return sendError(res, 409, 'DUPLICATE_MEMBER', 'Member already exists');\n  }\n  res.status(201).json({ member });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet membersStore = {};\n\nfunction addMember(projectId, memberData) {\n  if (!membersStore[projectId]) {\n    membersStore[projectId] = [];\n  }\n  const existingMember = membersStore[projectId].find(m => m.userId === memberData.userId);\n  if (existingMember) {\n    return null;\n  }\n  const newMember = { id: randomUUID(), ...memberData };\n  membersStore[projectId].push(newMember);\n  return newMember;\n}\n\nfunction getMembers(projectId) {\n  return membersStore[projectId] || [];\n}\n\nmodule.exports = {\n  addMember,\n  getMembers,\n};\n"
+    }
+  ],
+  "notes": "Fixed validation and handling of userId and role in members routes and service."
+}

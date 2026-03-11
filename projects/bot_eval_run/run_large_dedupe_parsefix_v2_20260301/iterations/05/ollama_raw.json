@@ -1,0 +1,16 @@
+{
+  "model": "deepseek-coder-v2:16b",
+  "created_at": "2026-03-02T00:28:10.6057349Z",
+  "message": {
+    "role": "assistant",
+    "content": "{ \"files\": [ {\"path\":\"src/modules/projects/service.js\",\"content\":\"const { randomUUID } = require('node:crypto');\\nconst projectsMap = new Map();\\n\\nfunction getProject(projectId) {\\n  return projectsMap.get(projectId);\\n}\\n\\nfunction createProject({ name }) {\\n  if (!name) throw new Error('E002', 'Name is required');\\n  const projectId = randomUUID();\\n  const project = { id: projectId, name };\\n  projectsMap.set(projectId, project);\\n  return project;\\n}\\n\\nmodule.exports = { getProject, createProject };\"} ]}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 3728241600,
+  "load_duration": 45739200,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 527522800,
+  "eval_count": 158,
+  "eval_duration": 1184938600
+}

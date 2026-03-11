@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:32b",
+  "created_at": "2026-03-03T08:42:13.0919966Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/modules/projects/service.js\",\n      \"content\": \"const { randomUUID } = require('node:crypto');\\nconst errors = require('../../lib/errors');\\n\\nlet projects = {};\\n\\nfunction getAllProjects() {\\n  return Object.values(projects);\\n}\\n\\nfunction getProjectById(projectId) {\\n  const project = projects[projectId];\\n  if (!project) {\\n    throw new errors.NotFoundError('Project not found');\\n  }\\n  return project;\\n}\\n\\nfunction createProject(name) {\\n  if (!name) {\\n    throw new errors.BadRequestError('Name is required');\\n  }\\n  const projectId = randomUUID();\\n  projects[projectId] = { id: projectId, name, members: [], tasks: [] };\\n  return projects[projectId];\\n}\\n\\nmodule.exports = {\\n  getAllProjects,\\n  getProjectById,\\n  createProject,\\n};\\n\"\n    }\n  ],\n  \"notes\": \"Added getAllProjects method to projects service and ensured proper error handling.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 91006523100,
+  "load_duration": 10975965400,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 4602372900,
+  "eval_count": 244,
+  "eval_duration": 70018553800
+}

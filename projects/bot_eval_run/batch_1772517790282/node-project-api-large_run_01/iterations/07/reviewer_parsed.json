@@ -1,0 +1,7 @@
+{
+  "review": "Route-service contract mismatch (projects): routes call projectsService.getAllProjects() but service does not export \"getAllProjects\". Route-service contract mismatch (tasks): routes call service.updateTask() but service does not export \"updateTask\".",
+  "priorityFiles": [
+    "src/modules/projects/service.js",
+    "src/modules/tasks/service.js"
+  ]
+}

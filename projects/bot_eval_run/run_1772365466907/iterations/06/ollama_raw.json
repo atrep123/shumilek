@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:32b",
+  "created_at": "2026-03-01T12:34:18.9017327Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/app.js\",\n      \"content\": \"const express = require('express');\\nconst projectsRoutes = require('./modules/projects/routes');\\nconst membersRoutes = require('./modules/members/routes');\\ntconst tasksRoutes = require('./modules/tasks/routes');\\nconst commentsRoutes = require('./modules/comments/routes');\\n\\nconst app = express();\\napp.use(express.json());\\n\\napp.get('/health', (req, res) => {\\n  res.json({ ok: true });\\n});\\n\\napp.use('/projects', projectsRoutes);\\napp.use('/projects/:projectId/members', membersRoutes);\\napp.use('/projects/:projectId/tasks', tasksRoutes);\\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRoutes);\\n\\nmodule.exports = app;\\n\"\n    },\n    {\n      \"path\": \"package.json\",\n      \"content\": \"{\\n  \\\"name\\\": \\\"node-project\\\",\\n  \\\"version\\\": \\\"1.0.0\\\",\\n  \\\"description\\\": \\\"\\\",\\n  \\\"main\\\": \\\"src/server.js\\\",\\n  \\\"scripts\\\": {\\n    \\\"start\\\": \\\"node src/server.js\\\"\\n  },\\n  \\\"dependencies\\\": {\\n    \\\"express\\\": \\\"^4.18.2\\\"\\n  },\\n  \\\"devDependencies\\\": {\\n    \\\"supertest\\\": \\\"^6.3.3\\\"\\n  }\\n}\\n\"\n    }\n  ],\n  \"notes\": \"Added /health route and ensured supertest is in devDependencies.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 118790761400,
+  "load_duration": 93577300,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 4516174100,
+  "eval_count": 333,
+  "eval_duration": 107773915500
+}

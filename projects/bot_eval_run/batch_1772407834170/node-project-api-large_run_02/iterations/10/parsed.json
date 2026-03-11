@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "// src/modules/comments/service.js\nconst { randomUUID } = require('node:crypto');\nconst commentsStore = {};\n\nasync function createComment(projectId, taskId, message) {\n  if (!message) {\n    return null; // Return null to indicate validation error\n  }\n  const commentId = randomUUID();\n  const comment = { id: commentId, message };\n  if (!commentsStore[projectId]) {\n    commentsStore[projectId] = {};\n  }\n  if (!commentsStore[projectId][taskId]) {\n    commentsStore[projectId][taskId] = [];\n  }\n  commentsStore[projectId][taskId].push(comment);\n  return comment;\n}\n\nmodule.exports = {\n  createComment,\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "// src/modules/tasks/service.js\nconst { randomUUID } = require('node:crypto');\nconst tasksStore = {};\n\nasync function getAllTasks(projectId) {\n  if (!tasksStore[projectId]) {\n    tasksStore[projectId] = [];\n  }\n  return tasksStore[projectId];\n}\n\nasync function getCommentsForTask(projectId, taskId) {\n  const task = await findTaskById(projectId, taskId);\n  if (!task) {\n    return null; // Return null to indicate not found error\n  }\n  return task.comments || [];\n}\n\nasync function createTask(projectId, title, description) {\n  if (!title || !description) {\n    return null; // Return null to indicate validation error\n  }\n  const taskId = randomUUID();\n  const task = { id: taskId, title, description, status: 'todo', comments: [] };\n  if (!tasksStore[projectId]) {\n    tasksStore[projectId] = [];\n  }\n  tasksStore[projectId].push(task);\n  return task;\n}\n\nasync function updateTaskStatus(projectId, taskId, status) {\n  const validStatuses = ['todo', 'done'];\n  if (!validStatuses.includes(status)) {\n    return null; // Return null to indicate validation error\n  }\n  const task = await findTaskById(projectId, taskId);\n  if (!task) {\n    return null; // Return null to indicate not found error\n  }\n  task.status = status;\n  return task;\n}\n\nasync function findTaskById(projectId, taskId) {\n  const tasks = await getAllTasks(projectId);\n  return tasks.find(task => task.id === taskId);\n}\n\nmodule.exports = {\n  getAllTasks,\n  getCommentsForTask,\n  createTask,\n  updateTaskStatus,\n};\n"
+    }
+  ],
+  "notes": "Updated services to return null for validation and not found errors instead of throwing exceptions."
+}

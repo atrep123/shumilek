@@ -1,0 +1,21 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "qwen2.5-coder:14b",
+      "ok": true,
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    },
+    {
+      "stage": "scenario_contract",
+      "model": "qwen2.5-coder:14b",
+      "ok": true,
+      "error": "Full mode output missing required files (README.md, mini_ai/__init__.py, mini_ai/cli.py); applying as patch to avoid destructive reset",
+      "errorKind": "schema"
+    }
+  ],
+  "finalOk": true
+}

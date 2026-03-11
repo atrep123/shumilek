@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"multi-module-project\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A multi-module project structure for managing projects, tasks, members, and comments.\",\n  \"main\": \"src/app.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\"\n  },\n  \"dependencies\": {},\n  \"devDependencies\": {\n    \"supertest\": \"^6.0.0\"\n  }\n}"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst app = express();\nconst bodyParser = require('body-parser');\nconst projectsRouter = require('./modules/projects/routes').router;\nconst membersRouter = require('./modules/members/routes').router;\nconst tasksRouter = require('./modules/tasks/routes').router;\nconst commentsRouter = require('./modules/comments/routes').router;\n\napp.use(bodyParser.json());\napp.use('/projects', projectsRouter);\napp.use('/projects/:projectId/members', membersRouter);\napp.use('/projects/:projectId/tasks', tasksRouter);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRouter);\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst projectsService = require('./service').service;\nconst sendError = require('../../lib/errors').sendError;\n\nrouter.get('/:projectId', (req, res) => {\n  const project = projectsService.getProject(req.params.projectId);\n  if (!project) return sendError(res, 404, 'E001', 'Project not found');\n  res.json({ project });\n});\n\nmodule.exports = { router };"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst projectsMap = new Map();\n\nfunction getProject(projectId) {\n  return projectsMap.get(projectId);\n}\n\nfunction createProject({ name }) {\n  if (!name) throw new Error('E002', 'Name is required');\n  const projectId = randomUUID();\n  const project = { id: projectId, name };\n  projectsMap.set(projectId, project);\n  return project;\n}\n\nmodule.exports = { getProject, createProject };"
+    }
+  ],
+  "notes": "Added supertest to devDependencies in package.json, mounted routes in app.js, and implemented the GET /:projectId route for projects."
+}

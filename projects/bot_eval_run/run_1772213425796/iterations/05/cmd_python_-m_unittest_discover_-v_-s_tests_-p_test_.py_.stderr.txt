@@ -1,0 +1,26 @@
+test_generate (test_markov_chain.TestMarkovChain.test_generate) ... ok
+test_seed (test_markov_chain.TestMarkovChain.test_seed) ... ok
+test_to_dict_and_from_dict (test_markov_chain.TestMarkovChain.test_to_dict_and_from_dict) ... FAIL
+test_train (test_markov_chain.TestMarkovChain.test_train) ... FAIL
+
+======================================================================
+FAIL: test_to_dict_and_from_dict (test_markov_chain.TestMarkovChain.test_to_dict_and_from_dict)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772213425796\workspace\tests\test_markov_chain.py", line 23, in test_to_dict_and_from_dict
+    self.assertEqual(new_mc.chain, mc.chain)
+AssertionError: {('(', "'", 'h', "'", ',', ' ', "'", 'e', "'[482 chars]'d']} != {('h', 'e'): ['l'], ('e', 'l'): ['l'], ('l',[122 chars]'d']}
+Diff is 756 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_train (test_markov_chain.TestMarkovChain.test_train)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772213425796\workspace\tests\test_markov_chain.py", line 7, in test_train
+    self.assertIn(('he',), mc.chain)
+AssertionError: ('he',) not found in {('h', 'e'): ['l'], ('e', 'l'): ['l'], ('l', 'l'): ['o'], ('l', 'o'): [' '], ('o', ' '): ['w'], (' ', 'w'): ['o'], ('w', 'o'): ['r'], ('o', 'r'): ['l'], ('r', 'l'): ['d']}
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.002s
+
+FAILED (failures=2)

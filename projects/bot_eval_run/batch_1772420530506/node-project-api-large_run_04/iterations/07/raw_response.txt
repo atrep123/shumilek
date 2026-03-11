@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/app.js",
+      "content": "// src/app.js\nconst express = require('express');\nconst projectsRoutes = require('./modules/projects/routes');\nconst membersRoutes = require('./modules/members/routes');\nconst tasksRoutes = require('./modules/tasks/routes');\nconst commentsRoutes = require('./modules/comments/routes');\n\nconst app = express();\napp.use(express.json());\n\n// Health check endpoint\napp.get('/health', (req, res) => {\n  res.json({ ok: true });\n});\n\n// Mount routes\napp.use('/projects', projectsRoutes);\napp.use('/projects/:projectId/members', membersRoutes);\napp.use('/projects/:projectId/tasks', tasksRoutes);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRoutes);\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/server.js",
+      "content": "// src/server.js\nconst http = require('http');\nconst app = require('./app');\n\nconst PORT = process.env.PORT || 3000;\n\nconst server = http.createServer(app);\nserver.listen(PORT, () => {\n  console.log(`Server is running on port ${PORT}`);\n});\n"
+    }
+  ],
+  "notes": "Fixed the app export issue by ensuring src/app.js exports the app instance correctly. Added a minimal server setup in src/server.js to start the server without auto-listening during import."
+}

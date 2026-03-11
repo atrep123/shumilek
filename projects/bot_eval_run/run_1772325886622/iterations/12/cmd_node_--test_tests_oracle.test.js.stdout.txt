@@ -1,0 +1,75 @@
+✖ health + empty project list (101.1251ms)
+✖ project create/list/get + duplicate + validation (32.7204ms)
+✖ members endpoints (17.5372ms)
+✖ tasks create/list/filter + patch status (9.7619ms)
+✖ comments + not-found and payload contract (7.2467ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 332.4404
+
+✖ failing tests:
+
+test at tests\oracle.test.js:52:1
+✖ health + empty project list (101.1251ms)
+  Error: connect EADDRINUSE 127.0.0.1:49158
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+    errno: -4091,
+    code: 'EADDRINUSE',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 49158,
+    response: undefined
+  }
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (32.7204ms)
+  Error: connect EADDRINUSE 127.0.0.1:49158
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+    errno: -4091,
+    code: 'EADDRINUSE',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 49158,
+    response: undefined
+  }
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (17.5372ms)
+  Error: connect EADDRINUSE 127.0.0.1:49158
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+    errno: -4091,
+    code: 'EADDRINUSE',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 49158,
+    response: undefined
+  }
+
+test at tests\oracle.test.js:122:1
+✖ tasks create/list/filter + patch status (9.7619ms)
+  Error: connect EADDRINUSE 127.0.0.1:49158
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+    errno: -4091,
+    code: 'EADDRINUSE',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 49158,
+    response: undefined
+  }
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (7.2467ms)
+  Error: connect EADDRINUSE 127.0.0.1:49158
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+    errno: -4091,
+    code: 'EADDRINUSE',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 49158,
+    response: undefined
+  }

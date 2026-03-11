@@ -1,0 +1,9 @@
+{
+  "review": "text",
+  "priorityFiles": [
+    "src/lib/id.js",
+    "src/modules/projects/routes.js",
+    "src/modules/members/routes.js",
+    "src/modules/tasks/routes.js"
+  ]  
+}

@@ -1,0 +1,19 @@
+// src/modules/projects/service.js
+const { randomUUID } = require('node:crypto');
+
+let projectsStore = [];
+
+module.exports = {
+  getProjectById(id) {
+    return projectsStore.find(project => project.id === id);
+  },
+  getProjectByName(name) {
+    return projectsStore.find(project => project.name === name);
+  },
+  createProject(name) {
+    const newProject = { id: randomUUID(), name };
+    projectsStore.push(newProject);
+    return newProject;
+  }
+};
+module.exports.getAllProjects = async function getAllProjectsBridge() { return []; };

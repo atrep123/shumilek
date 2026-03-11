@@ -1,0 +1,39 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Command failed: python -m unittest discover -v -s tests -p \"test*.py\" (exit=1, timedOut=false)",
+    "Command failed: python -m mini_ai.cli --help (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "python -m compileall -q mini_ai tests",
+      "cwd": "projects\\bot_eval_run\\run_1772213425796\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 71,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "python -m unittest discover -v -s tests -p \"test*.py\"",
+      "cwd": "projects\\bot_eval_run\\run_1772213425796\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 77,
+      "stdout": "",
+      "stderr": "test_generate (test_markov_chain.TestMarkovChain.test_generate) ... ok\r\ntest_seed (test_markov_chain.TestMarkovChain.test_seed) ... ok\r\ntest_to_dict_and_from_dict (test_markov_chain.TestMarkovChain.test_to_dict_and_from_dict) ... FAIL\r\ntest_train (test_markov_chain.TestMarkovChain.test_train) ... FAIL\r\n\r\n======================================================================\r\nFAIL: test_to_dict_and_from_dict (test_markov_chain.TestMarkovChain.test_to_dict_and_from_dict)\r\n----------------------------------------------------------------------\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772213425796\\workspace\\tests\\test_markov_chain.py\", line 23, in test_to_dict_and_from_dict\r\n    self.assertEqual(new_mc.chain, mc.chain)\r\nAssertionError: {('(', \"'\", 'h', \"'\", ',', ' ', \"'\", 'e', \"'[482 chars]'d']} != {('h', 'e'): ['l'], ('e', 'l'): ['l'], ('l',[122 chars]'d']}\r\nDiff is 756 characters long. Set self.maxDiff to None to see it.\r\n\r\n======================================================================\r\nFAIL: test_train (test_markov_chain.TestMarkovChain.test_train)\r\n----------------------------------------------------------------------\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772213425796\\workspace\\tests\\test_markov_chain.py\", line 7, in test_train\r\n    self.assertIn(('he',), mc.chain)\r\nAssertionError: ('he',) not found in {('h', 'e'): ['l'], ('e', 'l'): ['l'], ('l', 'l'): ['o'], ('l', 'o'): [' '], ('o', ' '): ['w'], (' ', 'w'): ['o'], ('w', 'o'): ['r'], ('o', 'r'): ['l'], ('r', 'l'): ['d']}\r\n\r\n----------------------------------------------------------------------\r\nRan 4 tests in 0.002s\r\n\r\nFAILED (failures=2)\r\n"
+    },
+    {
+      "command": "python -m mini_ai.cli --help",
+      "cwd": "projects\\bot_eval_run\\run_1772213425796\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 52,
+      "stdout": "",
+      "stderr": "Traceback (most recent call last):\r\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\r\n  File \"<frozen runpy>\", line 88, in _run_code\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772213425796\\workspace\\mini_ai\\cli.py\", line 6, in <module>\r\n    from mini_ai.markov import MarkovChain\r\nModuleNotFoundError: No module named 'mini_ai.markov'\r\n"
+    }
+  ]
+}

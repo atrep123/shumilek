@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Route-service contract mismatch (tasks): routes call tasksService.addTask() but service does not export \"addTask\".",
+    "Route-service contract mismatch (tasks): routes call tasksService.getTasks() but service does not export \"getTasks\".",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

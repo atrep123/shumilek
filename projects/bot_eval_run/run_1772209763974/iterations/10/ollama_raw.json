@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:32b",
+  "created_at": "2026-02-27T17:32:53.3979541Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"README.md\",\n      \"content\": \"# Mini AI Project\\nA simple character-level Markov chain generator using Python's standard library.\\n\\n## Usage\\n- Train the model: `python -m mini_ai.cli train --input <file> --model-out <output_model_file>`\\n- Generate text: `python -m mini_ai.cli generate --model <model_file> --length <length_of_output_text>`\\n\"\n    },\n    {\n      \"path\": \"mini_ai/__init__.py\",\n      \"content\": \"from . import cli\\n\"\n    },\n    {\n      \"path\": \"tests/test_cli.py\",\n      \"content\": \"import unittest\\nfrom unittest.mock import patch\\nfrom io import StringIO\\nfrom mini_ai.cli import main\\nimport os\\nfrom mini_ai.markov import MarkovChain\\n\\nclass TestCLI(unittest.TestCase):\\n    @patch('sys.argv', ['script.py', 'train', '--input', 'test.txt', '--model-out', 'model.json'])\\n    def test_train_command(self):\\n        with open('test.txt', 'w') as f:\\n            f.write(\\\"hello world\\\")\\n        main()\\n        self.assertTrue(os.path.exists('model.json'))\\n\\n    @patch('sys.argv', ['script.py', 'generate', '--model', 'model.json', '--length', '5'])\\n    @patch('sys.stdout', new_callable=StringIO)\\n    def test_generate_command(self, mock_stdout):\\n        with open('model.json', 'w') as f:\\n            import json\\n            model = MarkovChain(order=1)\\n            model.train(\\\"hello world\\\")\\n            json.dump(model.to_dict(), f)\\n        main()\\n        output = mock_stdout.getvalue().strip()\\n        self.assertEqual(len(output), 5)\\n\"\n    }\n  ],\n  \"notes\": \"Added README.md, mini_ai/__init__.py and fixed the indentation in tests/test_cli.py.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 164512758900,
+  "load_duration": 12695293000,
+  "prompt_eval_count": 1868,
+  "prompt_eval_duration": 11454284100,
+  "eval_count": 427,
+  "eval_duration": 131334658000
+}

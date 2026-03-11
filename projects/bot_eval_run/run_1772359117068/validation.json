@@ -1,0 +1,81 @@
+{
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772359117068",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772359117068\\workspace",
+  "deterministicFallback": {
+    "mode": "on-fail",
+    "tsTodo": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "nodeApi": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "totalActivations": 0,
+    "totalRecoveries": 0,
+    "totalTargetedActivations": 0,
+    "totalTargetedRecoveries": 0,
+    "totalCanonicalActivations": 0,
+    "totalCanonicalRecoveries": 0,
+    "totalRawPasses": 0,
+    "totalRawFailures": 0,
+    "totalRecoveredByFallback": 0,
+    "fallbackDependencyRate": 0
+  },
+  "reliability": {
+    "rawPasses": 0,
+    "rawFailures": 0,
+    "recoveredByFallback": 0,
+    "fallbackDependencyRate": 0
+  },
+  "parseStats": {
+    "plannerFailures": 0,
+    "schemaFailures": 1,
+    "jsonRepairFailures": 1,
+    "parseFailures": 1,
+    "jsonParseFailures": 0,
+    "placeholderFailures": 0,
+    "otherFailures": 0
+  },
+  "ok": false,
+  "diagnostics": [
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)",
+    "Runtime transport error (EADDRINUSE): avoid auto-listening on fixed ports and export app-only contract for supertest."
+  ],
+  "commands": [
+    {
+      "command": "npm install --no-audit --fund=false",
+      "cwd": "projects\\bot_eval_run\\run_1772359117068\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 561,
+      "stdout": "\nup to date in 341ms\n",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "projects\\bot_eval_run\\run_1772359117068\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 399,
+      "stdout": "✔ health + empty project list (127.9223ms)\n✖ project create/list/get + duplicate + validation (18.3891ms)\n✖ members endpoints (11.9187ms)\n✖ tasks create/list/filter + patch status (9.0096ms)\n✖ comments + not-found and payload contract (8.8397ms)\nℹ tests 5\nℹ suites 0\nℹ pass 1\nℹ fail 4\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 340.7282\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:65:1\n✖ project create/list/get + duplicate + validation (18.3891ms)\n  Error: connect EADDRINUSE 127.0.0.1:49178\n      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {\n    errno: -4091,\n    code: 'EADDRINUSE',\n    syscall: 'connect',\n    address: '127.0.0.1',\n    port: 49178,\n    response: undefined\n  }\n\ntest at tests\\oracle.test.js:92:1\n✖ members endpoints (11.9187ms)\n  Error: connect EADDRINUSE 127.0.0.1:49178\n      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {\n    errno: -4091,\n    code: 'EADDRINUSE',\n    syscall: 'connect',\n    address: '127.0.0.1',\n    port: 49178,\n    response: undefined\n  }\n\ntest at tests\\oracle.test.js:122:1\n✖ tasks create/list/filter + patch status (9.0096ms)\n  Error: connect EADDRINUSE 127.0.0.1:49178\n      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {\n    errno: -4091,\n    code: 'EADDRINUSE',\n    syscall: 'connect',\n    address: '127.0.0.1',\n    port: 49178,\n    response: undefined\n  }\n\ntest at tests\\oracle.test.js:160:1\n✖ comments + not-found and payload contract (8.8397ms)\n  Error: connect EADDRINUSE 127.0.0.1:49178\n      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {\n    errno: -4091,\n    code: 'EADDRINUSE',\n    syscall: 'connect',\n    address: '127.0.0.1',\n    port: 49178,\n    response: undefined\n  }\n",
+      "stderr": ""
+    }
+  ]
+}

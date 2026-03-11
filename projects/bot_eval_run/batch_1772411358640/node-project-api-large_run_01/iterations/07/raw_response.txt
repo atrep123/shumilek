@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "// src/modules/projects/routes.js\nconst express = require('express');\nconst router = express.Router();\nconst projectsService = require('../projects/service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.get('/', async (req, res) => {\n  try {\n    const projects = await projectsService.getAllProjects();\n    res.json({ projects });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nrouter.get('/:projectId', async (req, res) => {\n  try {\n    const projectId = req.params.projectId;\n    const project = await projectsService.getProjectById(projectId);\n    if (!project) {\n      return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found');\n    }\n    res.json({ project });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nrouter.post('/', async (req, res) => {\n  try {\n    const { name } = req.body;\n    if (!name || typeof name !== 'string' || name.trim() === '') {\n      return sendError(res, 400, 'INVALID_NAME', 'Name must be a non-empty string');\n    }\n\n    const existingProject = await projectsService.getProjectByName(name);\n    if (existingProject) {\n      return sendError(res, 409, 'PROJECT_ALREADY_EXISTS', 'Project with this name already exists');\n    }\n\n    const project = await projectsService.createProject(name);\n    res.status(201).json({ project });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;\n"
+    }
+  ],
+  "notes": "Added GET /:projectId handler in src/modules/projects/routes.js to retrieve a project by its ID."
+}

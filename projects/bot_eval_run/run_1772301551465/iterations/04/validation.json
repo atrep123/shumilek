@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Ollama request failed: Structured chat failed: The user aborted a request."
+  ]
+}

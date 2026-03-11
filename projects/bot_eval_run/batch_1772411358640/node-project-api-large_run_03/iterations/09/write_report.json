@@ -1,0 +1,8 @@
+{
+  "count": 1,
+  "files": [
+    "src/modules/tasks/service.js"
+  ],
+  "appliedAsPatch": true,
+  "forcePatchFromIncompleteFull": true
+}

@@ -1,0 +1,8 @@
+{
+  "review": "text",
+  "priorityFiles": [
+    "./src/modules/comments/service.js",
+    "./src/modules/members/service.js",
+    "./src/modules/tasks/service.js"
+  ]
+}

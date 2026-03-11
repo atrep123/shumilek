@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Comments contract mismatch: use payload field `message` (not `content`) in comments endpoints",
+    "Comments contract mismatch: comments routes/services should validate and persist `message`",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

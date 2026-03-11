@@ -1,0 +1,19 @@
+{
+  "files": [
+    {"path": "README.md", "content": "# Project Management API\n\nThis is a simple project management API built using Node.js with Express for handling HTTP requests.\nIt includes endpoints for managing projects, tasks, and comments."},
+    {"path": "package.json", "content": "{ \"name\": \"project-management-api\", \"version\": \"1.0.0\", \"main\": \"src/app.js\", \"scripts\": { \"start\": \"node src/server.js\" }, \"dependencies\": { \"express\": \"^4.17.1\", \"crypto\": \"^1.0.0\" } }"},
+    {"path": "src/app.js", "content": "const express = require('express');\nconst app = express();\nconst crypto = require('crypto');\nconst { randomUUID } = require('crypto');\nconst projectsRouter = require('./modules/projects/routes');\nconst tasksRouter = require('./modules/tasks/routes');\nconst membersRouter = require('./modules/members/routes');\nconst commentsRouter = require('./modules/comments/routes');\napp.use(express.json());\napp.get('/health', (req, res) => { res.json({ ok: true }); });\napp.use('/projects', projectsRouter);\napp.use('/projects/:projectId/members', membersRouter);\napp.use('/projects/:projectId/tasks', tasksRouter);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRouter);\nmodule.exports = app;"},
+    {"path": "src/server.js", "content": "const app = require('./app');\nconst port = process.env.PORT || 3000;\napp.listen(port, () => { console.log(`Server running on port ${port}`); });"},
+    {"path": "src/modules/projects/routes.js", "content": "const express = require('express');\nconst router = express.Router();\nconst service = require('./service');\nrouter.post('/', (req, res) => { service.createProject(req, res); });\nmodule.exports = router;"},
+    {"path": "src/modules/projects/service.js", "content": "const createProject = (req, res) => { const projectId = randomUUID(); res.json({ projectId }); };\nmodule.exports = { createProject };"},
+    {"path": "src/modules/tasks/routes.js", "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst service = require('./service');\nrouter.post('/', (req, res) => { service.createTask(req, res); });\nmodule.exports = router;"},
+    {"path": "src/modules/tasks/service.js", "content": "const createTask = (req, res) => { const taskId = randomUUID(); res.json({ task: { id: taskId, title: req.body.title } }); };\nmodule.exports = { createTask };"},
+    {"path": "src/modules/members/routes.js", "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst service = require('./service');\nrouter.post('/', (req, res) => { service.addMember(req, res); });\nmodule.exports = router;"},
+    {"path": "src/modules/members/service.js", "content": "const addMember = (req, res) => { const memberId = randomUUID(); res.json({ member: { userId: req.body.userId, role: req.body.role } }); };\nmodule.exports = { addMember };"},
+    {"path": "src/modules/comments/routes.js", "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst service = require('./service');\nrouter.post('/', (req, res) => { service.addComment(req, res); });\nmodule.exports = router;"},
+    {"path": "src/modules/comments/service.js", "content": "const addComment = (req, res) => { const commentId = randomUUID(); res.json({ comment: { message: req.body.message } }); };\nmodule.exports = { addComment };"},
+    {"path": "src/lib/errors.js", "content": "class CustomError extends Error {\n  constructor(code, message) { super(message); this.code = code; }\n}\nmodule.exports = { CustomError };"},
+    {"path": "src/lib/id.js", "content": "const { randomUUID } = require('crypto');\nmodule.exports = { randomUUID };"}
+  ],
+  "mode": "full"
+}

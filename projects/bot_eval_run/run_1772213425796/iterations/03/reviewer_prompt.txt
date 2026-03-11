@@ -1,0 +1,113 @@
+Jsi code reviewer (mini-validator). Tvuj ukol: navrhnout MINIMALNI opravy, ktere povedou k tomu, ze validace projde.
+Odpovez JEN JSON bez markdownu: { "review": "text", "priorityFiles": ["path1","path2"] }
+
+SPEC (zkraceno):
+Vytvor maly, ale realisticky Python projekt pro "AI" bez externich zavislosti.
+
+Pozadavky:
+- Pouze standardni knihovna Pythonu (zadne numpy/pandas/sklearn/torch/tensorflow/requests).
+- Struktura projektu jako balicek `mini_ai/` + `tests/` + `README.md`.
+- Implementuj jednoduchy model: napr. character-level Markov chain generator + trenovani z textu.
+- Pridat CLI: `python -m mini_ai.cli --help`, `train`, `generate` (offline).
+- Unit testy pres `unittest` (aspon 8 testu / assertu) a musi prochazet.
+
+VYSTUPNI FORMAT (STRICT): vrat JEN JSON objekt tohoto tvaru:
+{
+  "mode": "full",
+  "files": [
+    {"path": "README.md", "content": "...\n"},
+    {"path": "mini_ai/__init__.py", "content": "...\n"},
+    {"path": "mini_ai/...", "content": "...\n"},
+    {"path": "tests/test_....py", "content": "...\n"}
+  ],
+  "notes": "optional"
+}
+
+Pravidla:
+- Zadny markdown, zadne ``` bloky, zadny text mimo JSON.
+- Cesty jsou relativni, pouzij `/`, bez `..` a bez absolutnich cest.
+- Kazdy soubor ukonci znakem noveho radku.
+- "mode" pouzij "full" pro kompletni projekt (v pripade oprav muzes pouzit "patch").
+- `content` je vzdy kompletni obsah souboru (ne diff/snippet).
+
+---
+PLANNER HINTS (planner: deepseek-r1:8b; non-binding, SPEC wins on conflict):
+- [x] Vytvořit strukturu projektu `mini_ai/` a `tests/`
+- [x] Implementovat character-level Markov chain generator v souboru `mini_ai/markov_chain.py`
+- [x] Trenovat model z textu v souboru `mini_ai/cli.py`
+- [x] Přidat CLI funkce `train` a `generate` v souboru `mini_ai/cli.py`
+- [x] Napsat unit testy pro `markov_chain.py` v souboru `tests/test_markov_chain.py`
+- [x] Ujistit se, že testy procházejí pomocí `python -m unittest discover -v -s tests -p "test*.py"`
+- [x] Přidat pomocník CLI s výpisem možností pomocí `python -m mini_ai.cli --help`
+- [x] Ujistit se, že `mini_ai/cli.py` má modul `mini_ai.markov` importován
+- [x] Vytvořit `README.md` s popisem projektu a pokyny pro používání
+
+
+CHYBY:
+- Missing required file: mini_ai/cli.py
+- Command failed: python -m unittest discover -v -s tests -p "test*.py" (exit=1, timedOut=false)
+- Command failed: python -m mini_ai.cli --help (exit=1, timedOut=false)
+
+LOGY (zkraceno):
+- python -m unittest discover -v -s tests -p "test*.py"
+  stderr: "test_empty_chain (test_markov_chain.TestMarkovChain.test_empty_chain) ... ok\r\ntest_generate (test_markov_chain.TestMarkovChain.test_generate) ... ok\r\ntest_random_seed (test_markov_chain.TestMarkovChain.test_random_seed) ... ok\r\ntest_seed (test_markov_chain.TestMarkovChain.test_seed) ... ok\r\ntest_to_dict_and_from_dict (test_markov_chain.TestMarkovChain.test_to_dict_and_from_dict) ... ok\r\ntest_train (test_markov_chain.TestMarkovChain.test_train) ... FAIL\r\n\r\n======================================================================\r\nFAIL: test_train (test_markov_chain.TestMarkovChain.test_train)\r\n----------------------------------------------------------------------\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772213425796\\workspace\\tests\\test_markov_chain.py\", line 8, in test_train\r\n    self.assertIn(('he',), mc.chain)\r\nAssertionError: ('he',) not found in {('h', 'e'): ['l'], ('e', 'l'): ['l'], ('l', 'l'): ['o'], ('l', 'o'): [' '], ('o', ' '): ['w'], (' ', 'w'): ['o'], ('w', 'o'): ['r'], ('o', 'r'): ['l'], ('r', 'l'): ['d']}\r\n\r\n----------------------------------------------------------------------\r\nRan 6 tests in 0.001s\r\n\r\nFAILED (failures=1)\r\n"
+- python -m mini_ai.cli --help
+  stderr: "C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\python.exe: No module named mini_ai.cli\r\n"
+
+SOUBORY (zkraceno):
+- README.md
+- mini_ai/__init__.py
+- mini_ai/__pycache__/__init__.cpython-312.pyc
+- mini_ai/__pycache__/markov_chain.cpython-312.pyc
+- mini_ai/markov_chain.py
+- tests/__pycache__/test_markov_chain.cpython-312.pyc
+- tests/test_markov_chain.py
+
+KONTEXT SOUBORU (zkraceno):
+--- FILE: tests/test_markov_chain.py ---
+import unittest
+from mini_ai.markov_chain import MarkovChain
+
+class TestMarkovChain(unittest.TestCase):
+    def test_train(self):
+        mc = MarkovChain(order=2)
+        mc.train('hello world')
+        self.assertIn(('he',), mc.chain)
+        self.assertIn(('lo',), mc.chain)
+        self.assertIn(('or',), mc.chain)
+
+    def test_generate(self):
+        mc = MarkovChain(order=1)
+        mc.train('abracadabra')
+        generated_text = mc.generate(length=10, random_seed=42)
+        self.assertEqual(len(generated_text), 10)
+
+    def test_to_dict_and_from_dict(self):
+        mc = MarkovChain(order=2)
+        mc.train('hello world')
+        data = mc.to_dict()
+        new_mc = MarkovChain.from_dict(data)
+        self.assertEqual(new_mc.order, mc.order)
+        self.assertEqual(new_mc.chain, mc.chain)
+
+    def test_seed(self):
+        mc = MarkovChain(order=1)
+        mc.train('abracadabra')
+        generated_text_1 = mc.generate(length=10, seed='a', random_seed=42)
+        generated_text_2 = mc.generate(length=10, seed='a', random_seed=42)
+        self.assertEqual(generated_text_1, generated_text_2)
+
+    def test_random_seed(self):
+        mc = MarkovChain(order=1)
+        mc.train('abracadabra')
+        generated_text_1 = mc.generate(length=10, random_seed=42)
+        generated_text_2 = mc.generate(length=10, random_seed=43)
+        self.assertNotEqual(generated_text_1, generated_text_2)
+
+    def test_empty_chain(self):
+        mc = MarkovChain(order=1)
+        with self.assertRaises(KeyError):
+            mc.generate(length=10, seed='a', random_seed=42)
+
+if __name__ == '__main__':
+    unittest.main()

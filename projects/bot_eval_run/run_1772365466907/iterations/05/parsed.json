@@ -1,0 +1,37 @@
+{
+  "files": [
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst { sendError } = require('../../lib/errors');\nconst commentService = require('./service');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const { message } = req.body;\n  if (!message) return sendError(res, 400, 'INVALID_MESSAGE', 'Message is required');\n\n  const projectId = req.params.projectId;\n  const taskId = req.params.taskId;\n  const comment = commentService.addComment(projectId, taskId, message);\n  if (!comment) return sendError(res, 404, 'TASK_NOT_FOUND', 'Task not found');\n\n  res.status(201).json({ comment });\n});\n\nrouter.get('/', (req, res) => {\n  const projectId = req.params.projectId;\n  const taskId = req.params.taskId;\n  const comments = commentService.getCommentsByTask(projectId, taskId);\n  if (!comments) return sendError(res, 404, 'TASK_NOT_FOUND', 'Task not found');\n\n  res.json({ comments });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst { sendError } = require('../../lib/errors');\nmconst memberService = require('./service');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) return sendError(res, 400, 'INVALID_BODY', 'User ID and role are required');\n\n  const projectId = req.params.projectId;\n  const member = memberService.addMember(projectId, userId, role);\n  if (!member) return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found');\n  if (member === 'DUPLICATE') return sendError(res, 409, 'MEMBER_EXISTS', 'Member already exists in the project');\n\n  res.status(201).json({ member });\n});\n\nrouter.get('/', (req, res) => {\n  const projectId = req.params.projectId;\n  const members = memberService.getMembersByProject(projectId);\n  if (!members) return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found');\n\n  res.json({ members });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst projectService = require('../projects/service');\n\nlet members = [];\n\nfunction addMember(projectId, userId, role) {\n  const project = projectService.getProjectById(projectId);\n  if (!project) return null;\n\n  const existingMember = members.find(m => m.projectId === projectId && m.userId === userId);\n  if (existingMember) return 'DUPLICATE';\n\n  const member = { id: randomUUID(), projectId, userId, role };\n  members.push(member);\n  return member;\n}\n\nfunction getMembersByProject(projectId) {\n  const project = projectService.getProjectById(projectId);\n  if (!project) return null;\n\n  return members.filter(m => m.projectId === projectId);\n}\n\nmodule.exports = {\n  addMember,\n  getMembersByProject,\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst { sendError } = require('../../lib/errors');\nconst taskService = require('./service');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const projectId = req.params.projectId;\n  const task = taskService.addTask(projectId);\n  if (!task) return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found');\n\n  res.status(201).json({ task });\n});\n\nrouter.get('/', (req, res) => {\n  const projectId = req.params.projectId;\n  let tasks = taskService.getTasksByProject(projectId);\n  if (!tasks) return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found');\n\n  const status = req.query.status;\n  if (status === 'done') {\n    tasks = tasks.filter(t => t.status === 'done');\n  }\n\n  res.json({ tasks });\n});\n\nrouter.patch('/:taskId', (req, res) => {\n  const projectId = req.params.projectId;\n  const taskId = req.params.taskId;\n  const { status } = req.body;\n  if (!status || !['todo', 'done'].includes(status)) return sendError(res, 400, 'INVALID_STATUS', 'Status must be either todo or done');\n\n  const task = taskService.updateTaskStatus(projectId, taskId, status);\n  if (!task) return sendError(res, 404, 'TASK_NOT_FOUND', 'Task not found');\n\n  res.json({ task });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst projectService = require('../projects/service');\n\nlet tasks = [];\n\nfunction addTask(projectId) {\n  const project = projectService.getProjectById(projectId);\n  if (!project) return null;\n\n  const task = { id: randomUUID(), projectId, status: 'todo' };\n  tasks.push(task);\n  return task;\n}\n\nfunction getTasksByProject(projectId) {\n  const project = projectService.getProjectById(projectId);\n  if (!project) return null;\n\n  return tasks.filter(t => t.projectId === projectId);\n}\n\nfunction updateTaskStatus(projectId, taskId, status) {\n  const taskIndex = tasks.findIndex(t => t.id === taskId && t.projectId === projectId);\n  if (taskIndex === -1) return null;\n\n  tasks[taskIndex].status = status;\n  return tasks[taskIndex];\n}\n\nmodule.exports = {\n  addTask,\n  getTasksByProject,\n  updateTaskStatus,\n};\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst { sendError } = require('../../lib/errors');\nconst projectService = require('./service');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const name = req.body.name;\n  if (!name) return sendError(res, 400, 'INVALID_NAME', 'Name is required');\n\n  const project = projectService.addProject(name);\n  res.status(201).json({ project });\n});\n\nrouter.get('/', (req, res) => {\n  const projects = projectService.getAllProjects();\n  res.json({ projects });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet projects = [];\n\nfunction addProject(name) {\n  const project = { id: randomUUID(), name };\n  projects.push(project);\n  return project;\n}\n\nfunction getAllProjects() {\n  return projects;\n}\n\nfunction getProjectById(id) {\n  return projects.find(p => p.id === id);\n}\n\nmodule.exports = {\n  addProject,\n  getAllProjects,\n  getProjectById,\n};\n"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst projectRoutes = require('./modules/projects/routes');\nconst memberRoutes = require('./modules/members/routes');\nconst taskRoutes = require('./modules/tasks/routes');\nconst commentRoutes = require('./modules/comments/routes');\n\nconst app = express();\napp.use(express.json());\n\napp.use('/projects', projectRoutes);\napp.use('/projects/:projectId/members', memberRoutes);\napp.use('/projects/:projectId/tasks', taskRoutes);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentRoutes);\n\nmodule.exports = app;\n"
+    }
+  ],
+  "notes": "Minimal changes to ensure the application adheres to the oracle contract and fixes the issues mentioned in the logs."
+}

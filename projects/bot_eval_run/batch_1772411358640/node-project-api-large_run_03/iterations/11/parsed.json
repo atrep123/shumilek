@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "// src/modules/comments/service.js\nconst { randomUUID } = require('node:crypto');\nconst tasksService = require('../tasks/service');\nconst { sendError } = require('../../lib/errors');\n\nlet commentsStore = [];\n\nasync function addComment(projectId, taskId, content) {\n  const task = await tasksService.getTasksByStatus(projectId).find(t => t.id === taskId);\n  if (!task) {\n    return null;\n  }\n\n  const comment = { id: randomUUID(), projectId, taskId, content };\n  commentsStore.push(comment);\n  return comment;\n}\n\nmodule.exports = {\n  addComment,\n};\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "// src/modules/members/service.js\nconst { randomUUID } = require('node:crypto');\nconst projectsService = require('../projects/service');\nconst { sendError } = require('../../lib/errors');\n\nlet membersStore = [];\n\nasync function addMember(projectId, userId, role) {\n  const project = await projectsService.getAllProjects().find(p => p.id === projectId);\n  if (!project) {\n    return null;\n  }\n\n  const existingMember = membersStore.find(m => m.projectId === projectId && m.userId === userId);\n  if (existingMember) {\n    return null;\n  }\n\n  const member = { id: randomUUID(), projectId, userId, role };\n  membersStore.push(member);\n  return member;\n}\n\nmodule.exports = {\n  addMember,\n};\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "// src/modules/projects/service.js\nconst { randomUUID } = require('node:crypto');\nconst { sendError } = require('../../lib/errors');\n\nlet projectsStore = [];\n\nasync function createProject(name) {\n  const existingProject = projectsStore.find(project => project.name === name);\n  if (existingProject) {\n    return null;\n  }\n\n  const project = { id: randomUUID(), name };\n  projectsStore.push(project);\n  return project;\n}\n\nasync function getAllProjects() {\n  return projectsStore;\n}\n\nmodule.exports = {\n  createProject,\n  getAllProjects,\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "// src/modules/tasks/service.js\nconst { randomUUID } = require('node:crypto');\nconst projectsService = require('../projects/service');\nconst { sendError } = require('../../lib/errors');\n\nlet tasksStore = [];\n\nasync function createTask(projectId, title) {\n  const project = await projectsService.getAllProjects().find(p => p.id === projectId);\n  if (!project) {\n    return null;\n  }\n\n  const task = { id: randomUUID(), projectId, title, status: 'todo' };\n  tasksStore.push(task);\n  return task;\n}\n\nasync function getTasksByStatus(projectId, status) {\n  const project = await projectsService.getAllProjects().find(p => p.id === projectId);\n  if (!project) {\n    return null;\n  }\n\n  return tasksStore.filter(task => task.projectId === projectId && (status ? task.status === status : true));\n}\n\nasync function updateTaskStatus(projectId, taskId, status) {\n  const project = await projectsService.getAllProjects().find(p => p.id === projectId);\n  if (!project) {\n    return null;\n  }\n\n  const taskIndex = tasksStore.findIndex(task => task.projectId === projectId && task.id === taskId);\n  if (taskIndex === -1) {\n    return null;\n  }\n\n  tasksStore[taskIndex].status = status;\n  return tasksStore[taskIndex];\n}\n\nmodule.exports = {\n  createTask,\n  getTasksByStatus,\n  updateTaskStatus,\n};\n"
+    }
+  ],
+  "notes": "Updated service files to return null instead of throwing errors for domain-specific issues. This allows the route handlers to map these results to appropriate JSON error payloads."
+}

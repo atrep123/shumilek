@@ -1,0 +1,10 @@
+- Create directory structure
+- Initialize package.json with minimal configuration
+- Create openapi.json for API specification
+- Implement server logic in src/server.js
+- Write health check endpoint
+- Write OpenAPI endpoint
+- Write todo CRUD endpoints
+- Persist data to file
+- Ensure no external dependencies
+- Test implementation against oracle tests

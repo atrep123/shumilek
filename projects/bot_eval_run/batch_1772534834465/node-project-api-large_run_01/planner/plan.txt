@@ -1,0 +1,12 @@
+- Initialize the Node.js project with necessary dependencies.
+- Create the directory structure as specified in the SPEC.
+- Implement the `src/app.*` and `src/server.*` files without starting the HTTP listener.
+- Develop the in-memory repositories for projects, tasks, members, and comments under `src/lib/`.
+- Implement the service logic for each module (projects, tasks, members, comments) under `src/modules/*/service.js`.
+- Create the route handlers for each module under `src/modules/*/routes.js`, ensuring they use the services and handle errors as specified.
+- Ensure all endpoints are wired correctly in `src/app.js` using the mount points provided.
+- Implement error handling to return consistent JSON payloads for all types of errors (400, 404, 409).
+- Add validation logic to ensure that requests with missing or invalid data return appropriate 400 responses.
+- Ensure that duplicate entries are handled by returning a 409 response.
+- Write the necessary test cases in `tests/oracle.test.js` to validate the API endpoints and their behavior.
+- Run the build and test commands to ensure everything is working as expected.

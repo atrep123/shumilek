@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Route-service contract mismatch (comments): routes call commentsService.getAllComments() but service does not export \"getAllComments\".",
+    "Route-service contract mismatch (comments): routes call commentsService.addComment() but service does not export \"addComment\".",
+    "Route-service export map required (comments): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

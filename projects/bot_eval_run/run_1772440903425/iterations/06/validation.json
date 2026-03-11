@@ -1,0 +1,26 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Route-service contract mismatch (projects): routes call service.getTasksByProject() but service does not export \"getTasksByProject\".",
+    "Route-service contract mismatch (tasks): routes call service.getTasksByProject() but service does not export \"getTasksByProject\".",
+    "Status code contract mismatch: POST /projects should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/members should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/tasks should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/tasks/:taskId/comments should return HTTP 201 on create.",
+    "Invalid package.json: Unexpected non-whitespace character after JSON at position 16 (line 1 column 17)",
+    "JavaScript syntax check failed in src/app.js: node:internal/modules/package_json_reader:208",
+    "JavaScript syntax check failed in src/lib/errors.js: node:internal/modules/package_json_reader:208",
+    "JavaScript syntax check failed in src/lib/id.js: node:internal/modules/package_json_reader:208",
+    "JavaScript syntax check failed in src/modules/comments/routes.js: node:internal/modules/package_json_reader:208",
+    "JavaScript syntax check failed in src/modules/comments/service.js: node:internal/modules/package_json_reader:208",
+    "JavaScript syntax check failed in src/modules/members/routes.js: node:internal/modules/package_json_reader:208",
+    "JavaScript syntax check failed in src/modules/members/service.js: node:internal/modules/package_json_reader:208",
+    "JavaScript syntax check failed in src/modules/projects/routes.js: node:internal/modules/package_json_reader:208",
+    "JavaScript syntax check failed in src/modules/projects/service.js: node:internal/modules/package_json_reader:208",
+    "JavaScript syntax check failed in src/modules/tasks/routes.js: node:internal/modules/package_json_reader:208",
+    "JavaScript syntax check failed in src/modules/tasks/service.js: node:internal/modules/package_json_reader:208",
+    "JavaScript syntax check failed in src/server.js: node:internal/modules/package_json_reader:208",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

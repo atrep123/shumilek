@@ -1,0 +1,3 @@
+primaryModel=qwen2.5-coder:32b
+fallbackModels=qwen2.5-coder:7b, qwen2.5:7b, qwen2.5:3b
+error=Structured chat failed: The user aborted a request.

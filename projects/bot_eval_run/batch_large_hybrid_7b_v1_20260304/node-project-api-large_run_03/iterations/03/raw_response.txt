@@ -1,0 +1,16 @@
+{
+  "files": [
+    {
+      "path": "src/lib/id.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nfunction generateId() {\n  return randomUUID();\n}\n\nmodule.exports = { generateId };"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { generateId } = require('../../lib/id');\nconst projects = [];\n\nasync function getAllProjects() { return [...projects]; }\n\nasync function getProjectById(projectId) { return projects.find(project => String(project.id) === String(projectId)) || null; }\n\nasync function getProjectByName(name) { return projects.find(project => String(project.name) === String(name)) || null; }\n\nasync function createProject(name) {\n  const project = { id: generateId(), name: String(name || \"\").trim() };\n  projects.push(project);\n  return project;\n}\n\nmodule.exports = { getAllProjects, getProjectById, getProjectByName, createProject, projects };"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const router = require('express').Router();\nconst projectsService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.get('/', async (_req, res) => res.json({ projects: await projectsService.getAllProjects() }));\n\nrouter.post('/', async (req, res) => {\n  const name = String(req.body?.name || \"\").trim();\n  if (!name) return sendError(res, 400, 'BAD_REQUEST', 'Project name is required');\n  const duplicate = await projectsService.getProjectByName(name);\n  if (duplicate) return sendError(res, 409, 'PROJECT_DUPLICATE', 'Project already exists');\n  const project = await projectsService.createProject(name);\n  if (!project) return sendError(res, 409, 'PROJECT_DUPLICATE', 'Project already exists');\n  return res.status(201).json({ project });\n});\n\nrouter.get('/:projectId', async (req, res) => {\n  const project = await projectsService.getProjectById(req.params.projectId);\n  if (!project) return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found');\n  return res.json({ project });\n});\n\nmodule.exports = router;"
+    }
+  ]
+}

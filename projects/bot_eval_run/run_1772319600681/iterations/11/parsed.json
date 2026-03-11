@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst { sendError } = require('../../lib/errors');\nconst taskService = require('./service');\n\nconst router = express.Router();\n\nrouter.get('/', (req, res) => {\n  const statusFilter = req.query.status;\n  let tasks = taskService.getAllTasks();\n\n  if (statusFilter) {\n    tasks = tasks.filter(task => task.status === statusFilter);\n  }\n\n  res.json({ tasks });\n});\n\nrouter.post('/', (req, res) => {\n  const { title } = req.body;\n  if (!title) {\n    return sendError(res, 400, 'INVALID_TITLE', 'Title is required');\n  }\n\n  const task = taskService.createTask(title);\n  res.status(201).json({ task });\n});\n\nrouter.patch('/:taskId', (req, res) => {\n  const { taskId } = req.params;\n  const { status } = req.body;\n\n  if (!['todo', 'done'].includes(status)) {\n    return sendError(res, 400, 'INVALID_STATUS', 'Status must be either todo or done');\n  }\n\n  const task = taskService.updateTask(taskId, { status });\n  if (!task) {\n    return sendError(res, 404, 'TASK_NOT_FOUND', 'Task not found');\n  }\n\n  res.json({ task });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst projectStore = require('../projects/store');\n\nfunction getAllTasks() {\n  return Object.values(projectStore.tasks);\n}\n\nfunction createTask(title) {\n  const taskId = randomUUID();\n  const task = { id: taskId, title, status: 'todo' };\n  projectStore.tasks[taskId] = task;\n  return task;\n}\n\nfunction updateTask(taskId, updates) {\n  if (!projectStore.tasks[taskId]) {\n    return null;\n  }\n\n  Object.assign(projectStore.tasks[taskId], updates);\n  return projectStore.tasks[taskId];\n}\n\nmodule.exports = { getAllTasks, createTask, updateTask };\n"
+    }
+  ],
+  "notes": "Updated tasks routes and service to handle status filtering, task creation with title validation, and task updating with status validation."
+}

@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Task filtering contract mismatch: support ?status=todo|done and PATCH status updates.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

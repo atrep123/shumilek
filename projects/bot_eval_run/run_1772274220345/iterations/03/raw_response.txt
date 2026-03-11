@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"node-project\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A Node.js project with modular structure\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\",\n    \"test\": \"node --test tests/oracle.test.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.18.2\"\n  },\n  \"devDependencies\": {\n    \"supertest\": \"^6.3.3\"\n  }\n}\n"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst app = express();\n\napp.use(express.json());\n\n// Health endpoint\napp.get('/health', (req, res) => {\n  res.status(200).json({ ok: true });\n});\n\n// Import modules\nrequire('./modules/projects/routes')(app);\nrequire('./modules/tasks/routes')(app);\nrequire('./modules/members/routes')(app);\nrequire('./modules/comments/routes')(app);\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/server.js",
+      "content": "const app = require('./app');\nconst PORT = process.env.PORT || 3000;\n\napp.listen(PORT, () => {\n  console.log(`Server is running on port ${PORT}`);\n});\n"
+    }
+  ],
+  "notes": "Added supertest to devDependencies and corrected the export in src/app.js."
+}

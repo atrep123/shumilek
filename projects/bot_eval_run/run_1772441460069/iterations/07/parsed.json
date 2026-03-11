@@ -1,0 +1,61 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { getProjectById } = require('./service');\n\nrouter.get('/:projectId', async (req, res) => {\n  const project = await getProjectById(req.params.projectId);\n  if (!project) return sendError(res, 404, 'NOT_FOUND', 'Project not found');\n  res.json({ project });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { v4: uuidv4 } = require('uuid');\nconst projects = {};\n\nexport function getProjectById(projectId) {\n  return projects[projectId];\n}\n\nexport function createProject(name) {\n  if (!name) throw new BadRequestError('Name is required');\n  const projectId = uuidv4();\n  projects[projectId] = { id: projectId, name };\n  return projects[projectId];\n}\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst { createMember } = require('./service');\n\nrouter.post('/', async (req, res) => {\n  const member = await createMember(req.params.projectId, req.body);\n  if (!member) return sendError(res, 400, 'INVALID_DATA', 'Invalid data provided');\n  res.status(201).json({ member });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { v4: uuidv4 } = require('uuid');\nconst projects = {};\nconst members = {};\n\nexport function createMember(projectId, memberData) {\n  if (!memberData.userId || !memberData.role) throw new BadRequestError('UserId and role are required');\n  const memberId = uuidv4();\n  if (!projects[projectId]) return null;\n  members[memberId] = { id: memberId, ...memberData };\n  projects[projectId].members = projects[projectId].members || {};\n  projects[projectId].members[memberId] = members[memberId];\n  return members[memberId];\n}\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst { createTask, updateTaskStatus, getTasksByStatus } = require('./service');\n\nrouter.post('/', async (req, res) => {\n  const task = await createTask(req.params.projectId, req.body);\n  if (!task) return sendError(res, 400, 'INVALID_DATA', 'Invalid data provided');\n  res.status(201).json({ task });\n});\n\nrouter.patch('/:taskId', async (req, res) => {\n  const task = await updateTaskStatus(req.params.projectId, req.params.taskId, req.body);\n  if (!task) return sendError(res, 404, 'NOT_FOUND', 'Task not found');\n  res.json({ task });\n});\n\nrouter.get('/', async (req, res) => {\n  const tasks = await getTasksByStatus(req.params.projectId, req.query.status);\n  if (!tasks) return sendError(res, 404, 'NOT_FOUND', 'Tasks not found');\n  res.json({ tasks });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { v4: uuidv4 } = require('uuid');\nconst projects = {};\nconst tasks = {};\nexport function createTask(projectId, taskData) {\n  if (!taskData.name) throw new BadRequestError('Name is required');\n  const taskId = uuidv4();\n  if (!projects[projectId]) return null;\n  tasks[taskId] = { id: taskId, ...taskData, status: 'todo' };\n  projects[projectId].tasks = projects[projectId].tasks || {};\n  projects[projectId].tasks[taskId] = tasks[taskId];\n  return tasks[taskId];\n}\nexport function updateTaskStatus(projectId, taskId, { status }) {\n  if (status !== 'todo' && status !== 'done') throw new BadRequestError('Invalid status');\n  const task = projects[projectId]?.tasks?.[taskId];\n  if (!task) return null;\ntask.status = status;\nreturn task;\n}\nexport function getTasksByStatus(projectId, status) {\n  if (status !== 'done') throw new BadRequestError('Invalid status filter');\n  const project = projects[projectId];\n  if (!project) return null;\n  const doneTasks = Object.values(project.tasks).filter(task => task.status === 'done');\n  return doneTasks;\n}\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst { createComment } = require('./service');\n\nrouter.post('/', async (req, res) => {\n  const comment = await createComment(req.params.projectId, req.params.taskId, req.body);\n  if (!comment) return sendError(res, 400, 'INVALID_DATA', 'Invalid data provided');\n  res.status(201).json({ comment });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { v4: uuidv4 } = require('uuid');\nconst projects = {};\nconst comments = {};\nexport function createComment(projectId, taskId, commentData) {\n  if (!commentData.message) throw new BadRequestError('Message is required');\n  const commentId = uuidv4();\n  if (!projects[projectId] || !projects[projectId].tasks?.[taskId]) return null;\n  comments[commentId] = { id: commentId, ...commentData };\n  projects[projectId].tasks[taskId].comments = projects[projectId].tasks[taskId].comments || {};\n  projects[projectId].tasks[taskId].comments[commentId] = comments[commentId];\n  return comments[commentId];\n}\n"
+    },
+    {
+      "path": "README.md",
+      "content": "# My Project\n\nThis is a sample project for demonstration purposes.\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"my-project\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A sample Node.js project\",\n  \"main\": \"src/app.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\"\n  },\n  \"dependencies\": {},\n  \"devDependencies\": {\n    \"supertest\": \"^6.0.0\"\n  }\n}"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst app = express();\nconst { randomUUID } = require('node:crypto');\nconst { sendError } = require('../../lib/errors');\n\n// Middleware to parse JSON bodies\napp.use(express.json());\n\n// Health check endpoint\napp.get('/health', (req, res) => {\n  res.json({ ok: true });\n});\n\n// Project routes\nconst projectsRouter = require('./modules/projects/routes');\napp.use('/projects', projectsRouter);\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/server.js",
+      "content": "const http = require('http');\nconst app = require('./app');\n\nconst server = http.createServer(app);\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "const sendError = (res, status, code, message) => {\n  res.status(status).json({ error: { code, message } });\n};\nexports.sendError = sendError;"
+    },
+    {
+      "path": "src/lib/id.js",
+      "content": "const { randomUUID } = require(\"node:crypto\");\nmodule.exports = {\n  generateId() {\n    return randomUUID();\n  }\n};\n"
+    }
+  ],
+  "notes": "Optional notes about the changes."
+}

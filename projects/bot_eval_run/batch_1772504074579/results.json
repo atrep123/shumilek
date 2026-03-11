@@ -1,0 +1,60 @@
+[
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 1,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 211251,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772504074579\\node-project-api-large_run_01",
+    "diagnostics": [
+      "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)",
+      "Contract mismatch: avoid swallowing domain/service contract errors as generic INTERNAL_ERROR 500 responses.",
+      "Contract mismatch: API must never return HTML error pages; return JSON error payloads even on failures."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 1,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 1
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  }
+]

@@ -1,0 +1,50 @@
+✖ GET /health + GET /openapi.json (46.2186ms)
+✖ Todo CRUD + persistence (18.3306ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 121.7515
+
+✖ failing tests:
+
+test at tests\oracle.test.js:39:1
+✖ GET /health + GET /openapi.json (46.2186ms)
+  TypeError: fetch failed
+      at node:internal/deps/undici/undici:15845:13
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async requestJson (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_local_10x3_after_13a3703_20260224_224441\node-api-oracle_run_02\workspace\tests\oracle.test.js:26:15)
+      at async TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_local_10x3_after_13a3703_20260224_224441\node-api-oracle_run_02\workspace\tests\oracle.test.js:44:20)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    [cause]: Error: connect EADDRINUSE 127.0.0.1:49169
+        at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+      errno: -4091,
+      code: 'EADDRINUSE',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 49169
+    }
+  }
+
+test at tests\oracle.test.js:59:1
+✖ Todo CRUD + persistence (18.3306ms)
+  TypeError: fetch failed
+      at node:internal/deps/undici/undici:15845:13
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async requestJson (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_local_10x3_after_13a3703_20260224_224441\node-api-oracle_run_02\workspace\tests\oracle.test.js:26:15)
+      at async TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_local_10x3_after_13a3703_20260224_224441\node-api-oracle_run_02\workspace\tests\oracle.test.js:65:21)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    [cause]: Error: connect EADDRINUSE 127.0.0.1:49169
+        at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+      errno: -4091,
+      code: 'EADDRINUSE',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 49169
+    }
+  }

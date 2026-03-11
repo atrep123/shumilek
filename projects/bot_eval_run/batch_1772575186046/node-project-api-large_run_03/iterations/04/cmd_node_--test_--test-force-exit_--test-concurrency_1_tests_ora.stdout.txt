@@ -1,0 +1,65 @@
+✖ health + empty project list (82.885ms)
+✖ project create/list/get + duplicate + validation (27.9187ms)
+✖ members endpoints (12.2133ms)
+✔ tasks create/list/filter + patch status (20.11ms)
+✔ comments + not-found and payload contract (18.3905ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 2
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 311.8599
+
+✖ failing tests:
+
+test at tests\oracle.test.js:52:1
+✖ health + empty project list (82.885ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(Array.isArray(list.body?.projects))
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772575186046\node-project-api-large_run_03\workspace\tests\oracle.test.js:61:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (27.9187ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(Array.isArray(list.body?.projects))
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772575186046\node-project-api-large_run_03\workspace\tests\oracle.test.js:80:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (12.2133ms)
+  TypeError: Cannot read properties of undefined (reading 'find')
+      at addMember (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772575186046\node-project-api-large_run_03\workspace\src\modules\members\service.js:7:42)
+      at Object.addMember (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772575186046\node-project-api-large_run_03\workspace\src\modules\members\service.js:31:20)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772575186046\node-project-api-large_run_03\workspace\src\modules\members\routes.js:9:40
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772575186046\node-project-api-large_run_03\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772575186046\node-project-api-large_run_03\workspace\node_modules\express\lib\router\route.js:149:13)
+      at Route.dispatch (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772575186046\node-project-api-large_run_03\workspace\node_modules\express\lib\router\route.js:119:3)
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772575186046\node-project-api-large_run_03\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772575186046\node-project-api-large_run_03\workspace\node_modules\express\lib\router\index.js:284:15
+      at router.process_params (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772575186046\node-project-api-large_run_03\workspace\node_modules\express\lib\router\index.js:346:12)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772575186046\node-project-api-large_run_03\workspace\node_modules\express\lib\router\index.js:280:10)

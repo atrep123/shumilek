@@ -1,0 +1,23 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "qwen2.5-coder:14b",
+      "ok": true,
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    },
+    {
+      "stage": "scenario_contract",
+      "model": "qwen2.5-coder:14b",
+      "ok": false,
+      "error": "Large scenario requires mode \"full\" after structural contract failures; mode \"patch\" is not allowed for this iteration.",
+      "errorKind": "schema"
+    }
+  ],
+  "finalOk": false,
+  "finalError": "Large scenario requires mode \"full\" after structural contract failures; mode \"patch\" is not allowed for this iteration.",
+  "finalErrorKind": "schema"
+}

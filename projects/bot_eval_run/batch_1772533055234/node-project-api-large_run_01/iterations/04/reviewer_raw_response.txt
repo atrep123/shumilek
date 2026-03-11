@@ -1,0 +1,63 @@
+{
+  "summary": "The tests are failing because the `members` endpoints are not implemented in the application. The test suite is trying to make requests to `/projects/:projectId/members`, but there's no corresponding route or service implementation.",
+  "recommendations": [
+    {
+      "step": "Implement the missing routes and services",
+      "details": "You need to add the necessary routes and services for handling member-related operations. Specifically, you should implement the following endpoints in your application:\n\n1. POST `/projects/:projectId/members` - To create a new member.\n2. GET `/projects/:projectId/members` - To list all members of a project.",
+      "code_snippet": [
+        "```javascript",
+        "const express = require('express');",
+        "const service = require('./service');",
+        "const { sendError, errorHandler } = require('../../lib/errors');",
+        "",
+        "const router = express.Router();",
+        "",
+        "router.post('/', async (req, res) => {",
+        "  try {",
+        "    const member = await service.addMember(req.params.projectId, req.body);",
+        "    if (!member) return sendError(res, 409, 'MEMBER_DUPLICATE', 'Member already exists');",
+        "    res.status(201).json({ member });",
+        "  } catch (error) {",
+        "    errorHandler(res, error);",
+        "  }",
+        "});",
+        "",
+        "router.get('/', async (req, res) => {",
+        "  try {",
+        "    const members = await service.getAllMembers(req.params.projectId);",
+        "    if (!members) return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found');",
+        "    res.status(200).json({ members });",
+        "  } catch (error) {",
+        "    errorHandler(res, error);",
+        "  }",
+        "});",
+        "",
+        "module.exports = router;",
+        "```"
+      ]
+    },
+    {
+      "step": "Ensure the service layer is updated",
+      "details": "Make sure that your `service` module has methods for adding and retrieving members. For example, you might have something like this in your `service.js`:",
+      "code_snippet": [
+        "```javascript",
+        "const Member = require('./models/Member');",
+        "",
+        "async function addMember(projectId, memberData) {",
+        "  const existingMember = await Member.findOne({ projectId, userId: memberData.userId });",
+        "  if (existingMember) return null;",
+        "  const newMember = new Member(memberData);",
+        "  await newMember.save();",
+        "  return newMember;",
+        "}",
+        "",
+        "async function getAllMembers(projectId) {",
+        "  return Member.find({ projectId });",
+        "}",
+        "",
+        "module.exports = { addMember, getAllMembers };",
+        "```"
+      ]
+    }
+  ]
+}

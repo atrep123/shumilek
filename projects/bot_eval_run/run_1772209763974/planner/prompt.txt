@@ -1,0 +1,47 @@
+Jsi planner. Navrhni implementacni plan tak, aby projekt prosiel oracle testy a validaci.
+Odpovez JEN JSON bez markdownu: { "plan": "..." }
+
+SPEC:
+Vytvor maly, ale realisticky Python projekt pro "AI" bez externich zavislosti.
+
+Pozadavky:
+- Pouze standardni knihovna Pythonu (zadne numpy/pandas/sklearn/torch/tensorflow/requests).
+- Struktura projektu jako balicek `mini_ai/` + `tests/` + `README.md`.
+- Implementuj jednoduchy model: napr. character-level Markov chain generator + trenovani z textu.
+- Pridat CLI: `python -m mini_ai.cli --help`, `train`, `generate` (offline).
+- Unit testy pres `unittest` (aspon 8 testu / assertu) a musi prochazet.
+
+VYSTUPNI FORMAT (STRICT): vrat JEN JSON objekt tohoto tvaru:
+{
+  "mode": "full",
+  "files": [
+    {"path": "README.md", "content": "...\n"},
+    {"path": "mini_ai/__init__.py", "content": "...\n"},
+    {"path": "mini_ai/...", "content": "...\n"},
+    {"path": "tests/test_....py", "content": "...\n"}
+  ],
+  "notes": "optional"
+}
+
+Pravidla:
+- Zadny markdown, zadne ``` bloky, zadny text mimo JSON.
+- Cesty jsou relativni, pouzij `/`, bez `..` a bez absolutnich cest.
+- Kazdy soubor ukonci znakem noveho radku.
+- "mode" pouzij "full" pro kompletni projekt (v pripade oprav muzes pouzit "patch").
+- `content` je vzdy kompletni obsah souboru (ne diff/snippet).
+
+Pozadavky na plan:
+- Strucny seznam kroku (max 12) ve formatu seznamu (radky zacinaji "- ").
+- konkretni seznam souboru a co v nich bude,
+- kontrolni body (build/test).
+- pokud je konflikt, prioritu ma puvodni SPEC, ne plan.
+
+FAILURE CONTEXT (planner-on-fail trigger):
+- Command failed: python -m unittest discover -v -s tests -p "test*.py" (exit=1, timedOut=false)
+- Command failed: python -m mini_ai.cli --help (exit=1, timedOut=false)
+
+FAILED COMMAND LOGS (zkraceno):
+- python -m unittest discover -v -s tests -p "test*.py"
+  stderr: "test_markov_chain (unittest.loader._FailedTest.test_markov_chain) ... ERROR\r\n\r\n======================================================================\r\nERROR: test_markov_chain (unittest.loader._FailedTest.test_markov_chain)\r\n----------------------------------------------------------------------\r\nImportError: Failed to import test module: test_markov_chain\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\loader.py\", line 396, in _find_test_path\r\n    module = self._get_module_from_name(name)\r\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\loader.py\", line 339, in _get_module_from_name\r\n    __import__(name)\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\tests\\test_markov_chain.py\", line 2, in <module>\r\n    from mini_ai.markov_chain import MarkovChain\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\mini_ai\\__init__.py\", line 2, in <module>\r\n    from .cli import main\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\mini_ai\\cli.py\", line 6, in <module>\r\n    from mini_ai.markov import MarkovChain\r\nModuleNotFoundError: No module named 'mini_ai.markov'\r\n\r\n\r\n----------------------------------------------------------------------\r\nRan 1 test in 0.000s\r\n\r\nFAILED (errors=1)\r\n"
+- python -m mini_ai.cli --help
+  stderr: "Traceback (most recent call last):\r\n  File \"<frozen runpy>\", line 189, in _run_module_as_main\r\n  File \"<frozen runpy>\", line 112, in _get_module_details\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\mini_ai\\__init__.py\", line 2, in <module>\r\n    from .cli import main\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\mini_ai\\cli.py\", line 6, in <module>\r\n    from mini_ai.markov import MarkovChain\r\nModuleNotFoundError: No module named 'mini_ai.markov'\r\n"

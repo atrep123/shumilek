@@ -1,0 +1,20 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Deterministic fallback activated (node-api-oracle, mode=on-fail, tier=canonical) but validation still failed.",
+    "Retried node-api oracle command 2x after transient transport failure.",
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_local_10x3_after_13a3703_20260224_224441\\node-api-oracle_run_02\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 187,
+      "stdout": "✖ GET /health + GET /openapi.json (46.2186ms)\n✖ Todo CRUD + persistence (18.3306ms)\nℹ tests 2\nℹ suites 0\nℹ pass 0\nℹ fail 2\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 121.7515\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:39:1\n✖ GET /health + GET /openapi.json (46.2186ms)\n  TypeError: fetch failed\n      at node:internal/deps/undici/undici:15845:13\n      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n      at async requestJson (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_local_10x3_after_13a3703_20260224_224441\\node-api-oracle_run_02\\workspace\\tests\\oracle.test.js:26:15)\n      at async TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_local_10x3_after_13a3703_20260224_224441\\node-api-oracle_run_02\\workspace\\tests\\oracle.test.js:44:20)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    [cause]: Error: connect EADDRINUSE 127.0.0.1:49169\n        at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {\n      errno: -4091,\n      code: 'EADDRINUSE',\n      syscall: 'connect',\n      address: '127.0.0.1',\n      port: 49169\n    }\n  }\n\ntest at tests\\oracle.test.js:59:1\n✖ Todo CRUD + persistence (18.3306ms)\n  TypeError: fetch failed\n      at node:internal/deps/undici/undici:15845:13\n      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n      at async requestJson (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_local_10x3_after_13a3703_20260224_224441\\node-api-oracle_run_02\\workspace\\tests\\oracle.test.js:26:15)\n      at async TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_local_10x3_after_13a3703_20260224_224441\\node-api-oracle_run_02\\workspace\\tests\\oracle.test.js:65:21)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    [cause]: Error: connect EADDRINUSE 127.0.0.1:49169\n        at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {\n      errno: -4091,\n      code: 'EADDRINUSE',\n      syscall: 'connect',\n      address: '127.0.0.1',\n      port: 49169\n    }\n  }\n",
+      "stderr": ""
+    }
+  ]
+}

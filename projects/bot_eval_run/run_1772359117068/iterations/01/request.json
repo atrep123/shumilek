@@ -1,0 +1,24 @@
+{
+  "model": "qwen2.5-coder:32b",
+  "baseUrl": "http://localhost:11434",
+  "transport": "generate",
+  "formatKind": "json",
+  "schemaUsed": false,
+  "fallbackUsed": true,
+  "fallbackReason": "request to http://localhost:11434/api/chat failed, reason: ",
+  "usedFormatJson": true,
+  "doneReason": "stop",
+  "evalCount": 2367,
+  "promptEvalCount": 4002,
+  "effectiveOptions": {
+    "num_predict": 6000,
+    "seed": 42,
+    "temperature": 0
+  },
+  "options": {
+    "temperature": 0.2,
+    "num_predict": 2400,
+    "seed": 42
+  },
+  "deterministicFallbackMode": "on-fail"
+}

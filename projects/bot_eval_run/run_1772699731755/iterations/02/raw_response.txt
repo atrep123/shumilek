@@ -1,0 +1,9 @@
+{
+  "files": [
+    { "path": "README.md", "content": "# Minimal Node.js Project\n\nThis project includes the basic structure and endpoints required for a simple CRUD application with projects, members, tasks, and comments.\n" },
+    { "path": "package.json", "content": "```json\n\"dependencies\": {\n  \"express\": \"^4.17.1\"\n},\n\"devDependencies\": {\n  \"supertest\": \"^6.0.2\"\n}\n```" },
+    { "path": "src/app.js", "content": "```js\nconst express = require('express');\nconst app = express();\nconst port = process.env.PORT || 11434;\n\napp.use(express.json());\n\n// Health check endpoint\napp.get('/health', (req, res) => {\n  res.send({ ok: true });\n});\n\n// Projects endpoints\nrequire('./src/modules/projects');\n\n// Members endpoints\nrequire('./src/modules/members');\n\n// Tasks endpoints\nrequire('./src/modules/tasks');\n\n// Comments endpoints\nrequire('./src/modules/comments');\n\napp.listen(port, () => {\n  console.log(`Server running on port ${port}`);\n});\n```" },
+    { "path": "src/server.js", "content": "```js\nconst app = require('./src/app');\n\nmodule.exports = app;\n```" }
+  ],
+  "notes": "Ensure all modules are correctly imported and exported, and that routes are properly mounted in src/app.js."
+}

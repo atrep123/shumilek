@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "diagnostics": [
+    "Deterministic fallback activated (node-api-oracle, mode=on-fail, tier=canonical) and recovered validation."
+  ],
+  "commands": [
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "projects\\bot_eval_run\\run_1772208660074\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 197,
+      "stdout": "✔ GET /health + GET /openapi.json (50.2569ms)\n✔ Todo CRUD + persistence (32.9409ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 139.7779\n",
+      "stderr": ""
+    }
+  ]
+}

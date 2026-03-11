@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst { getProjects, createProject, getProjectById } = require('./service');\nconst router = express.Router();\n\nrouter.get('/', (req, res) => {\n  try {\n    const projects = getProjects();\n    res.json({ projects });\n  } catch (error) {\n    res.status(error.code).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.post('/', (req, res) => {\n  try {\n    const project = createProject(req.body);\n    res.status(201).json({ project });\n  } catch (error) {\n    res.status(error.code).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.get('/:projectId', (req, res) => {\n  try {\n    const project = getProjectById(req.params.projectId);\n    res.json({ project });\n  } catch (error) {\n    res.status(error.code).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst { addMember, getMembersByProjectId } = require('./service');\nconst router = express.Router();\n\nrouter.post('/:projectId/members', (req, res) => {\n  try {\n    const member = addMember(req.params.projectId, req.body);\n    res.status(201).json({ member });\n  } catch (error) {\n    res.status(error.code).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.get('/:projectId/members', (req, res) => {\n  try {\n    const members = getMembersByProjectId(req.params.projectId);\n    res.json({ members });\n  } catch (error) {\n    res.status(error.code).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst { createTask, getTasksByProjectId, updateTaskStatus } = require('./service');\nconst router = express.Router();\n\nrouter.post('/:projectId/tasks', (req, res) => {\n  try {\n    const task = createTask(req.params.projectId, req.body);\n    res.status(201).json({ task });\n  } catch (error) {\n    res.status(error.code).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.get('/:projectId/tasks', (req, res) => {\n  try {\n    const tasks = getTasksByProjectId(req.params.projectId, req.query.status);\n    res.json({ tasks });\n  } catch (error) {\n    res.status(error.code).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.patch('/:projectId/tasks/:taskId', (req, res) => {\n  try {\n    const task = updateTaskStatus(req.params.projectId, req.params.taskId, req.body);\n    res.json({ task });\n  } catch (error) {\n    res.status(error.code).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst { addComment, getCommentsByTaskId } = require('./service');\nconst router = express.Router();\n\nrouter.post('/:projectId/tasks/:taskId/comments', (req, res) => {\n  try {\n    const comment = addComment(req.params.projectId, req.params.taskId, req.body);\n    res.status(201).json({ comment });\n  } catch (error) {\n    res.status(error.code).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.get('/:projectId/tasks/:taskId/comments', (req, res) => {\n  try {\n    const comments = getCommentsByTaskId(req.params.projectId, req.params.taskId);\n    res.json({ comments });\n  } catch (error) {\n    res.status(error.code).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nmodule.exports = router;\n"
+    }
+  ],
+  "notes": "Added missing route signatures for /projects/:projectId/members, /projects/:projectId/tasks, and /projects/:projectId/tasks/:taskId/comments."
+}

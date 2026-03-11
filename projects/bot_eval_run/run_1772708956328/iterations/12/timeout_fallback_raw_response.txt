@@ -1,0 +1,36 @@
+{
+  "files": [
+    {
+      "path": "src/lib/id.js",
+      "content": "const { randomUUID } = require('crypto');\n\nfunction generateId() {\n  return randomUUID();\n}\n\nmodule.exports = { generateId };"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { generateId } = require('../../lib/id');\nconst projects = [];\n\nasync function getAllProjects() { return [...projects]; }\nasync function getProjectById(projectId) { return projects.find(project => String(project.id) === String(projectId)) || null; }\nasync function getProjectByName(name) { return projects.find(project => String(project.name) === String(name)) || null; }\n\nasync function createProject(name) {\n  const project = { id: generateId(), name: String(name || '').trim() };\n  projects.push(project);\n  return project;\n}\n\nmodule.exports = { getAllProjects, getProjectById, getProjectByName, createProject, projects };"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { generateId } = require('../../lib/id');\nconst comments = [];\n\nasync function getAllComments() { return [...comments]; }\nasync function getCommentById(commentId) { return comments.find(comment => String(comment.id) === String(commentId)) || null; }\n\nasync function createComment(message) {\n  const comment = { id: generateId(), message: String(message || '').trim() };\n  comments.push(comment);\n  return comment;\n}\n\nmodule.exports = { getAllComments, getCommentById, createComment, comments };"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const router = require('express').Router();\nconst commentsService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.get('/', async (_req, res) => res.json({ comments: await commentsService.getAllComments() }));\nrouter.post('/', async (req, res) => {\n  const message = String(req.body?.message || '').trim();\n  if (!message) return sendError(res, 400, 'BAD_REQUEST', 'Comment message is required');\n  const comment = await commentsService.createComment(message);\n  if (!comment) return sendError(res, 409, 'COMMENT_DUPLICATE', 'Comment already exists');\n  return res.status(201).json({ comment });\n});\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { generateId } = require('../../lib/id');\nconst members = [];\n\nasync function getAllMembers() { return [...members]; }\nasync function getMemberById(memberId) { return members.find(member => String(member.id) === String(memberId)) || null; }\n\nasync function createMember(userId, role) {\n  const member = { id: generateId(), userId, role: String(role || '').trim() };\n  members.push(member);\n  return member;\n}\n\nmodule.exports = { getAllMembers, getMemberById, createMember, members };"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const router = require('express').Router();\nconst membersService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.get('/', async (_req, res) => res.json({ members: await membersService.getAllMembers() }));\nrouter.post('/', async (req, res) => {\n  const userId = String(req.body?.userId || '').trim();\n  const role = String(req.body?.role || '').trim();\n  if (!userId || !role) return sendError(res, 400, 'BAD_REQUEST', 'User ID and role are required');\n  const member = await membersService.createMember(userId, role);\n  if (!member) return sendError(res, 409, 'MEMBER_DUPLICATE', 'Member already exists');\n  return res.status(201).json({ member });\n});\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { generateId } = require('../../lib/id');\nconst tasks = [];\n\nasync function getAllTasks() { return [...tasks]; }\nasync function getTaskById(taskId) { return tasks.find(task => String(task.id) === String(taskId)) || null; }\n\nasync function createTask(description) {\n  const task = { id: generateId(), description: String(description || '').trim(), status: 'todo' };\n  tasks.push(task);\n  return task;\n}\n\nasync function updateTask(taskId, status) {\n  const task = await getTaskById(taskId);\n  if (!task) return null;\n  if (status !== 'todo' && status !== 'done') return null;\n  task.status = status;\n  return task;\n}\n\nmodule.exports = { getAllTasks, getTaskById, createTask, updateTask, tasks };"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const router = require('express').Router();\nconst tasksService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.get('/', async (_req, res) => res.json({ tasks: await tasksService.getAllTasks() }));\nrouter.post('/', async (req, res) => {\n  const description = String(req.body?.description || '').trim();\n  if (!description) return sendError(res, 400, 'BAD_REQUEST', 'Task description is required');\n  const task = await tasksService.createTask(description);\n  if (!task) return sendError(res, 409, 'TASK_DUPLICATE', 'Task already exists');\n  return res.status(201).json({ task });\n});\n\nrouter.patch('/:taskId', async (req, res) => {\n  const taskId = req.params.taskId;\n  const status = String(req.body?.status || '').trim();\n  if (!status) return sendError(res, 400, 'BAD_REQUEST', 'Task status is required');\n  const updatedTask = await tasksService.updateTask(taskId, status);\n  if (!updatedTask) return sendError(res, 404, 'TASK_NOT_FOUND', 'Task not found');\n  return res.json({ task: updatedTask });\n});\n\nmodule.exports = router;"
+    }
+  ]
+}

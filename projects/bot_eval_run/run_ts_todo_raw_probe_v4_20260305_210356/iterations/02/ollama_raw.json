@@ -1,0 +1,16 @@
+{
+  "model": "deepseek-coder-v2:16b",
+  "created_at": "2026-03-05T20:06:05.4028883Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\"files\": [{\"path\": \"src/store.ts\", \"content\": \"import { randomUUID as uuidv4 } from 'node:crypto';\\nconst fs = require('node:fs');\\nconst path = require('node:path');\\n\\nexport class Task {\\n  id: string;\\n  title: string;\\n  done: boolean;\\n  createdAt: string;\\n  doneAt?: string;\\n\\n  constructor(title: string) {\\n    this.id = uuidv4();\\n    this.title = title;\\n    this.done = false;\\n    this.createdAt = new Date().toISOString();\\n  }\\n}\\n\\nexport class TaskStore {\\n  filePath: string;\\n\\n  constructor(filePath: string) {\\n    this.filePath = filePath;\\n    if (!fs.existsSync(filePath)) {\\n      fs.writeFileSync(filePath, JSON.stringify({ tasks: [] }));\\n    }\\n  }\\n\\n  list(): Task[] {\\n    const data = fs.readFileSync(this.filePath, 'utf8');\\n    return JSON.parse(data).tasks;\\n  }\\n\\n  add(title: string): Task {\\n    const task = new Task(title);\\n    const data = fs.readFileSync(this.filePath, 'utf8');\\n    const tasks = JSON.parse(data).tasks;\\n    tasks.push(task);\\n    fs.writeFileSync(this.filePath, JSON.stringify({ tasks: tasks }));\\n    return task;\\n  }\\n\\n  done(id: string): Task {\\n    const data = fs.readFileSync(this.filePath, 'utf8');\\n    const tasks = JSON.parse(data).tasks;\\n    const task = tasks.find(t => t.id === id);\\n    if (task) {\\n      task.done = true;\\n      task.doneAt = new Date().toISOString();\\n      fs.writeFileSync(this.filePath, JSON.stringify({ tasks: tasks }));\\n    }\\n    return task;\\n  }\\n\\n  remove(id: string): Task {\\n    const data = fs.readFileSync(this.filePath, 'utf8');\\n    const tasks = JSON.parse(data).tasks;\\n    const taskIndex = tasks.findIndex(t => t.id === id);\\n    if (taskIndex !== -1) {\\n      const removedTask = tasks.splice(taskIndex, 1)[0];\\n      fs.writeFileSync(this.filePath, JSON.stringify({ tasks: tasks }));\\n      return removedTask;\\n    }\\n    return null;\\n  }\\n}\\n\"}]}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 71094150100,
+  "load_duration": 56737879400,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 517827900,
+  "eval_count": 620,
+  "eval_duration": 4767060400
+}

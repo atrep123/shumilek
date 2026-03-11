@@ -1,0 +1,14 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for /projects/:projectId/tasks/:taskId/comments",
+    "Do not use \"uuid\" package in node-project-api-large; use node:crypto randomUUID instead",
+    "Uses `new BadRequestError(...)` but src/lib/errors.* does not define/export BadRequestError",
+    "State-sharing mismatch: members service should reuse shared projects repository, not isolated members map/array",
+    "Status code contract mismatch: POST /projects should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/members should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/tasks should return HTTP 201 on create.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

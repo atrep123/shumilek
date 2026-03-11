@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/modules/members/service.js",
+      "content": "// src/modules/members/service.js\nconst { randomUUID } = require('node:crypto');\n\nmodule.exports = {\n  getMembers(projectId) {\n    // Implement logic to fetch members for a project\n    return [];\n  },\n  addMember(projectId, userId, role) {\n    if (!userId || !role) {\n      return null;\n    }\n    const member = { id: randomUUID(), projectId, userId, role };\n    // Implement logic to store the member\n    return member;\n  }\n};\n"
+    }
+  ],
+  "notes": "Added getMembers method to membersService in src/modules/members/service.js to resolve route-service contract mismatch."
+}

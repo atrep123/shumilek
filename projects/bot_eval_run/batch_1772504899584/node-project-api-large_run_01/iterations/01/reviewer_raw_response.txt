@@ -1,0 +1,8 @@
+{
+  "review": "state-sharing-mismatch, error-payload-contract-likely-missing, package-json-supertest",
+  "priorityFiles": [
+    "src/modules/projects/repository.js",
+    "src/modules/members/service.js",
+    "package.json"
+  ]
+}

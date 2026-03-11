@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"project-management-api\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A Node.js monolith for a Project Management API\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\",\n    \"test\": \"jest\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.17.1\"\n  },\n  \"devDependencies\": {\n    \"jest\": \"^27.0.6\",\n    \"supertest\": \"^6.2.3\"\n  }\n}\n"
+    }
+  ],
+  "notes": "Removed incorrect dependency 'node:crypto' from package.json as it is a built-in module and does not need to be listed as a dependency."
+}

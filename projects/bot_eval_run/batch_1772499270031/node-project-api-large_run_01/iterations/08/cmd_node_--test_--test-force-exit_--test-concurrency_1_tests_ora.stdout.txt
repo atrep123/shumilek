@@ -1,0 +1,99 @@
+✖ health + empty project list (76.0984ms)
+✖ project create/list/get + duplicate + validation (16.879ms)
+✖ members endpoints (3.204ms)
+✖ tasks create/list/filter + patch status (2.9933ms)
+✖ comments + not-found and payload contract (2.4641ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 250.1978
+
+✖ failing tests:
+
+test at tests\oracle.test.js:52:1
+✖ health + empty project list (76.0984ms)
+  AssertionError [ERR_ASSERTION]: <!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <title>Error</title>
+  </head>
+  <body>
+  <pre>Cannot GET /projects</pre>
+  </body>
+  </html>
+  
+  
+  404 !== 200
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\tests\oracle.test.js:60:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 404,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:65:1
+✖ project create/list/get + duplicate + validation (16.879ms)
+  TypeError: projectsService.getProjectByName is not a function
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\src\modules\projects\routes.js:22:49
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:149:13)
+      at Route.dispatch (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:119:3)
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:284:15
+      at router.process_params (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:346:12)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:280:10)
+      at router.handle (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:175:3)
+      at router (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:47:12)
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (3.204ms)
+  TypeError: projectsService.getProjectByName is not a function
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\src\modules\projects\routes.js:22:49
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:149:13)
+      at Route.dispatch (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:119:3)
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:284:15
+      at router.process_params (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:346:12)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:280:10)
+      at router.handle (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:175:3)
+      at router (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:47:12)
+
+test at tests\oracle.test.js:122:1
+✖ tasks create/list/filter + patch status (2.9933ms)
+  TypeError: projectsService.getProjectByName is not a function
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\src\modules\projects\routes.js:22:49
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:149:13)
+      at Route.dispatch (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:119:3)
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:284:15
+      at router.process_params (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:346:12)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:280:10)
+      at router.handle (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:175:3)
+      at router (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:47:12)
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (2.4641ms)
+  TypeError: projectsService.getProjectByName is not a function
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\src\modules\projects\routes.js:22:49
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:149:13)
+      at Route.dispatch (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:119:3)
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:284:15
+      at router.process_params (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:346:12)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:280:10)
+      at router.handle (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:175:3)
+      at router (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772499270031\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:47:12)

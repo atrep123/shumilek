@@ -1,0 +1,9 @@
+{
+  "count": 2,
+  "files": [
+    "package.json",
+    "src/modules/projects/service.js"
+  ],
+  "appliedAsPatch": true,
+  "forcePatchFromIncompleteFull": true
+}

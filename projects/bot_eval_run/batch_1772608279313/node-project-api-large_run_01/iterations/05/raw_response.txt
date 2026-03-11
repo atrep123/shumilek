@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) {\n    return sendError(res, 400, 'BAD_REQUEST', 'Invalid payload');\n  }\n\n  const member = service.addMember(req.projectId, { userId, role });\n  if (!member) {\n    return sendError(res, 409, 'CONFLICT', 'Duplicate member');\n  }\n\n  res.status(201).json({ member });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet membersStore = {};\n\nfunction addMember(projectId, memberData) {\n  if (!membersStore[projectId]) {\n    membersStore[projectId] = [];\n  }\n\n  const existingMember = membersStore[projectId].find(m => m.userId === memberData.userId);\n  if (existingMember) {\n    return null;\n  }\n\n  const newMember = { id: randomUUID(), ...memberData };\n  membersStore[projectId].push(newMember);\n  return newMember;\n}\n\nmodule.exports = {\n  addMember,\n};\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const { message } = req.body;\n  if (!message) {\n    return sendError(res, 400, 'BAD_REQUEST', 'Invalid payload');\n  }\n\n  const comment = service.addComment(req.projectId, req.taskId, { message });\n  if (!comment) {\n    return sendError(res, 409, 'CONFLICT', 'Duplicate comment');\n  }\n\n  res.status(201).json({ comment });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet commentsStore = {};\n\nfunction addComment(projectId, taskId, commentData) {\n  if (!commentsStore[projectId]) {\n    commentsStore[projectId] = {};\n  }\n  if (!commentsStore[projectId][taskId]) {\n    commentsStore[projectId][taskId] = [];\n  }\n\n  const newComment = { id: randomUUID(), ...commentData };\n  commentsStore[projectId][taskId].push(newComment);\n  return newComment;\n}\n\nmodule.exports = {\n  addComment,\n};\n"
+    }
+  ],
+  "notes": "Minimal changes to fix the issues in members and comments endpoints."
+}

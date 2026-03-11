@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "// src/modules/comments/service.js\nconst { randomUUID } = require('node:crypto');\n\nconst commentsStore = [];\n\nmodule.exports = {\n  getCommentsByTaskId(taskId) {\n    return commentsStore.filter(comment => comment.taskId === taskId);\n  },\n  addComment(taskId, message) {\n    const comment = { id: randomUUID(), taskId, message };\n    commentsStore.push(comment);\n    return comment;\n  }\n};\n"
+    }
+  ],
+  "notes": "Added getCommentsByTaskId method to commentsService in src/modules/comments/service.js."
+}

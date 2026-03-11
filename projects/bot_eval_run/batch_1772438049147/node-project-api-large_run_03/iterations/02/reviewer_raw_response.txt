@@ -1,0 +1,8 @@
+{
+  "review": "Missing route signature for project detail endpoint /projects/:projectId, Members contract mismatch: src/modules/members/* should validate/use both `userId` and `role` fields, Comments contract mismatch: comments routes/services should validate and persist `message`. Skipped oracle command checks because structural contract did not pass.",
+  "priorityFiles": [
+    "src/modules/projects/routes.js",
+    "src/modules/members/service.js",
+    "src/modules/comments/service.js"
+  ]
+}

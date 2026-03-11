@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-03-01T23:41:54.8787418Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/modules/tasks/routes.js\",\n      \"content\": \"// src/modules/tasks/routes.js\\nconst express = require('express');\\nconst router = express.Router();\\nconst tasksService = require('./service');\\nconst { sendError } = require('../../lib/errors');\\n\\nrouter.get('/', async (req, res) => {\\n  const projectId = req.params.projectId;\\n  const status = req.query.status;\\n  try {\\n    const tasks = await tasksService.getTasks(projectId, status);\\n    res.json({ tasks });\\n  } catch (error) {\\n    sendError(res, error.statusCode || 500, error.code || 'INTERNAL_ERROR', error.message);\\n  }\\n});\\n\\nrouter.patch('/:taskId', async (req, res) => {\\n  const projectId = req.params.projectId;\\n  const taskId = req.params.taskId;\\n  const { status } = req.body;\\n  try {\\n    const task = await tasksService.updateTaskStatus(projectId, taskId, status);\\n    if (!task) {\\n      return sendError(res, 404, 'TASK_NOT_FOUND', 'Task not found');\\n    }\\n    res.json({ task });\\n  } catch (error) {\\n    sendError(res, error.statusCode || 500, error.code || 'INTERNAL_ERROR', error.message);\\n  }\\n});\\n\\nmodule.exports = router;\\n\"\n    },\n    {\n      \"path\": \"src/modules/tasks/service.js\",\n      \"content\": \"// src/modules/tasks/service.js\\nconst { randomUUID } = require('node:crypto');\\nconst tasksStore = {};\\n\\nasync function getTasks(projectId, status) {\\n  if (!tasksStore[projectId]) {\\n    return [];\\n  }\\n  let tasks = tasksStore[projectId];\\n  if (status === 'done') {\\n    tasks = tasks.filter(task => task.status === 'done');\\n  }\\n  return tasks;\\n}\\n\\nasync function updateTaskStatus(projectId, taskId, status) {\\n  if (!tasksStore[projectId]) {\\n    return null;\\n  }\\n  const taskIndex = tasksStore[projectId].findIndex(task => task.id === taskId);\\n  if (taskIndex === -1) {\\n    return null;\\n  }\\n  tasksStore[projectId][taskIndex].status = status;\\n  return tasksStore[projectId][taskIndex];\\n}\\n\\nmodule.exports = {\\n  getTasks,\\n  updateTaskStatus,\\n};\\n\"\n    }\n  ],\n  \"notes\": \"Updated task routes and service to support filtering by status and updating task status.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 18971311400,
+  "load_duration": 64616500,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 980749600,
+  "eval_count": 591,
+  "eval_duration": 7086622900
+}

@@ -1,0 +1,8 @@
+{
+  "error": {
+    "message": "405 Method Not Allowed",
+    "status": 405,
+    "method": "POST",
+    "path": "/api/v1/organizations"
+  }
+}

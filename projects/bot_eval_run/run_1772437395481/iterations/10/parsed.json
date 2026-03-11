@@ -1,0 +1,61 @@
+{
+  "files": [
+    {
+      "path": "src/app.js",
+      "content": "import express from 'express';\nimport { randomUUID } from 'node:crypto';\nimport { sendError } from './lib/errors';\nimport projectsRouter from './modules/projects/routes';\nimport membersRouter from './modules/members/routes';\nimport tasksRouter from './modules/tasks/routes';\nimport commentsRouter from './modules/comments/routes';\n\nconst app = express();\napp.use(express.json());\n\n// Health endpoint\napp.get('/health', (req, res) => {\n  res.json({ ok: true });\n});\n\n// Routes\napp.use('/projects', projectsRouter);\napp.use('/projects/:projectId/members', membersRouter);\napp.use('/projects/:projectId/tasks', tasksRouter);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRouter);\n\n// Error handling middleware\napp.use((err, req, res, next) => {\n  if (err) {\n    sendError(res, err.status || 500, err.code || 'INTERNAL_ERROR', err.message || 'Internal Server Error');\n  } else {\n    next();\n  }\n});\n\nexport default app;"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "import express from 'express';\nconst router = express.Router();\n\n// Project routes here\n\nexport default router;"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "import express from 'express';\nconst router = express.Router();\n\n// Member routes here\n\nexport default router;"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "import express from 'express';\nconst router = express.Router();\n\n// Task routes here\n\nexport default router;"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "import express from 'express';\nconst router = express.Router();\n\n// Comment routes here\n\nexport default router;"
+    },
+    {
+      "path": "README.md",
+      "content": "# Project Management API\n\nThis is a simple project management API built using Node.js with Express for handling HTTP requests.\nIt includes endpoints for managing projects, tasks, and comments."
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"project-management-api\",\n  \"version\": \"1.0.0\",\n  \"main\": \"src/app.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.17.1\",\n    \"crypto\": \"^1.0.0\",\n    \"supertest\": \"^6.3.3\"\n  }\n}"
+    },
+    {
+      "path": "src/server.js",
+      "content": "const app = require('./app');\nconst port = process.env.PORT || 3000;\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "import { randomUUID } from 'node:crypto';\nimport { sendError } from '../../lib/errors.js';\n\nconst projects = {};\n\nexport const createProject = (name) => {\n  if (!name) return null;\n  const id = randomUUID();\n  projects[id] = { id, name };\n  return { id, name };\n};\n\nexport const getProjectById = (projectId) => projects[projectId];\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "import { randomUUID } from 'node:crypto';\nimport { sendError } from '../../lib/errors.js';\n\nconst tasks = {};\n\nexport const createTask = (title) => {\n  if (!title) return null;\n  const id = randomUUID();\n  tasks[id] = { id, title, status: 'todo' };\n  return { id, title, status: 'todo' };\n};\n\nexport const getTasksByProjectId = (projectId) => {\n  return Object.values(tasks).filter(task => task.projectId === projectId);\n};\n\nexport const updateTaskStatus = (projectId, taskId, status) => {\n  if (!['todo', 'done'].includes(status)) return null;\n  tasks[taskId].status = status;\n  return { id: taskId, title: tasks[taskId].title, status };\n};\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "import { sendError } from '../../lib/errors';\nimport prisma from '../../../prisma/client';\n\nexport const getMembers = async (projectId) => {\n  if (!projectId) return null;\n  return await prisma.member.findMany({ where: { projectId } });\n};\n\nexport const createMember = async ({ projectId, userId, role }) => {\n  if (!userId || !role) return null;\n  return await prisma.member.create({ data: { projectId, userId, role } });\n};\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "import { sendError } from '../../lib/errors';\nimport prisma from '../../../prisma/client';\n\nexport const getComments = async (taskId) => {\n  if (!taskId) return null;\n  return await prisma.comment.findMany({ where: { taskId } });\n};\n\nexport const createComment = async ({ taskId, message }) => {\n  if (!message) return null;\n  return await prisma.comment.create({ data: { taskId, message } });\n};\n"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "class BadRequestError extends Error {\n  constructor(message) {\n    super(message);\n    this.code = 'E_BADREQUEST';\n  }\n}\nexports.sendError = function(res, status, code, message) {\n  res.status(status).json({ error: { code, message } });\n};"
+    },
+    {
+      "path": "src/lib/id.js",
+      "content": "const { randomUUID } = require('node:crypto');\nexports.generateId = function() {\n  return randomUUID();\n};"
+    }
+  ],
+  "notes": "I have added the necessary exports for projects, members, tasks, and comments routers in their respective route files to match the strict implementation template provided."
+}

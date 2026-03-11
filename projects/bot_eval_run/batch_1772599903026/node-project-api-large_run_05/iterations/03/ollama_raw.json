@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-03-04T05:23:13.4881269Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/modules/tasks/routes.js\",\n      \"content\": \"// src/modules/tasks/routes.js\\nconst express = require('express');\\nconst router = express.Router();\\nconst taskService = require('../tasks/service');\\nconst { sendError } = require('../../lib/errors');\\n\\nrouter.get('/', async (req, res) => {\\n  const projectId = req.params.projectId;\\n  const statusFilter = req.query.status;\\n  try {\\n    const tasks = await taskService.getTasks(projectId, statusFilter);\\n    if (!tasks) return sendError(res, 404, 'NOT_FOUND', 'Project not found');\\n    res.json({ tasks });\\n  } catch (error) {\\n    sendError(res, 500, 'INTERNAL_ERROR', error.message);\\n  }\\n});\\n\\nrouter.patch('/:taskId', async (req, res) => {\\n  const projectId = req.params.projectId;\\n  const taskId = req.params.taskId;\\n  const { status } = req.body;\\n  try {\\n    if (!['todo', 'done'].includes(status)) return sendError(res, 400, 'INVALID_STATUS', 'Invalid task status');\\n    const updatedTask = await taskService.updateTaskStatus(projectId, taskId, status);\\n    if (!updatedTask) return sendError(res, 404, 'NOT_FOUND', 'Task not found');\\n    res.json({ task: updatedTask });\\n  } catch (error) {\\n    sendError(res, 500, 'INTERNAL_ERROR', error.message);\\n  }\\n});\\n\\nmodule.exports = router;\\n\"\n    },\n    {\n      \"path\": \"src/modules/tasks/service.js\",\n      \"content\": \"// src/modules/tasks/service.js\\nconst { randomUUID } = require('node:crypto');\\nconst { sendError } = require('../../lib/errors');\\n\\nlet tasksStore = [];\\n\\nasync function getTasks(projectId, statusFilter) {\\n  const projectTasks = tasksStore.filter(task => task.projectId === projectId);\\n  if (statusFilter) {\\n    return projectTasks.filter(task => task.status === statusFilter);\\n  }\\n  return projectTasks;\\n}\\n\\nasync function updateTaskStatus(projectId, taskId, newStatus) {\\n  const taskIndex = tasksStore.findIndex(task => task.projectId === projectId && task.id === taskId);\\n  if (taskIndex === -1) return null;\\n  tasksStore[taskIndex].status = newStatus;\\n  return tasksStore[taskIndex];\\n}\\n\\nmodule.exports = {\\n  getTasks,\\n  updateTaskStatus,\\n};\\n\"\n    }\n  ],\n  \"notes\": \"Updated task routes and service to support status filtering and PATCH updates.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 57383462800,
+  "load_duration": 61423500,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 985110800,
+  "eval_count": 614,
+  "eval_duration": 7450764800
+}

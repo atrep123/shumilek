@@ -1,0 +1,9 @@
+- [x] Vytvořit strukturu projektu `mini_ai/` a `tests/`
+- [x] Implementovat character-level Markov chain generator v souboru `mini_ai/markov_chain.py`
+- [x] Trenovat model z textu v souboru `mini_ai/cli.py`
+- [x] Přidat CLI funkce `train` a `generate` v souboru `mini_ai/cli.py`
+- [x] Napsat unit testy pro `markov_chain.py` v souboru `tests/test_markov_chain.py`
+- [x] Ujistit se, že testy procházejí pomocí `python -m unittest discover -v -s tests -p "test*.py"`
+- [x] Přidat pomocník CLI s výpisem možností pomocí `python -m mini_ai.cli --help`
+- [x] Ujistit se, že `mini_ai/cli.py` má modul `mini_ai.markov` importován
+- [x] Vytvořit `README.md` s popisem projektu a pokyny pro používání

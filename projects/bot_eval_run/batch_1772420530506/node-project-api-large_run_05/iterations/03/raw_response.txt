@@ -1,0 +1,56 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Project Management API\n\nThis is a simple project management API built with Node.js and Express. It allows you to manage projects, tasks, members, and comments.\n\n## Features\n- Create and retrieve projects\n- Manage members of a project\n- Create and update tasks within a project\n- Add comments to tasks\n\n## Getting Started\n1. Clone the repository:\n   ```bash\n   git clone https://github.com/yourusername/project-management-api.git\n   cd project-management-api\n   ```\n2. Install dependencies:\n   ```bash\n   npm install\n   ```\n3. Start the server:\n   ```bash\n   node src/server.js\n   ```\n\n## API Endpoints\n- **GET /health**: Check if the server is running.\n- **POST /projects**: Create a new project.\n- **GET /projects/:projectId/members**: Retrieve members of a project.\n- **POST /projects/:projectId/members**: Add a member to a project.\n- **GET /projects/:projectId/tasks**: Retrieve tasks of a project.\n- **POST /projects/:projectId/tasks**: Create a new task in a project.\n- **PATCH /projects/:projectId/tasks/:taskId**: Update the status of a task.\n- **POST /projects/:projectId/tasks/:taskId/comments**: Add a comment to a task.\n\n## Error Handling\nThe API returns JSON error payloads with the following structure:\n```json\n{\n  \"error\": {\n    \"code\": \"ERROR_CODE\",\n    \"message\": \"Error message\"\n  }\n}\n```\n\n## License\nThis project is licensed under the MIT License.\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"project-management-api\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple project management API\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.17.3\"\n  },\n  \"devDependencies\": {\n    \"supertest\": \"^6.2.4\",\n    \"jest\": \"^28.0.0\"\n  }\n}"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst projectsRoutes = require('./modules/projects/routes');\nconst membersRoutes = require('./modules/members/routes');\nconst tasksRoutes = require('./modules/tasks/routes');\nconst commentsRoutes = require('./modules/comments/routes');\n\nconst app = express();\napp.use(express.json());\n\napp.get('/health', (req, res) => {\n  res.json({ ok: true });\n});\n\napp.use('/projects', projectsRoutes);\napp.use('/projects/:projectId/members', membersRoutes);\napp.use('/projects/:projectId/tasks', tasksRoutes);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRoutes);\n\nmodule.exports = app;"
+    },
+    {
+      "path": "src/server.js",
+      "content": "const app = require('./app');\nconst PORT = process.env.PORT || 3000;\n\napp.listen(PORT, () => {\n  console.log(`Server is running on port ${PORT}`);\n});"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst projectsService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', async (req, res) => {\n  const { name } = req.body;\n  if (!name || typeof name !== 'string' || name.trim() === '') {\n    return sendError(res, 400, 'INVALID_NAME', 'Name must be a non-empty string');\n  }\n\n  try {\n    const project = await projectsService.createProject(name);\n    res.status(201).json({ project });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet projectsStore = [];\n\nasync function createProject(name) {\n  const project = {\n    id: randomUUID(),\n    name,\n    members: [],\n    tasks: []\n  };\n  projectsStore.push(project);\n  return project;\n}\n\nmodule.exports = {\n  createProject\n};"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst membersService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', async (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || typeof userId !== 'string' || !role || typeof role !== 'string') {\n    return sendError(res, 400, 'INVALID_INPUT', 'Invalid input');\n  }\n\n  try {\n    const member = await membersService.addMember(req.params.projectId, userId, role);\n    res.status(201).json({ member });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet projectsStore = [];\n\nasync function addMember(projectId, userId, role) {\n  const project = projectsStore.find(p => p.id === projectId);\n  if (!project) {\n    throw new Error('Project not found');\n  }\n\n  const member = { id: randomUUID(), userId, role };\n  project.members.push(member);\n  return member;\n}\n\nmodule.exports = {\n  addMember\n};"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst tasksService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', async (req, res) => {\n  const { title } = req.body;\n  if (!title || typeof title !== 'string' || title.trim() === '') {\n    return sendError(res, 400, 'INVALID_TITLE', 'Title must be a non-empty string');\n  }\n\n  try {\n    const task = await tasksService.createTask(req.params.projectId, title);\n    res.status(201).json({ task });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nrouter.patch('/:taskId', async (req, res) => {\n  const { status } = req.body;\n  if (!status || typeof status !== 'string' || ![ 'todo', 'done' ].includes(status)) {\n    return sendError(res, 400, 'INVALID_STATUS', 'Invalid status');\n  }\n\n  try {\n    const task = await tasksService.updateTaskStatus(req.params.projectId, req.params.taskId, status);\n    res.json({ task });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet projectsStore = [];\n\nasync function createTask(projectId, title) {\n  const project = projectsStore.find(p => p.id === projectId);\n  if (!project) {\n    throw new Error('Project not found');\n  }\n\n  const task = { id: randomUUID(), title, status: 'todo' };\n  project.tasks.push(task);\n  return task;\n}\n\nasync function updateTaskStatus(projectId, taskId, status) {\n  const project = projectsStore.find(p => p.id === projectId);\n  if (!project) {\n    throw new Error('Project not found');\n  }\n\n  const task = project.tasks.find(t => t.id === taskId);\n  if (!task) {\n    throw new Error('Task not found');\n  }\n\n  task.status = status;\n  return task;\n}\n\nmodule.exports = {\n  createTask,\n  updateTaskStatus\n};"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst commentsService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', async (req, res) => {\n  const { content } = req.body;\n  if (!content || typeof content !== 'string' || content.trim() === '') {\n    return sendError(res, 400, 'INVALID_CONTENT', 'Content must be a non-empty string');\n  }\n\n  try {\n    const comment = await commentsService.addComment(req.params.projectId, req.params.taskId, content);\n    res.status(201).json({ comment });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet projectsStore = [];\n\nasync function addComment(projectId, taskId, content) {\n  const project = projectsStore.find(p => p.id === projectId);\n  if (!project) {\n    throw new Error('Project not found');\n  }\n\n  const task = project.tasks.find(t => t.id === taskId);\n  if (!task) {\n    throw new Error('Task not found');\n  }\n\n  const comment = { id: randomUUID(), content };\n  task.comments = task.comments || [];\n  task.comments.push(comment);\n  return comment;\n}\n\nmodule.exports = {\n  addComment\n};"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "function sendError(res, statusCode, errorCode, message) {\n  res.status(statusCode).json({\n    error: {\n      code: errorCode,\n      message: message\n    }\n  });\n}\n\nmodule.exports = {\n  sendError\n};"
+    }
+  ]
+}

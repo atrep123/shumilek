@@ -1,0 +1,11 @@
+{
+  "files": [
+    {"path":"src/modules/projects/routes.js","content":"const express = require('express');\nconst router = express.Router();\nconst { getProjectById } = require('./service');\n\nrouter.get('/:projectId', (req, res) => {\n  const projectId = req.params.projectId;\n  const project = getProjectById(projectId);\n  if (!project) return sendError(res, 404, 'NOT_FOUND', 'Project not found');\n  res.json({ project });\n});\n\nexports.router = router;\n"},
+    {"path":"src/modules/projects/service.js","content":"const { v4: uuidv4 } = require('uuid');\nconst projects = {};\n\nfunction getProjectById(projectId) {\n  return projects[projectId];\n}\n\nexports.getProjectById = getProjectById;\n"},
+    {"path":"src/modules/projects/routes.js","content":"const express = require('express');\nconst router = express.Router();\nconst { getProjectById } = require('./service');\n\nrouter.get('/:projectId', (req, res) => {\n  const projectId = req.params.projectId;\n  const project = getProjectById(projectId);\n  if (!project) return sendError(res, 404, 'NOT_FOUND', 'Project not found');\n  res.json({ project });\n});\n\nexports.router = router;\n"},
+    {"path":"src/modules/projects/service.js","content":"const { v4: uuidv4 } = require('uuid');\nconst projects = {};\n\nfunction getProjectById(projectId) {\n  return projects[projectId];\n}\n\nexports.getProjectById = getProjectById;\n"},
+    {"path":"src/modules/projects/routes.js","content":"const express = require('express');\nconst router = express.Router();\nconst { getProjectById } = require('./service');\n\nrouter.get('/:projectId', (req, res) => {\n  const projectId = req.params.projectId;\n  const project = getProjectById(projectId);\n  if (!project) return sendError(res, 404, 'NOT_FOUND', 'Project not found');\n  res.json({ project });\n});\n\nexports.router = router;\n"},
+    {"path":"src/modules/projects/service.js","content":"const { v4: uuidv4 } = require('uuid');\nconst projects = {};\n\nfunction getProjectById(projectId) {\n  return projects[projectId];\n}\n\nexports.getProjectById = getProjectById;\n"}
+  ],
+  "notes": "Added route for project detail and fixed missing route signature."
+}

@@ -1,0 +1,27 @@
+{
+    "review": "Zkontrolujte, že pro všechny POST endpointy, které vyžadují body (např. /projects, /projects/:projectId/tasks/:taskId/comments), kontrolujete, zda jsou předané data platné a obsahují požadovaná pole. Dodatečně upravte expectErrorPayload funkci tak, aby kontrolovala, že chybové zprávy mají správný formát.",
+    "files": [
+        {
+            "file": "tests/oracle.test.js",
+            "changes": [
+                {
+                    "line": 43,
+                    "change": "Přidejte kontrolu, zda je pole 'message' prázdné."
+                },
+                {
+                    "line": 176,
+                    "change": "Změňte expectErrorPayload tak, aby kontrolovalo, že chybové zprávy mají správný formát."
+                }
+            ]
+        },
+        {
+            "file": "src/**/*.js",
+            "changes": [
+                {
+                    "line": 123,
+                    "change": "Přidejte kontrolu platnosti předaných dat pro všechny POST endpointy, které vyžadují body."
+                }
+            ]
+        }
+    ]
+}

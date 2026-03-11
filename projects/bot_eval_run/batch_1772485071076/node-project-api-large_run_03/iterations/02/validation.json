@@ -1,0 +1,11 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "State-sharing mismatch: members service should reuse shared projects repository, not isolated members map/array",
+    "Route-service contract mismatch (tasks): routes call tasksService.getTasksByStatus() but service does not export \"getTasksByStatus\".",
+    "Route-service export map required (tasks): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+    "Error payload contract likely missing: expected { error: { code, message } } handling in API responses",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

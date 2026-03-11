@@ -1,0 +1,37 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "import express from 'express';\nconst router = express.Router();\n\n// Project detail endpoint\nrouter.get('/:projectId', (req, res) => {\n  const project = projectsService.getProjectById(req.params.projectId);\n  if (!project) return sendError(res, 404, 'E_NOTFOUND', 'Project not found');\n  res.json({ project });\n});\n\n// Add other routes as needed\nexport default router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "import { v4 as uuidv4 } from 'uuid';\nconst projects = [];\n\nexport const getProjectById = (projectId) => {\n  return projects.find(p => p.id === projectId);\n};\n\nexport const createProject = ({ name }) => {\n  if (!name) throw new BadRequestError('E_BADREQUEST', 'Name is required');\n  const project = { id: uuidv4(), name };\n  projects.push(project);\n  return project;\n};\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "import express from 'express';\nconst router = express.Router({ mergeParams: true });\n\n// Member routes\nrouter.post('/', (req, res) => {\n  const member = membersService.createMember(req.body);\n  if (!member) return sendError(res, 409, 'E_DUPLICATE', 'Member already exists');\n  res.status(201).json({ member });\n});\n\nexport default router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "import { v4 as uuidv4 } from 'uuid';\nconst members = [];\n\nexport const createMember = ({ userId, role }) => {\n  if (!userId || !role) throw new BadRequestError('E_BADREQUEST', 'UserId and Role are required');\n  const exists = members.find(m => m.userId === userId);\n  if (exists) return null;\n  const member = { id: uuidv4(), userId, role };\n  members.push(member);\n  return member;\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "import express from 'express';\nconst router = express.Router({ mergeParams: true });\n\n// Task routes\nrouter.post('/', (req, res) => {\n  const task = tasksService.createTask(req.body);\n  if (!task) return sendError(res, 409, 'E_DUPLICATE', 'Task already exists');\n  res.status(201).json({ task });\n});\n\nrouter.patch('/:taskId', (req, res) => {\n  const updated = tasksService.updateTaskStatus(req.params.taskId, req.body);\n  if (!updated) return sendError(res, 404, 'E_NOTFOUND', 'Task not found or invalid status');\n  res.json({ task: updated });\n});\n\nexport default router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "import { v4 as uuidv4 } from 'uuid';\nconst tasks = [];\n\nexport const createTask = ({ name, status }) => {\n  if (!name || !status) throw new BadRequestError('E_BADREQUEST', 'Name and Status are required');\n  const task = { id: uuidv4(), name, status };\n  tasks.push(task);\n  return task;\n};\n\nexport const updateTaskStatus = (taskId, { status }) => {\n  if (!['todo', 'done'].includes(status)) throw new BadRequestError('E_BADREQUEST', 'Invalid status');\n  const taskIndex = tasks.findIndex(t => t.id === taskId);\n  if (taskIndex === -1) return null;\n  tasks[taskIndex].status = status;\n  return tasks[taskIndex];\n};\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "import express from 'express';\nconst router = express.Router({ mergeParams: true });\n\n// Comment routes\nrouter.post('/', (req, res) => {\n  const comment = commentsService.createComment(req.body);\n  if (!comment) return sendError(res, 409, 'E_DUPLICATE', 'Comment already exists');\n  res.status(201).json({ comment });\n});\n\nexport default router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "import { v4 as uuidv4 } from 'uuid';\nconst comments = [];\n\nexport const createComment = ({ message }) => {\n  if (!message) throw new BadRequestError('E_BADREQUEST', 'Message is required');\n  const comment = { id: uuidv4(), message };\n  comments.push(comment);\n  return comment;\n};\n"
+    }
+  ],
+  "notes": "optional"
+}

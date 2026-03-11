@@ -1,0 +1,7 @@
+{
+  "review": "state-sharing-mismatch, error-payload-contract-missing",
+  "priorityFiles": [
+    "../src/modules/members/service.js",
+    "../src/modules/projects/service.js"
+  ]
+}

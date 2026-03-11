@@ -1,0 +1,12 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for /projects/:projectId/members",
+    "Missing route signature for /projects/:projectId/tasks",
+    "Missing route signature for /projects/:projectId/tasks/:taskId/comments",
+    "Uses `new BadRequestError(...)` but src/lib/errors.* does not define/export BadRequestError",
+    "Route-service contract mismatch (tasks): routes call tasksService.getTasksByProjectId() but service does not export \"getTasksByProjectId\".",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

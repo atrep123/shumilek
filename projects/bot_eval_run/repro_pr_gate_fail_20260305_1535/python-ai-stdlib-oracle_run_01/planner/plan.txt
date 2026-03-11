@@ -1,0 +1,12 @@
+- Vytvořit soubor `mini_ai/__init__.py` s prázdným obsahem
+- Vytvořit soubor `mini_ai/markov.py` s třídou `MarkovChain` a metodami `train`, `generate` a `to_dict`
+- Vytvořit soubor `mini_ai/cli.py` s funkcí `main` pro zpracování argumentů a volání metody `generate` z `markov.py`
+- Zapsat do `README.md` základní informace o projektu
+- Zkontrolovat, že `main` funkce v `cli.py` funguje správně
+- Zkontrolovat, že metoda `generate` v `markov.py` funguje správně
+- Zkontrolovat, že metoda `to_dict` v `markov.py` funguje správně
+- Zkontrolovat, že metoda `train` v `markov.py` funguje správně
+- Zkontrolovat, že třída `MarkovChain` v `markov.py` funguje správně
+- Zkontrolovat, že testy v `tests/test_oracle.py` probíhají úspěšně
+- Zkontrolovat, že `python -m mini_ai.cli --help` vypíše správnou pomoc
+- Zkontrolovat, že `python -m unittest discover -v -s tests -p "test*.py"` probíhá úspěšně

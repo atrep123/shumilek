@@ -1,0 +1,9 @@
+{
+  "strategy": "on-fail",
+  "scenarioId": "python-ai-stdlib",
+  "triggerIteration": 1,
+  "diagnostics": [
+    "Command failed: python -m unittest discover -v -s tests -p \"test*.py\" (exit=1, timedOut=false)",
+    "Command failed: python -m mini_ai.cli --help (exit=1, timedOut=false)"
+  ]
+}

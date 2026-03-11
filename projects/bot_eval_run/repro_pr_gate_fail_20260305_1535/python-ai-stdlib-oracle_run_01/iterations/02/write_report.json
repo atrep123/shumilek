@@ -1,0 +1,11 @@
+{
+  "count": 2,
+  "files": [
+    "mini_ai/cli.py",
+    "tests/test_oracle.py"
+  ],
+  "appliedAsPatch": true,
+  "forcePatchFromIncompleteFull": true,
+  "appliedFixes": [],
+  "skippedFixes": []
+}

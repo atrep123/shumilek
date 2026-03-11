@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for /health",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

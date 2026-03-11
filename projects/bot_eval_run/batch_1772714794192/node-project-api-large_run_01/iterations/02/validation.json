@@ -1,0 +1,12 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "State-sharing mismatch: members service should reuse shared projects repository, not isolated members map/array",
+    "Task status contract mismatch: use `todo` / `done` statuses (not `open` or `pending`)",
+    "Task status contract mismatch: PATCH status must allow only \"todo\" or \"done\" (pending/open are not allowed).",
+    "JavaScript syntax check failed in src/lib/validation.js: C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_01\\workspace\\src\\lib\\validation.js:29",
+    "Likely truncated/incomplete JS content in src/lib/validation.js; regenerate full file content with closed strings and braces.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

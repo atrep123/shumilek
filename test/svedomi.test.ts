@@ -181,11 +181,11 @@ describe('SvedomiValidator', () => {
 
     it('should truncate long inputs', () => {
       const validator = new SvedomiValidator();
-      const longPrompt = 'a'.repeat(1000);
-      const longResponse = 'b'.repeat(3000);
-      
+      const longPrompt = 'a'.repeat(10000);
+      const longResponse = 'b'.repeat(10000);
+
       const prompt = validator.buildValidationPrompt(longPrompt, longResponse);
-      
+
       // Should not contain full strings
       expect(prompt.length).to.be.lessThan(longPrompt.length + longResponse.length);
     });

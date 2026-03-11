@@ -1,0 +1,8 @@
+{
+  "review": "text",
+  "priorityFiles": [
+    "src/app.js",
+    "src/lib/errors.js",
+    "src/lib/id.js"
+  ]
+}

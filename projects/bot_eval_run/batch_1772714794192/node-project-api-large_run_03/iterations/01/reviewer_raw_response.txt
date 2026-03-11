@@ -1,0 +1,1 @@
+{ "review": "state-sharing-mismatch, task-status-contract-mismatch", "priorityFiles": ["src/modules/projects/service.js", "src/modules/tasks/service.js"] }

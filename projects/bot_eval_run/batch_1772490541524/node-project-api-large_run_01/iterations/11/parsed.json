@@ -1,0 +1,60 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Node.js Project API\n\nThis is a Node.js project that provides an API for managing projects, tasks, members, and comments.\n\n## Features\n- Health check endpoint\n- CRUD operations for projects\n- CRUD operations for members within a project\n- CRUD operations for tasks within a project\n- CRUD operations for comments within a task\n\n## Dependencies\n- Express.js\n- Supertest (for testing)\n\n## Setup\n1. Clone the repository.\n2. Install dependencies using `npm install`.\n3. Run tests using `node --test --test-concurrency=1 tests/oracle.test.js`.\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"node-project-api\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A Node.js project API for managing projects, tasks, members, and comments.\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"test\": \"node --test --test-concurrency=1 tests/oracle.test.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.18.2\"\n  },\n  \"devDependencies\": {\n    \"supertest\": \"^6.3.0\",\n    \"jest\": \"^29.5.0\"\n  }\n}"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst projectsRoutes = require('./modules/projects/routes');\nconst membersRoutes = require('./modules/members/routes');\nconst tasksRoutes = require('./modules/tasks/routes');\nconst commentsRoutes = require('./modules/comments/routes');\n\nconst app = express();\napp.use(express.json());\n\napp.get('/health', (req, res) => {\n  res.json({ ok: true });\n});\n\napp.use('/projects', projectsRoutes);\napp.use('/projects/:projectId/members', membersRoutes);\napp.use('/projects/:projectId/tasks', tasksRoutes);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRoutes);\n\nmodule.exports = app;"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "const sendError = (res, status, code, message) => {\n  res.status(status).json({ error: { code, message } });\n};\n\nmodule.exports = { sendError };"
+    },
+    {
+      "path": "src/lib/id.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nmodule.exports = { randomUUID };"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst commentsService = require('./service');\nconst sendError = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', async (req, res) => {\n  const { message } = req.body;\n  if (!message) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Message is required');\n  }\n  try {\n    const comment = await commentsService.createComment(req.params.taskId, message);\n    res.status(201).json({ comment });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', error.message);\n  }\n});\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { randomUUID } = require('../../lib/id');\n\nlet commentsStore = [];\n\nconst createComment = async (taskId, message) => {\n  const commentId = randomUUID();\n  const comment = { id: commentId, taskId, message };\n  commentsStore.push(comment);\n  return comment;\n};\n\nmodule.exports = { createComment };"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst membersService = require('./service');\nconst sendError = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', async (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) {\n    return sendError(res, 400, 'INVALID_INPUT', 'User ID and role are required');\n  }\n  try {\n    const member = await membersService.addMember(req.params.projectId, userId, role);\n    if (!member) return sendError(res, 409, 'MEMBER_DUPLICATE', 'Member already exists');\n  res.status(201).json({ member });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', error.message);\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('../../lib/id');\n\nlet membersStore = [];\n\nconst addMember = async (projectId, userId, role) => {\n  const memberId = randomUUID();\n  const member = { id: memberId, projectId, userId, role };\n  membersStore.push(member);\n  return member;\n};\n\nmodule.exports = { addMember };"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst projectsService = require('./service');\nconst sendError = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.get('/', async (req, res) => {\n  try {\n    const projects = await projectsService.getAllProjects();\n    res.json({ projects });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', error.message);\n  }\n});\n\nrouter.post('/', async (req, res) => {\n  const { name } = req.body;\n  if (!name) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Name is required');\n  }\n  try {\n    const __existingProject = await projectsService.getProjectByName(name);\n  if (__existingProject) return sendError(res, 409, 'PROJECT_DUPLICATE', 'Project already exists');\n  const project = await projectsService.createProject(name);\n    res.status(201).json({ project });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', error.message);\n  }\n});\n\nrouter.get('/:projectId', async (req, res) => {\n  try {\n    const project = await projectsService.getProjectById(req.params.projectId);\n    if (!project) return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found');\n    return res.json({ project });\n  } catch (_error) {\n    return sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('../../lib/id');\n\nlet projectsStore = [];\n\nconst getAllProjects = async () => {\n  return projectsStore;\n};\n\nconst createProject = async (name) => {\n  const projectId = randomUUID();\n  const project = { id: projectId, name };\n  projectsStore.push(project);\n  return project;\n};\n\nmodule.exports = { getAllProjects, createProject };"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst tasksService = require('./service');\nconst sendError = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.get('/', async (req, res) => {\n  const { status } = req.query;\n  try {\n    let tasks = await tasksService.getAllTasks(req.params.projectId);\n    if (status === 'todo' || status === 'done') {\n      tasks = tasks.filter(task => task.status === 'done');\n    }\n    res.json({ tasks });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', error.message);\n  }\n});\n\nrouter.post('/', async (req, res) => {\n  const { description } = req.body;\n  if (!description) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Description is required');\n  }\n  try {\n    const task = await tasksService.createTask(req.params.projectId, description);\n    res.status(201).json({ task });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', error.message);\n  }\n});\n\nrouter.patch('/:taskId', async (req, res) => {\n  const { status } = req.body;\n  if (!status || ![ 'todo', 'done' ].includes(status)) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Invalid status');\n  }\n  try {\n    const task = await tasksService.updateTaskStatus(req.params.projectId, req.params.taskId, status);\n    res.json({ task });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', error.message);\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('../../lib/id');\n\nlet tasksStore = [];\n\nconst getAllTasks = async (projectId) => {\n  return tasksStore.filter(task => task.projectId === projectId);\n};\n\nconst createTask = async (projectId, description) => {\n  const taskId = randomUUID();\n  const task = { id: taskId, projectId, description, status: 'todo' };\n  tasksStore.push(task);\n  return task;\n};\n\nconst updateTaskStatus = async (projectId, taskId, status) => {\n  const taskIndex = tasksStore.findIndex(task => task.id === taskId && task.projectId === projectId);\n  if (taskIndex === -1) {\n    return null;\n  }\n  tasksStore[taskIndex].status = status;\n  return tasksStore[taskIndex];\n};\n\nmodule.exports = { getAllTasks, createTask, updateTaskStatus };\n"
+    },
+    {
+      "path": "src/server.js",
+      "content": "const app = require('./app');\n\nmodule.exports = app;\n"
+    }
+  ]
+}

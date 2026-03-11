@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst { sendError } = require('../../lib/errors');\nconst membersService = require('./service');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) {\n    return sendError(res, 400, 'INVALID_PAYLOAD', 'Invalid payload');\n  }\n\n  const member = membersService.addMember(req.projectId, { userId, role });\n  if (member === null) {\n    return sendError(res, 409, 'MEMBER_DUPLICATE', 'Member already exists');\n  }\n\n  res.status(201).json({ member });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst { sendError } = require('../../lib/errors');\nconst commentsService = require('./service');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const { message } = req.body;\n  if (!message) {\n    return sendError(res, 400, 'INVALID_PAYLOAD', 'Invalid payload');\n  }\n\n  const comment = commentsService.addComment(req.taskId, { message });\n  res.status(201).json({ comment });\n});\n\nmodule.exports = router;\n"
+    }
+  ],
+  "notes": "Fixed the members and comments routes to ensure they return the correct status codes and error payloads as per the requirements."
+}

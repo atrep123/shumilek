@@ -1,0 +1,61 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Project Management API\n\nThis is a simple project management API built with Node.js and Express.\nIt includes endpoints for managing projects, tasks, members, and comments."
+    },
+    {
+      "path": "package.json",
+      "content": "{ \"name\": \"project-management-api\", \"version\": \"1.0.0\", \"main\": \"src/app.js\", \"scripts\": { \"start\": \"node src/server.js\" }, \"dependencies\": { \"express\": \"^4.17.1\", \"crypto\": \"^1.0.0\" } }"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst app = express();\nconst projectsRouter = require('./modules/projects/routes');\nconst membersRouter = require('./modules/members/routes');\nconst tasksRouter = require('./modules/tasks/routes');\nconst commentsRouter = require('./modules/comments/routes');\napp.use(express.json());\napp.get('/health', (req, res) => { res.json({ ok: true }); });\napp.use('/projects', projectsRouter);\napp.use('/projects/:projectId/members', membersRouter);\napp.use('/projects/:projectId/tasks', tasksRouter);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRouter);\nmodule.exports = app;"
+    },
+    {
+      "path": "src/server.js",
+      "content": "const app = require('./app');\nconst port = process.env.PORT || 3000;\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { createProject } = require('./service');\nrouter.post('/', (req, res) => { const project = createProject(req.body); if (!project) return res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'Invalid input' } }); res.status(201).json(project); });\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('crypto');\nconst projects = [];\nconst createProject = (data) => {\n  if (!data.name) return null;\n  const project = { id: randomUUID(), ...data };\n  projects.push(project);\n  return project;\n};\nmodule.exports = { createProject };"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { addMember } = require('./service');\nrouter.post('/', (req, res) => { const member = addMember(req.body); if (!member) return res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'Invalid input' } }); if (projects.some(p => p.id === req.params.projectId && p.members.includes(member))) return res.status(409).json({ error: { code: 'DUPLICATE_MEMBER', message: 'Member already exists for this project' } }); res.status(201).json(member); });\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('crypto');\nconst addMember = (data) => {\n  if (!data.userId || !data.role) return null;\n  const member = { id: randomUUID(), ...data };\n  return member;\n};\nmodule.exports = { addMember };"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { createTask } = require('./service');\nrouter.post('/', (req, res) => { const task = createTask(req.body); if (!task) return res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'Invalid input' } }); res.status(201).json(task); });\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('crypto');\nconst tasks = [];\nconst createTask = (data) => {\n  if (!data.title) return null;\n  const task = { id: randomUUID(), ...data };\n  tasks.push(task);\n  return task;\n};\nmodule.exports = { createTask };"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { addComment } = require('./service');\nrouter.post('/', (req, res) => { const comment = addComment(req.body); if (!comment) return res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'Invalid input' } }); res.status(201).json(comment); });\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { randomUUID } = require('crypto');\nconst addComment = (data) => {\n  if (!data.message) return null;\n  const comment = { id: randomUUID(), ...data };\n  return comment;\n};\nmodule.exports = { addComment };"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "class CustomError extends Error {\n  constructor(code, message) {\n    super(message);\n    this.code = code;\n  }\n}\nmodule.exports = { CustomError };"
+    },
+    {
+      "path": "src/lib/id.js",
+      "content": "const { randomUUID } = require('crypto');\nmodule.exports = { randomUUID };"
+    }
+  ],
+  "mode": "full"
+}

@@ -1,0 +1,20 @@
+{
+    "review": "Zkontrolujte všechny POST endpointy, které mají vyžadovat `name`, `userId` nebo `message`. Zároveň zkontrolujte, že všechny chyby jsou správně vráceny s kódem 400 a odpovědí ve formátu JSON. Ujistěte se, že všechny body odpovědí obsahují pole `error` s příslušnými zprávami.",
+    "specific_changes": [
+        {
+            "file": "src/routes/projects.js",
+            "line": 15,
+            "change": "Přidat kontrolu pro prázdného body v POST /projects"
+        },
+        {
+            "file": "src/routes/members.js",
+            "line": 20,
+            "change": "Přidat kontrolu pro prázdného body v POST /projects/:projectId/members"
+        },
+        {
+            "file": "src/routes/comments.js",
+            "line": 15,
+            "change": "Přidat kontrolu pro prázdného body v POST /comments"
+        }
+    ]
+}

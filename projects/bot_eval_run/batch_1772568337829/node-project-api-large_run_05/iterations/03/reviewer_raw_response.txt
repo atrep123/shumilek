@@ -1,0 +1,20 @@
+{
+    "review": "Zkontrolujte, že pro všechny POST endpointy, které vyžadují body (např. /projects, /projects/:projectId/tasks/:taskId/comments), kontrolujete prázdný nebo chybějící payload a vracejte odpovídající 400 chybu. Pro endpointy, které mají mít validní ID (např. /projects/:id), zkontrolujte, že ID je správně formátováno.",
+    "changes": [
+        {
+            "file": "src/routes/projects.js",
+            "line": 20,
+            "change": "Přidejte kontrolu pro prázdný payload v POST /projects"
+        },
+        {
+            "file": "src/routes/tasks.js",
+            "line": 35,
+            "change": "Přidejte kontrolu pro prázdný payload v POST /projects/:projectId/tasks/:taskId/comments"
+        },
+        {
+            "file": "src/models/project.js",
+            "line": 12,
+            "change": "Zkontrolujte, zda ID je správně formátováno při vytváření a získání projektů"
+        }
+    ]
+}

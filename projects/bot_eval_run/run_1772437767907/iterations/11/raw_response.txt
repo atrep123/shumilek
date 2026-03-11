@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst app = express();\nconst { randomUUID } = require('node:crypto');\nconst { sendError } = require('./lib/errors');\n\n// Middleware to parse JSON bodies\napp.use(express.json());\n\n// Health endpoint\napp.get('/health', (req, res) => {\n  res.json({ ok: true });\n});\n\n// Project routes\nconst projectsRouter = require('./modules/projects/routes');\napp.use('/projects', projectsRouter);\n\nmodule.exports = app;"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "module.exports.sendError = (res, status, code, message) => {\n  res.status(status).json({ error: { code, message } });\n};"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { getProjects, createProject, getProjectById } = require('./service');\n\n// Get all projects\nrouter.get('/', async (req, res) => {\n  try {\n    const projects = await getProjects();\n    res.json({ projects });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', error.message);\n  }\n});\n\n// Create a new project\nrouter.post('/', async (req, res) => {\n  if (!req.body.name) return sendError(res, 400, 'BAD_REQUEST', 'Name is required');\n  try {\n    const project = await createProject({ name: req.body.name });\n    res.status(201).json({ project });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', error.message);\n  }\n});\n\n// Get a single project by ID\nrouter.get('/:projectId', async (req, res) => {\n  try {\n    const project = await getProjectById(req.params.projectId);\n    if (!project) return sendError(res, 404, 'NOT_FOUND', 'Project not found');\n    res.json({ project });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', error.message);\n  }\n});\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst projects = [];\nexports.getProjects = () => {\n  return projects;\n};\nexports.createProject = ({ name }) => {\n  const project = { id: randomUUID(), name };\n  projects.push(project);\n  return project;\n};\nexports.getProjectById = (id) => {\n  return projects.find(project => project.id === id);\n};"
+    }
+  ],
+  "notes": "Added routes and service methods for projects, including error handling and validation."
+}

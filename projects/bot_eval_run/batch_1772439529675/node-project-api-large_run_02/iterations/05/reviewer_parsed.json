@@ -1,0 +1,9 @@
+{
+  "review": "Route-service contract mismatch (comments): routes call commentsService.getCommentsByTaskId() but service does not export \"getCommentsByTaskId\". Route wiring in app.js needs to be updated to match the expected methods.",
+  "priorityFiles": [
+    "src/modules/comments/service.js",
+    "src/modules/members/service.js",
+    "src/modules/projects/service.js",
+    "src/modules/tasks/service.js"
+  ]
+}

@@ -1,0 +1,35 @@
+﻿[
+    {
+        "runIndex":  1,
+        "startedAt":  "2026-02-28T21:52:40.8000247+01:00",
+        "finishedAt":  "2026-02-28T23:59:59.4548868+01:00",
+        "durationSec":  7639,
+        "commandExitCode":  2,
+        "outDir":  "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772311961999",
+        "ok":  false,
+        "parseFailures":  1,
+        "diagnostics":  "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)"
+    },
+    {
+        "runIndex":  2,
+        "startedAt":  "2026-02-28T23:59:59.5244170+01:00",
+        "finishedAt":  "2026-03-01T01:44:45.3954245+01:00",
+        "durationSec":  6286,
+        "commandExitCode":  2,
+        "outDir":  "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772319600681",
+        "ok":  false,
+        "parseFailures":  3,
+        "diagnostics":  "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)"
+    },
+    {
+        "runIndex":  3,
+        "startedAt":  "2026-03-01T01:44:45.4054992+01:00",
+        "finishedAt":  "2026-03-01T03:49:47.6222730+01:00",
+        "durationSec":  7502,
+        "commandExitCode":  2,
+        "outDir":  "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772325886622",
+        "ok":  false,
+        "parseFailures":  1,
+        "diagnostics":  "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)"
+    }
+]

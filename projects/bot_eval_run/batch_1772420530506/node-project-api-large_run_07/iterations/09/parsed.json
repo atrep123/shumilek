@@ -1,0 +1,33 @@
+{
+  "files": [
+    {
+      "path": "src/app.js",
+      "content": "// src/app.js\nconst express = require('express');\nconst projectsRoutes = require('./modules/projects/routes');\nconst membersRoutes = require('./modules/members/routes');\nconst tasksRoutes = require('./modules/tasks/routes');\nconst commentsRoutes = require('./modules/comments/routes');\n\nconst app = express();\napp.use(express.json());\n\napp.get('/health', (req, res) => {\n  res.json({ ok: true });\n});\n\napp.use('/projects', projectsRoutes);\napp.use('/projects/:projectId/members', membersRoutes);\napp.use('/projects/:projectId/tasks', tasksRoutes);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRoutes);\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "// src/modules/projects/routes.js\nconst express = require('express');\nconst projectsService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.get('/', async (req, res) => {\n  try {\n    const projects = await projectsService.getAllProjects();\n    res.json({ projects });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nrouter.post('/', async (req, res) => {\n  const { name } = req.body;\n  if (!name || typeof name !== 'string' || name.trim() === '') {\n    return sendError(res, 400, 'INVALID_NAME', 'Name must be a non-empty string');\n  }\n\n  try {\n    const project = await projectsService.createProject(name);\n    res.status(201).json({ project });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "// src/modules/members/routes.js\nconst express = require('express');\nconst membersService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', async (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || typeof userId !== 'string' || !role || typeof role !== 'string') {\n    return sendError(res, 400, 'INVALID_INPUT', 'Invalid input');\n  }\n\n  try {\n    const member = await membersService.addMember(req.params.projectId, userId, role);\n    if (!member) {\n      return sendError(res, 409, 'DUPLICATE_MEMBER', 'Duplicate member in the project');\n    }\n    res.status(201).json({ member });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "// src/modules/tasks/routes.js\nconst express = require('express');\nconst tasksService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.get('/', async (req, res) => {\n  const status = req.query.status;\n  try {\n    const tasks = await tasksService.getTasksByStatus(req.params.projectId, status);\n    res.json({ tasks });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nrouter.post('/', async (req, res) => {\n  const { description } = req.body;\n  if (!description || typeof description !== 'string' || description.trim() === '') {\n    return sendError(res, 400, 'INVALID_DESCRIPTION', 'Description must be a non-empty string');\n  }\n\n  try {\n    const task = await tasksService.createTask(req.params.projectId, description);\n    res.status(201).json({ task });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nrouter.patch('/:taskId', async (req, res) => {\n  const { status } = req.body;\n  if (!status || (status !== 'todo' && status !== 'done')) {\n    return sendError(res, 400, 'INVALID_STATUS', 'Invalid task status');\n  }\n\n  try {\n    const updatedTask = await tasksService.updateTaskStatus(req.params.projectId, req.params.taskId, status);\n    if (!updatedTask) {\n      return sendError(res, 404, 'TASK_NOT_FOUND', 'Task not found');\n    }\n    res.json({ task: updatedTask });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "// src/modules/comments/routes.js\nconst express = require('express');\nconst commentsService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', async (req, res) => {\n  const { message } = req.body;\n  if (!message || typeof message !== 'string' || message.trim() === '') {\n    return sendError(res, 400, 'INVALID_MESSAGE', 'Message must be a non-empty string');\n  }\n\n  try {\n    const comment = await commentsService.addComment(req.params.projectId, req.params.taskId, message);\n    if (!comment) {\n      return sendError(res, 404, 'TASK_NOT_FOUND', 'Task not found');\n    }\n    res.status(201).json({ comment });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "// src/lib/errors.js\nconst sendError = (res, status, code, message) => {\n  res.status(status).json({ error: { code, message } });\n};\n\nmodule.exports = { sendError };\n"
+    },
+    {
+      "path": "src/lib/id.js",
+      "content": "// src/lib/id.js\nconst { randomUUID } = require('node:crypto');\n\nmodule.exports = { randomUUID };\n"
+    }
+  ],
+  "notes": "Minimal changes to address the contract mismatches and ensure proper error handling."
+}

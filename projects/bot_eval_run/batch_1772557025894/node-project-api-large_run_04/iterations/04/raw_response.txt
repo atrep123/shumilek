@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst membersService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', (req, res) => {\n  const { userId, role } = req.body;\n\n  if (!userId || !role) {\n    return sendError(res, 400, 'INVALID_INPUT', 'User ID and role are required.');\n  }\n\n  const member = membersService.createMember(req.projectId, userId, role);\n\n  if (member.duplicate) {\n    return sendError(res, 409, 'DUPLICATE_MEMBER', 'Member already exists for this project.');\n  }\n\n  res.status(201).json({ member: member.member });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst commentsService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', (req, res) => {\n  const { message } = req.body;\n\n  if (!message) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Message is required.');\n  }\n\n  const comment = commentsService.createComment(req.projectId, req.taskId, message);\n  res.status(201).json({ comment });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst projectsService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.get('/:projectId', (req, res) => {\n  const project = projectsService.getProject(req.params.projectId);\n\n  if (!project) {\n    return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found.');\n  }\n\n  res.json({ project });\n});\n\nrouter.post('/', (req, res) => {\n  const { name } = req.body;\n\n  if (!name) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Name is required.');\n  }\n\n  const project = projectsService.createProject(name);\n  res.status(201).json({ project });\n});\n\nmodule.exports = router;\n"
+    }
+  ],
+  "notes": "Fixed validation for POST requests in members and comments routes to return 400 Bad Request if required fields are missing. Added validation for the name field in projects route."
+}

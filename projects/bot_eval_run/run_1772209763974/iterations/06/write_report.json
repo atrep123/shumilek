@@ -1,0 +1,11 @@
+{
+  "count": 4,
+  "files": [
+    "mini_ai/cli.py",
+    "mini_ai/markov.py",
+    "tests/test_markov.py",
+    "tests/test_cli.py"
+  ],
+  "appliedAsPatch": false,
+  "forcePatchFromIncompleteFull": false
+}

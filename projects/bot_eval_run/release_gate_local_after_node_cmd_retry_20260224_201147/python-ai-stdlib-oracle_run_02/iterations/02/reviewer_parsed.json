@@ -1,0 +1,17 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Mini AI Project\n\nThis is a simple implementation of a Markov Chain generator in Python, following the requirements specified.\n"
+    },
+    {
+      "path": "mini_ai/__init__.py",
+      "content": ""
+    },
+    {
+      "path": "mini_ai/markov.py",
+      "content": "from typing import Dict, Any, Union, List, Optional\nimport json\nimport random\nimport string\n\n\nclass MarkovChain:\n    def __init__(self, order: int = 1):\n        self.order = order\n        self.transitions: Dict[str, Dict[str, int]] = {}\n\n    @classmethod\n    def from_dict(cls, d: Dict[str, Any]) -> "
+    }
+  ]
+}

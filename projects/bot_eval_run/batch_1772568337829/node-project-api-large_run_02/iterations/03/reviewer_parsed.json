@@ -1,0 +1,36 @@
+{
+  "review": "Zkontrolujte, že pro všechny POST requesty, kde je požadováno `name`, `title`, `message` nebo `userId` a `role`, zahrnete kontrolu těchto polí. V případě chyb zavolejte funkci expectErrorPayload s očekávaným stavem 400.",
+  "files": [
+    {
+      "file": "src/routes/projects.js",
+      "changes": [
+        {
+          "line": 25,
+          "change": "if (!req.body.name) { return res.status(400).json({ error: 'Name is required' }); }"
+        },
+        {
+          "line": 36,
+          "change": "if (projectExists) { return res.status(409).json({ error: 'Project with this name already exists' }); }"
+        }
+      ]
+    },
+    {
+      "file": "src/routes/comments.js",
+      "changes": [
+        {
+          "line": 15,
+          "change": "if (!req.body.message) { return res.status(400).json({ error: 'Message is required' }); }"
+        }
+      ]
+    },
+    {
+      "file": "src/routes/members.js",
+      "changes": [
+        {
+          "line": 15,
+          "change": "if (!req.body.userId || !req.body.role) { return res.status(400).json({ error: 'UserId and role are required' }); }"
+        }
+      ]
+    }
+  ]
+}

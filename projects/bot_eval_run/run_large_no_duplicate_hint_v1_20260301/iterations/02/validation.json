@@ -1,0 +1,15 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Avoid raw throw in src/modules/projects/service.js: return domain errors and map them to JSON payloads in routes.",
+    "Avoid raw throw in src/modules/tasks/service.js: return domain errors and map them to JSON payloads in routes.",
+    "Route-service contract mismatch (projects): routes call projectsService.getProject() but service does not export \"getProject\".",
+    "Route-service contract mismatch (tasks): routes call tasksService.getTasks() but service does not export \"getTasks\".",
+    "Route-service contract mismatch (tasks): routes call tasksService.updateTaskStatus() but service does not export \"updateTaskStatus\".",
+    "Status code contract mismatch: POST /projects/:projectId/members should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/tasks/:taskId/comments should return HTTP 201 on create.",
+    "package.json should include \"supertest\" (dependencies or devDependencies) for oracle execution",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

@@ -1,0 +1,30 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)",
+    "Contract mismatch: POST /projects with missing/empty `name` must return 400 with { error: { code, message } }.",
+    "Contract mismatch: POST /projects/:projectId/tasks/:taskId/comments with missing/empty `message` must return 400."
+  ],
+  "commands": [
+    {
+      "command": "npm install --no-audit --fund=false",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772557025894\\node-project-api-large_run_01\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 2594,
+      "stdout": "\nadded 90 packages in 2s\n",
+      "stderr": "npm warn deprecated supertest@6.3.4: Please upgrade to supertest v7.1.3+, see release notes at https://github.com/forwardemail/supertest/releases/tag/v7.1.3 - maintenance is supported by Forward Email @ https://forwardemail.net\nnpm warn deprecated superagent@8.1.2: Please upgrade to superagent v10.2.2+, see release notes at https://github.com/forwardemail/superagent/releases/tag/v10.2.2 - maintenance is supported by Forward Email @ https://forwardemail.net\n"
+    },
+    {
+      "command": "node --test --test-concurrency=1 tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772557025894\\node-project-api-large_run_01\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 407,
+      "stdout": "✔ health + empty project list (88.5999ms)\n✔ project create/list/get + duplicate + validation (34.2741ms)\n✖ members endpoints (9.9011ms)\n✔ tasks create/list/filter + patch status (20.7517ms)\n✖ comments + not-found and payload contract (8.7951ms)\nℹ tests 5\nℹ suites 0\nℹ pass 3\nℹ fail 2\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 338.3309\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:92:1\n✖ members endpoints (9.9011ms)\n  AssertionError [ERR_ASSERTION]: {\"member\":{\"duplicate\":false,\"member\":{\"projectId\":\"15746537-5d6a-4c3c-9acd-f4e4ba7f601d\",\"userId\":\"\",\"role\":\"owner\"}}}\n  \n  201 !== 400\n  \n      at expectErrorPayload (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772557025894\\node-project-api-large_run_01\\workspace\\tests\\oracle.test.js:43:10)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772557025894\\node-project-api-large_run_01\\workspace\\tests\\oracle.test.js:102:3)\n      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 201,\n    expected: 400,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at tests\\oracle.test.js:160:1\n✖ comments + not-found and payload contract (8.7951ms)\n  AssertionError [ERR_ASSERTION]: {\"comment\":{\"id\":\"893be169-d8cd-4c16-b6db-866f7f4f921f\",\"projectId\":\"2a050d3b-2e9d-4905-bdfb-dbc1ae2dd427\",\"taskId\":\"132e5231-5047-4b03-9e16-a8dbe9285ec0\",\"message\":\"\"}}\n  \n  201 !== 400\n  \n      at expectErrorPayload (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772557025894\\node-project-api-large_run_01\\workspace\\tests\\oracle.test.js:43:10)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772557025894\\node-project-api-large_run_01\\workspace\\tests\\oracle.test.js:176:3)\n      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 201,\n    expected: 400,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+      "stderr": ""
+    }
+  ]
+}

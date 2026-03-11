@@ -1,0 +1,13 @@
+{
+  "strategy": "on-fail",
+  "scenarioId": "node-project-api-large",
+  "triggerIteration": 1,
+  "diagnostics": [
+    "Task status contract mismatch: use `todo` / `done` statuses (not `open` or `pending`)",
+    "Task status contract mismatch: PATCH status must allow only \"todo\" or \"done\" (pending/open are not allowed).",
+    "Task filtering contract mismatch: support ?status=todo|done and PATCH status updates.",
+    "Route-service contract mismatch (projects): routes call projectsService.getAllProjects() but service does not export \"getAllProjects\".",
+    "Route-service export map required (projects): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "strategy": "on-fail",
+  "scenarioId": "ts-todo-oracle",
+  "triggerIteration": 1,
+  "diagnostics": [
+    "Ollama request failed: Structured chat failed: The user aborted a request."
+  ]
+}

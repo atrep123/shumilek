@@ -1,0 +1,12 @@
+- Initialize the Node.js project with necessary dependencies.
+- Create the directory structure as specified in the SPEC.
+- Implement the `src/app.*` and `src/server.*` files without starting an HTTP listener.
+- Develop the service layer for each domain (projects, tasks, members, comments) using in-memory repositories.
+- Implement the routes for each module ensuring they follow the specified API contract.
+- Ensure all error responses are consistent with the format `{ "error": { "code": "<string>", "message": "<string>" } }`.
+- Add validation checks to handle invalid inputs and return appropriate HTTP status codes (400, 404, 409).
+- Implement the `src/lib/id.js` for generating unique IDs using `crypto.randomUUID()`.
+- Ensure that all routes are wired correctly in `src/app.js` with the specified mount points.
+- Add a `README.md` file with project setup instructions.
+- Include `supertest` in `package.json` as a dependency or devDependency.
+- Run build and test commands to ensure the application meets all requirements.

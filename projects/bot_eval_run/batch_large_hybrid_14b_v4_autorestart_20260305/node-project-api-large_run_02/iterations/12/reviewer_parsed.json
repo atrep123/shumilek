@@ -1,0 +1,5 @@
+{
+  "priority": 1,
+  "message": "src/modules/comments/service.js: Missing required import for randomUUID",
+  "file": "src/modules/comments/service.js"
+}

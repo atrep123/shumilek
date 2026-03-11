@@ -1,0 +1,7 @@
+{
+  "review": "Added 'supertest' to dependencies in package.json and ensured members service uses shared projects repository.",
+  "priorityFiles": [
+    "package.json",
+    "src/modules/members/service.js"
+  ]
+}

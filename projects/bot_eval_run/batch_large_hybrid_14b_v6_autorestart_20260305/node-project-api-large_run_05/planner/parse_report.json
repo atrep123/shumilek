@@ -1,0 +1,16 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "deepseek-r1:8b",
+      "ok": false,
+      "error": "Structured chat failed: Ollama HTTP 500: {\"error\":\"health resp: Get \\\"http://127.0.0.1:49204/health\\\": dial tcp 127.0.0.1:49204: connectex: Normálně je povoleno pouze jedno použití každé adresy (protokolu, síťové adresy, portu) soketu.\"}",
+      "errorKind": "other"
+    }
+  ],
+  "finalOk": false,
+  "primaryError": "Structured chat failed: Ollama HTTP 500: {\"error\":\"health resp: Get \\\"http://127.0.0.1:49204/health\\\": dial tcp 127.0.0.1:49204: connectex: Normálně je povoleno pouze jedno použití každé adresy (protokolu, síťové adresy, portu) soketu.\"}",
+  "primaryErrorKind": "other",
+  "finalError": "Structured chat failed: Ollama HTTP 500: {\"error\":\"health resp: Get \\\"http://127.0.0.1:49204/health\\\": dial tcp 127.0.0.1:49204: connectex: Normálně je povoleno pouze jedno použití každé adresy (protokolu, síťové adresy, portu) soketu.\"}",
+  "finalErrorKind": "other"
+}

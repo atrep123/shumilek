@@ -1,0 +1,19 @@
+{
+  "src/lib/errors.js": {
+    "sendError": "This function sends an error response with the given status, code, and message."
+  },
+  "src/modules/members/service.js": {
+    "addMember": "Adds a member to a project. Returns null if the member already exists or throws an error.",
+    "getMembers": "Returns all members of a project."
+  },
+  "src/modules/members/routes.js": {
+    "GET /members": "Fetches and returns all members of a project.",
+    "POST /members": "Adds a new member to a project. Returns the created member on success or an error response if userId or role is missing."
+  },
+  "node_modules/express/lib/router/layer.js": {
+    "Layer": "A class representing a single route layer in Express, handling requests and errors.",
+    "handle_error": "Handles errors for the layer.",
+    "handle_request": "Handles requests for the layer.",
+    "match": "Checks if this route matches the given path."
+  }
+}

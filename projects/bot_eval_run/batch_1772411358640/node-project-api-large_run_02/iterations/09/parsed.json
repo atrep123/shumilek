@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "// src/modules/tasks/service.js\nconst { randomUUID } = require('node:crypto');\n\nconst tasksStore = [];\n\nmodule.exports = {\n  getTasksByProjectId(projectId) {\n    return tasksStore.filter(task => task.projectId === projectId);\n  },\n  createTask(projectId, title) {\n    const newTask = {\n      id: randomUUID(),\n      projectId,\n      title,\n      status: 'todo'\n    };\n    tasksStore.push(newTask);\n    return newTask;\n  },\n  updateTaskStatus(taskId, status) {\n    const task = tasksStore.find(t => t.id === taskId);\n    if (task && ['todo', 'done'].includes(status)) {\n      task.status = status;\n      return task;\n    }\n    return null;\n  }\n};\n"
+    }
+  ],
+  "notes": "Added getTasksByProjectId method to tasksService in src/modules/tasks/service.js."
+}

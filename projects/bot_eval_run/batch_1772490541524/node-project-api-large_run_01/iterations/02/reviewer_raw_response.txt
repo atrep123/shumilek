@@ -1,0 +1,4 @@
+{
+  "review": "Route-service contract mismatch (projects): routes call projectsService.getProjectByName() but service does not export \"getProjectByName\". State-sharing mismatch: members service should reuse shared projects repository, not isolated members map/array. Error payload contract likely missing: expected { error: { code, message } } handling in API responses.",
+  "priorityFiles": ["src/modules/projects/service.js", "src/modules/members/service.js"]
+}

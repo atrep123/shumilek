@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"project-management-api\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple Project Management API using Node.js\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\",\n    \"test\": \"node --test tests/oracle.test.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.18.2\",\n    \"supertest\": \"^6.3.3\"\n  }\n}\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst projectService = require('./service');\n\nrouter.post('/', (req, res) => {\n  const project = projectService.createProject(req.body);\n  res.status(201).json({ project });\n});\n\nrouter.get('/:id', (req, res) => {\n  const project = projectService.getProjectById(req.params.id);\n  if (!project) {\n    return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Project not found' } });\n  }\n  res.json({ project });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst taskService = require('./service');\n\nrouter.post('/:projectId/tasks', (req, res) => {\n  const task = taskService.createTask(req.params.projectId, req.body);\n  if (!task) {\n    return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Project not found' } });\n  }\n  res.status(201).json({ task });\n});\n\nrouter.get('/:projectId/tasks/:taskId', (req, res) => {\n  const task = taskService.getTaskById(req.params.projectId, req.params.taskId);\n  if (!task) {\n    return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Task not found' } });\n  }\n  res.json({ task });\n});\n\nrouter.patch('/:projectId/tasks/:taskId', (req, res) => {\n  const task = taskService.updateTask(req.params.projectId, req.params.taskId, req.body);\n  if (!task) {\n    return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Task not found' } });\n  }\n  res.json({ task });\n});\n\nrouter.get('/:projectId/tasks', (req, res) => {\n  const tasks = taskService.getTasksByProjectId(req.params.projectId);\n  if (!tasks) {\n    return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Project not found' } });\n  }\n  res.json({ tasks });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst commentService = require('./service');\n\nrouter.post('/:projectId/tasks/:taskId/comments', (req, res) => {\n  const comment = commentService.createComment(req.params.projectId, req.params.taskId, req.body);\n  if (!comment) {\n    return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Task not found' } });\n  }\n  res.status(201).json({ comment });\n});\n\nrouter.get('/:projectId/tasks/:taskId/comments', (req, res) => {\n  const comments = commentService.getCommentsByTaskId(req.params.projectId, req.params.taskId);\n  if (!comments) {\n    return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Task not found' } });\n  }\n  res.json({ comments });\n});\n\nmodule.exports = router;\n"
+    }
+  ],
+  "notes": "Fixed routing issues in tasks and comments modules to ensure correct HTTP status codes are returned."
+}

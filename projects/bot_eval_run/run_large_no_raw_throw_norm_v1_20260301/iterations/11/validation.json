@@ -1,0 +1,12 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for /projects/:projectId/members",
+    "Missing route signature for /projects/:projectId/tasks",
+    "Missing route signature for /projects/:projectId/tasks/:taskId/comments",
+    "Do not use \"uuid\" package in node-project-api-large; use node:crypto randomUUID instead",
+    "State-sharing mismatch: members service should reuse shared projects repository, not isolated members map/array",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

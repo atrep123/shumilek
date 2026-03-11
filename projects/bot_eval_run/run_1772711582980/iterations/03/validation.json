@@ -1,0 +1,26 @@
+{
+  "ok": true,
+  "diagnostics": [],
+  "commands": [
+    {
+      "command": "npm install --no-audit --fund=false",
+      "cwd": "projects\\bot_eval_run\\run_1772711582980\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 2267,
+      "stdout": "\nadded 90 packages in 2s\n",
+      "stderr": "npm warn deprecated supertest@6.3.4: Please upgrade to supertest v7.1.3+, see release notes at https://github.com/forwardemail/supertest/releases/tag/v7.1.3 - maintenance is supported by Forward Email @ https://forwardemail.net\nnpm warn deprecated superagent@8.1.2: Please upgrade to superagent v10.2.2+, see release notes at https://github.com/forwardemail/superagent/releases/tag/v10.2.2 - maintenance is supported by Forward Email @ https://forwardemail.net\n"
+    },
+    {
+      "command": "node --test --test-concurrency=1 tests/oracle.test.js",
+      "cwd": "projects\\bot_eval_run\\run_1772711582980\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 370,
+      "stdout": "✔ health + empty project list (86.4088ms)\n✔ project create/list/get + duplicate + validation (22.0209ms)\n✔ members endpoints (11.0518ms)\n✔ tasks create/list/filter + patch status (12.4908ms)\n✔ comments + not-found and payload contract (12.1707ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 309.012\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Route-service contract mismatch (comments): routes call commentsService.getCommentsByTaskId() but service does not export \"getCommentsByTaskId\".",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

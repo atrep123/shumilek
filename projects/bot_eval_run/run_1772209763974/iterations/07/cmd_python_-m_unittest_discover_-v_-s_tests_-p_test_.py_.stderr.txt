@@ -1,0 +1,38 @@
+test_generate_command (test_cli.TestCLI.test_generate_command) ... FAIL
+test_train_command (test_cli.TestCLI.test_train_command) ... ok
+test_generate_with_longer_seed (test_markov.TestMarkovChain.test_generate_with_longer_seed) ... FAIL
+test_generate_with_seed (test_markov.TestMarkovChain.test_generate_with_seed) ... FAIL
+test_to_dict_and_from_dict (test_markov.TestMarkovChain.test_to_dict_and_from_dict) ... ok
+test_train_and_generate (test_markov.TestMarkovChain.test_train_and_generate) ... ok
+
+======================================================================
+FAIL: test_generate_command (test_cli.TestCLI.test_generate_command)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py", line 1396, in patched
+    return func(*newargs, **newkeywargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772209763974\workspace\tests\test_cli.py", line 26, in test_generate_command
+    self.assertEqual(len(output), 5)
+AssertionError: 4 != 5
+
+======================================================================
+FAIL: test_generate_with_longer_seed (test_markov.TestMarkovChain.test_generate_with_longer_seed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772209763974\workspace\tests\test_markov.py", line 31, in test_generate_with_longer_seed
+    self.assertTrue(generated_text.startswith("hello"))
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_generate_with_seed (test_markov.TestMarkovChain.test_generate_with_seed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772209763974\workspace\tests\test_markov.py", line 24, in test_generate_with_seed
+    self.assertTrue(generated_text.startswith("he"))
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.004s
+
+FAILED (failures=3)

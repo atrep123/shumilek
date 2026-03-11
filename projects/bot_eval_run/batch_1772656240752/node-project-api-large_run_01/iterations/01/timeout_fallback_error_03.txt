@@ -1,0 +1,1 @@
+request to http://localhost:11434/api/generate failed, reason: 

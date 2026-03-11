@@ -1,0 +1,41 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Project Management API\nThis is a simple in-memory project management API built with Node.js and Express.\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"project-management-api\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple in-memory project management API\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.18.2\",\n    \"supertest\": \"^6.3.3\"\n  }\n}\n"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst crypto = require('crypto');\n\nconst app = express();\napp.use(express.json());\n\n// In-memory repositories\nconst projectsRepo = {};\nconst tasksRepo = {};\nconst membersRepo = {};\nconst commentsRepo = {};\n\n// Health check\napp.get('/health', (req, res) => {\n  res.status(200).json({ ok: true });\n});\n\n// Projects\nconst projectsRouter = require('./modules/projects/router');\nprojectsRouter(app, { projectsRepo, tasksRepo, membersRepo, commentsRepo, crypto });\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/server.js",
+      "content": "const app = require('./app');\nconst PORT = process.env.PORT || 3000;\n\napp.listen(PORT, () => {\n  console.log(`Server is running on port ${PORT}`);\n});\n"
+    },
+    {
+      "path": "src/modules/projects/router.js",
+      "content": "module.exports = (app, { projectsRepo, crypto }) => {\n  const createProject = (req, res) => {\n    const { name } = req.body;\n    if (!name) return res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'Name is required' } });\n\n    const id = crypto.randomUUID();\n    if (projectsRepo[id]) return res.status(409).json({ error: { code: 'DUPLICATE_PROJECT', message: 'Project already exists' } });\n\n    projectsRepo[id] = { id, name, tasks: [], members: [] };\n    res.status(201).json({ project: projectsRepo[id] });\n  };\n\n  const getProjects = (req, res) => {\n    res.status(200).json({ projects: Object.values(projectsRepo) });\n  };\n\n  const getProjectById = (req, res) => {\n    const { projectId } = req.params;\n    if (!projectsRepo[projectId]) return res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });\n\n    res.status(200).json({ project: projectsRepo[projectId] });\n  };\n\n  app.post('/projects', createProject);\n  app.get('/projects', getProjects);\n  app.get('/projects/:projectId', getProjectById);\n};\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "module.exports = (projectsRepo) => {\n  const findProjectById = (id) => projectsRepo[id];\n\n  return { findProjectById };\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/router.js",
+      "content": "module.exports = (app, { tasksRepo, projectsRepo, crypto }) => {\n  const createTask = (req, res) => {\n    const { projectId } = req.params;\n    const project = projectsRepo[projectId];\n    if (!project) return res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });\n\n    const { title } = req.body;\n    if (!title) return res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'Title is required' } });\n\n    const taskId = crypto.randomUUID();\n    tasksRepo[taskId] = { id: taskId, projectId, title, status: 'todo', comments: [] };\n    project.tasks.push(taskId);\n    res.status(201).json({ task: tasksRepo[taskId] });\n  };\n\n  const getTasksByProjectId = (req, res) => {\n    const { projectId } = req.params;\n    const project = projectsRepo[projectId];\n    if (!project) return res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });\n\n    const statusFilter = req.query.status;\n    let tasks = project.tasks.map(id => tasksRepo[id]);\n    if (statusFilter) {\n      tasks = tasks.filter(task => task.status === statusFilter);\n    }\n    res.status(200).json({ tasks });\n  };\n\n  const updateTaskStatus = (req, res) => {\n    const { projectId, taskId } = req.params;\n    const project = projectsRepo[projectId];\n    if (!project || !tasksRepo[taskId] || tasksRepo[taskId].projectId !== projectId) return res.status(404).json({ error: { code: 'TASK_NOT_FOUND', message: 'Task not found' } });\n\n    const { status } = req.body;\n    if (status !== 'todo' && status !== 'done') return res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'Invalid status' } });\n\n    tasksRepo[taskId].status = status;\n    res.status(200).json({ task: tasksRepo[taskId] });\n  };\n\n  app.post('/projects/:projectId/tasks', createTask);\n  app.get('/projects/:projectId/tasks', getTasksByProjectId);\n  app.patch('/projects/:projectId/tasks/:taskId', updateTaskStatus);\n};\n"
+    },
+    {
+      "path": "src/modules/members/router.js",
+      "content": "module.exports = (app, { membersRepo, projectsRepo }) => {\n  const addMemberToProject = (req, res) => {\n    const { projectId } = req.params;\n    const project = projectsRepo[projectId];\n    if (!project) return res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });\n\n    const { memberId, role } = req.body;\n    if (!memberId || !role) return res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'Member ID and role are required' } });\n\n    membersRepo[memberId] = { id: memberId, projectId, role };\n    project.members.push(memberId);\n    res.status(201).json({ member: membersRepo[memberId] });\n  };\n\n  const getMembersByProjectId = (req, res) => {\n    const { projectId } = req.params;\n    const project = projectsRepo[projectId];\n    if (!project) return res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });\n\n    const members = project.members.map(id => membersRepo[id]);\n    res.status(200).json({ members });\n  };\n\n  app.post('/projects/:projectId/members', addMemberToProject);\n  app.get('/projects/:projectId/members', getMembersByProjectId);\n};\n"
+    },
+    {
+      "path": "src/modules/comments/router.js",
+      "content": "module.exports = (app, { commentsRepo, tasksRepo, crypto }) => {\n  const addCommentToTask = (req, res) => {\n    const { projectId, taskId } = req.params;\n    const task = tasksRepo[taskId];\n    if (!task || task.projectId !== projectId) return res.status(404).json({ error: { code: 'TASK_NOT_FOUND', message: 'Task not found' } });\n\n    const { message } = req.body;\n    if (!message) return res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'Message is required' } });\n\n    const commentId = crypto.randomUUID();\n    commentsRepo[commentId] = { id: commentId, taskId, message };\n    task.comments.push(commentId);\n    res.status(201).json({ comment: commentsRepo[commentId] });\n  };\n\n  const getCommentsByTaskId = (req, res) => {\n    const { projectId, taskId } = req.params;\n    const task = tasksRepo[taskId];\n    if (!task || task.projectId !== projectId) return res.status(404).json({ error: { code: 'TASK_NOT_FOUND', message: 'Task not found' } });\n\n    const comments = task.comments.map(id => commentsRepo[id]);\n    res.status(200).json({ comments });\n  };\n\n  app.post('/projects/:projectId/tasks/:taskId/comments', addCommentToTask);\n  app.get('/projects/:projectId/tasks/:taskId/comments', getCommentsByTaskId);\n};\n"
+    }
+  ],
+  "notes": "This is the initial implementation of the project management API. It includes basic CRUD operations for projects, tasks, members, and comments with in-memory storage."
+}

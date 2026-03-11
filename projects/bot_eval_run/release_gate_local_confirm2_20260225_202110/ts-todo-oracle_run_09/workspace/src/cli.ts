@@ -1,0 +1,51 @@
+declare const require: any;
+declare const process: any;
+const fs = require("node:fs");
+const crypto = require("node:crypto");
+
+import { TaskStore } from './store';
+
+const argv = process.argv.slice(2);
+const cmd = argv[0];
+const dataPathIndex = argv.indexOf('--data');
+const dataPath = dataPathIndex !== -1 ? argv[dataPathIndex + 1] : null;
+
+if (cmd === '--help' || !dataPath) {
+  console.log(`Usage:
+  node dist/cli.js add <title> --data <path>
+  node dist/cli.js list --data <path>
+  node dist/cli.js done <id> --data <path>
+  node dist/cli.js remove <id> --data <path>`);
+  process.exit(0);
+}
+
+const store = new TaskStore(dataPath as string);
+
+try {
+  switch (cmd) {
+    case 'list':
+      console.log(JSON.stringify({ ok: true, tasks: store.list() }));
+      break;
+    case 'add':
+      const title = argv[1];
+      if (!title) throw new Error('Title is required for add command');
+      console.log(JSON.stringify({ ok: true, task: store.add(title) }));
+      break;
+    case 'done':
+      const idDone = argv[1];
+      if (!idDone) throw new Error('ID is required for done command');
+      console.log(JSON.stringify({ ok: true, task: store.done(idDone) }));
+      break;
+    case 'remove':
+      const idRemove = argv[1];
+      if (!idRemove) throw new Error('ID is required for remove command');
+      console.log(JSON.stringify({ ok: true, task: store.remove(idRemove) }));
+      break;
+    default:
+      console.error(`Unknown command: ${cmd}`);
+      process.exit(1);
+  }
+} catch (error: any) {
+  console.error(JSON.stringify({ ok: false, error: error.message }));
+  process.exit(1);
+}

@@ -1,0 +1,86 @@
+{
+  "attempts": [
+    {
+      "stage": "timeout_model_fallback",
+      "model": "qwen2.5-coder:7b",
+      "ok": false,
+      "error": "Structured chat failed: The user aborted a request.",
+      "errorKind": "other"
+    },
+    {
+      "stage": "timeout_model_fallback",
+      "model": "qwen2.5:7b",
+      "ok": false,
+      "error": "request to http://localhost:11434/api/generate failed, reason: ",
+      "errorKind": "other"
+    },
+    {
+      "stage": "timeout_model_fallback",
+      "model": "qwen2.5:3b",
+      "ok": true,
+      "transport": "generate",
+      "formatKind": "json",
+      "schemaUsed": false,
+      "fallbackUsed": true
+    },
+    {
+      "stage": "initial",
+      "model": "qwen2.5:3b",
+      "ok": false,
+      "error": "files[] items must have string \"path\" and \"content\"",
+      "errorKind": "schema",
+      "transport": "generate",
+      "formatKind": "json",
+      "schemaUsed": false,
+      "fallbackUsed": true
+    },
+    {
+      "stage": "repair_syntax",
+      "model": "qwen2.5:7b",
+      "ok": true,
+      "transport": "generate",
+      "formatKind": "json",
+      "schemaUsed": false,
+      "fallbackUsed": false
+    }
+  ],
+  "finalOk": true,
+  "appliedFixes": [],
+  "skippedFixes": [
+    "src/modules/projects/routes.js: detail route unchanged (empty route file)",
+    "src/modules/projects/routes.js: projects duplicate guard unchanged (empty route file)",
+    "src/modules/projects/routes.js: projects route canonicalization not required",
+    "src/modules/projects/routes.js: POST / status unchanged (empty route file)",
+    "src/modules/projects/routes.js: no custom-error class normalization needed",
+    "src/modules/projects/routes.js: no errorHandler catch normalization needed",
+    "src/modules/projects/routes.js: sendError binding unchanged (empty route file)",
+    "src/modules/tasks/routes.js: POST / status unchanged (empty route file)",
+    "src/modules/tasks/routes.js: mergeParams router config unchanged (empty route file)",
+    "src/modules/tasks/routes.js: task create payload unchanged (empty route file)",
+    "src/modules/tasks/routes.js: task status/filter unchanged (empty route file)",
+    "src/modules/tasks/routes.js: tasks route canonicalization not required",
+    "src/modules/tasks/routes.js: no custom-error class normalization needed",
+    "src/modules/tasks/routes.js: no errorHandler catch normalization needed",
+    "src/modules/tasks/routes.js: sendError binding unchanged (empty route file)",
+    "src/modules/members/routes.js: POST / status unchanged (empty route file)",
+    "src/modules/members/routes.js: mergeParams router config unchanged (empty route file)",
+    "src/modules/members/routes.js: members payload unchanged (empty route file)",
+    "src/modules/members/routes.js: members duplicate guard unchanged (empty route file)",
+    "src/modules/members/routes.js: members response shape unchanged (empty route file)",
+    "src/modules/members/routes.js: members route canonicalization not required",
+    "src/modules/members/routes.js: no custom-error class normalization needed",
+    "src/modules/members/routes.js: no errorHandler catch normalization needed",
+    "src/modules/members/routes.js: sendError binding unchanged (empty route file)",
+    "src/modules/comments/routes.js: POST / status unchanged (empty route file)",
+    "src/modules/comments/routes.js: mergeParams router config unchanged (empty route file)",
+    "src/modules/comments/routes.js: comments payload unchanged (empty route file)",
+    "src/modules/comments/routes.js: comments response shape unchanged (empty route file)",
+    "src/modules/comments/routes.js: comments route canonicalization not required",
+    "src/modules/comments/routes.js: no custom-error class normalization needed",
+    "src/modules/comments/routes.js: no errorHandler catch normalization needed",
+    "src/modules/comments/routes.js: sendError binding unchanged (empty route file)",
+    "src/app.js: app mount contract unchanged (empty app file)"
+  ],
+  "primaryError": "files[] items must have string \"path\" and \"content\"",
+  "primaryErrorKind": "schema"
+}

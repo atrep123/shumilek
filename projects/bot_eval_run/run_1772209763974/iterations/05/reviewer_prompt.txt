@@ -1,0 +1,119 @@
+Jsi code reviewer (mini-validator). Tvuj ukol: navrhnout MINIMALNI opravy, ktere povedou k tomu, ze validace projde.
+Odpovez JEN JSON bez markdownu: { "review": "text", "priorityFiles": ["path1","path2"] }
+
+SPEC (zkraceno):
+Vytvor maly, ale realisticky Python projekt pro "AI" bez externich zavislosti.
+
+Pozadavky:
+- Pouze standardni knihovna Pythonu (zadne numpy/pandas/sklearn/torch/tensorflow/requests).
+- Struktura projektu jako balicek `mini_ai/` + `tests/` + `README.md`.
+- Implementuj jednoduchy model: napr. character-level Markov chain generator + trenovani z textu.
+- Pridat CLI: `python -m mini_ai.cli --help`, `train`, `generate` (offline).
+- Unit testy pres `unittest` (aspon 8 testu / assertu) a musi prochazet.
+
+VYSTUPNI FORMAT (STRICT): vrat JEN JSON objekt tohoto tvaru:
+{
+  "mode": "full",
+  "files": [
+    {"path": "README.md", "content": "...\n"},
+    {"path": "mini_ai/__init__.py", "content": "...\n"},
+    {"path": "mini_ai/...", "content": "...\n"},
+    {"path": "tests/test_....py", "content": "...\n"}
+  ],
+  "notes": "optional"
+}
+
+Pravidla:
+- Zadny markdown, zadne ``` bloky, zadny text mimo JSON.
+- Cesty jsou relativni, pouzij `/`, bez `..` a bez absolutnich cest.
+- Kazdy soubor ukonci znakem noveho radku.
+- "mode" pouzij "full" pro kompletni projekt (v pripade oprav muzes pouzit "patch").
+- `content` je vzdy kompletni obsah souboru (ne diff/snippet).
+
+---
+PLANNER HINTS (planner: deepseek-r1:8b; non-binding, SPEC wins on conflict):
+- [x] Vytvořit strukturu projektu `mini_ai/` a `tests/`
+- [x] Implementovat `__init__.py` v `mini_ai/` s importem `cli`
+- [x] Implementovat `cli.py` pro příkazovou řádkovou interakci
+- [x] Implementovat `markov.py` pro generaci Markovovy řetězce
+- [x] Vytvořit `train` a `generate` funkce v `cli.py`
+- [x] Napsat jednotkové testy pro `markov.py` v `tests/test_markov.py`
+- [x] Napsat jednotkové testy pro `cli.py` v `tests/test_cli.py`
+- [x] Zkontrolovat, že jsou spuštěny a úspěšné
+- [x] Vytvořit `README.md` s informacemi o projekту
+
+
+CHYBY:
+- Missing tests/*.py
+- Command failed: python -m unittest discover -v -s tests -p "test*.py" (exit=1, timedOut=false)
+- Command failed: python -m mini_ai.cli --help (exit=1, timedOut=false)
+
+LOGY (zkraceno):
+- python -m unittest discover -v -s tests -p "test*.py"
+  stderr: "Traceback (most recent call last):\r\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\r\n  File \"<frozen runpy>\", line 88, in _run_code\r\n  File \"C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\__main__.py\", line 18, in <module>\r\n    main(module=None)\r\n  File \"C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\main.py\", line 104, in __init__\r\n    self.parseArgs(argv)\r\n  File \"C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\main.py\", line 130, in parseArgs\r\n    self._do_discovery(argv[2:])\r\n  File \"C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\main.py\", line 253, in _do_discovery\r\n    self.createTests(from_discovery=True, Loader=Loader)\r\n  File \"C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\main.py\", line 160, in createTests\r\n    self.test = loader.discover(self.start, self.pattern, self.top)\r\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\atrep\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\loader.py\", line 308, in discover\r\n    raise ImportError('Start directory is not importable: %r' % start_dir)\r\nImportError: Start directory is not importable: 'tests'\r\n"
+- python -m mini_ai.cli --help
+  stderr: "Traceback (most recent call last):\r\n  File \"<frozen runpy>\", line 189, in _run_module_as_main\r\n  File \"<frozen runpy>\", line 112, in _get_module_details\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\mini_ai\\__init__.py\", line 1, in <module>\r\n    from . import cli\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\mini_ai\\cli.py\", line 6, in <module>\r\n    from mini_ai.markov import MarkovChain\r\nModuleNotFoundError: No module named 'mini_ai.markov'\r\n"
+
+SOUBORY (zkraceno):
+- README.md
+- mini_ai/__init__.py
+- mini_ai/__pycache__/__init__.cpython-312.pyc
+- mini_ai/__pycache__/cli.cpython-312.pyc
+- mini_ai/cli.py
+
+KONTEXT SOUBORU (zkraceno):
+--- FILE: mini_ai/__init__.py ---
+from . import cli
+
+--- FILE: mini_ai/cli.py ---
+from __future__ import annotations
+
+import argparse
+import json
+
+from mini_ai.markov import MarkovChain
+
+def _save_model(model: MarkovChain, path: str) -> None:
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(model.to_dict(), f, ensure_ascii=False)
+
+def _load_model(path: str) -> MarkovChain:
+    with open(path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    return MarkovChain.from_dict(data)
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description='Character-level Markov chain generator.')
+    sub = parser.add_subparsers(dest='command')
+
+    p_train = sub.add_parser('train', help='Train a model')
+    p_train.add_argument('--input', required=True)
+    p_train.add_argument('--model-out', required=True)
+    p_train.add_argument('--order', type=int, default=1)
+
+    p_generate = sub.add_parser('generate', help='Generate text')
+    p_generate.add_argument('--model', required=True)
+    p_generate.add_argument('--length', type=int, required=True)
+    p_generate.add_argument('--seed', default=None)
+    p_generate.add_argument('--random-seed', type=int, default=None)
+
+    args = parser.parse_args(argv)
+
+    if args.command == 'train':
+        with open(args.input, 'r', encoding='utf-8') as f:
+            text = f.read()
+        model = MarkovChain(order=args.order)
+        model.train(text)
+        _save_model(model, args.model_out)
+        return 0
+
+    if args.command == 'generate':
+        model = _load_model(args.model)
+        print(model.generate(length=args.length, seed=args.seed, random_seed=args.random_seed))
+        return 0
+
+    parser.print_help()
+    return 0
+
+if __name__ == '__main__':
+    raise SystemExit(main())

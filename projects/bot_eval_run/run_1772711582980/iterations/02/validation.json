@@ -1,0 +1,30 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Command failed: npm install --no-audit --fund=false (exit=1, timedOut=false)",
+    "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)",
+    "Oracle dependency missing: add \"supertest\" to dependencies/devDependencies in package.json"
+  ],
+  "commands": [
+    {
+      "command": "npm install --no-audit --fund=false",
+      "cwd": "projects\\bot_eval_run\\run_1772711582980\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 490,
+      "stdout": "",
+      "stderr": "npm error code EINVALIDPACKAGENAME\nnpm error Invalid package name \"node:crypto\" of package \"node:crypto@^1.0.0\": name can only contain URL-friendly characters.\nnpm error A complete log of this run can be found in: C:\\Users\\atrep\\AppData\\Local\\npm-cache\\_logs\\2026-03-05T11_57_38_267Z-debug-0.log\n"
+    },
+    {
+      "command": "node --test --test-concurrency=1 tests/oracle.test.js",
+      "cwd": "projects\\bot_eval_run\\run_1772711582980\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 110,
+      "stdout": "node:internal/modules/cjs/loader:1424\n  throw err;\n  ^\n\nError: Cannot find module 'supertest'\nRequire stack:\n- C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772711582980\\workspace\\tests\\oracle.test.js\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1421:15)\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1059:19)\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1064:22)\n    at Module._load (node:internal/modules/cjs/loader:1227:37)\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\n    at Module.require (node:internal/modules/cjs/loader:1504:12)\n    at require (node:internal/modules/helpers:152:16)\n    at Object.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772711582980\\workspace\\tests\\oracle.test.js:6:17)\n    at Module._compile (node:internal/modules/cjs/loader:1761:14) {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: [\n    'C:\\\\Users\\\\atrep\\\\Desktop\\\\Test_AI_Code\\\\shumilek\\\\projects\\\\bot_eval_run\\\\run_1772711582980\\\\workspace\\\\tests\\\\oracle.test.js'\n  ]\n}\n\nNode.js v24.12.0\n✖ tests\\oracle.test.js (43.6527ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 48.9988\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:1:1\n✖ tests\\oracle.test.js (43.6527ms)\n  'test failed'\n",
+      "stderr": ""
+    }
+  ]
+}

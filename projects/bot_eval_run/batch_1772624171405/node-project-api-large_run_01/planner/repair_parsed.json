@@ -1,0 +1,3 @@
+{
+  "plan": "- [src/app.js] - Implement minimal app export\n- [src/server.js] - Implement server setup without listener\n- [src/modules/projects/routes.js] - Define project routes\n- [src/modules/projects/service.js] - Implement in-memory project service\n- [src/modules/tasks/routes.js] - Define task routes\n- [src/modules/tasks/service.js] - Implement in-memory task service\n- [src/modules/members/routes.js] - Define member routes\n- [src/modules/members/service.js] - Implement in-memory member service\n- [src/modules/comments/routes.js] - Define comment routes\n- [src/modules/comments/service.js] - Implement in-memory comment service\n- [src/lib/errors.js] - Define error handling\n- [README.md] - Add project documentation"
+}

@@ -1,0 +1,12 @@
+{
+  "scenario": "ts-todo-oracle",
+  "runIndex": 1,
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_infra_abort_smoke2_20260304\\ts-todo-oracle_run_01",
+  "kind": "ollama_unreachable",
+  "message": "Cannot reach Ollama preflight endpoint (/api/tags).",
+  "source": "validation",
+  "detectedAt": "2026-03-04T21:32:23.954Z",
+  "plannedRuns": 2,
+  "executedRuns": 1,
+  "skippedRuns": 1
+}

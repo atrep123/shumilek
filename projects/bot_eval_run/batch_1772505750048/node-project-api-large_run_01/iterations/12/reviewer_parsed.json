@@ -1,0 +1,7 @@
+{
+  "review": "members state: do not keep isolated `members` array/map; bind members to shared project repository and enforce duplicate check per project.",
+  "priorityFiles": [
+    "src/modules/members/service.js",
+    "src/modules/projects/service.js"
+  ]
+}

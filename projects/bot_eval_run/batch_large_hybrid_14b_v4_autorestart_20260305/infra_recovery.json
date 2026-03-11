@@ -1,0 +1,12 @@
+[
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 1,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_large_hybrid_14b_v4_autorestart_20260305\\node-project-api-large_run_01",
+    "kind": "ollama_unreachable",
+    "recovered": false,
+    "attempts": 18,
+    "elapsedMs": 90009,
+    "occurredAt": "2026-03-05T06:40:47.881Z"
+  }
+]

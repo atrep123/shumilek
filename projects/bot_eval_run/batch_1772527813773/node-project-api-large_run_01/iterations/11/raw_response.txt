@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "let projects = [];\n\nconst createProject = (name) => {\n  const projectId = randomUUID();\n  const project = { id: projectId, name };\n  projects.push(project);\n  return project;\n};\n\nconst getAllProjects = () => {\n  return projects;\n};\n\nconst getProjectById = (projectId) => {\n  return projects.find(p => p.id === projectId);\n};\n\nmodule.exports = { createProject, getAllProjects, getProjectById };\n"
+    }
+  ],
+  "notes": "Removed the duplicate guard logic from src/modules/projects/service.js to resolve the randomUUID error."
+}

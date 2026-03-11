@@ -1,0 +1,37 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "import express from 'express';\nconst router = express.Router();\n\nrouter.get('/:projectId', (req, res) => {\n  const project = projectsService.getProjectById(req.params.projectId);\n  if (!project) return sendError(res, 404, 'NOT_FOUND', 'Project not found');\n  res.json({ project });\n});\n\nexport default router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "import { randomUUID } from 'node:crypto';\nimport BadRequestError from '../../lib/errors.js';\n\nconst projects = [];\n\nexport const getProjectById = (projectId) => {\n  return projects.find(p => p.id === projectId);\n};\n\nexport const createProject = ({ name }) => {\n  if (!name) throw new BadRequestError('Name is required');\n  const id = randomUUID();\n  const project = { id, name };\n  projects.push(project);\n  return project;\n};\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "import express from 'express';\nconst router = express.Router({ mergeParams: true });\n\nrouter.post('/', (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) return sendError(res, 400, 'BAD_REQUEST', 'Invalid member data');\n  const member = membersService.createMember({ projectId: req.params.projectId, ...req.body });\n  res.status(201).json({ member });\n});\n\nexport default router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "import { randomUUID } from 'node:crypto';\nimport BadRequestError from '../../lib/errors.js';\n\nconst members = [];\n\nexport const createMember = ({ projectId, userId, role }) => {\n  if (!userId || !role) throw new BadRequestError('Invalid member data');\n  const id = randomUUID();\n  const member = { id, projectId, userId, role };\n  members.push(member);\n  return member;\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "import express from 'express';\nconst router = express.Router({ mergeParams: true });\n\nrouter.post('/', (req, res) => {\n  const task = tasksService.createTask({ projectId: req.params.projectId, ...req.body });\n  res.status(201).json({ task });\n});\n\nrouter.patch('/:taskId', (req, res) => {\n  const { status } = req.body;\n  if (!['todo', 'done'].includes(status)) return sendError(res, 400, 'BAD_REQUEST', 'Invalid task status');\n  const updatedTask = tasksService.updateTaskStatus({ projectId: req.params.projectId, taskId: req.params.taskId, status });\n  if (!updatedTask) return sendError(res, 404, 'NOT_FOUND', 'Task not found');\n  res.json({ task: updatedTask });\n});\n\nexport default router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "import { randomUUID } from 'node:crypto';\nimport BadRequestError from '../../lib/errors.js';\n\nconst tasks = [];\n\nexport const createTask = ({ projectId, title }) => {\n  if (!title) throw new BadRequestError('Title is required');\n  const id = randomUUID();\n  const task = { id, projectId, status: 'todo' };\n  tasks.push(task);\n  return task;\n};\n\nexport const updateTaskStatus = ({ projectId, taskId, status }) => {\n  const taskIndex = tasks.findIndex(t => t.id === taskId && t.projectId === projectId);\n  if (taskIndex === -1) return null;\n  tasks[taskIndex].status = status;\n  return tasks[taskIndex];\n};\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "import express from 'express';\nconst router = express.Router({ mergeParams: true });\n\nrouter.post('/', (req, res) => {\n  const comment = commentsService.createComment({ taskId: req.params.taskId, ...req.body });\n  res.status(201).json({ comment });\n});\n\nexport default router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "import { randomUUID } from 'node:crypto';\nimport BadRequestError from '../../lib/errors.js';\n\nconst comments = [];\n\nexport const createComment = ({ taskId, message }) => {\n  if (!message) throw new BadRequestError('Message is required');\n  const id = randomUUID();\n  const comment = { id, taskId, message };\n  comments.push(comment);\n  return comment;\n};\n"
+    }
+  ],
+  "notes": "Added routes for project detail and fixed errors related to missing route signatures and custom error usage."
+}

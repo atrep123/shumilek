@@ -1,0 +1,11 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Uses `new BadRequestError(...)` but src/lib/errors.* does not define/export BadRequestError",
+    "State-sharing mismatch: members service should reuse shared projects repository, not isolated members map/array",
+    "Duplicate handling hint: expected 409 conflict handling for duplicate project names.",
+    "package.json should include \"supertest\" (dependencies or devDependencies) for oracle execution",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

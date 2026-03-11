@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\n\nconst router = express.Router();\n\nrouter.get('/', (req, res) => {\n  const projects = service.getAllProjects();\n  res.json({ projects });\n});\n\nrouter.post('/', (req, res) => {\n  try {\n    const project = service.createProject(req.body.name);\n    res.status(201).json({ project });\n  } catch (error) {\n    res.status(400).json({ error: { code: 'INVALID_NAME', message: error.message } });\n  }\n});\n\nrouter.get('/:projectId/tasks', (req, res) => {\n  const tasks = service.getTasksByProjectId(req.params.projectId);\n  if (!tasks) {\n    return res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });\n  }\n  res.json({ tasks });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\n\nconst router = express.Router();\n\nrouter.post('/:projectId', (req, res) => {\n  try {\n    const task = service.createTask(req.params.projectId, req.body.title);\n    res.status(201).json({ task });\n  } catch (error) {\n    res.status(400).json({ error: { code: 'INVALID_TITLE', message: error.message } });\n  }\n});\n\nrouter.patch('/:projectId/:taskId', (req, res) => {\n  try {\n    const task = service.updateTaskStatus(req.params.projectId, req.params.taskId, req.body.status);\n    res.json({ task });\n  } catch (error) {\n    res.status(404).json({ error: { code: 'TASK_NOT_FOUND', message: error.message } });\n  }\n});\n\nrouter.get('/:projectId/:taskId/comments', (req, res) => {\n  const comments = service.getCommentsByTaskId(req.params.projectId, req.params.taskId);\n  if (!comments) {\n    return res.status(404).json({ error: { code: 'TASK_NOT_FOUND', message: 'Task not found' } });\n  }\n  res.json({ comments });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\n\nconst router = express.Router();\n\nrouter.post('/:projectId/:taskId', (req, res) => {\n  try {\n    const comment = service.createComment(req.params.projectId, req.params.taskId, req.body.message);\n    res.status(201).json({ comment });\n  } catch (error) {\n    res.status(400).json({ error: { code: 'INVALID_MESSAGE', message: error.message } });\n  }\n});\n\nmodule.exports = router;\n"
+    }
+  ],
+  "notes": "Updated routes to ensure correct HTTP status codes and error handling."
+}

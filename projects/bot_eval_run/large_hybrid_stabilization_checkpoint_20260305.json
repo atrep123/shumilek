@@ -1,0 +1,153 @@
+﻿{
+    "generatedAt":  "2026-03-05T15:12:51.3407395+01:00",
+    "scenario":  "node-project-api-large",
+    "objective":  "Hybrid stabilization verification after timeout/retry/id-helper fixes",
+    "datasets":  {
+                     "before32":  [
+                                      {
+                                          "batch":  "batch_large_hybrid_32b_v3_autorestart_20260305",
+                                          "phase":  "before",
+                                          "model":  "32b",
+                                          "scenario":  "node-project-api-large",
+                                          "pass":  0,
+                                          "total":  3,
+                                          "passRate":  0,
+                                          "rawRunPassRate":  0,
+                                          "fallbackDependencyRunRate":  0,
+                                          "avgMs":  900080,
+                                          "avgSec":  900.08,
+                                          "topFailureClusters":  [
+                                                                     "other:6",
+                                                                     "timeout:3"
+                                                                 ],
+                                          "summaryPath":  "projects\\bot_eval_run\\batch_large_hybrid_32b_v3_autorestart_20260305\\summary.json"
+                                      },
+                                      {
+                                          "batch":  "batch_large_hybrid_32b_v4_timeout600_20260305",
+                                          "phase":  "before",
+                                          "model":  "32b",
+                                          "scenario":  "node-project-api-large",
+                                          "pass":  0,
+                                          "total":  1,
+                                          "passRate":  0,
+                                          "rawRunPassRate":  0,
+                                          "fallbackDependencyRunRate":  0,
+                                          "avgMs":  660033,
+                                          "avgSec":  660.03,
+                                          "topFailureClusters":  [
+                                                                     "other:2",
+                                                                     "timeout:1"
+                                                                 ],
+                                          "summaryPath":  "projects\\bot_eval_run\\batch_large_hybrid_32b_v4_timeout600_20260305\\summary.json"
+                                      }
+                                  ],
+                     "after32":  [
+                                     {
+                                         "batch":  "batch_1772711932665",
+                                         "phase":  "after",
+                                         "model":  "32b",
+                                         "scenario":  "node-project-api-large",
+                                         "pass":  3,
+                                         "total":  3,
+                                         "passRate":  1,
+                                         "rawRunPassRate":  1,
+                                         "fallbackDependencyRunRate":  0,
+                                         "avgMs":  456118,
+                                         "avgSec":  456.12,
+                                         "topFailureClusters":  [
+
+                                                                ],
+                                         "summaryPath":  "projects\\bot_eval_run\\batch_1772711932665\\summary.json"
+                                     },
+                                     {
+                                         "batch":  "batch_1772713371210",
+                                         "phase":  "after",
+                                         "model":  "32b",
+                                         "scenario":  "node-project-api-large",
+                                         "pass":  3,
+                                         "total":  3,
+                                         "passRate":  1,
+                                         "rawRunPassRate":  1,
+                                         "fallbackDependencyRunRate":  0,
+                                         "avgMs":  460463,
+                                         "avgSec":  460.46,
+                                         "topFailureClusters":  [
+
+                                                                ],
+                                         "summaryPath":  "projects\\bot_eval_run\\batch_1772713371210\\summary.json"
+                                     },
+                                     {
+                                         "batch":  "batch_1772717548021",
+                                         "phase":  "after",
+                                         "model":  "32b",
+                                         "scenario":  "node-project-api-large",
+                                         "pass":  5,
+                                         "total":  5,
+                                         "passRate":  1,
+                                         "rawRunPassRate":  1,
+                                         "fallbackDependencyRunRate":  0,
+                                         "avgMs":  462813,
+                                         "avgSec":  462.81,
+                                         "topFailureClusters":  [
+
+                                                                ],
+                                         "summaryPath":  "projects\\bot_eval_run\\batch_1772717548021\\summary.json"
+                                     }
+                                 ],
+                     "after14":  [
+                                     {
+                                         "batch":  "batch_1772714794192",
+                                         "phase":  "after",
+                                         "model":  "14b",
+                                         "scenario":  "node-project-api-large",
+                                         "pass":  5,
+                                         "total":  5,
+                                         "passRate":  1,
+                                         "rawRunPassRate":  1,
+                                         "fallbackDependencyRunRate":  0,
+                                         "avgMs":  537666,
+                                         "avgSec":  537.67,
+                                         "topFailureClusters":  [
+
+                                                                ],
+                                         "summaryPath":  "projects\\bot_eval_run\\batch_1772714794192\\summary.json"
+                                     }
+                                 ]
+                 },
+    "aggregate":  {
+                      "before32":  {
+                                       "runs":  4,
+                                       "passes":  0,
+                                       "passRateAvg":  0,
+                                       "rawRunPassRateAvg":  0,
+                                       "fallbackDependencyRunRateAvg":  0,
+                                       "avgSec":  780.06
+                                   },
+                      "after32":  {
+                                      "runs":  11,
+                                      "passes":  11,
+                                      "passRateAvg":  1,
+                                      "rawRunPassRateAvg":  1,
+                                      "fallbackDependencyRunRateAvg":  0,
+                                      "avgSec":  459.8
+                                  },
+                      "after14":  {
+                                      "runs":  5,
+                                      "passes":  5,
+                                      "passRateAvg":  1,
+                                      "rawRunPassRateAvg":  1,
+                                      "fallbackDependencyRunRateAvg":  0,
+                                      "avgSec":  537.67
+                                  }
+                  },
+    "checkpoint":  {
+                       "criteria":  [
+                                        "32b stress \u003e= 1/3 pass",
+                                        "14b batch \u003e= 1/5 pass",
+                                        "fallbackDependencyRunRate == 0",
+                                        "no infrastructure false-fail in final batches"
+                                    ],
+                       "result":  "PASS",
+                       "conclusion":  "Stabilization fixes validated on both 32b and 14b with strong margin; suitable for merge/rollout checkpoint."
+                   }
+}

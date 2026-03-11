@@ -1,0 +1,7 @@
+{
+  "review": "Zohledněte, že `members` služba by měla rekurzivně používat společný repositář pro projekty a ne samostatnou mapu či pole členů. To zajišťuje konzistentní zachování stavu a zabrání duplicitám v rámci jednoho projektu.",
+  "priorityFiles": [
+    "src/modules/members/service.js",
+    "src/modules/projects/members/routes.js"
+  ]
+}

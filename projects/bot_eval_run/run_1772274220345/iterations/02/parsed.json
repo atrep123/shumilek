@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const idService = require('../lib/id');\nconst errors = require('../lib/errors');\n\nlet projects = [];\n\nfunction getAllProjects() {\n  return projects;\n}\n\nfunction createProject(name) {\n  if (projects.some(p => p.name === name)) {\n    throw new errors.AppError('duplicate', 'Project with this name already exists.');\n  }\n  const project = { id: idService.generateId(), name };\n  projects.push(project);\n  return project;\n}\n\nfunction getProjectById(id) {\n  const project = projects.find(p => p.id === id);\n  if (!project) {\n    throw new errors.AppError('not_found', 'Project not found.');\n  }\n  return project;\n}\n\nmodule.exports = { getAllProjects, createProject, getProjectById };\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst projectService = require('./service');\n\nrouter.get('/', (req, res) => {\n  const projects = projectService.getAllProjects();\n  res.status(200).json({ projects });\n});\n\nrouter.post('/', (req, res) => {\n  try {\n    const project = projectService.createProject(req.body.name);\n    res.status(201).json({ project });\n  } catch (error) {\n    res.status(error.statusCode).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.get('/:projectId', (req, res) => {\n  try {\n    const project = projectService.getProjectById(req.params.projectId);\n    res.status(200).json({ project });\n  } catch (error) {\n    res.status(error.statusCode).json({ error: { code: 'not_found', message: error.message } });\n  }\n});\n\nmodule.exports = (app) => app.use('/projects', router);\n"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "class AppError extends Error {\n  constructor(code, message) {\n    super(message);\n    this.code = code;\n    this.statusCode = code === 'not_found' ? 404 : 400;\n  }\n}\n\nmodule.exports = { AppError };\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"node-project\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A Node.js project\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\",\n    \"test\": \"node --test tests/oracle.test.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.18.2\"\n  },\n  \"devDependencies\": {\n    \"supertest\": \"^6.3.3\"\n  }\n}\n"
+    }
+  ],
+  "notes": "Fixed error handling in projects service and routes, updated errors.js to use AppError class, and added supertest to devDependencies."
+}

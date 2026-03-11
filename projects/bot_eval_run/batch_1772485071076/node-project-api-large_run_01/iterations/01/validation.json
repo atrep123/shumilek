@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Task filtering contract mismatch: support ?status=todo|done and PATCH status updates.",
+    "package.json should include \"supertest\" (dependencies or devDependencies) for oracle execution",
+    "JavaScript syntax check failed in src/app.js: C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772485071076\\node-project-api-large_run_01\\workspace\\src\\app.js:3",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "src/app.js",
+      "content": "// src/app.js\nconst express = require('express');\nconst projectsRoutes = require('./modules/projects/routes');\nconst membersRoutes = require('./modules/members/routes');\nconst tasksRoutes = require('./modules/tasks/routes');\nconst commentsRoutes = require('./modules/comments/routes');\n\nconst app = express();\napp.use(express.json());\n\n// Health endpoint\napp.get('/health', (req, res) => {\n  res.json({ ok: true });\n});\n\n// Mount routes\napp.use('/projects', projectsRoutes);\napp.use('/projects/:projectId/members', membersRoutes);\napp.use('/projects/:projectId/tasks', tasksRoutes);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRoutes);\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "// src/modules/tasks/service.js\nconst { randomUUID } = require('node:crypto');\nconst errors = require('../../lib/errors');\n\nlet tasksStore = [];\n\nfunction getTasks(projectId, statusFilter) {\n  const projectTasks = tasksStore.filter(task => task.projectId === projectId);\n  if (statusFilter) {\n    return projectTasks.filter(task => task.status === statusFilter);\n  }\n  return projectTasks;\n}\n\nfunction updateTask(projectId, taskId, newStatus) {\n  const taskIndex = tasksStore.findIndex(task => task.projectId === projectId && task.id === taskId);\n  if (taskIndex === -1) {\n    errors.sendError(res, 404, 'NOT_FOUND', 'Task not found');\n    return null;\n  }\n\n  if (!['todo', 'done'].includes(newStatus)) {\n    errors.sendError(res, 400, 'INVALID_STATUS', 'Invalid task status');\n    return null;\n  }\n\n  tasksStore[taskIndex].status = newStatus;\n  return tasksStore[taskIndex];\n}\n\nmodule.exports = {\n  getTasks,\n  updateTask\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "// src/modules/tasks/routes.js\nconst express = require('express');\nconst tasksService = require('./service');\nconst errors = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.get('/', (req, res) => {\n  const projectId = req.params.projectId;\n  const statusFilter = req.query.status;\n  try {\n    const tasks = tasksService.getTasks(projectId, statusFilter);\n    res.json({ tasks });\n  } catch (error) {\n    errors.sendError(res, error.statusCode || 500, error.code || 'INTERNAL_ERROR', error.message);\n  }\n});\n\nrouter.patch('/:taskId', (req, res) => {\n  const projectId = req.params.projectId;\n  const taskId = req.params.taskId;\n  const { status } = req.body;\n  try {\n    const updatedTask = tasksService.updateTask(projectId, taskId, status);\n    if (!updatedTask) return;\n    res.json({ task: updatedTask });\n  } catch (error) {\n    errors.sendError(res, error.statusCode || 500, error.code || 'INTERNAL_ERROR', error.message);\n  }\n});\n\nmodule.exports = router;\n"
+    }
+  ],
+  "notes": "Updated src/app.js to include the health endpoint and mount routes. Updated src/modules/tasks/service.js to export getTasks and updateTask methods. Updated src/modules/tasks/routes.js to use the correct service methods."
+}

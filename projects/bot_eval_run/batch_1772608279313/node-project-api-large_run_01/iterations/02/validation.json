@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "State-sharing mismatch: tasks service should reuse shared projects repository, not a local `projects` map/array",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

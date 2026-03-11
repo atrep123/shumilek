@@ -1,0 +1,12 @@
+- Initialize the Node.js project with necessary dependencies.
+- Create the directory structure as specified in the SPEC.
+- Implement the `src/app.*` and `src/server.*` files without starting the server automatically.
+- Develop the in-memory repositories for projects, tasks, members, and comments under `src/lib/`.
+- Implement the service logic for each module (projects, tasks, members, comments) under `src/modules/*/service.js`.
+- Create the route handlers for each module under `src/modules/*/routes.js`, ensuring they use the correct service methods.
+- Ensure all error responses are consistent and follow the specified format.
+- Implement the health check endpoint `/health`.
+- Add validation checks in routes to handle invalid inputs and return appropriate 400 errors.
+- Implement conflict handling for duplicate entries (e.g., projects, members) and return 409 errors.
+- Ensure all necessary files are included as per the SPEC, such as `README.md`, `package.json`, etc.
+- Run tests to ensure the application meets the Oracle test requirements.

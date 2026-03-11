@@ -1,0 +1,28 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Command failed: node --test tests/oracle.test.js (exit=null, timedOut=true)"
+  ],
+  "commands": [
+    {
+      "command": "npm install --no-audit --fund=false",
+      "cwd": "projects\\bot_eval_run\\run_1772352156769\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 1254,
+      "stdout": "\nup to date in 365ms\n",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "projects\\bot_eval_run\\run_1772352156769\\workspace",
+      "ok": false,
+      "exitCode": null,
+      "timedOut": true,
+      "durationMs": 600015,
+      "stdout": "✔ health + empty project list (105.5773ms)\n✖ project create/list/get + duplicate + validation (56.6706ms)\n✖ members endpoints (28.2466ms)\n✖ tasks create/list/filter + patch status (12.1371ms)\n✖ comments + not-found and payload contract (9.5644ms)\n",
+      "stderr": ""
+    }
+  ]
+}

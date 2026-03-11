@@ -1,0 +1,45 @@
+{
+    "review": "Zkontrolujte, že pro všechny POST endpointy, které vyžadují body (např. /projects, /projects/:projectId/tasks/:taskId/comments), kontrolujete, zda jsou předané body neprázdnými objekty a vracejte 400 chybu, pokud ne. Dodržujte také správnou strukturu JSON pro všechny odpovědi.",
+    "files": [
+        {
+            "file": "src/routes/projects.js",
+            "changes": [
+                {
+                    "line": 25,
+                    "change": "if (!req.body || !Object.keys(req.body).length) return res.status(400).json({ error: { code: 'E_INVALID_REQUEST_BODY', message: 'Request body is empty or invalid' } });"
+                },
+                {
+                    "line": 38,
+                    "change": "if (!req.body || !Object.keys(req.body).length) return res.status(400).json({ error: { code: 'E_INVALID_REQUEST_BODY', message: 'Request body is empty or invalid' } });"
+                }
+            ]
+        },
+        {
+            "file": "src/routes/tasks.js",
+            "changes": [
+                {
+                    "line": 25,
+                    "change": "if (!req.body || !Object.keys(req.body).length) return res.status(400).json({ error: { code: 'E_INVALID_REQUEST_BODY', message: 'Request body is empty or invalid' } });"
+                }
+            ]
+        },
+        {
+            "file": "src/routes/comments.js",
+            "changes": [
+                {
+                    "line": 25,
+                    "change": "if (!req.body || !Object.keys(req.body).length) return res.status(400).json({ error: { code: 'E_INVALID_REQUEST_BODY', message: 'Request body is empty or invalid' } });"
+                }
+            ]
+        },
+        {
+            "file": "tests/oracle.test.js",
+            "changes": [
+                {
+                    "line": 176,
+                    "change": "assert.ok(res.body.error && typeof res.body.error === 'object', 'Expected error object');\nassert.equal(typeof res.body.error.code, 'string');\nassert.ok(res.body.error.code.length > 0);\nassert.equal(typeof res.body.error.message, 'string');\nassert.ok(res.body.error.message.length > 0);"
+                }
+            ]
+        }
+    ]
+}

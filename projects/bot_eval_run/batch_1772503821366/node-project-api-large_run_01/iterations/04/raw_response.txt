@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/modules/members/service.js",
+      "content": "// src/modules/members/service.js\nconst { randomUUID } = require('node:crypto');\nconst { sendError } = require('../../lib/errors');\n\nlet projectsRepository = {};\n\nfunction addProject(projectId) {\n  if (!projectsRepository[projectId]) {\n    projectsRepository[projectId] = { members: [] };\n  }\n}\n\nfunction getMembersByProjectId(projectId) {\n  return projectsRepository[projectId]?.members || [];\n}\n\nfunction addMemberToProject(projectId, userId, role) {\n  if (!userId || !role) {\n    return null;\n  }\n\n  const members = getMembersByProjectId(projectId);\n  const existingMember = members.find(member => member.userId === userId);\n\n  if (existingMember) {\n    return null;\n  }\n\n  const newMember = { id: randomUUID(), userId, role };\n  projectsRepository[projectId].members.push(newMember);\n  return newMember;\n}\n\nmodule.exports = {\n  addProject,\n  getMembersByProjectId,\n  addMemberToProject,\n};\n"
+    }
+  ],
+  "notes": "Updated members service to reuse the shared projects repository and enforce duplicate check per project."
+}

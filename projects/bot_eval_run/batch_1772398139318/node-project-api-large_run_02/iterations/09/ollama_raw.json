@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-03-01T21:06:54.723245Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/modules/projects/service.js\",\n      \"content\": \"// src/modules/projects/service.js\\nconst { randomUUID } = require('node:crypto');\\n\\nlet projects = [];\\n\\nmodule.exports = {\\n  getAllProjects() {\\n    return projects;\\n  },\\n\\n  getProjectById(id) {\\n    return projects.find(project => project.id === id);\\n  },\\n\\n  getProjectByName(name) {\\n    return projects.find(project => project.name === name);\\n  },\\n\\n  createProject(name) {\\n    if (!name) return null;\\n    const newProject = { id: randomUUID(), name };\\n    projects.push(newProject);\\n    return newProject;\\n  }\\n};\\n\"\n    },\n    {\n      \"path\": \"src/modules/tasks/service.js\",\n      \"content\": \"// src/modules/tasks/service.js\\nconst { randomUUID } = require('node:crypto');\\n\\nlet tasks = [];\\n\\nmodule.exports = {\\n  getAllTasks(projectId) {\\n    return tasks.filter(task => task.projectId === projectId);\\n  },\\n\\n  createTask(projectId, description) {\\n    if (!description) return null;\\n    const newTask = { id: randomUUID(), projectId, description, status: 'todo' };\\n    tasks.push(newTask);\\n    return newTask;\\n  },\\n\\n  updateTaskStatus(taskId, status) {\\n    if (status !== 'todo' && status !== 'done') return null;\\n    const task = tasks.find(t => t.id === taskId);\\n    if (!task) return null;\\n    task.status = status;\\n    return task;\\n  }\\n};\\n\"\n    },\n    {\n      \"path\": \"src/modules/comments/service.js\",\n      \"content\": \"// src/modules/comments/service.js\\nconst { randomUUID } = require('node:crypto');\\n\\nlet comments = [];\\n\\nmodule.exports = {\\n  addComment(taskId, message) {\\n    if (!message) return null;\\n    const newComment = { id: randomUUID(), taskId, message };\\n    comments.push(newComment);\\n    return newComment;\\n  },\\n\\n  getAllComments(taskId) {\\n    return comments.filter(comment => comment.taskId === taskId);\\n  }\\n};\\n\"\n    }\n  ],\n  \"notes\": \"Updated service methods to match the required exports for projects, tasks, and comments modules.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 17373638600,
+  "load_duration": 58292000,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 978918000,
+  "eval_count": 547,
+  "eval_duration": 6594290900
+}

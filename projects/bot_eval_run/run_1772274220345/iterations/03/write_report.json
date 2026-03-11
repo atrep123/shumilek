@@ -1,0 +1,10 @@
+{
+  "count": 3,
+  "files": [
+    "package.json",
+    "src/app.js",
+    "src/server.js"
+  ],
+  "appliedAsPatch": true,
+  "forcePatchFromIncompleteFull": true
+}

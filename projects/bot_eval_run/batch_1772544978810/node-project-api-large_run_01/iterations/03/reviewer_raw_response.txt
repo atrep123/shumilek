@@ -1,0 +1,4 @@
+{
+    "review": "Zkontrolujte, že při POST /projects/:projectId/tasks/:taskId/comments endpointu kontrolujete prázdný `message` a vracejte správnou chybovou odpověď. Zkontrolujte také, že všechny entity (project, member) mají správně definované ID.",
+    "priorityFiles": ["src/modules/comments/routes.js", "src/lib/id.js"]
+}

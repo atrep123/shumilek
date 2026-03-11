@@ -1,0 +1,33 @@
+{
+  "files": [
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst commentsService = require('./service');\n\nrouter.post('/:taskId/comments', (req, res) => {\n  try {\n    const { projectId } = req.params;\n    const { taskId } = req.params;\n    const { message } = req.body;\n    const comment = commentsService.addCommentToTask(projectId, taskId, message);\n    res.status(201).json({ comment });\n  } catch (error) {\n    res.status(400).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.get('/:taskId/comments', (req, res) => {\n  try {\n    const { projectId } = req.params;\n    const { taskId } = req.params;\n    const comments = commentsService.getCommentsByTaskId(projectId, taskId);\n    res.json({ comments });\n  } catch (error) {\n    res.status(404).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst membersService = require('./service');\n\nrouter.post('/', (req, res) => {\n  try {\n    const { projectId } = req.params;\n    const { name } = req.body;\n    const member = membersService.addMemberToProject(projectId, name);\n    res.status(201).json({ member });\n  } catch (error) {\n    res.status(400).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { createError } = require('../../lib/errors');\nconst projectsService = require('../projects/service');\n\nfunction addMemberToProject(projectId, name) {\n  const project = projectsService.getProjectById(projectId);\n  if (project.members.includes(name)) {\n    throw createError('duplicate', 'Member already exists in the project.');\n  }\n  project.members.push(name);\n  return { projectId, member: name };\n}\n\nmodule.exports = { addMemberToProject };\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst projectsService = require('./service');\n\nrouter.get('/', (req, res) => {\n  const projects = projectsService.getProjects();\n  res.json({ projects });\n});\n\nrouter.post('/', (req, res) => {\n  try {\n    const { name } = req.body;\n    const project = projectsService.createProject(name);\n    res.status(201).json({ project });\n  } catch (error) {\n    res.status(400).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst tasksService = require('./service');\n\nrouter.post('/', (req, res) => {\n  try {\n    const { projectId } = req.params;\n    const { title } = req.body;\n    const task = tasksService.createTask(projectId, title);\n    res.status(201).json({ task });\n  } catch (error) {\n    res.status(400).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.get('/', (req, res) => {\n  try {\n    const { projectId } = req.params;\n    const tasks = tasksService.getTasksByProjectId(projectId);\n    res.json({ tasks });\n  } catch (error) {\n    res.status(404).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nrouter.patch('/:taskId', (req, res) => {\n  try {\n    const { projectId } = req.params;\n    const { taskId } = req.params;\n    const { status } = req.body;\n    const task = tasksService.updateTaskStatus(projectId, taskId, status);\n    res.json({ task });\n  } catch (error) {\n    res.status(404).json({ error: { code: error.code, message: error.message } });\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { generateId, createError } = require('../../lib/errors');\nconst projectsService = require('../projects/service');\n\nfunction createTask(projectId, title) {\n  const project = projectsService.getProjectById(projectId);\n  const task = { id: generateId(), title, status: 'pending', comments: [] };\n  project.tasks.push(task);\n  return task;\n}\n\nfunction getTasksByProjectId(projectId) {\n  const project = projectsService.getProjectById(projectId);\n  return project.tasks;\n}\n\nfunction updateTaskStatus(projectId, taskId, status) {\n  const project = projectsService.getProjectById(projectId);\n  const task = project.tasks.find(t => t.id === taskId);\n  if (!task) {\n    throw createError('not_found', 'Task not found.');\n  }\n  task.status = status;\n  return task;\n}\n\nmodule.exports = { createTask, getTasksByProjectId, updateTaskStatus };\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { generateId, createError } = require('../../lib/errors');\nconst tasksService = require('../tasks/service');\n\nfunction addCommentToTask(projectId, taskId, message) {\n  const task = tasksService.getTasksByProjectId(projectId).find(t => t.id === taskId);\n  if (!task) {\n    throw createError('not_found', 'Task not found.');\n  }\n  const comment = { id: generateId(), message };\n  if (!task.comments) {\n    task.comments = [];\n  }\n  task.comments.push(comment);\n  return comment;\n}\n\nfunction getCommentsByTaskId(projectId, taskId) {\n  const task = tasksService.getTasksByProjectId(projectId).find(t => t.id === taskId);\n  if (!task || !task.comments) {\n    throw createError('not_found', 'Comments not found.');\n  }\n  return task.comments;\n}\n\nmodule.exports = { addCommentToTask, getCommentsByTaskId };\n"
+    }
+  ],
+  "notes": "Added missing routes and fixed ambiguous imports."
+}

@@ -1,0 +1,48 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md"
+    },
+    {
+      "path": "package.json"
+    },
+    {
+      "path": "src/app.js"
+    },
+    {
+      "path": "src/server.js"
+    },
+    {
+      "path": "src/modules/projects/routes.js"
+    },
+    {
+      "path": "src/modules/projects/service.js"
+    },
+    {
+      "path": "src/modules/tasks/routes.js"
+    },
+    {
+      "path": "src/modules/tasks/service.js"
+    },
+    {
+      "path": "src/modules/members/routes.js"
+    },
+    {
+      "path": "src/modules/members/service.js"
+    },
+    {
+      "path": "src/modules/comments/routes.js"
+    },
+    {
+      "path": "src/modules/comments/service.js"
+    },
+    {
+      "path": "src/lib/errors.js"
+    },
+    {
+      "path": "src/lib/id.js"
+    }
+  ],
+  "notes": "Ensure all required files and directories are included. The modular structure under src/modules/projects, tasks, members, comments is maintained."
+}

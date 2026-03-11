@@ -1,0 +1,52 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Node Project\nThis is a simple Node.js project with an API for managing projects, tasks, members, and comments.\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"node-project\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple Node.js project with an API for managing projects, tasks, members, and comments.\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.18.2\"\n  },\n  \"devDependencies\": {\n    \"supertest\": \"^6.3.3\"\n  }\n}\n"
+    },
+    {
+      "path": "src/server.js",
+      "content": "const express = require('express');\nconst app = express();\nconst port = 3000;\n\napp.use(express.json());\n\nconst projectsRouter = require('./modules/projects/routes');\nconst membersRouter = require('./modules/members/routes');\nconst tasksRouter = require('./modules/tasks/routes');\nconst commentsRouter = require('./modules/comments/routes');\n\napp.use('/projects', projectsRouter);\napp.use('/projects/:projectId/members', membersRouter);\napp.use('/projects/:projectId/tasks', tasksRouter);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRouter);\n\napp.get('/health', (req, res) => {\n  res.json({ ok: true });\n});\n\napp.listen(port, () => {\n  console.log(`Server is running on http://localhost:${port}`);\n});\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst projectService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.get('/', (req, res) => {\n  const projects = projectService.getAllProjects();\n  res.json({ projects });\n});\n\nrouter.post('/', (req, res) => {\n  const { name } = req.body;\n  if (!name) {\n    return sendError(res, 400, 'INVALID_NAME', 'Name is required');\n  }\n  const project = projectService.createProject(name);\n  res.status(201).json({ project });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { v4: uuidv4 } = require('crypto').randomUUID;\n\nlet projects = [];\n\nfunction getAllProjects() {\n  return projects;\n}\n\nfunction createProject(name) {\n  const project = { id: uuidv4(), name };\n  projects.push(project);\n  return project;\n}\n\nmodule.exports = {\n  getAllProjects,\n  createProject\n};\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst memberService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) {\n    return sendError(res, 400, 'INVALID_BODY', 'UserId and role are required');\n  }\n  const member = memberService.addMember(req.params.projectId, userId, role);\n  res.status(201).json({ member });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { v4: uuidv4 } = require('crypto').randomUUID;\nconst projectService = require('../projects/service');\n\nfunction addMember(projectId, userId, role) {\n  const project = projectService.getAllProjects().find(p => p.id === projectId);\n  if (!project) {\n    throw new Error('Project not found');\n  }\n  const member = { id: uuidv4(), userId, role };\n  if (!project.members) {\n    project.members = [];\n  }\n  project.members.push(member);\n  return member;\n}\n\nmodule.exports = {\n  addMember\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst taskService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.get('/', (req, res) => {\n  const tasks = taskService.getAllTasks(req.params.projectId);\n  if (req.query.status) {\n    return res.json({ tasks: tasks.filter(task => task.status === req.query.status) });\n  }\n  res.json({ tasks });\n});\n\nrouter.post('/', (req, res) => {\n  const { title } = req.body;\n  if (!title) {\n    return sendError(res, 400, 'INVALID_TITLE', 'Title is required');\n  }\n  const task = taskService.createTask(req.params.projectId, title);\n  res.status(201).json({ task });\n});\n\nrouter.patch('/:taskId', (req, res) => {\n  const { status } = req.body;\n  if (!status || !['todo', 'done'].includes(status)) {\n    return sendError(res, 400, 'INVALID_STATUS', 'Status must be either todo or done');\n  }\n  const task = taskService.updateTask(req.params.projectId, req.params.taskId, status);\n  res.json({ task });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { v4: uuidv4 } = require('crypto').randomUUID;\nconst projectService = require('../projects/service');\n\nfunction getAllTasks(projectId) {\n  const project = projectService.getAllProjects().find(p => p.id === projectId);\n  if (!project || !project.tasks) {\n    return [];\n  }\n  return project.tasks;\n}\n\nfunction createTask(projectId, title) {\n  const project = projectService.getAllProjects().find(p => p.id === projectId);\n  if (!project) {\n    throw new Error('Project not found');\n  }\n  const task = { id: uuidv4(), title, status: 'todo' };\n  if (!project.tasks) {\n    project.tasks = [];\n  }\n  project.tasks.push(task);\n  return task;\n}\n\nfunction updateTask(projectId, taskId, status) {\n  const project = projectService.getAllProjects().find(p => p.id === projectId);\n  if (!project || !project.tasks) {\n    throw new Error('Project or task not found');\n  }\n  const task = project.tasks.find(t => t.id === taskId);\n  if (!task) {\n    throw new Error('Task not found');\n  }\n  task.status = status;\n  return task;\n}\n\nmodule.exports = {\n  getAllTasks,\n  createTask,\n  updateTask\n};\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst commentService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', (req, res) => {\n  const { message } = req.body;\n  if (!message) {\n    return sendError(res, 400, 'INVALID_MESSAGE', 'Message is required');\n  }\n  const comment = commentService.addComment(req.params.projectId, req.params.taskId, message);\n  res.status(201).json({ comment });\n});\n\nrouter.get('/', (req, res) => {\n  const comments = commentService.getAllComments(req.params.projectId, req.params.taskId);\n  res.json({ comments });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { v4: uuidv4 } = require('crypto').randomUUID;\nconst taskService = require('../tasks/service');\n\nfunction getAllComments(projectId, taskId) {\n  const tasks = taskService.getAllTasks(projectId);\n  const task = tasks.find(t => t.id === taskId);\n  if (!task || !task.comments) {\n    return [];\n  }\n  return task.comments;\n}\n\nfunction addComment(projectId, taskId, message) {\n  const tasks = taskService.getAllTasks(projectId);\n  const task = tasks.find(t => t.id === taskId);\n  if (!task) {\n    throw new Error('Task not found');\n  }\n  const comment = { id: uuidv4(), message };\n  if (!task.comments) {\n    task.comments = [];\n  }\n  task.comments.push(comment);\n  return comment;\n}\n\nmodule.exports = {\n  getAllComments,\n  addComment\n};\n"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "function sendError(res, statusCode, errorCode, message) {\n  res.status(statusCode).json({ error: { code: errorCode, message } });\n}\n\nmodule.exports = {\n  sendError\n};\n"
+    }
+  ]
+}

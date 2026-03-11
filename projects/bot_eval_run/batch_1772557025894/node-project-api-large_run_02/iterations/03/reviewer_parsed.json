@@ -1,0 +1,7 @@
+{
+  "review": "Zkontrolujte, že v souborech `src/modules/members/routes.js` a `src/modules/members/service.js` implementujete kontrolu pro oba pole `userId` a `role`. Toto řešení zajistí správnou validaci dat podle požadavků.",
+  "priorityFiles": [
+    "src/modules/members/routes.js",
+    "src/modules/members/service.js"
+  ]
+}

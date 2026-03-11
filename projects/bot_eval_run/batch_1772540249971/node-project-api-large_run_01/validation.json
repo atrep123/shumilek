@@ -1,0 +1,81 @@
+{
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace",
+  "deterministicFallback": {
+    "mode": "on-fail",
+    "tsTodo": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "nodeApi": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "totalActivations": 0,
+    "totalRecoveries": 0,
+    "totalTargetedActivations": 0,
+    "totalTargetedRecoveries": 0,
+    "totalCanonicalActivations": 0,
+    "totalCanonicalRecoveries": 0,
+    "totalRawPasses": 0,
+    "totalRawFailures": 0,
+    "totalRecoveredByFallback": 0,
+    "fallbackDependencyRate": 0
+  },
+  "reliability": {
+    "rawPasses": 0,
+    "rawFailures": 0,
+    "recoveredByFallback": 0,
+    "fallbackDependencyRate": 0
+  },
+  "parseStats": {
+    "plannerFailures": 0,
+    "schemaFailures": 0,
+    "jsonRepairFailures": 0,
+    "parseFailures": 0,
+    "jsonParseFailures": 0,
+    "placeholderFailures": 0,
+    "otherFailures": 0
+  },
+  "ok": false,
+  "diagnostics": [
+    "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)",
+    "Contract mismatch: API must never return HTML error pages; return JSON error payloads even on failures."
+  ],
+  "commands": [
+    {
+      "command": "npm install --no-audit --fund=false",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 1399,
+      "stdout": "\nadded 90 packages in 1s\n",
+      "stderr": "npm warn deprecated supertest@6.3.4: Please upgrade to supertest v7.1.3+, see release notes at https://github.com/forwardemail/supertest/releases/tag/v7.1.3 - maintenance is supported by Forward Email @ https://forwardemail.net\nnpm warn deprecated superagent@8.1.2: Please upgrade to superagent v10.2.2+, see release notes at https://github.com/forwardemail/superagent/releases/tag/v10.2.2 - maintenance is supported by Forward Email @ https://forwardemail.net\n"
+    },
+    {
+      "command": "node --test --test-concurrency=1 tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 411,
+      "stdout": "✔ health + empty project list (91.5678ms)\n✔ project create/list/get + duplicate + validation (47.4167ms)\nReferenceError: sendError is not defined\n    at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\src\\modules\\members\\routes.js:10:5\n    at Layer.handle [as handle_request] (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\layer.js:95:5)\n    at next (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\route.js:149:13)\n    at Route.dispatch (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\route.js:119:3)\n    at Layer.handle [as handle_request] (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\layer.js:95:5)\n    at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:284:15\n    at router.process_params (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:346:12)\n    at next (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:280:10)\n    at router.handle (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:175:3)\n    at router (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:47:12)\n✖ members endpoints (9.2021ms)\n✔ tasks create/list/filter + patch status (20.8498ms)\n✖ comments + not-found and payload contract (8.2323ms)\nReferenceError: sendError is not defined\n    at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\src\\modules\\comments\\routes.js:10:5\n    at Layer.handle [as handle_request] (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\layer.js:95:5)\n    at next (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\route.js:149:13)\n    at Route.dispatch (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\route.js:119:3)\n    at Layer.handle [as handle_request] (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\layer.js:95:5)\n    at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:284:15\n    at router.process_params (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:346:12)\n    at next (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:280:10)\n    at router.handle (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:175:3)\n    at router (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:47:12)\nℹ tests 5\nℹ suites 0\nℹ pass 3\nℹ fail 2\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 347.3425\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:92:1\n✖ members endpoints (9.2021ms)\n  AssertionError [ERR_ASSERTION]: <!DOCTYPE html>\n  <html lang=\"en\">\n  <head>\n  <meta charset=\"utf-8\">\n  <title>Error</title>\n  </head>\n  <body>\n  <pre>ReferenceError: sendError is not defined<br> &nbsp; &nbsp;at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\src\\modules\\members\\routes.js:10:5<br> &nbsp; &nbsp;at Layer.handle [as handle_request] (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\layer.js:95:5)<br> &nbsp; &nbsp;at next (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\route.js:149:13)<br> &nbsp; &nbsp;at Route.dispatch (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\route.js:119:3)<br> &nbsp; &nbsp;at Layer.handle [as handle_request] (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\layer.js:95:5)<br> &nbsp; &nbsp;at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:284:15<br> &nbsp; &nbsp;at router.process_params (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:346:12)<br> &nbsp; &nbsp;at next (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:280:10)<br> &nbsp; &nbsp;at router.handle (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:175:3)<br> &nbsp; &nbsp;at router (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:47:12)</pre>\n  </body>\n  </html>\n  \n  \n  500 !== 400\n  \n      at expectErrorPayload (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\tests\\oracle.test.js:43:10)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\tests\\oracle.test.js:102:3)\n      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 500,\n    expected: 400,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at tests\\oracle.test.js:160:1\n✖ comments + not-found and payload contract (8.2323ms)\n  AssertionError [ERR_ASSERTION]: <!DOCTYPE html>\n  <html lang=\"en\">\n  <head>\n  <meta charset=\"utf-8\">\n  <title>Error</title>\n  </head>\n  <body>\n  <pre>ReferenceError: sendError is not defined<br> &nbsp; &nbsp;at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\src\\modules\\comments\\routes.js:10:5<br> &nbsp; &nbsp;at Layer.handle [as handle_request] (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\layer.js:95:5)<br> &nbsp; &nbsp;at next (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\route.js:149:13)<br> &nbsp; &nbsp;at Route.dispatch (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\route.js:119:3)<br> &nbsp; &nbsp;at Layer.handle [as handle_request] (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\layer.js:95:5)<br> &nbsp; &nbsp;at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:284:15<br> &nbsp; &nbsp;at router.process_params (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:346:12)<br> &nbsp; &nbsp;at next (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:280:10)<br> &nbsp; &nbsp;at router.handle (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:175:3)<br> &nbsp; &nbsp;at router (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\node_modules\\express\\lib\\router\\index.js:47:12)</pre>\n  </body>\n  </html>\n  \n  \n  500 !== 400\n  \n      at expectErrorPayload (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\tests\\oracle.test.js:43:10)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772540249971\\node-project-api-large_run_01\\workspace\\tests\\oracle.test.js:176:3)\n      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 500,\n    expected: 400,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+      "stderr": ""
+    }
+  ]
+}

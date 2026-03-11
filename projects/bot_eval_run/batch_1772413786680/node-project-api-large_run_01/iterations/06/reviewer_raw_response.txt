@@ -1,0 +1,7 @@
+{
+  "review": "tasks contract: GET /projects/:projectId/tasks?status=todo|done and PATCH status updates must be implemented correctly.",
+  "priorityFiles": [
+    "src/modules/tasks/routes.js",
+    "src/modules/tasks/service.js"
+  ]
+}

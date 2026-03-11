@@ -1,0 +1,1 @@
+First iteration must use mode "full" with all core files. Missing: src/lib/errors.js

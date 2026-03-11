@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "// src/modules/tasks/routes.js\nconst express = require('express');\nconst router = express.Router();\nconst tasksService = require('../tasks/service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.get('/', async (req, res) => {\n  const projectId = req.params.projectId;\n  const statusFilter = req.query.status;\n  try {\n    const tasks = await tasksService.getTasks(projectId, statusFilter);\n    if (!tasks) {\n      return sendError(res, 404, 'NOT_FOUND', 'Project not found');\n    }\n    res.json({ tasks });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', error.message);\n  }\n});\n\nrouter.patch('/:taskId', async (req, res) => {\n  const projectId = req.params.projectId;\n  const taskId = req.params.taskId;\n  const { status } = req.body;\n  if (!['todo', 'done'].includes(status)) {\n    return sendError(res, 400, 'INVALID_STATUS', 'Status must be either "
+      }
+    ]
+  }
+  

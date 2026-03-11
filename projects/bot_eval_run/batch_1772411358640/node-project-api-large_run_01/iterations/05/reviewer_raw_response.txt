@@ -1,0 +1,8 @@
+{
+ "review": "Avoid raw throw in src/modules/comments/service.js: return domain errors and map to JSON payloads in routes. Avoid raw throw in src/modules/members/service.js: return domain errors and map to JSON payloads in routes. Avoid raw throw in src/modules/tasks/service.js: return domain errors and map to JSON payloads in routes.",
+ "priorityFiles": [
+   "src/modules/comments/service.js",
+   "src/modules/members/service.js",
+   "src/modules/tasks/service.js"
+ ]
+}

@@ -1,0 +1,6 @@
+- Create full files: README.md, package.json, openapi.json, src/server.js.
+- Export createServer via module.exports = { createServer } and never call listen() inside.
+- Use only Node builtins and keep package.json as commonjs with no dependencies.
+- Implement /health, /openapi.json, /todos, /todos/{id} with GET/POST/PATCH/DELETE.
+- Persist todos as { todos: [...] } in dataPath.
+- Verify with oracle tests.

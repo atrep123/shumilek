@@ -1,0 +1,67 @@
+[
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 1,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 1647575,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772531072511\\node-project-api-large_run_01",
+    "diagnostics": [
+      "Route-service contract mismatch (projects): routes call projectsService.getAllProjects() but service does not export \"getAllProjects\".",
+      "Route-service export map required (projects): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+      "Route-service contract mismatch (members): routes call membersService.getMembers() but service does not export \"getMembers\".",
+      "Route-service export map required (members): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+      "Route-service contract mismatch (tasks): routes call taskService.updateTask() but service does not export \"updateTask\".",
+      "Route-service export map required (tasks): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+      "Route-service contract mismatch (comments): routes call commentsService.getAllComments() but service does not export \"getAllComments\".",
+      "Route-service contract mismatch (comments): routes call commentsService.addComment() but service does not export \"addComment\".",
+      "Route-service export map required (comments): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+      "Skipped oracle command checks because structural contract did not pass."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 0,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  }
+]

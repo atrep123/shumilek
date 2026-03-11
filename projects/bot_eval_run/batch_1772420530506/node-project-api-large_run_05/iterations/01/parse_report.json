@@ -1,0 +1,23 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "qwen2.5-coder:14b",
+      "ok": true,
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    },
+    {
+      "stage": "scenario_contract",
+      "model": "qwen2.5-coder:14b",
+      "ok": false,
+      "error": "First iteration must use mode \"full\" with all core files. Missing: src/lib/id.js",
+      "errorKind": "schema"
+    }
+  ],
+  "finalOk": false,
+  "finalError": "First iteration must use mode \"full\" with all core files. Missing: src/lib/id.js",
+  "finalErrorKind": "schema"
+}

@@ -1,0 +1,25 @@
+{
+  "files": [
+    {
+      "path": "src/lib/errors.js",
+      "content": "const sendError = (res, status, code, message) => {\n  res.status(status).json({ error: { code, message } });\n};\n\nmodule.exports = { sendError };\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst membersService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) {\n    return sendError(res, 400, 'BAD_REQUEST', 'Invalid request body');\n  }\n\n  const member = membersService.createMember(req.projectId, userId, role);\n  if (!member) {\n    return sendError(res, 500, 'INTERNAL_ERROR', 'Failed to create member');\n  }\n\n  res.status(201).json({ member });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet membersStore = {};\n\nconst createMember = (projectId, userId, role) => {\n  if (!membersStore[projectId]) {\n    membersStore[projectId] = [];\n  }\n\n  const member = { id: randomUUID(), userId, role };\n  membersStore[projectId].push(member);\n  return member;\n};\n\nmodule.exports = { createMember };\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst commentsService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', (req, res) => {\n  const { message } = req.body;\n  if (!message) {\n    return sendError(res, 400, 'BAD_REQUEST', 'Invalid request body');\n  }\n\n  const comment = commentsService.createComment(req.projectId, req.taskId, message);\n  if (!comment) {\n    return sendError(res, 500, 'INTERNAL_ERROR', 'Failed to create comment');\n  }\n\n  res.status(201).json({ comment });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet commentsStore = {};\n\nconst createComment = (projectId, taskId, message) => {\n  if (!commentsStore[projectId]) {\n    commentsStore[projectId] = {};\n  }\n  if (!commentsStore[projectId][taskId]) {\n    commentsStore[projectId][taskId] = [];\n  }\n\n  const comment = { id: randomUUID(), message };\n  commentsStore[projectId][taskId].push(comment);\n  return comment;\n};\n\nmodule.exports = { createComment };\n"
+    }
+  ],
+  "notes": "Minimal changes to ensure proper error handling and request validation in members and comments routes."
+}

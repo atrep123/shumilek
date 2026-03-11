@@ -1,0 +1,30 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst projectsService = require('./service');\n\nrouter.post('/', async (req, res) => {\n  const { name } = req.body;\n  if (!name) return sendError(res, 400, 'MissingName', 'Project name is required');\n  try {\n    const project = await projectsService.createProject({ name });\n    return res.status(201).json({ project });\n  } catch (error) {\n    if (error.code === 'Duplicate') return sendError(res, 409, error.code, error.message);\n    throw error;\n  }\n});\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst errors = require('../../lib/errors');\nconst projectsStore = {};\n\nexports.createProject = async ({ name }) => {\n  if (projectsStore[name]) throw new errors.DuplicateError('User with this name already exists');\n  const projectId = randomUUID();\n  projectsStore[name] = { id: projectId, name };\n  return { id: projectId, name };\n};\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst membersService = require('./service');\n\nrouter.post('/', async (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) return sendError(res, 400, 'InvalidMemberData', 'User ID and role are required');\n  try {\n    const member = await membersService.addMember({ projectId: req.params.projectId, userId, role });\n    return res.status(201).json({ member });\n  } catch (error) {\n    if (error.code === 'Duplicate') return sendError(res, 409, error.code, error.message);\n    throw error;\n  }\n});\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const errors = require('../../lib/errors');\nconst membersStore = {};\n\nexports.addMember = async ({ projectId, userId, role }) => {\n  const key = `${projectId}-${userId}`;\n  if (membersStore[key]) throw new errors.DuplicateError('User is already a member of this project');\n  membersStore[key] = { projectId, userId, role };\n  return { userId, role };\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst tasksService = require('./service');\n\nrouter.post('/', async (req, res) => {\n  const { title } = req.body;\n  if (!title) return sendError(res, 400, 'MissingTitle', 'Task title is required');\n  try {\n    const task = await tasksService.createTask({ projectId: req.params.projectId, title });\n    return res.status(201).json({ task });\n  } catch (error) {\n    throw error;\n  }\n});\n\nrouter.patch('/:taskId', async (req, res) => {\n  const { status } = req.body;\n  if (!['todo', 'done'].includes(status)) return sendError(res, 400, 'InvalidStatus', 'Task status must be either todo or done');\n  try {\n    const task = await tasksService.updateTaskStatus({ projectId: req.params.projectId, taskId: req.params.taskId, status });\n    return res.json({ task });\n  } catch (error) {\n    throw error;\n  }\n});\n\nrouter.get('/', async (req, res) => {\n  const { status } = req.query;\n  try {\n    const tasks = await tasksService.getTasksByStatus({ projectId: req.params.projectId, status });\n    return res.json({ tasks });\n  } catch (error) {\n    throw error;\n  }\n});\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const errors = require('../../lib/errors');\ntasksStore = {};\n\nexports.createTask = async ({ projectId, title }) => {\n  if (tasksStore[title]) throw new errors.BadRequestError('Task with this title already exists');\n  const taskId = randomUUID();\n  tasksStore[title] = { id: taskId, projectId, title, status: 'todo' };\n  return { id: taskId, projectId, title, status: 'todo' };\n};\n\nexports.updateTaskStatus = async ({ projectId, taskId, status }) => {\n  const taskKey = Object.keys(tasksStore).find(key => tasksStore[key].id === taskId);\n  if (!taskKey) throw new errors.NotFoundError('Task not found');\n  tasksStore[taskKey].status = status;\n  return { id: taskId, projectId, title: tasksStore[taskKey].title, status };\n};\n\nexports.getTasksByStatus = async ({ projectId, status }) => {\n  const tasks = Object.keys(tasksStore).map(key => tasksStore[key]).filter(task => task.projectId === projectId && task.status === status);\n  return tasks;\n};\n"
+    }
+  ],
+  "mode": "patch",
+  "notes": "Added validation for project name, user ID and role in POST /projects and POST /projects/:projectId/members; added checks for duplicate users in projects. Added routes and services for managing tasks with status updates."
+}

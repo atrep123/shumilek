@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Route-service contract mismatch (members): routes call membersService.createMember() but service does not export \"createMember\".",
+    "Route-service contract mismatch (comments): routes call commentsService.createComment() but service does not export \"createComment\".",
+    "Duplicate handling hint: expected 409 conflict handling for duplicate members in a project.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

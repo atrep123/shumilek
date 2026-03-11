@@ -1,0 +1,7 @@
+{
+  "review": "generateId helper export mismatch: services call generateId(...) but src/lib/id.* does not define+export generateId",
+  "priorityFiles": [
+    "src/lib/id.js",
+    "src/lib/id.*"
+  ]
+}

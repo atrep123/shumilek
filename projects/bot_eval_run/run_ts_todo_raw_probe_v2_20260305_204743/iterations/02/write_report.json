@@ -1,0 +1,11 @@
+{
+  "count": 2,
+  "files": [
+    "tsconfig.json",
+    "src/store.ts"
+  ],
+  "appliedAsPatch": true,
+  "forcePatchFromIncompleteFull": true,
+  "appliedFixes": [],
+  "skippedFixes": []
+}

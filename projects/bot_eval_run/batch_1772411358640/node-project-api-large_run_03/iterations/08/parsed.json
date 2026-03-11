@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "// src/modules/comments/service.js\nconst { randomUUID } = require('node:crypto');\n\nmodule.exports = {\n  createComment: (message) => {\n    if (!message) {\n      return null;\n    }\n    return {\n      id: randomUUID(),\n      message,\n    };\n  },\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "// src/modules/tasks/service.js\nconst { randomUUID } = require('node:crypto');\n\nmodule.exports = {\n  updateTaskStatus: (taskId, status) => {\n    if (!taskId || !['todo', 'done'].includes(status)) {\n      return null;\n    }\n    return {\n      id: taskId,\n      status,\n    };\n  },\n};\nmodule.exports.createTask = async function createTaskBridge(projectId, title) { return { id: 'tasks_createTask_' + Date.now(), projectId: String(projectId || ''), title: String(title || ''), status: 'todo' }; };\n"
+    }
+  ],
+  "notes": "Updated comments and tasks services to include the required methods."
+}

@@ -1,0 +1,42 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "deepseek-coder-v2:16b",
+      "ok": false,
+      "error": "Duplicate file paths in files[]: src/modules/projects/routes.js",
+      "errorKind": "schema",
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    },
+    {
+      "stage": "repair_syntax",
+      "model": "deepseek-coder-v2:16b",
+      "ok": false,
+      "error": "Duplicate file paths in files[]: src/modules/projects/routes.js",
+      "errorKind": "schema",
+      "transport": "generate",
+      "formatKind": "json",
+      "schemaUsed": false,
+      "fallbackUsed": false
+    },
+    {
+      "stage": "repair_schema",
+      "model": "deepseek-coder-v2:16b",
+      "ok": false,
+      "error": "Duplicate file paths in files[]: src/modules/projects/routes.js",
+      "errorKind": "schema",
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    }
+  ],
+  "finalOk": false,
+  "primaryError": "Duplicate file paths in files[]: src/modules/projects/routes.js",
+  "primaryErrorKind": "schema",
+  "finalError": "Duplicate file paths in files[]: src/modules/projects/routes.js",
+  "finalErrorKind": "schema"
+}

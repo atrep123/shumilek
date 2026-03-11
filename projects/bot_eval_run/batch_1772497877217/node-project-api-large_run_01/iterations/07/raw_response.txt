@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "// src/modules/tasks/service.js\nconst { randomUUID } = require('node:crypto');\n\nmodule.exports = {\n  getAllTasks,\n  createTask,\n  updateTaskStatus,\n};\n\nfunction getAllTasks() {\n  // Implement logic to get all tasks\n}\n\nfunction createTask(task) {\n  // Implement logic to create a task\n}\n\nfunction updateTaskStatus(taskId, status) {\n  // Implement logic to update task status\n}"
+    }
+  ],
+  "notes": "Added getAllTasks method to tasksService in src/modules/tasks/service.js"
+}

@@ -1,0 +1,18 @@
+{
+  "review": "Zkontrolujte, že pro všechny POST endpointy, které vyžadují body (např. /projects, /projects/:projectId/tasks/:taskId/comments), kontrolujete prázdný nebo chybějící payload a odpovídajícím způsobem vracíte 400 Bad Request. Pro endpointy, které mají mít validní data (např. /projects), zkontrolujte, že jsou data správně formátovány a obsahují požadované pole.",
+  "files": [
+    {
+      "file": "tests/oracle.test.js",
+      "changes": [
+        {
+          "line": 43,
+          "change": "Zkontrolujte, že funkce expectErrorPayload kontroluje, zda je v odpovědi správně formátován objekt s chybou (error)."
+        },
+        {
+          "line": 160,
+          "change": "Pro endpoint /projects/:projectId/tasks/:taskId/comments, zkontrolujte, že kontrola prázdného nebo chybějícího payload je správně implementována a odpovídajícím způsobem vrací 400 Bad Request."
+        }
+      ]
+    }
+  ]
+}

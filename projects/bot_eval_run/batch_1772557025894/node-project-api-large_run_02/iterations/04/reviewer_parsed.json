@@ -1,0 +1,38 @@
+{
+  "review": "Zkontrolujte všechny endpointy a závěrečné chyby. Změňte export v souboru src/app.js tak, aby nevolal listen() přímo. Zkontrolujte, že všude jsou správné kódy odpovědí (400 pro neplatný input a 409 pro duplicitní záznam).",
+  "files": [
+    {
+      "file": "src/app.js",
+      "changes": [
+        "Ujistěte se, že export v souboru src/app.js je funkce a nevolá listen() přímo."
+      ]
+    },
+    {
+      "file": "src/controllers/projectController.js",
+      "changes": [
+        "Zkontrolujte, že všechny endpointy (POST /projects) zpracovávají neplatný input a vracejí 400.",
+        "Zkontrolujte, že všechny endpointy (POST /projects) zpracovávají duplicitní záznamy a vracejí 409."
+      ]
+    },
+    {
+      "file": "src/controllers/memberController.js",
+      "changes": [
+        "Zkontrolujte, že všechny endpointy (POST /projects/:projectId/members) zpracovávají neplatný input a vracejí 400.",
+        "Zkontrolujte, že všechny endpointy (POST /projects/:projectId/members) zpracovávají duplicitní záznamy a vracejí 409."
+      ]
+    },
+    {
+      "file": "src/controllers/taskController.js",
+      "changes": [
+        "Zkontrolujte, že všechny endpointy (POST /projects/:projectId/tasks) zpracovávají neplatný input a vracejí 400.",
+        "Zkontrolujte, že všechny endpointy (POST /projects/:projectId/tasks) zpracovávají duplicitní záznamy a vracejí 409."
+      ]
+    },
+    {
+      "file": "src/controllers/commentController.js",
+      "changes": [
+        "Zkontrolujte, že všechny endpointy (POST /projects/:projectId/comments) zpracovávají neplatný input a vracejí 400."
+      ]
+    }
+  ]
+}

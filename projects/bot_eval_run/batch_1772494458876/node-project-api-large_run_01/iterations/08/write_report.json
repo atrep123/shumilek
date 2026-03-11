@@ -1,0 +1,41 @@
+{
+  "count": 14,
+  "files": [
+    "src/app.js",
+    "src/lib/errors.js",
+    "src/modules/projects/routes.js",
+    "src/modules/members/routes.js",
+    "src/modules/tasks/routes.js",
+    "src/modules/comments/routes.js",
+    "README.md",
+    "package.json",
+    "src/server.js",
+    "src/modules/projects/service.js",
+    "src/modules/tasks/service.js",
+    "src/modules/members/service.js",
+    "src/modules/comments/service.js",
+    "src/lib/id.js"
+  ],
+  "appliedAsPatch": false,
+  "forcePatchFromIncompleteFull": false,
+  "appliedFixes": [
+    "src/modules/tasks/routes.js: normalized task create payload to { title }",
+    "src/modules/tasks/routes.js: normalized task status contract (todo|done + filter)",
+    "src/modules/members/routes.js: normalized duplicate member contract (null->409)",
+    "src/modules/comments/routes.js: normalized comments payload key to message",
+    "src/app.js: normalized app mount contract to canonical routes"
+  ],
+  "skippedFixes": [
+    "src/modules/projects/routes.js: detail route unchanged (detail route already present)",
+    "src/modules/projects/routes.js: projects duplicate guard unchanged (duplicate guard already present)",
+    "src/modules/projects/routes.js: POST / status unchanged (POST / already returns 201 or no res.json success branch)",
+    "src/modules/projects/routes.js: no custom-error class normalization needed",
+    "src/modules/tasks/routes.js: POST / status unchanged (POST / already returns 201 or no res.json success branch)",
+    "src/modules/tasks/routes.js: no custom-error class normalization needed",
+    "src/modules/members/routes.js: POST / status unchanged (POST / already returns 201 or no res.json success branch)",
+    "src/modules/members/routes.js: members payload unchanged (members payload already aligned or pattern not detected)",
+    "src/modules/members/routes.js: no custom-error class normalization needed",
+    "src/modules/comments/routes.js: POST / status unchanged (POST / already returns 201 or no res.json success branch)",
+    "src/modules/comments/routes.js: no custom-error class normalization needed"
+  ]
+}

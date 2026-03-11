@@ -1,0 +1,37 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst { sendError } = require('../../lib/errors');\n\nlet projects = {};\n\nfunction getProjectById(id) {\n  return projects[id] || null;\n}\n\nfunction createProject(name) {\n  if (Object.values(projects).some(project => project.name === name)) {\n    return { error: { code: 'PROJECT_DUPLICATE', message: 'Project already exists' } };\n  }\n  const id = randomUUID();\n  projects[id] = { id, name, members: [], tasks: [] };\n  return projects[id];\n}\n\nmodule.exports = {\n  getProjectById,\n  createProject,\n};\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst { sendError } = require('../../lib/errors');\nconst commentService = require('./service');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const { message } = req.body;\n  if (!message) {\n    return sendError(res, 400, 'INVALID_PAYLOAD', 'Message is required');\n  }\n  const comment = commentService.createComment(req.taskId, message);\n  if (comment.error) {\n    return sendError(res, 409, comment.error.code, comment.error.message);\n  }\n  res.status(201).json({ comment });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst projectService = require('../projects/service');\n\nlet comments = {};\n\nfunction createComment(taskId, message) {\n  const task = Object.values(projectService.projects).flatMap(project => project.tasks).find(task => task.id === taskId);\n  if (!task) {\n    return { error: { code: 'TASK_NOT_FOUND', message: 'Task not found' } };\n  }\n  const id = randomUUID();\n  comments[id] = { id, taskId, message };\n  task.comments.push(id);\n  return comments[id];\n}\n\nmodule.exports = {\n  createComment,\n};\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst { sendError } = require('../../lib/errors');\nmconst memberService = require('./service');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) {\n    return sendError(res, 400, 'INVALID_PAYLOAD', 'UserId and role are required');\n  }\n  const member = memberService.addMember(req.projectId, userId, role);\n  if (member.error) {\n    return sendError(res, 409, member.error.code, member.error.message);\n  }\n  res.status(201).json({ member });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const projectService = require('../projects/service');\n\nfunction addMember(projectId, userId, role) {\n  const project = projectService.getProjectById(projectId);\n  if (!project) {\n    return { error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } };\n  }\n  const member = { userId, role };\n  project.members.push(member);\n  return member;\n}\n\nmodule.exports = {\n  addMember,\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst { sendError } = require('../../lib/errors');\nconst taskService = require('./service');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  const { name } = req.body;\n  if (!name) {\n    return sendError(res, 400, 'INVALID_PAYLOAD', 'Name is required');\n  }\n  const task = taskService.createTask(req.projectId, name);\n  res.status(201).json({ task });\n});\n\nrouter.patch('/:taskId', (req, res) => {\n  const { status } = req.body;\n  if (!status || !['todo', 'done'].includes(status)) {\n    return sendError(res, 400, 'INVALID_PAYLOAD', 'Status must be either todo or done');\n  }\n  const task = taskService.updateTask(req.projectId, req.params.taskId, status);\n  if (!task) {\n    return sendError(res, 404, 'TASK_NOT_FOUND', 'Task not found');\n  }\n  res.json({ task });\n});\n\nrouter.get('/', (req, res) => {\n  const { status } = req.query;\n  let tasks = projectService.getProjectById(req.projectId).tasks;\n  if (status && ['todo', 'done'].includes(status)) {\n    tasks = tasks.filter(task => task.status === status);\n  }\n  res.json({ tasks });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst projectService = require('../projects/service');\n\nfunction createTask(projectId, name) {\n  const project = projectService.getProjectById(projectId);\n  if (!project) {\n    return null;\n  }\n  const id = randomUUID();\n  const task = { id, name, status: 'todo', comments: [] };\n  project.tasks.push(task);\n  return task;\n}\n\nfunction updateTask(projectId, taskId, status) {\n  const project = projectService.getProjectById(projectId);\n  if (!project) {\n    return null;\n  }\n  const task = project.tasks.find(t => t.id === taskId);\n  if (task) {\n    task.status = status;\n  }\n  return task;\n}\n\nmodule.exports = {\n  createTask,\n  updateTask,\n};\n"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "function sendError(res, status, code, message) {\n  res.status(status).json({ error: { code, message } });\n}\n\nmodule.exports = {\n  sendError,\n};\n"
+    }
+  ],
+  "notes": "Minimal changes to ensure correct handling of duplicate project names and other validation errors."
+}

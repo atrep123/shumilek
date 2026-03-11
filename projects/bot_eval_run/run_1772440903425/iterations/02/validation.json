@@ -1,0 +1,11 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Task filtering contract mismatch: support ?status=todo|done and PATCH status updates.",
+    "Status code contract mismatch: POST /projects/:projectId/members should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/tasks/:taskId/comments should return HTTP 201 on create.",
+    "Invalid package.json: Expected ',' or '}' after property value in JSON at position 234 (line 11 column 27)",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

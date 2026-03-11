@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-03-01T20:30:46.8849346Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/modules/projects/service.js\",\n      \"content\": \"// src/modules/projects/service.js\\nconst { randomUUID } = require('node:crypto');\\n\\nlet projectsStore = [];\\n\\nmodule.exports = {\\n  getAllProjects() {\\n    return projectsStore;\\n  },\\n\\n  getProjectById(id) {\\n    return projectsStore.find(project => project.id === id);\\n  },\\n\\n  getProjectByName(name) {\\n    return projectsStore.find(project => project.name === name);\\n  },\\n\\n  createProject(name) {\\n    if (!name || typeof name !== 'string' || name.trim() === '') {\\n      return null;\\n    }\\n    const newProject = {\\n      id: randomUUID(),\\n      name: name.trim()\\n    };\\n    projectsStore.push(newProject);\\n    return newProject;\\n  }\\n};\\n\"\n    },\n    {\n      \"path\": \"src/modules/tasks/service.js\",\n      \"content\": \"// src/modules/tasks/service.js\\nconst { randomUUID } = require('node:crypto');\\n\\nlet tasksStore = [];\\n\\nmodule.exports = {\\n  getAllTasks(projectId) {\\n    return tasksStore.filter(task => task.projectId === projectId);\\n  },\\n\\n  createTask(projectId, title) {\\n    if (!title || typeof title !== 'string' || title.trim() === '') {\\n      return null;\\n    }\\n    const newTask = {\\n      id: randomUUID(),\\n      projectId,\\n      title: title.trim(),\\n      status: 'todo'\\n    };\\n    tasksStore.push(newTask);\\n    return newTask;\\n  },\\n\\n  updateTaskStatus(taskId, status) {\\n    if (status !== 'todo' && status !== 'done') {\\n      return null;\\n    }\\n    const task = tasksStore.find(t => t.id === taskId);\\n    if (!task) {\\n      return null;\\n    }\\n    task.status = status;\\n    return task;\\n  }\\n};\\n\"\n    },\n    {\n      \"path\": \"src/modules/comments/service.js\",\n      \"content\": \"// src/modules/comments/service.js\\nconst { randomUUID } = require('node:crypto');\\n\\nlet commentsStore = [];\\n\\nmodule.exports = {\\n  addComment(taskId, message) {\\n    if (!message || typeof message !== 'string' || message.trim() === '') {\\n      return null;\\n    }\\n    const newComment = {\\n      id: randomUUID(),\\n      taskId,\\n      message: message.trim()\\n    };\\n    commentsStore.push(newComment);\\n    return newComment;\\n  },\\n\\n  getAllComments(taskId) {\\n    return commentsStore.filter(comment => comment.taskId === taskId);\\n  }\\n};\\n\"\n    }\n  ],\n  \"notes\": \"Updated services to include missing methods and corrected the contract mismatches.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 20660575100,
+  "load_duration": 59628700,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 1018345500,
+  "eval_count": 660,
+  "eval_duration": 7917408100
+}

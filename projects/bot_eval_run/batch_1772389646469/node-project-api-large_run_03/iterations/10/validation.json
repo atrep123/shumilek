@@ -1,0 +1,15 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Avoid raw throw in src/modules/tasks/service.js: return domain errors and map them to JSON payloads in routes.",
+    "Missing route signature for project detail endpoint /projects/:projectId",
+    "Status code contract mismatch: POST /projects should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/members should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/tasks should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/tasks/:taskId/comments should return HTTP 201 on create.",
+    "Duplicate handling hint: expected 409 conflict handling for duplicate project names.",
+    "Duplicate handling hint: expected 409 conflict handling for duplicate members in a project.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

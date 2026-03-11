@@ -1,0 +1,19 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing required file: README.md",
+    "Missing required file: package.json",
+    "Expected at least 12 source files under src/, found 6",
+    "Missing required app entrypoint: src/app.*",
+    "Missing required server entrypoint: src/server.*",
+    "Missing shared helper source file: src/lib/errors.js",
+    "Missing shared helper source file: src/lib/id.js",
+    "Missing domain module sources: src/modules/projects/",
+    "Missing route signature for /health",
+    "Missing route signature for /projects/:projectId/members",
+    "Missing route signature for /projects/:projectId/tasks",
+    "Missing route signature for /projects/:projectId/tasks/:taskId/comments",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

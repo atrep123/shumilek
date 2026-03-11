@@ -1,0 +1,97 @@
+Vytvor maly, ale realisticky Python projekt pro "AI" bez externich zavislosti.
+
+Pozadavky:
+- Pouze standardni knihovna Pythonu (zadne numpy/pandas/sklearn/torch/tensorflow/requests).
+- Struktura projektu jako balicek `mini_ai/` + `tests/` + `README.md`.
+- Implementuj jednoduchy model: napr. character-level Markov chain generator + trenovani z textu.
+- Pridat CLI: `python -m mini_ai.cli --help`, `train`, `generate` (offline).
+- Unit testy pres `unittest` (aspon 8 testu / assertu) a musi prochazet.
+
+VYSTUPNI FORMAT (STRICT): vrat JEN JSON objekt tohoto tvaru:
+{
+  "mode": "full",
+  "files": [
+    {"path": "README.md", "content": "...\n"},
+    {"path": "mini_ai/__init__.py", "content": "...\n"},
+    {"path": "mini_ai/...", "content": "...\n"},
+    {"path": "tests/test_....py", "content": "...\n"}
+  ],
+  "notes": "optional"
+}
+
+Pravidla:
+- Zadny markdown, zadne ``` bloky, zadny text mimo JSON.
+- Cesty jsou relativni, pouzij `/`, bez `..` a bez absolutnich cest.
+- Kazdy soubor ukonci znakem noveho radku.
+- "mode" pouzij "full" pro kompletni projekt (v pripade oprav muzes pouzit "patch").
+- `content` je vzdy kompletni obsah souboru (ne diff/snippet).
+
+---
+PLANNER HINTS (planner: deepseek-r1:8b; non-binding, SPEC wins on conflict):
+- [x] Vytvořit strukturu projektu `mini_ai/` a `tests/`
+- [x] Implementovat `__init__.py` v `mini_ai/` s importem `cli`
+- [x] Implementovat `cli.py` pro příkazovou řádkovou interakci
+- [x] Implementovat `markov.py` pro generaci Markovovy řetězce
+- [x] Vytvořit `train` a `generate` funkce v `cli.py`
+- [x] Napsat jednotkové testy pro `markov.py` v `tests/test_markov.py`
+- [x] Napsat jednotkové testy pro `cli.py` v `tests/test_cli.py`
+- [x] Zkontrolovat, že jsou spuštěny a úspěšné
+- [x] Vytvořit `README.md` s informacemi o projekту
+
+---
+NEPROSLO VALIDACI. Oprav nasledujici problemy.
+
+CHYBY:
+- Command failed: python -m unittest discover -v -s tests -p "test*.py" (exit=1, timedOut=false)
+
+LOGY (zkraceno):
+- python -m unittest discover -v -s tests -p "test*.py"
+  stderr: "test_generate (test_markov.TestMarkovChain.test_generate) ... FAIL\r\ntest_train (test_markov.TestMarkovChain.test_train) ... ok\r\n\r\n======================================================================\r\nFAIL: test_generate (test_markov.TestMarkovChain.test_generate)\r\n----------------------------------------------------------------------\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772209763974\\workspace\\tests\\test_markov.py\", line 19, in test_generate\r\n    self.assertEqual(len(generated_text), 10)\r\nAssertionError: 8 != 10\r\n\r\n----------------------------------------------------------------------\r\nRan 2 tests in 0.001s\r\n\r\nFAILED (failures=1)\r\n"
+
+DULEZITE (PY GENERATE): `MarkovChain.generate(length=...)` musi vratit PRESNE `length` znaku pro natrenovany model.
+Pri chybejicim kontextu fallbackni na validni context z transitions misto predcasneho ukonceni.
+
+AKTUALNI SOUBORY:
+- README.md
+- mini_ai/__init__.py
+- mini_ai/__pycache__/__init__.cpython-312.pyc
+- mini_ai/__pycache__/cli.cpython-312.pyc
+- mini_ai/__pycache__/markov.cpython-312.pyc
+- mini_ai/cli.py
+- mini_ai/markov.py
+- tests/__pycache__/test_markov.cpython-312.pyc
+- tests/test_markov.py
+
+DULEZITE: OPRAV SYNTAX/INDENT CHYBY PRESNE NA NIZE UVEDENYCH RADECH.
+KONTEXT SYNTAX CHYB:
+--- SYNTAX FILE: tests/test_markov.py (line 19) ---
+      1 | import unittest
+      2 | from mini_ai.markov import MarkovChain
+      3 | class TestMarkovChain(unittest.TestCase):
+      4 |     def setUp(self):
+      5 |         self.model = MarkovChain()
+      6 |         self.text = 'hello world'
+      7 |         self.model.train(self.text)
+      8 | 
+      9 |     def test_train(self):
+     10 |         self.assertIn('h', self.model.chain)
+     11 |         self.assertIn('e', self.model.chain['h'])
+     12 |         self.assertIn('l', self.model.chain['e'])
+     13 |         self.assertIn('o', self.model.chain['l'])
+     14 |         self.assertIn(' ', self.model.chain['o'])
+     15 |         self.assertIn('w', self.model.chain[' '])
+     16 | 
+     17 |     def test_generate(self):
+     18 |         generated_text = self.model.generate(10)
+>>   19 |         self.assertEqual(len(generated_text), 10)
+     20 |         for char in generated_text:
+     21 |             self.assertTrue(char in self.text or char == '')
+     22 | 
+     23 | if __name__ == '__main__':
+     24 |     unittest.main()
+     25 | 
+Instrukce: dodrz konzistentni odsazeni (mezery), zadne smichani blokovych urovni.
+
+VYSTUP: vrat JEN platny JSON objekt bez markdownu:
+{ "mode": "patch", "files": [ {"path":"...","content":"...\n"} ], "notes": "optional" }
+Pravidla: udelej jen minimalni nutne zmeny; posli jen soubory ktere menis nebo pridavas; u kazdeho posli VZDY cely obsah souboru.

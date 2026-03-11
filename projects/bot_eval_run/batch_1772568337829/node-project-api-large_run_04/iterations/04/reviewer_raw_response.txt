@@ -1,0 +1,36 @@
+{
+    "review": "Zkontrolujte, že při POST /projects body { name } způsobující prázdný nebo chybějící `name` vrátí 400 s správnou chybovou zprávou. Zkontrolujte také, že při POST /projects odpověď obsahuje správně vytvořený projekt s unikátním ID.",
+    "files": [
+        {
+            "file": "tests/oracle.test.js",
+            "changes": [
+                {
+                    "line": 43,
+                    "change": "Změňte `assert.equal(typeof res.body.error.message, 'string');` na `assert.ok(res.body.error.message);` pro lépe čitelnou kontrolu chybové zprávy."
+                },
+                {
+                    "line": 160,
+                    "change": "Ověřte, že při POST /projects s prázdným nebo chybějícím `name` je odpověď správně 400 a obsahuje chybové zprávy."
+                }
+            ]
+        },
+        {
+            "file": "src/app.js",
+            "changes": [
+                {
+                    "line": 12,
+                    "change": "Zkontrolujte, že při vytvoření projektu vrátí odpověď s unikátním ID pro nový projekt."
+                }
+            ]
+        },
+        {
+            "file": "src/projects/project.js",
+            "changes": [
+                {
+                    "line": 25,
+                    "change": "Zkontrolujte, že při vytvoření projektu kontroluje existence `name` a vrátí 400 s chybovou zprávou pro prázdný nebo chybějící `name`."
+                }
+            ]
+        }
+    ]
+}

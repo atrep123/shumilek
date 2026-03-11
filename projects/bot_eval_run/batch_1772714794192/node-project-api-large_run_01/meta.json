@@ -1,0 +1,19 @@
+{
+  "runId": 1772714795273,
+  "scenario": "node-project-api-large",
+  "model": "qwen2.5-coder:14b",
+  "plannerModel": "deepseek-r1:8b",
+  "plannerStrategy": "on-fail",
+  "reviewerModel": "qwen2.5:3b",
+  "jsonRepairModel": "qwen2.5:7b",
+  "timeoutFallbackModel": null,
+  "deterministicFallbackMode": "on-fail",
+  "baseUrl": "http://localhost:11434",
+  "ollamaOptions": {
+    "temperature": 0.05,
+    "num_predict": 4800,
+    "seed": 42
+  },
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772714794192\\node-project-api-large_run_01\\workspace",
+  "startedAt": "2026-03-05T12:46:35.275Z"
+}

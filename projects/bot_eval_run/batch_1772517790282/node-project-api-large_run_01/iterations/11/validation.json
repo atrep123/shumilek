@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Health route contract mismatch: GET /health should return body { ok: true }.",
+    "State-sharing mismatch: members service should reuse shared projects repository, not isolated members map/array",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

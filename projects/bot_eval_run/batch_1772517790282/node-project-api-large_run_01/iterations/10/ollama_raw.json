@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:32b",
+  "created_at": "2026-03-03T07:02:15.9182497Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/modules/tasks/service.js\",\n      \"content\": \"const { randomUUID } = require('node:crypto');\\n\\nlet tasksStore = {};\\n\\nfunction createTask(projectId, taskData) {\\n  const taskId = randomUUID();\\n  if (!tasksStore[projectId]) {\\n    tasksStore[projectId] = {};\\n  }\\n  tasksStore[projectId][taskId] = { ...taskData, id: taskId, status: 'todo' };\\n  return tasksStore[projectId][taskId];\\n}\\n\\nfunction getTasks(projectId, status) {\\n  const tasks = tasksStore[projectId] ? Object.values(tasksStore[projectId]) : [];\\n  if (status) {\\n    return tasks.filter(task => task.status === status);\\n  }\\n  return tasks;\\n}\\n\\nfunction updateTask(projectId, taskId, updatedData) {\\n  if (!tasksStore[projectId] || !tasksStore[projectId][taskId]) {\\n    return null;\\n  }\\n  const task = tasksStore[projectId][taskId];\\n  if (updatedData.status && ['todo', 'done'].includes(updatedData.status)) {\\n    task.status = updatedData.status;\\n  }\\n  return task;\\n}\\n\\nmodule.exports = { createTask, getTasks, updateTask };\\n\"\n    }\n  ],\n  \"notes\": \"Added updateTask method to tasks service.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 113798210600,
+  "load_duration": 11256783700,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 4221339300,
+  "eval_count": 319,
+  "eval_duration": 89235101200
+}

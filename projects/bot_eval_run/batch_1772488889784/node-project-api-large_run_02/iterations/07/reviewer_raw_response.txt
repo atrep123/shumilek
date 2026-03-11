@@ -1,0 +1,4 @@
+{
+  "review": "Missing route signatures for /health, /projects/:projectId/members, /projects/:projectId/tasks, and /projects/:projectId/tasks/:taskId/comments. Missing health endpoint declaration in src/app.*: expected app.get(\"/health\", ...).",
+  "priorityFiles": ["src/app.js", "src/server.js"]
+}

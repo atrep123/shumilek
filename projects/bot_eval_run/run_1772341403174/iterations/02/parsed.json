@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/lib/id.js",
+      "content": "const { randomUUID } = require(\"node:crypto\");\n\nmodule.exports = {\n  generateId: () => randomUUID()\n};\n"
+    }
+  ],
+  "notes": "Added src/lib/id.js to generate unique IDs using node:crypto."
+}

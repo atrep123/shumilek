@@ -1,0 +1,10 @@
+{
+  "count": 1,
+  "files": [
+    "mini_ai/cli.py"
+  ],
+  "appliedAsPatch": true,
+  "forcePatchFromIncompleteFull": true,
+  "appliedFixes": [],
+  "skippedFixes": []
+}

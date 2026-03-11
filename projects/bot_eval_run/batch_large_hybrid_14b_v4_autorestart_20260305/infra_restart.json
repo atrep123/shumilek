@@ -1,0 +1,17 @@
+[
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 1,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_large_hybrid_14b_v4_autorestart_20260305\\node-project-api-large_run_01",
+    "kind": "ollama_unreachable",
+    "restartIndex": 1,
+    "command": "taskkill /IM ollama.exe /F >nul 2>&1 & start \"\" /B ollama serve",
+    "restartOk": false,
+    "restartElapsedMs": 30012,
+    "restartError": "Restart command timed out after 30000ms.",
+    "recoveredAfterRestart": true,
+    "recoveryAttempts": 1,
+    "recoveryElapsedMs": 18,
+    "occurredAt": "2026-03-05T06:41:22.921Z"
+  }
+]

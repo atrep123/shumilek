@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"project-management-api\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple Project Management API using Node.js\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\",\n    \"test\": \"node --test tests/oracle.test.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.18.2\",\n    \"supertest\": \"^6.3.3\"\n  }\n}\n"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst app = express();\n\napp.use(express.json());\n\n// Import routes\nconst projectRoutes = require('./modules/projects/routes');\nconst taskRoutes = require('./modules/tasks/routes');\nconst memberRoutes = require('./modules/members/routes');\nconst commentRoutes = require('./modules/comments/routes');\n\n// Use routes\napp.use('/projects', projectRoutes);\napp.use('/projects/:projectId/tasks', taskRoutes);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentRoutes);\napp.use('/projects/:projectId/members', memberRoutes);\n\n// Health check endpoint\napp.get('/', (req, res) => {\n  res.status(200).json({ message: 'API is running' });\n});\n\n// Error handling middleware\napp.use((err, req, res, next) => {\n  console.error(err.stack);\n  res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Something went wrong!' } });\n});\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/server.js",
+      "content": "const app = require('./app');\nconst PORT = process.env.PORT || 3000;\n\napp.listen(PORT, () => {\n  console.log(`Server is running on port ${PORT}`);\n});\n"
+    }
+  ],
+  "notes": "Added supertest to dependencies and corrected the app export in src/app.js."
+}

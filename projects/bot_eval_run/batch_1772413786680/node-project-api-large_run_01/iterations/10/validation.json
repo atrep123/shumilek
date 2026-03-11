@@ -1,0 +1,12 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Uses `new BadRequestError(...)` but src/lib/errors.* does not define/export BadRequestError",
+    "Uses `new NotFoundError(...)` but src/lib/errors.* does not define/export NotFoundError",
+    "Status code contract mismatch: POST /projects should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/members should return HTTP 201 on create.",
+    "Status code contract mismatch: POST /projects/:projectId/tasks/:taskId/comments should return HTTP 201 on create.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

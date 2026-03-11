@@ -1,0 +1,3 @@
+Error: Failed to reset workspace directory after 8 attempts: C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772533055234\node-project-api-large_run_01\workspace (EBUSY: resource busy or locked, rmdir 'C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772533055234\node-project-api-large_run_01\workspace')
+    at resetDir (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\scripts\botEval.ts:1308:9)
+    at async main (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\scripts\botEval.ts:7885:11)

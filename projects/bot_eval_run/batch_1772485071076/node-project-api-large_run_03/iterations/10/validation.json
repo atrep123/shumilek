@@ -1,0 +1,11 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Route-service contract mismatch (tasks): routes call tasksService.getTasksByStatus() but service does not export \"getTasksByStatus\".",
+    "Route-service export map required (tasks): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+    "JavaScript syntax check failed in src/modules/tasks/routes.js: C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772485071076\\node-project-api-large_run_03\\workspace\\src\\modules\\tasks\\routes.js:40",
+    "Likely truncated/incomplete JS content in src/modules/tasks/routes.js; regenerate full file content with closed strings and braces.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

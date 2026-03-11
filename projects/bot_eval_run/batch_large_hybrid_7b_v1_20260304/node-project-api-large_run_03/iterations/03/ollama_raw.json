@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:7b",
+  "created_at": "2026-03-04T22:19:02.1327852Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/lib/id.js\",\n      \"content\": \"const { randomUUID } = require('node:crypto');\\n\\nfunction generateId() {\\n  return randomUUID();\\n}\\n\\nmodule.exports = { generateId };\"\n    },\n    {\n      \"path\": \"src/modules/projects/service.js\",\n      \"content\": \"const { generateId } = require('../../lib/id');\\nconst projects = [];\\n\\nasync function getAllProjects() { return [...projects]; }\\n\\nasync function getProjectById(projectId) { return projects.find(project => String(project.id) === String(projectId)) || null; }\\n\\nasync function getProjectByName(name) { return projects.find(project => String(project.name) === String(name)) || null; }\\n\\nasync function createProject(name) {\\n  const project = { id: generateId(), name: String(name || \\\"\\\").trim() };\\n  projects.push(project);\\n  return project;\\n}\\n\\nmodule.exports = { getAllProjects, getProjectById, getProjectByName, createProject, projects };\"\n    },\n    {\n      \"path\": \"src/modules/projects/routes.js\",\n      \"content\": \"const router = require('express').Router();\\nconst projectsService = require('./service');\\nconst { sendError } = require('../../lib/errors');\\n\\nrouter.get('/', async (_req, res) => res.json({ projects: await projectsService.getAllProjects() }));\\n\\nrouter.post('/', async (req, res) => {\\n  const name = String(req.body?.name || \\\"\\\").trim();\\n  if (!name) return sendError(res, 400, 'BAD_REQUEST', 'Project name is required');\\n  const duplicate = await projectsService.getProjectByName(name);\\n  if (duplicate) return sendError(res, 409, 'PROJECT_DUPLICATE', 'Project already exists');\\n  const project = await projectsService.createProject(name);\\n  if (!project) return sendError(res, 409, 'PROJECT_DUPLICATE', 'Project already exists');\\n  return res.status(201).json({ project });\\n});\\n\\nrouter.get('/:projectId', async (req, res) => {\\n  const project = await projectsService.getProjectById(req.params.projectId);\\n  if (!project) return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found');\\n  return res.json({ project });\\n});\\n\\nmodule.exports = router;\"\n    }\n  ]\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 13670656800,
+  "load_duration": 67338100,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 490153500,
+  "eval_count": 551,
+  "eval_duration": 3425894800
+}

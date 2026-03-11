@@ -1,0 +1,19 @@
+[
+  {
+    "model": "qwen2.5-coder:7b",
+    "ok": false,
+    "timeoutMs": 90000,
+    "error": "Structured chat failed: The user aborted a request."
+  },
+  {
+    "model": "qwen2.5:7b",
+    "ok": false,
+    "timeoutMs": 90000,
+    "error": "The user aborted a request."
+  },
+  {
+    "model": "qwen2.5:3b",
+    "ok": true,
+    "timeoutMs": 90000
+  }
+]

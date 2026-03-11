@@ -1,0 +1,14 @@
+{
+  "strategy": "on-fail",
+  "scenarioId": "node-project-api-large",
+  "triggerIteration": 1,
+  "diagnostics": [
+    "State-sharing mismatch: members service should reuse shared projects repository, not isolated members map/array",
+    "Route-service contract mismatch (projects): routes call projectsService.getProjectByName() but service does not export \"getProjectByName\".",
+    "Route-service export map required (projects): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+    "Route-service contract mismatch (tasks): routes call service.updateTask() but service does not export \"updateTask\".",
+    "Route-service export map required (tasks): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+    "package.json should include \"supertest\" (dependencies or devDependencies) for oracle execution",
+    "Skipped oracle command checks because structural contract did not pass."
+  ]
+}

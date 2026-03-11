@@ -1,0 +1,31 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)",
+    "Contract mismatch: POST /projects/:projectId/members must accept { userId, role } and return 201 for valid payload.",
+    "Contract mismatch: Duplicate member (same userId in one project) must return 409 error payload.",
+    "Contract mismatch: Duplicate member add (same userId in one project) must return HTTP 409 with error payload."
+  ],
+  "commands": [
+    {
+      "command": "npm install --no-audit --fund=false",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772420530506\\node-project-api-large_run_07\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 649,
+      "stdout": "\nup to date in 449ms\n",
+      "stderr": ""
+    },
+    {
+      "command": "node --test --test-concurrency=1 tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772420530506\\node-project-api-large_run_07\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 324,
+      "stdout": "✔ health + empty project list (74.6749ms)\n✖ project create/list/get + duplicate + validation (22.8242ms)\n✖ members endpoints (10.4822ms)\n✖ tasks create/list/filter + patch status (5.0904ms)\n✖ comments + not-found and payload contract (4.8976ms)\nℹ tests 5\nℹ suites 0\nℹ pass 1\nℹ fail 4\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 267.2514\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:65:1\n✖ project create/list/get + duplicate + validation (22.8242ms)\n  AssertionError [ERR_ASSERTION]: {\"project\":{\"id\":\"31b2dcfa-5b05-4434-b7c5-38fae167cfed\",\"name\":\"Alpha\"}}\n  \n  201 !== 409\n  \n      at expectErrorPayload (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772420530506\\node-project-api-large_run_07\\workspace\\tests\\oracle.test.js:43:10)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772420530506\\node-project-api-large_run_07\\workspace\\tests\\oracle.test.js:89:3)\n      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 201,\n    expected: 409,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at tests\\oracle.test.js:92:1\n✖ members endpoints (10.4822ms)\n  AssertionError [ERR_ASSERTION]: {\"member\":{\"id\":\"03d839de-345e-4321-8959-c0d775ee7d15\",\"userId\":\"u-1\",\"role\":\"owner\"}}\n  \n  201 !== 409\n  \n      at expectErrorPayload (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772420530506\\node-project-api-large_run_07\\workspace\\tests\\oracle.test.js:43:10)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772420530506\\node-project-api-large_run_07\\workspace\\tests\\oracle.test.js:114:3)\n      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 201,\n    expected: 409,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at tests\\oracle.test.js:122:1\n✖ tasks create/list/filter + patch status (5.0904ms)\n  AssertionError [ERR_ASSERTION]: {\"error\":{\"code\":\"INVALID_DESCRIPTION\",\"message\":\"Description must be a non-empty string\"}}\n  \n  400 !== 201\n  \n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772420530506\\node-project-api-large_run_07\\workspace\\tests\\oracle.test.js:132:10)\n      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 400,\n    expected: 201,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at tests\\oracle.test.js:160:1\n✖ comments + not-found and payload contract (4.8976ms)\n  AssertionError [ERR_ASSERTION]: {\"error\":{\"code\":\"INVALID_DESCRIPTION\",\"message\":\"Description must be a non-empty string\"}}\n  \n  400 !== 201\n  \n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772420530506\\node-project-api-large_run_07\\workspace\\tests\\oracle.test.js:170:10)\n      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 400,\n    expected: 201,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+      "stderr": ""
+    }
+  ]
+}

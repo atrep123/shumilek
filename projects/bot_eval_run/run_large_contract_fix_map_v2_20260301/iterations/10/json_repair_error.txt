@@ -1,0 +1,1 @@
+Duplicate file paths in files[]: src/modules/projects/routes.js

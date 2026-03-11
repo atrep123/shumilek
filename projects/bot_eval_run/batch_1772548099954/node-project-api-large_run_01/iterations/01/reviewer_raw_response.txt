@@ -1,0 +1,4 @@
+{
+  "review": "Změny byly minimalizovány, aby projekce splnila všechny požadavky a projela validací Oracle testů. Změny se soustředily na správné importy služeb a přidání závislosti na `supertest` do `package.json`. Tyto změny by měly zajistit, že projekt bude kompatibilní s Oracle testovacím procesem.",
+  "priorityFiles": ["src/modules/projects/members/routes.js", "src/modules/projects/tasks/comments/routes.js", "src/modules/projects/tasks/routes.js", "package.json"]
+}

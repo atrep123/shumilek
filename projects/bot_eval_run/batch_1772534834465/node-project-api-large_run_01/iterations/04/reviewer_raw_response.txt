@@ -1,0 +1,4 @@
+{
+    "review": "Zkontrolujte, že všechny entity (project, member, task, comment) jsou správně založeny a vracejí realní data. Zkontrolujte také, že endpoint GET /projects vrátí neprázdný seznam projektů po vytvoření nového projektu.",
+    "priorityFiles": ["src/modules/projects/service.js", "src/modules/members/service.js", "src/modules/tasks/service.js", "src/modules/comments/service.js"]
+}

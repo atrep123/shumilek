@@ -1,0 +1,46 @@
+[
+  {
+    "scenario": "node-project-api-large",
+    "pass": 0,
+    "total": 3,
+    "passRate": 0,
+    "avgMs": 564846,
+    "runsWithPlannerError": 0,
+    "runsWithJsonRepairError": 3,
+    "jsonRepairErrorFiles": 36,
+    "runsWithSchemaFailure": 3,
+    "schemaFailures": 36,
+    "runsWithJsonParseFailure": 0,
+    "jsonParseFailures": 0,
+    "runsWithPlaceholderFailure": 0,
+    "placeholderFailures": 0,
+    "runsWithOtherParseFailure": 0,
+    "otherParseFailures": 0,
+    "runsWithDeterministicFallback": 0,
+    "deterministicFallbackActivations": 0,
+    "deterministicFallbackRecoveries": 0,
+    "deterministicFallbackTargetedActivations": 0,
+    "deterministicFallbackTargetedRecoveries": 0,
+    "deterministicFallbackCanonicalActivations": 0,
+    "deterministicFallbackCanonicalRecoveries": 0,
+    "rawPasses": 0,
+    "rawFailures": 3,
+    "rawPassRate": 0,
+    "recoveredByFallback": 0,
+    "fallbackDependencyRate": 0,
+    "runsWithRawPass": 0,
+    "runsRecoveredByFallback": 0,
+    "rawRunPassRate": 0,
+    "fallbackDependencyRunRate": 0,
+    "topFailureClusters": [
+      {
+        "id": "schema_shape",
+        "count": 36
+      },
+      {
+        "id": "node_contract",
+        "count": 3
+      }
+    ]
+  }
+]

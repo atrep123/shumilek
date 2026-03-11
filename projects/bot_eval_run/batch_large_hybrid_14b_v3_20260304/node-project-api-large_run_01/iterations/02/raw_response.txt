@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"dependencies\": {\n    \"express\": \"^4.17.3\",\n    \"supertest\": \"^6.2.4\"\n  }\n}\n"
+    }
+  ],
+  "notes": "Added 'express' and 'supertest' to dependencies in package.json."
+}

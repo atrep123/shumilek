@@ -1,0 +1,9 @@
+{
+  "review": "Změň import service v souborech `src/modules/projects/members/routes.js`, `src/modules/projects/tasks/comments/routes.js` a `src/modules/projects/tasks/routes.js` na relativní cesty, aby byly podle kontraktu. Přidej závislost na `supertest` do `package.json` ve `devDependencies`. Uprav strukturu souborů v `package.json`, abychom splnili minimální počet zdrojových souborů.",
+  "priorityFiles": [
+    "src/modules/projects/members/routes.js",
+    "src/modules/projects/tasks/comments/routes.js",
+    "src/modules/projects/tasks/routes.js",
+    "package.json"
+  ]
+}

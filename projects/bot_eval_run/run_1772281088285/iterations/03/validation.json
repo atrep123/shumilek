@@ -1,0 +1,11 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for /projects/:projectId/members",
+    "Missing route signature for /projects/:projectId/tasks",
+    "Missing route signature for /projects/:projectId/tasks/:taskId/comments",
+    "Ambiguous shared helper import in src/modules/projects/service.js: import concrete files ../../lib/id or ../../lib/errors",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

@@ -1,0 +1,11 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for /health",
+    "Missing route signature for project detail endpoint /projects/:projectId",
+    "Missing health endpoint declaration in src/app.*: expected app.get(\"/health\", ...).",
+    "Route-service contract mismatch (tasks): routes call tasksService.updateTaskStatus() but service does not export \"updateTaskStatus\".",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

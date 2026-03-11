@@ -1,0 +1,13 @@
+{
+  "name": "project-management-api",
+  "version": "1.0.0",
+  "description": "A Node.js monolithic application for managing projects, tasks, members, and comments.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "supertest": "^6.2.4"
+  }
+}

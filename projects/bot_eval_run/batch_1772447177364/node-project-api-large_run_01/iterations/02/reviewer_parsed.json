@@ -1,0 +1,8 @@
+{
+  "review": "Missing route signatures for /projects/:projectId/members, /projects/:projectId/tasks, and /projects/:projectId/tasks/:taskId/comments. State-sharing mismatch: members service should reuse shared projects repository, not isolated members map/array.",
+  "priorityFiles": [
+    "src/modules/projects/service.js",
+    "src/modules/tasks/service.js",
+    "src/modules/members/service.js"
+  ]
+}

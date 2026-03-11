@@ -1,0 +1,21 @@
+{
+  "batchId": 1772663699784,
+  "startedAt": "2026-03-04T22:34:59.785Z",
+  "scenarios": [
+    "node-project-api-large"
+  ],
+  "runs": 3,
+  "model": "qwen2.5-coder:14b",
+  "plannerModel": "deepseek-r1:8b",
+  "reviewerModel": "qwen2.5:3b",
+  "jsonRepairModel": "qwen2.5:7b",
+  "deterministicFallbackMode": "on-fail",
+  "timeoutSec": 1200,
+  "maxIterations": 12,
+  "hardTimeoutSec": 900,
+  "stopOnInfraFailure": false,
+  "ollamaBaseUrl": "http://localhost:11434",
+  "infraRecoveryTimeoutSec": 90,
+  "infraRecoveryPollSec": 5,
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_large_hybrid_14b_v3_20260304"
+}

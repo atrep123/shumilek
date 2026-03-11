@@ -1,0 +1,3 @@
+{
+  "plan": "- [x] Vytvořit strukturu projektu `mini_ai/` a `tests/`\n- [x] Implementovat `__init__.py` v `mini_ai/` s importem `cli`\n- [x] Implementovat `cli.py` pro příkazovou řádkovou interakci\n- [x] Implementovat `markov.py` pro generaci Markovovy řetězce\n- [x] Vytvořit `train` a `generate` funkce v `cli.py`\n- [x] Napsat jednotkové testy pro `markov.py` v `tests/test_markov.py`\n- [x] Napsat jednotkové testy pro `cli.py` v `tests/test_cli.py`\n- [x] Zkontrolovat, že jsou spuštěny a úspěšné\n- [x] Vytvořit `README.md` s informacemi o projekту\n"
+}

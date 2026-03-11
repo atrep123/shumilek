@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Invalid package.json: Expected ',' or '}' after property value in JSON at position 210 (line 10 column 27)",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

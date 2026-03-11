@@ -1,0 +1,29 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)",
+    "Runtime transport error (EADDRINUSE): avoid auto-listening on fixed ports and export app-only contract for supertest."
+  ],
+  "commands": [
+    {
+      "command": "npm install --no-audit --fund=false",
+      "cwd": "projects\\bot_eval_run\\run_1772359117068\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 1125,
+      "stdout": "\nup to date in 359ms\n",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "projects\\bot_eval_run\\run_1772359117068\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 1597,
+      "stdout": "✖ health + empty project list (395.7315ms)\n✖ project create/list/get + duplicate + validation (321.9486ms)\n✖ members endpoints (13.2788ms)\n✖ tasks create/list/filter + patch status (323.4556ms)\n✖ comments + not-found and payload contract (326.4131ms)\nℹ tests 5\nℹ suites 0\nℹ pass 0\nℹ fail 5\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1538.9706\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:52:1\n✖ health + empty project list (395.7315ms)\n  Error: ETIMEDOUT: Operation timed out\n      at Test.assert (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772359117068\\workspace\\node_modules\\supertest\\lib\\test.js:156:20)\n      at Server.localAssert (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772359117068\\workspace\\node_modules\\supertest\\lib\\test.js:120:14)\n      at Object.onceWrapper (node:events:622:28)\n      at Server.emit (node:events:508:28)\n      at emitCloseNT (node:net:2419:8)\n      at process.processTicksAndRejections (node:internal/process/task_queues:88:21)\n\ntest at tests\\oracle.test.js:65:1\n✖ project create/list/get + duplicate + validation (321.9486ms)\n  Error: ETIMEDOUT: Operation timed out\n      at Test.assert (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772359117068\\workspace\\node_modules\\supertest\\lib\\test.js:156:20)\n      at Server.localAssert (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772359117068\\workspace\\node_modules\\supertest\\lib\\test.js:120:14)\n      at Object.onceWrapper (node:events:622:28)\n      at Server.emit (node:events:508:28)\n      at emitCloseNT (node:net:2419:8)\n      at process.processTicksAndRejections (node:internal/process/task_queues:88:21)\n\ntest at tests\\oracle.test.js:92:1\n✖ members endpoints (13.2788ms)\n  Error: connect EADDRINUSE 127.0.0.1:49172\n      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {\n    errno: -4091,\n    code: 'EADDRINUSE',\n    syscall: 'connect',\n    address: '127.0.0.1',\n    port: 49172,\n    response: undefined\n  }\n\ntest at tests\\oracle.test.js:122:1\n✖ tasks create/list/filter + patch status (323.4556ms)\n  Error: ETIMEDOUT: Operation timed out\n      at Test.assert (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772359117068\\workspace\\node_modules\\supertest\\lib\\test.js:156:20)\n      at Server.localAssert (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772359117068\\workspace\\node_modules\\supertest\\lib\\test.js:120:14)\n      at Object.onceWrapper (node:events:622:28)\n      at Server.emit (node:events:508:28)\n      at emitCloseNT (node:net:2419:8)\n      at process.processTicksAndRejections (node:internal/process/task_queues:88:21)\n\ntest at tests\\oracle.test.js:160:1\n✖ comments + not-found and payload contract (326.4131ms)\n  Error: ETIMEDOUT: Operation timed out\n      at Test.assert (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772359117068\\workspace\\node_modules\\supertest\\lib\\test.js:156:20)\n      at Server.localAssert (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\run_1772359117068\\workspace\\node_modules\\supertest\\lib\\test.js:120:14)\n      at Object.onceWrapper (node:events:622:28)\n      at Server.emit (node:events:508:28)\n      at emitCloseNT (node:net:2419:8)\n      at process.processTicksAndRejections (node:internal/process/task_queues:88:21)\n",
+      "stderr": ""
+    }
+  ]
+}

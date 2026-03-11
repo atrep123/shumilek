@@ -1,0 +1,29 @@
+✔ health + empty project list (72.3533ms)
+✔ project create/list/get + duplicate + validation (19.639ms)
+✔ members endpoints (10.9059ms)
+✔ tasks create/list/filter + patch status (11.7391ms)
+✖ comments + not-found and payload contract (6.7651ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 4
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 266.9458
+
+✖ failing tests:
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (6.7651ms)
+  TypeError: Cannot destructure property 'message' of 'req.body' as it is undefined.
+      at Object.addComment (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772714794192\node-project-api-large_run_02\workspace\src\modules\comments\service.js:5:11)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772714794192\node-project-api-large_run_02\workspace\src\modules\comments\routes.js:8:41
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772714794192\node-project-api-large_run_02\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772714794192\node-project-api-large_run_02\workspace\node_modules\express\lib\router\route.js:149:13)
+      at Route.dispatch (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772714794192\node-project-api-large_run_02\workspace\node_modules\express\lib\router\route.js:119:3)
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772714794192\node-project-api-large_run_02\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772714794192\node-project-api-large_run_02\workspace\node_modules\express\lib\router\index.js:284:15
+      at router.process_params (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772714794192\node-project-api-large_run_02\workspace\node_modules\express\lib\router\index.js:346:12)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772714794192\node-project-api-large_run_02\workspace\node_modules\express\lib\router\index.js:280:10)
+      at router.handle (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772714794192\node-project-api-large_run_02\workspace\node_modules\express\lib\router\index.js:175:3)

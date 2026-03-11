@@ -1,0 +1,1 @@
+C:\Users\atrep\AppData\Local\Programs\Python\Python312\python.exe: Error while finding module specification for 'mini_ai.cli' (ImportError: cannot import name 'cli' from partially initialized module 'mini_ai' (most likely due to a circular import) (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772209763974\workspace\mini_ai\__init__.py))

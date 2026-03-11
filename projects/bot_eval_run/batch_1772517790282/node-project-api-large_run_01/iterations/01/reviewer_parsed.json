@@ -1,0 +1,9 @@
+{
+  "review": "text",
+  "priorityFiles": [
+    "src/modules/projects/members/service.js",
+    "src/modules/projects/tasks/comments/service.js",
+    "src/modules/projects/tasks/service.js",
+    "package.json"
+  ]
+}

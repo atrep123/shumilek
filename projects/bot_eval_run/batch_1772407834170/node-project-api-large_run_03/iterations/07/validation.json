@@ -1,0 +1,30 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)",
+    "Contract mismatch: POST /projects with missing/empty `name` must return 400 with { error: { code, message } }.",
+    "Contract mismatch: POST /projects/:projectId/tasks/:taskId/comments with missing/empty `message` must return 400."
+  ],
+  "commands": [
+    {
+      "command": "npm install --no-audit --fund=false",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772407834170\\node-project-api-large_run_03\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 508,
+      "stdout": "\nup to date in 308ms\n",
+      "stderr": ""
+    },
+    {
+      "command": "node --test --test-concurrency=1 tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772407834170\\node-project-api-large_run_03\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 319,
+      "stdout": "✔ health + empty project list (74.3704ms)\n✖ project create/list/get + duplicate + validation (15.0605ms)\n✖ members endpoints (9.748ms)\n✔ tasks create/list/filter + patch status (13.8131ms)\n✖ comments + not-found and payload contract (7.2522ms)\nℹ tests 5\nℹ suites 0\nℹ pass 2\nℹ fail 3\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 265.6496\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:65:1\n✖ project create/list/get + duplicate + validation (15.0605ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  0 !== 1\n  \n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772407834170\\node-project-api-large_run_03\\workspace\\tests\\oracle.test.js:81:10)\n      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 0,\n    expected: 1,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at tests\\oracle.test.js:92:1\n✖ members endpoints (9.748ms)\n  AssertionError [ERR_ASSERTION]: {\"member\":{\"userId\":\"u-1\",\"role\":\"owner\"}}\n  \n  201 !== 409\n  \n      at expectErrorPayload (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772407834170\\node-project-api-large_run_03\\workspace\\tests\\oracle.test.js:43:10)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772407834170\\node-project-api-large_run_03\\workspace\\tests\\oracle.test.js:114:3)\n      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 201,\n    expected: 409,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at tests\\oracle.test.js:160:1\n✖ comments + not-found and payload contract (7.2522ms)\n  AssertionError [ERR_ASSERTION]: {\"comment\":{\"id\":\"27b84aba-e4c5-4c1c-b255-61a8f7bb1bd2\"}}\n  \n  201 !== 400\n  \n      at expectErrorPayload (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772407834170\\node-project-api-large_run_03\\workspace\\tests\\oracle.test.js:43:10)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772407834170\\node-project-api-large_run_03\\workspace\\tests\\oracle.test.js:176:3)\n      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n      at async Test.run (node:internal/test_runner/test:1113:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 201,\n    expected: 400,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+      "stderr": ""
+    }
+  ]
+}

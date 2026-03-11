@@ -1,0 +1,37 @@
+{
+  "files": [
+    {
+      "path": "src/app.js",
+      "content": "// src/app.js\nconst express = require('express');\nconst projectsRoutes = require('./modules/projects/routes');\nconst membersRoutes = require('./modules/members/routes');\nconst tasksRoutes = require('./modules/tasks/routes');\nconst commentsRoutes = require('./modules/comments/routes');\n\nconst app = express();\napp.use(express.json());\n\napp.use('/projects', projectsRoutes);\napp.use('/projects/:projectId/members', membersRoutes);\napp.use('/projects/:projectId/tasks', tasksRoutes);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRoutes);\n\nmodule.exports = app;"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "// src/lib/errors.js\nconst sendError = (res, status, code, message) => {\n  res.status(status).json({ error: { code, message } });\n};\n\nmodule.exports = { sendError };"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "// src/modules/members/routes.js\nconst express = require('express');\nconst service = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', async (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) {\n    return sendError(res, 400, 'INVALID_INPUT', 'User ID and role are required');\n  }\n  try {\n    const member = await service.createMember(userId, role);\n    res.status(201).json({ member });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Failed to create member');\n  }\n});\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "// src/modules/members/service.js\nconst { randomUUID } = require('node:crypto');\n\nlet membersStore = [];\n\nconst createMember = (userId, role) => {\n  const member = { id: randomUUID(), userId, role };\n  membersStore.push(member);\n  return member;\n};\n\nmodule.exports = { createMember };"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "// src/modules/tasks/routes.js\nconst express = require('express');\nconst service = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', async (req, res) => {\n  const { description } = req.body;\n  if (!description) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Description is required');\n  }\n  try {\n    const task = await service.createTask(description);\n    res.status(201).json({ task });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Failed to create task');\n  }\n});\n\nrouter.get('/', async (req, res) => {\n  const { status } = req.query;\n  try {\n    const tasks = await service.getTasks(status);\n    res.json({ tasks });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Failed to get tasks');\n  }\n});\n\nrouter.patch('/:taskId', async (req, res) => {\n  const { taskId } = req.params;\n  const { status } = req.body;\n  if (!['todo', 'done'].includes(status)) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Invalid task status');\n  }\n  try {\n    const updatedTask = await service.updateTask(taskId, status);\n    res.json({ task: updatedTask });\n  } catch (error) {\n    if (error.code === 'NOT_FOUND') {\n      return sendError(res, 404, 'NOT_FOUND', 'Task not found');\n    }\n    sendError(res, 500, 'INTERNAL_ERROR', 'Failed to update task');\n  }\n});\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "// src/modules/tasks/service.js\nconst { randomUUID } = require('node:crypto');\n\nlet tasksStore = [];\n\nconst createTask = (description) => {\n  const task = { id: randomUUID(), description, status: 'todo' };\n  tasksStore.push(task);\n  return task;\n};\n\nconst getTasks = (status) => {\n  if (!status) {\n    return tasksStore;\n  }\n  return tasksStore.filter(task => task.status === status);\n};\n\nconst updateTask = (taskId, newStatus) => {\n  const task = tasksStore.find(t => t.id === taskId);\n  if (!task) {\n    throw { code: 'NOT_FOUND' };\n  }\n  task.status = newStatus;\n  return task;\n};\n\nmodule.exports = { createTask, getTasks, updateTask };"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "// src/modules/comments/routes.js\nconst express = require('express');\nconst service = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', async (req, res) => {\n  const { content } = req.body;\n  if (!content) {\n    return sendError(res, 400, 'INVALID_INPUT', 'Content is required');\n  }\n  try {\n    const comment = await service.createComment(content);\n    res.status(201).json({ comment });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Failed to create comment');\n  }\n});\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "// src/modules/comments/service.js\nconst { randomUUID } = require('node:crypto');\n\nlet commentsStore = [];\n\nconst createComment = (content) => {\n  const comment = { id: randomUUID(), content };\n  commentsStore.push(comment);\n  return comment;\n};\n\nmodule.exports = { createComment };"
+    }
+  ],
+  "notes": "Minimal changes to fix the contract mismatches and ensure proper error handling."
+}

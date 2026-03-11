@@ -1,0 +1,39 @@
+✔ health + empty project list (136.4786ms)
+✔ project create/list/get + duplicate + validation (80.5573ms)
+✖ members endpoints (37.6789ms)
+✔ tasks create/list/filter + patch status (59.4603ms)
+✖ comments + not-found and payload contract (39.4481ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 3
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 565.3576
+
+✖ failing tests:
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (37.6789ms)
+  TypeError: Cannot read properties of null (reading 'duplicate')
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772624171405\node-project-api-large_run_01\workspace\src\modules\members\routes.js:10:15
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (39.4481ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772624171405\node-project-api-large_run_01\workspace\tests\oracle.test.js:188:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

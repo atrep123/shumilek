@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Parse/write failed: Large scenario full output must include all core files. Missing: README.md, package.json, src/lib/errors.js, src/lib/id.js"
+  ]
+}

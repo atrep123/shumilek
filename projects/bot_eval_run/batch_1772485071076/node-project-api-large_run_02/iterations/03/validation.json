@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "State-sharing mismatch: members service should reuse shared projects repository, not isolated members map/array",
+    "Error payload contract likely missing: expected { error: { code, message } } handling in API responses",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

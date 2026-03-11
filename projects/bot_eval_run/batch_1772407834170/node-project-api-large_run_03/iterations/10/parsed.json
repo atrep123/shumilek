@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "// src/modules/members/routes.js\nconst express = require('express');\nconst router = express.Router();\nconst membersService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', async (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) {\n    return sendError(res, 400, 'BAD_REQUEST', 'Missing userId or role');\n  }\n  try {\n    const member = await membersService.addMember(req.params.projectId, userId, role);\n    res.json({ member });\n  } catch (error) {\n    if (error.code === 'DUPLICATE') {\n      return sendError(res, 409, 'CONFLICT', 'Duplicate member');\n    }\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "// src/modules/members/service.js\nconst { randomUUID } = require('node:crypto');\nconst projectsService = require('../projects/service');\n\nasync function addMember(projectId, userId, role) {\n  const project = await projectsService.getProjectById(projectId);\n  if (!project) {\n    return null;\n  }\n  const existingMember = project.members.find(m => m.userId === userId);\n  if (existingMember) {\n    throw { code: 'DUPLICATE' };\n  }\n  const newMember = { id: randomUUID(), projectId, userId, role };\n  project.members.push(newMember);\n  return newMember;\n}\n\nmodule.exports = { addMember };\n"
+    }
+  ],
+  "notes": "Added duplicate handling for members in the projects module."
+}

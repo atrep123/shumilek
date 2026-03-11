@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "// src/modules/tasks/routes.js\nconst express = require('express');\nconst router = express.Router();\nconst tasksService = require('./service');\n\nrouter.get('/', async (req, res) => {\n  const projectId = req.params.projectId;\n  const status = req.query.status;\n  try {\n    const tasks = await tasksService.getTasks(projectId, status);\n    res.json({ tasks });\n  } catch (error) {\n    sendError(res, error.statusCode || 500, error.code, error.message);\n  }\n});\n\nrouter.post('/', async (req, res) => {\n  const projectId = req.params.projectId;\n  const { title } = req.body;\n  try {\n    const task = await tasksService.createTask(projectId, title);\n    res.status(201).json({ task });\n  } catch (error) {\n    sendError(res, error.statusCode || 500, error.code, error.message);\n  }\n});\n\nrouter.patch('/:taskId', async (req, res) => {\n  const projectId = req.params.projectId;\n  const taskId = req.params.taskId;\n  const { status } = req.body;\n  try {\n    const updatedTask = await tasksService.updateTaskStatus(projectId, taskId, status);\n    res.json({ task: updatedTask });\n  } catch (error) {\n    sendError(res, error.statusCode || 500, error.code, error.message);\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "// src/modules/tasks/service.js\nconst { randomUUID } = require('node:crypto');\nconst tasksStore = [];\n\nasync function getTasks(projectId, status) {\n  if (status) {\n    return tasksStore.filter(task => task.projectId === projectId && task.status === status);\n  }\n  return tasksStore.filter(task => task.projectId === projectId);\n}\n\nasync function createTask(projectId, title) {\n  const newTask = {\n    id: randomUUID(),\n    projectId,\n    title,\n    status: 'todo'\n  };\n  tasksStore.push(newTask);\n  return newTask;\n}\n\nasync function updateTaskStatus(projectId, taskId, status) {\n  const taskIndex = tasksStore.findIndex(task => task.id === taskId && task.projectId === projectId);\n  if (taskIndex === -1) {\n    throw { statusCode: 404, code: 'NOT_FOUND', message: 'Task not found' };\n  }\n  if (!['todo', 'done'].includes(status)) {\n    throw { statusCode: 400, code: 'INVALID_STATUS', message: 'Invalid task status' };\n  }\n  tasksStore[taskIndex].status = status;\n  return tasksStore[taskIndex];\n}\n\nmodule.exports = {\n  getTasks,\n  createTask,\n  updateTaskStatus\n};\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "// src/modules/comments/routes.js\nconst express = require('express');\nconst router = express.Router();\nconst commentsService = require('./service');\n\nrouter.post('/', async (req, res) => {\n  const projectId = req.params.projectId;\n  const taskId = req.params.taskId;\n  const { message } = req.body;\n  try {\n    const comment = await commentsService.createComment(projectId, taskId, message);\n    res.status(201).json({ comment });\n  } catch (error) {\n    sendError(res, error.statusCode || 500, error.code, error.message);\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "// src/modules/comments/service.js\nconst { randomUUID } = require('node:crypto');\nconst commentsStore = [];\n\nasync function createComment(projectId, taskId, message) {\n  const newComment = {\n    id: randomUUID(),\n    projectId,\n    taskId,\n    message\n  };\n  commentsStore.push(newComment);\n  return newComment;\n}\n\nmodule.exports = {\n  createComment\n};\n"
+    }
+  ],
+  "notes": "Fixed issues in tasks and comments routes and services to ensure they handle errors correctly and return the expected payloads."
+}

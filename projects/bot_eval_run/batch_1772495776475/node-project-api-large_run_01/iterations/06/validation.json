@@ -1,0 +1,28 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=null, timedOut=true)"
+  ],
+  "commands": [
+    {
+      "command": "npm install --no-audit --fund=false",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772495776475\\node-project-api-large_run_01\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 1148,
+      "stdout": "\nadded 90 packages in 948ms\n",
+      "stderr": "npm warn deprecated supertest@6.3.4: Please upgrade to supertest v7.1.3+, see release notes at https://github.com/forwardemail/supertest/releases/tag/v7.1.3 - maintenance is supported by Forward Email @ https://forwardemail.net\nnpm warn deprecated superagent@8.1.2: Please upgrade to superagent v10.2.2+, see release notes at https://github.com/forwardemail/superagent/releases/tag/v10.2.2 - maintenance is supported by Forward Email @ https://forwardemail.net\n"
+    },
+    {
+      "command": "node --test --test-concurrency=1 tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772495776475\\node-project-api-large_run_01\\workspace",
+      "ok": false,
+      "exitCode": null,
+      "timedOut": true,
+      "durationMs": 600005,
+      "stdout": "✖ health + empty project list (110.4365ms)\n✖ project create/list/get + duplicate + validation (17.2627ms)\n✖ members endpoints (3.3457ms)\n✖ tasks create/list/filter + patch status (2.47ms)\n✖ comments + not-found and payload contract (3.1323ms)\n",
+      "stderr": ""
+    }
+  ]
+}

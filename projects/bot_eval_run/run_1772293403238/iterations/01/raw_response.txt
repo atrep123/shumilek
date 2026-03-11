@@ -1,0 +1,61 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# Project Management API\nThis is a simple in-memory Node.js monolith for managing projects, tasks, members, and comments.\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"project-management-api\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple in-memory Node.js monolith for managing projects, tasks, members, and comments.\",\n  \"main\": \"src/server.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.18.2\",\n    \"supertest\": \"^6.3.3\"\n  }\n}\n"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst projectsRoutes = require('./modules/projects/routes');\nconst membersRoutes = require('./modules/members/routes');\nconst tasksRoutes = require('./modules/tasks/routes');\nconst commentsRoutes = require('./modules/comments/routes');\n\nconst app = express();\napp.use(express.json());\n\napp.get('/health', (req, res) => {\n  res.status(200).json({ ok: true });\n});\n\napp.use('/projects', projectsRoutes);\napp.use('/projects/:projectId/members', membersRoutes);\napp.use('/projects/:projectId/tasks', tasksRoutes);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRoutes);\n\nmodule.exports = { app };\n"
+    },
+    {
+      "path": "src/server.js",
+      "content": "const { app } = require('./app');\nconst PORT = process.env.PORT || 3000;\n\napp.listen(PORT, () => {\n  console.log(`Server is running on port ${PORT}`);\n});\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\nconst { errorHandler } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', async (req, res) => {\n  try {\n    const project = await service.createProject(req.body);\n    res.status(201).json({ project });\n  } catch (error) {\n    errorHandler(res, error);\n  }\n});\n\nrouter.get('/', async (req, res) => {\n  try {\n    const projects = await service.getAllProjects();\n    res.status(200).json({ projects });\n  } catch (error) {\n    errorHandler(res, error);\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { generateId } = require('../../lib/id');\nlet projects = [];\n\nfunction createProject(projectData) {\n  const project = { id: generateId(), ...projectData };\n  if (projects.some(p => p.name === project.name)) {\n    throw { code: 'duplicate', message: 'Project already exists' };\n  }\n  projects.push(project);\n  return project;\n}\n\nfunction getAllProjects() {\n  return projects;\n}\n\nmodule.exports = { createProject, getAllProjects };\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\nconst { errorHandler } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', async (req, res) => {\n  try {\n    const member = await service.addMember(req.params.projectId, req.body);\n    res.status(201).json({ member });\n  } catch (error) {\n    errorHandler(res, error);\n  }\n});\n\nrouter.get('/', async (req, res) => {\n  try {\n    const members = await service.getAllMembers(req.params.projectId);\n    res.status(200).json({ members });\n  } catch (error) {\n    errorHandler(res, error);\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { generateId } = require('../../lib/id');\nlet membersByProject = {};\n\nfunction addMember(projectId, memberData) {\n  if (!membersByProject[projectId]) {\n    membersByProject[projectId] = [];\n  }\n  const member = { id: generateId(), ...memberData };\n  if (membersByProject[projectId].some(m => m.userId === member.userId)) {\n    throw { code: 'duplicate', message: 'Member already exists in this project' };\n  }\n  membersByProject[projectId].push(member);\n  return member;\n}\n\nfunction getAllMembers(projectId) {\n  return membersByProject[projectId] || [];\n}\n\nmodule.exports = { addMember, getAllMembers };\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\nconst { errorHandler } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', async (req, res) => {\n  try {\n    const task = await service.createTask(req.params.projectId, req.body);\n    res.status(201).json({ task });\n  } catch (error) {\n    errorHandler(res, error);\n  }\n});\n\nrouter.get('/', async (req, res) => {\n  try {\n    const tasks = await service.getAllTasks(req.params.projectId, req.query.status);\n    res.status(200).json({ tasks });\n  } catch (error) {\n    errorHandler(res, error);\n  }\n});\n\nrouter.patch('/:taskId', async (req, res) => {\n  try {\n    const task = await service.updateTask(req.params.projectId, req.params.taskId, req.body);\n    res.status(200).json({ task });\n  } catch (error) {\n    errorHandler(res, error);\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { generateId } = require('../../lib/id');\nlet tasksByProject = {};\n\nfunction createTask(projectId, taskData) {\n  if (!tasksByProject[projectId]) {\n    tasksByProject[projectId] = [];\n  }\n  const task = { id: generateId(), status: 'open', ...taskData };\n  tasksByProject[projectId].push(task);\n  return task;\n}\n\nfunction getAllTasks(projectId, status) {\n  if (!tasksByProject[projectId]) {\n    return [];\n  }\n  return status ? tasksByProject[projectId].filter(t => t.status === status) : tasksByProject[projectId];\n}\n\nfunction updateTask(projectId, taskId, taskData) {\n  const tasks = tasksByProject[projectId] || [];\n  const taskIndex = tasks.findIndex(t => t.id === taskId);\n  if (taskIndex === -1) {\n    throw { code: 'not_found', message: 'Task not found' };\n  }\n  tasks[taskIndex] = { ...tasks[taskIndex], ...taskData };\n  return tasks[taskIndex];\n}\n\nmodule.exports = { createTask, getAllTasks, updateTask };\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\nconst { errorHandler } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.post('/', async (req, res) => {\n  try {\n    const comment = await service.addComment(req.params.projectId, req.params.taskId, req.body);\n    res.status(201).json({ comment });\n  } catch (error) {\n    errorHandler(res, error);\n  }\n});\n\nrouter.get('/', async (req, res) => {\n  try {\n    const comments = await service.getAllComments(req.params.projectId, req.params.taskId);\n    res.status(200).json({ comments });\n  } catch (error) {\n    errorHandler(res, error);\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { generateId } = require('../../lib/id');\nlet commentsByTask = {};\n\nfunction addComment(projectId, taskId, commentData) {\n  const key = `${projectId}-${taskId}`;\n  if (!commentsByTask[key]) {\n    commentsByTask[key] = [];\n  }\n  const comment = { id: generateId(), ...commentData };\n  commentsByTask[key].push(comment);\n  return comment;\n}\n\nfunction getAllComments(projectId, taskId) {\n  const key = `${projectId}-${taskId}`;\n  return commentsByTask[key] || [];\n}\n\nmodule.exports = { addComment, getAllComments };\n"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "function errorHandler(res, error) {\n  switch (error.code) {\n    case 'not_found':\n      res.status(404).json({ error: { code: error.code, message: error.message } });\n      break;\n    case 'duplicate':\n      res.status(409).json({ error: { code: error.code, message: error.message } });\n      break;\n    default:\n      res.status(400).json({ error: { code: 'invalid_input', message: error.message || 'Invalid input' } });\n  }\n}\n\nmodule.exports = { errorHandler };\n"
+    },
+    {
+      "path": "src/lib/id.js",
+      "content": "const crypto = require('crypto');\n\nfunction generateId() {\n  return crypto.randomUUID();\n}\n\nmodule.exports = { generateId };\n"
+    }
+  ],
+  "notes": "This is the initial full implementation of the Project Management API with all required routes and services."
+}

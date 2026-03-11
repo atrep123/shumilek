@@ -1,0 +1,14 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "deepseek-coder-v2:16b",
+      "ok": true,
+      "transport": "generate",
+      "formatKind": "json",
+      "schemaUsed": false,
+      "fallbackUsed": true
+    }
+  ],
+  "finalOk": true
+}

@@ -1,0 +1,18 @@
+{
+    "review": "Zkontrolujte, že pro všechny POST endpointy, které vyžadují body (např. /projects, /projects/:projectId/tasks/:taskId/comments), kontrolujete prázdný nebo chybějící payload a odpovídajícím způsobem vracejte 400 Bad Request. Pro endpointy, které mají mít prázdnou odpověď (např. /health), zkontrolujte, že odpověď obsahuje správný status a body.",
+    "files": [
+        {
+            "file": "tests/oracle.test.js",
+            "changes": [
+                {
+                    "line": 160,
+                    "change": "Zkontrolujte, že pro endpoint /projects/:projectId/tasks/:taskId/comments kontrolujete prázdný nebo chybějící payload a odpovídajícím způsobem vracejete 400 Bad Request."
+                },
+                {
+                    "line": 176,
+                    "change": "Zkontrolujte, že pro endpoint /projects kontrolujete prázdný nebo chybějící payload a odpovídajícím způsobem vracejete 400 Bad Request."
+                }
+            ]
+        }
+    ]
+}

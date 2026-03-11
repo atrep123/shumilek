@@ -1,0 +1,11 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Route-service contract mismatch (projects): routes call projectsService.getProjectById() but service does not export \"getProjectById\".",
+    "Route-service contract mismatch (projects): routes call projectsService.getProjectByName() but service does not export \"getProjectByName\".",
+    "Route-service contract mismatch (tasks): routes call tasksService.getAllTasks() but service does not export \"getAllTasks\".",
+    "Route-service contract mismatch (comments): routes call commentsService.getAllComments() but service does not export \"getAllComments\".",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

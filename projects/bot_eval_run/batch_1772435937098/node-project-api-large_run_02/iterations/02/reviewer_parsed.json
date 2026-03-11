@@ -1,0 +1,7 @@
+{
+  "review": "projects routes: add GET /:projectId handler in src/modules/projects/routes.* (mounted under /projects); tasks contract: GET /projects/:projectId/tasks?status=todo|done must really filter; PATCH must allow only todo|done.",
+  "priorityFiles": [
+    "src/modules/projects/routes.js",
+    "src/modules/tasks/routes.js"
+  ]
+}

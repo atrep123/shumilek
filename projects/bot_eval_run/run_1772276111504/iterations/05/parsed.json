@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"project-management\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple project management API\",\n  \"main\": \"src/app.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\",\n    \"test\": \"node --test tests/oracle.test.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.18.2\"\n  },\n  \"devDependencies\": {\n    \"supertest\": \"^6.3.3\"\n  }\n}\n"
+    },
+    {
+      "path": "src/lib/id.js",
+      "content": "const crypto = require('node:crypto');\n\nfunction generateId() {\n  return crypto.randomUUID();\n}\n\nmodule.exports = { generateId };\n"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "function createError(code, message) {\n  const error = new Error(message);\n  error.code = code;\n  return error;\n}\n\nmodule.exports = { createError };\n"
+    }
+  ],
+  "notes": "Added supertest to devDependencies and corrected the import paths in lib/id.js and lib/errors.js."
+}

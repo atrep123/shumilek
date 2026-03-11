@@ -1,0 +1,23 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "deepseek-coder-v2:16b",
+      "ok": true,
+      "transport": "generate",
+      "formatKind": "json",
+      "schemaUsed": false,
+      "fallbackUsed": true
+    },
+    {
+      "stage": "scenario_contract",
+      "model": "deepseek-coder-v2:16b",
+      "ok": false,
+      "error": "Large scenario full output must include all core files. Missing: src/lib/id.js",
+      "errorKind": "schema"
+    }
+  ],
+  "finalOk": false,
+  "finalError": "Large scenario full output must include all core files. Missing: src/lib/id.js",
+  "finalErrorKind": "schema"
+}

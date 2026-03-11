@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "// src/modules/comments/routes.js\nconst express = require('express');\nconst router = express.Router();\nconst commentsService = require('../comments/service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', async (req, res) => {\n  const { message } = req.body;\n  if (!message) {\n    return sendError(res, 400, 'INVALID_PAYLOAD', 'Message is required');\n  }\n  try {\n    const comment = await commentsService.createComment(message);\n    res.status(201).json({ comment });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', error.message);\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "// src/modules/comments/service.js\nconst { randomUUID } = require('node:crypto');\n\nlet commentsStore = [];\n\nasync function createComment(message) {\n  const commentId = randomUUID();\n  const newComment = { id: commentId, message };\n  commentsStore.push(newComment);\n  return newComment;\n}\n\nmodule.exports = {\n  createComment,\n};\n"
+    }
+  ],
+  "notes": "Fixed the issue with the comments endpoint by ensuring that the message is required and properly handled in both routes and service."
+}

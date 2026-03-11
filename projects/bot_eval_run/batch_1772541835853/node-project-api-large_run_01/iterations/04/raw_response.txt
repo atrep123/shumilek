@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "src/lib/errors.js",
+      "content": "const sendError = (res, status, code, message) => {\n  res.status(status).json({ error: { code, message } });\n};\n\nmodule.exports = { sendError };\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst membersService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) {\n    return sendError(res, 400, 'BAD_REQUEST', 'Invalid request body');\n  }\n\n  const member = membersService.addMember(req.projectId, { userId, role });\n  if (!member) {\n    return sendError(res, 500, 'INTERNAL_ERROR', 'Failed to add member');\n  }\n\n  res.status(201).json({ member });\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst commentsService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', (req, res) => {\n  const { message } = req.body;\n  if (!message) {\n    return sendError(res, 400, 'BAD_REQUEST', 'Invalid request body');\n  }\n\n  const comment = commentsService.addComment(req.taskId, { message });\n  if (!comment) {\n    return sendError(res, 500, 'INTERNAL_ERROR', 'Failed to add comment');\n  }\n\n  res.status(201).json({ comment });\n});\n\nmodule.exports = router;\n"
+    }
+  ],
+  "notes": "Updated error handling in members and comments routes to ensure consistent JSON error payloads."
+}

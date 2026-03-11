@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const comments = [];\nmodule.exports = {\n  addComment: (taskId, commentData) => {\n    const task = tasks.find(t => t.id === taskId);\n    if (!commentData.message) throw new Error('Invalid comment data');\n    comments.push({ id: randomUUID(), ...commentData });\n    return commentData;\n  },\n  getComments: (taskId) => comments.filter(c => c.taskId === taskId)\n};\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const members = [];\nmodule.exports = {\n  addMember: (projectId, memberData) => {\n    const project = projects.find(p => p.id === projectId);\n    if (!memberData.userId || !['user', 'admin'].includes(memberData.role)) throw new Error('Invalid member data');\n    project.members.push(memberData);\n    return memberData;\n  }\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const tasks = [];\nmodule.exports = {\n  createTask: (projectId, taskData) => {\n    const task = { id: randomUUID(), projectId, status: 'todo', ...taskData };\n    tasks.push(task);\n    return task;\n  },\n  updateTaskStatus: (taskId, newStatus) => {\n    const task = tasks.find(t => t.id === taskId);\n    if (!['todo', 'done'].includes(newStatus)) throw new Error('Invalid status');\n    task.status = newStatus;\n  },\n  getTasksByStatus: (projectId, status) => tasks.filter(t => t.projectId === projectId && t.status === status)\n};\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"my-project\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A sample Node.js project\",\n  \"main\": \"src/app.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\"\n  },\n  \"dependencies\": {\n    \"express\": \"^4.17.1\"\n  },\n  \"devDependencies\": {\n    \"supertest\": \"^6.0.0\"\n  }\n}\n"
+    }
+  ],
+  "notes": "Added supertest to devDependencies and fixed the service files for comments, members, and tasks."
+}

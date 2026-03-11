@@ -1,0 +1,6 @@
+{
+  "review": "Zkontrolujte, že při vytváření projektu s duplicitním názvem (Alpha) je odpověď HTTP status 409. Aktualizujte obsah funkce expectErrorPayload v tests/oracle.test.js pro správné očekávané chybové zprávy.",
+  "priorityFiles": [
+    "tests/oracle.test.js"
+  ]
+}

@@ -1,0 +1,21 @@
+test_markov_chain (unittest.loader._FailedTest.test_markov_chain) ... ERROR
+
+======================================================================
+ERROR: test_markov_chain (unittest.loader._FailedTest.test_markov_chain)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_markov_chain
+Traceback (most recent call last):
+  File "C:\Users\atrep\AppData\Local\Programs\Python\Python312\Lib\unittest\loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\atrep\AppData\Local\Programs\Python\Python312\Lib\unittest\loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\run_1772213425796\workspace\tests\test_markov_chain.py", line 2, in <module>
+    from mini_ai.markov_chain import MarkovChain
+ModuleNotFoundError: No module named 'mini_ai.markov_chain'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

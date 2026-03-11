@@ -1,0 +1,7 @@
+{
+  "review": "Ensure that the GET /projects/:projectId/tasks/:taskId/comments endpoint returns a 404 error payload when comments are not found for a task, and update the expectErrorPayload function to handle this case.",
+  "priorityFiles": [
+    "src/modules/comments/routes.js",
+    "tests/oracle.test.js"
+  ]
+}

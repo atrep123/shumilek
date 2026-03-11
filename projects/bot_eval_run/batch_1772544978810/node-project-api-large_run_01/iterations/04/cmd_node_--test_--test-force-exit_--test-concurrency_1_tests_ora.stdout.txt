@@ -1,0 +1,19 @@
+✔ health + empty project list (81.0489ms)
+✔ project create/list/get + duplicate + validation (29.2146ms)
+✔ members endpoints (16.1123ms)
+✔ tasks create/list/filter + patch status (15.4782ms)
+✖ comments + not-found and payload contract (9.7514ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 4
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 305.5748
+
+✖ failing tests:
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (9.7514ms)
+  { code: 'invalid_input', message: 'Message is required' }

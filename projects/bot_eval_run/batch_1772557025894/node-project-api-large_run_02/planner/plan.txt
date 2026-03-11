@@ -1,0 +1,10 @@
+- Analyze the SPEC and Oracle tests to understand the requirements.
+- Create a project structure with modules for projects, tasks, members, and comments.
+- Implement in-memory repositories for each module.
+- Develop routes and services for each module based on the API contract.
+- Ensure consistent error handling and validation across all endpoints.
+- Integrate `supertest` for testing purposes.
+- Write tests to cover all specified scenarios.
+- Ensure that the application does not automatically start a server when imported.
+- Verify that all required files are present and correctly structured.
+- Run build and test commands to ensure everything works as expected.

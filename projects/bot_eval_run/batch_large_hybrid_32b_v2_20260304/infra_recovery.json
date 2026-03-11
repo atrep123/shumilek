@@ -1,0 +1,22 @@
+[
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 1,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_large_hybrid_32b_v2_20260304\\node-project-api-large_run_01",
+    "kind": "ollama_unreachable",
+    "recovered": true,
+    "attempts": 5,
+    "elapsedMs": 20122,
+    "occurredAt": "2026-03-04T22:20:00.326Z"
+  },
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 3,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_large_hybrid_32b_v2_20260304\\node-project-api-large_run_03",
+    "kind": "ollama_unreachable",
+    "recovered": true,
+    "attempts": 4,
+    "elapsedMs": 15081,
+    "occurredAt": "2026-03-04T22:34:36.527Z"
+  }
+]

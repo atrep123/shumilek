@@ -1,0 +1,12 @@
+- Create project structure and files.
+- Install dependencies.
+- Write `src/app.js`.
+- Write `src/server.js`.
+- Write `src/lib/id.js`.
+- Write `src/lib/errors.js`.
+- Write `src/modules/projects/routes.js`.
+- Write `src/modules/projects/service.js`.
+- Write `src/modules/tasks/routes.js`.
+- Write `src/modules/tasks/service.js`.
+- Write `src/modules/members/routes.js`.
+- Write `src/modules/members/service.js`.

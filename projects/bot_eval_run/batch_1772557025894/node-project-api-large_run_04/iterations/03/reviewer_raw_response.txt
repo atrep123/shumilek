@@ -1,0 +1,17 @@
+{
+    "review": "Zkontrolujte, že pro všechny POST requesty, kde je požadováno nějaké pole (např. name, userId, role, message), zpracováváte případ prázdných nebo chybějících dat a odpovídáte 400 Bad Request. Pro kontrolu duplicitních projektů byste měli zajistit, že pokus o vytvoření existujícího projektu vrátí 409 Conflict.",
+    "changes": [
+        {
+            "file": "src/routes/projects.js",
+            "change": "Zkontrolujte funkci pro vytváření projektů a zajistěte, že kontroluje prázdné nebo chybějící pole name. Pokud je nějaké pole chybějící, vrátit 400 Bad Request."
+        },
+        {
+            "file": "src/routes/projects.js",
+            "change": "Zkontrolujte funkci pro vytváření členů projektu a zajistěte, že kontroluje prázdné nebo chybějící pole userId a role. Pokud je nějaké pole chybějící, vrátit 400 Bad Request."
+        },
+        {
+            "file": "src/routes/projects.js",
+            "change": "Zkontrolujte funkci pro vytváření členů projektu a zajistěte, že kontroluje duplicitní projekty. Pokud se pokusí o vytvoření existujícího projektu, vrátit 409 Conflict."
+        }
+    ]
+}

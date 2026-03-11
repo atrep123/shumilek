@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet tasksStore = {};\n\nfunction addTask(projectId, taskData) {\n  if (!tasksStore[projectId]) {\n    tasksStore[projectId] = [];\n  }\n  const newTask = { id: randomUUID(), ...taskData, status: 'todo' };\n  tasksStore[projectId].push(newTask);\n  return newTask;\n}\n\nfunction getTasksByProjectId(projectId) {\n  return tasksStore[projectId] || [];\n}\n\nmodule.exports = { addTask, getTasksByProjectId };\n"
+    }
+  ],
+  "notes": "Added missing methods addTask and getTasksByProjectId to the tasks service."
+}

@@ -1,0 +1,17 @@
+{
+  "error": "The provided code snippets are incomplete and do not provide enough context to identify the issue. However, based on the test cases and the code you've shared, it seems that there might be an issue with how comments are being added or retrieved in your application.",
+  "suggestions": [
+    {
+      "description": "Ensure that `tasksService.getTasksByProjectId` returns a task object when called. If not, add logging to check if the task is found.",
+      "code": "console.log(`Task for project ${req.params.projectId} and task ${req.params.taskId}:`, tasksService.getTasksByProjectId(req.params.projectId)?.find(task => task.id === req.params.taskId));"
+    },
+    {
+      "description": "Check if `tasksService` is properly initialized and the `getTasksByProjectId` method is correctly implemented.",
+      "code": "console.log(`Task service:`, tasksService);"
+    },
+    {
+      "description": "Ensure that the `addCommentToTask` function in `src/modules/comments/service.js` is correctly adding comments to the task. Add logging to check if a comment is being added.",
+      "code": "console.log(`Added comment:`, comment);"
+    }
+  ]
+}

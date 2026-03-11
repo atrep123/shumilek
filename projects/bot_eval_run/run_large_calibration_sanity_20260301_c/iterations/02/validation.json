@@ -1,0 +1,14 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Missing route signature for /health",
+    "Avoid raw throw in src/modules/tasks/service.js: return domain errors and map them to JSON payloads in routes.",
+    "Missing route signature for project detail endpoint /projects/:projectId",
+    "Missing health endpoint declaration in src/app.*: expected app.get(\"/health\", ...).",
+    "State-sharing mismatch: members service should reuse shared projects repository, not isolated members map/array",
+    "Duplicate handling hint: expected 409 conflict handling for duplicate project names.",
+    "Duplicate handling hint: expected 409 conflict handling for duplicate members in a project.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

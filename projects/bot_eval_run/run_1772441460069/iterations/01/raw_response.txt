@@ -1,0 +1,20 @@
+{
+  "mode": "full",
+  "files": [
+    {"path": "README.md", "content": "# Project Documentation\n\nThis is a project documentation for our application.\n"},
+    {"path": "package.json", "content": "{ \"name\": \"my-project\", \"version\": \"1.0.0\", \"dependencies\": { } }\n"},
+    {"path": "src/app.js", "content": "const express = require('express');\nconst projectRouter = require('./modules/projects');\nconst app = express();\n\napp.use(express.json());\napp.use('/projects', projectRouter);\n\nmodule.exports = app;\n"},
+    {"path": "src/server.js", "content": "const app = require('./src/app');\n\nconst PORT = process.env.PORT || 3000;\napp.listen(PORT, () => {\n  console.log(`Server is running on port ${PORT}`);\n});\n"},
+    {"path": "src/modules/projects/routes.js", "content": "const express = require('express');\nconst { createProject, getProjects } = require('./service');\nconst router = express.Router();\n\nrouter.get('/', getProjects);\nrouter.post('/', createProject);\n\nmodule.exports = router;\n"},
+    {"path": "src/modules/projects/service.js", "content": "const { randomUUID } = require('node:crypto');\nconst projects = [];\n\nexports.createProject = (name) => {\n  const project = { id: randomUUID(), name };\n  projects.push(project);\n  return project;\n};\n\nexports.getProjects = () => projects;\n"},
+    {"path": "src/modules/projects/controllers.js", "content": "const { createProject, getProjects } = require('./service');\n\nexports.createProjectController = (req, res) => {\n  const project = createProject(req.body.name);\n  res.status(201).json({ project });\n};\n\nexports.getProjectsController = (req, res) => {\n  const projects = getProjects();\n  res.json({ projects });\n};\n"},
+    {"path": "src/modules/projects/models.js", "content": "const { randomUUID } = require('node:crypto');\nexports.ProjectModel = (name) => ({ id: randomUUID(), name });\n"},
+    {"path": "src/modules/members/routes.js", "content": "const express = require('express');\nconst { createMember, getMembers } = require('./service');\nconst router = express.Router();\n\nrouter.post('/', createMember);\nrouter.get('/:projectId', getMembers);\n\nmodule.exports = router;\n"},
+    {"path": "src/modules/members/service.js", "content": "const { randomUUID } = require('node:crypto');\nconst members = {};\n\nexports.createMember = (projectId, userId, role) => {\n  if (!members[projectId]) members[projectId] = [];\n  const memberExists = members[projectId].find(m => m.userId === userId);\n  if (memberExists) return null;\n  const member = { id: randomUUID(), projectId, userId, role };\n  members[projectId].push(member);\n  return member;\n};\n\nexports.getMembers = (projectId) => members[projectId] || [];\n"},
+    {"path": "src/modules/members/controllers.js", "content": "const { createMember, getMembers } = require('./service');\n\nexports.createMemberController = (req, res) => {\n  const member = createMember(req.params.projectId, req.body.userId, req.body.role);\n  if (!member) return res.status(409).json({ error: { code: 'DUPLICATE', message: 'User already a member of this project' } });\n  res.status(201).json({ member });\n};\n\nexports.getMembersController = (req, res) => {\n  const members = getMembers(req.params.projectId);\n  res.json({ members });\n};\n"},
+    {"path": "src/modules/members/models.js", "content": "const { randomUUID } = require('node:crypto');\nexports.MemberModel = (projectId, userId, role) => ({ id: randomUUID(), projectId, userId, role });\n"},
+    {"path": "src/lib/errors.js", "content": "exports.ErrorHandler = (err, req, res, next) => {\n  console.error(err);\n  res.status(400).json({ error: { code: 'BAD_REQUEST', message: err.message || 'Bad Request' } });\n};\n"},
+    {"path": "src/lib/id.js", "content": "const { randomUUID } = require('node:crypto');\nexports.generateId = () => randomUUID();\n"}
+  ],
+  "notes": "This output includes a basic structure for the project, with modularization and shared helpers."
+}

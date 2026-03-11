@@ -1,0 +1,605 @@
+[
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 1,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 854993,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772413786680\\node-project-api-large_run_01",
+    "diagnostics": [
+      "Task status contract mismatch: use `todo` / `done` statuses (not `open` or `pending`)",
+      "Task status contract mismatch: PATCH status must allow only \"todo\" or \"done\" (pending/open are not allowed).",
+      "Task filtering contract mismatch: support ?status=todo|done and PATCH status updates.",
+      "Status code contract mismatch: POST /projects should return HTTP 201 on create.",
+      "Status code contract mismatch: POST /projects/:projectId/members should return HTTP 201 on create.",
+      "Status code contract mismatch: POST /projects/:projectId/tasks should return HTTP 201 on create.",
+      "Status code contract mismatch: POST /projects/:projectId/tasks/:taskId/comments should return HTTP 201 on create.",
+      "Skipped oracle command checks because structural contract did not pass."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 1,
+      "schemaFailures": 3,
+      "jsonRepairFailures": 3,
+      "parseFailures": 4,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 1
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 2,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 601232,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772413786680\\node-project-api-large_run_02",
+    "diagnostics": [
+      "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)",
+      "Contract mismatch: After POST /projects success, project must be visible in list/get endpoints (shared in-memory state).",
+      "Contract mismatch: POST /projects/:projectId/members must accept { userId, role } and return 201 for valid payload.",
+      "Contract mismatch: Duplicate member (same userId in one project) must return 409 error payload.",
+      "Contract mismatch: Duplicate member add (same userId in one project) must return HTTP 409 with error payload."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 2,
+      "jsonRepairFailures": 2,
+      "parseFailures": 2,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 3,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 614286,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772413786680\\node-project-api-large_run_03",
+    "diagnostics": [
+      "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)",
+      "Contract mismatch: After POST /projects success, project must be visible in list/get endpoints (shared in-memory state).",
+      "Contract mismatch: POST /projects/:projectId/members must accept { userId, role } and return 201 for valid payload.",
+      "Contract mismatch: Duplicate member (same userId in one project) must return 409 error payload.",
+      "Contract mismatch: Duplicate member add (same userId in one project) must return HTTP 409 with error payload."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 2,
+      "jsonRepairFailures": 2,
+      "parseFailures": 2,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 4,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 609897,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772413786680\\node-project-api-large_run_04",
+    "diagnostics": [
+      "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)",
+      "Contract mismatch: After POST /projects success, project must be visible in list/get endpoints (shared in-memory state).",
+      "Contract mismatch: POST /projects/:projectId/members must accept { userId, role } and return 201 for valid payload.",
+      "Contract mismatch: Duplicate member (same userId in one project) must return 409 error payload.",
+      "Contract mismatch: Duplicate member add (same userId in one project) must return HTTP 409 with error payload."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 2,
+      "jsonRepairFailures": 2,
+      "parseFailures": 2,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 5,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 604629,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772413786680\\node-project-api-large_run_05",
+    "diagnostics": [
+      "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)",
+      "Contract mismatch: After POST /projects success, project must be visible in list/get endpoints (shared in-memory state).",
+      "Contract mismatch: POST /projects/:projectId/members must accept { userId, role } and return 201 for valid payload.",
+      "Contract mismatch: Duplicate member (same userId in one project) must return 409 error payload.",
+      "Contract mismatch: Duplicate member add (same userId in one project) must return HTTP 409 with error payload."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 2,
+      "jsonRepairFailures": 2,
+      "parseFailures": 2,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 6,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 617076,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772413786680\\node-project-api-large_run_06",
+    "diagnostics": [
+      "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)",
+      "Contract mismatch: After POST /projects success, project must be visible in list/get endpoints (shared in-memory state).",
+      "Contract mismatch: POST /projects/:projectId/members must accept { userId, role } and return 201 for valid payload.",
+      "Contract mismatch: Duplicate member (same userId in one project) must return 409 error payload.",
+      "Contract mismatch: Duplicate member add (same userId in one project) must return HTTP 409 with error payload."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 2,
+      "jsonRepairFailures": 2,
+      "parseFailures": 2,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 7,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 607856,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772413786680\\node-project-api-large_run_07",
+    "diagnostics": [
+      "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)",
+      "Contract mismatch: After POST /projects success, project must be visible in list/get endpoints (shared in-memory state).",
+      "Contract mismatch: POST /projects/:projectId/members must accept { userId, role } and return 201 for valid payload.",
+      "Contract mismatch: Duplicate member (same userId in one project) must return 409 error payload.",
+      "Contract mismatch: Duplicate member add (same userId in one project) must return HTTP 409 with error payload."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 2,
+      "jsonRepairFailures": 2,
+      "parseFailures": 2,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 8,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 610185,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772413786680\\node-project-api-large_run_08",
+    "diagnostics": [
+      "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)",
+      "Contract mismatch: After POST /projects success, project must be visible in list/get endpoints (shared in-memory state).",
+      "Contract mismatch: POST /projects/:projectId/members must accept { userId, role } and return 201 for valid payload.",
+      "Contract mismatch: Duplicate member (same userId in one project) must return 409 error payload.",
+      "Contract mismatch: Duplicate member add (same userId in one project) must return HTTP 409 with error payload."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 2,
+      "jsonRepairFailures": 2,
+      "parseFailures": 2,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 9,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 588865,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772413786680\\node-project-api-large_run_09",
+    "diagnostics": [
+      "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)",
+      "Contract mismatch: After POST /projects success, project must be visible in list/get endpoints (shared in-memory state).",
+      "Contract mismatch: POST /projects/:projectId/members must accept { userId, role } and return 201 for valid payload.",
+      "Contract mismatch: Duplicate member (same userId in one project) must return 409 error payload.",
+      "Contract mismatch: Duplicate member add (same userId in one project) must return HTTP 409 with error payload."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 2,
+      "jsonRepairFailures": 2,
+      "parseFailures": 2,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 10,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 594590,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772413786680\\node-project-api-large_run_10",
+    "diagnostics": [
+      "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)",
+      "Contract mismatch: After POST /projects success, project must be visible in list/get endpoints (shared in-memory state).",
+      "Contract mismatch: POST /projects/:projectId/members must accept { userId, role } and return 201 for valid payload.",
+      "Contract mismatch: Duplicate member (same userId in one project) must return 409 error payload.",
+      "Contract mismatch: Duplicate member add (same userId in one project) must return HTTP 409 with error payload."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 2,
+      "jsonRepairFailures": 2,
+      "parseFailures": 2,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  }
+]

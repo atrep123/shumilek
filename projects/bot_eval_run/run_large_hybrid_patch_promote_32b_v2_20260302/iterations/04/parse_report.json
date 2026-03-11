@@ -1,0 +1,25 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "qwen2.5-coder:32b",
+      "ok": true,
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    },
+    {
+      "stage": "scenario_contract",
+      "model": "qwen2.5-coder:32b",
+      "ok": false,
+      "error": "Large scenario requires mode \"full\" after structural contract failures; unable to build full output because workspace is missing: src/lib/id.js",
+      "errorKind": "schema"
+    }
+  ],
+  "finalOk": false,
+  "appliedFixes": [],
+  "skippedFixes": [],
+  "finalError": "Large scenario requires mode \"full\" after structural contract failures; unable to build full output because workspace is missing: src/lib/id.js",
+  "finalErrorKind": "schema"
+}

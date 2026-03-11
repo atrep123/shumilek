@@ -1,0 +1,13 @@
+{
+  "count": 6,
+  "files": [
+    "src/app.js",
+    "src/modules/projects/routes.js",
+    "src/modules/members/routes.js",
+    "src/modules/tasks/routes.js",
+    "src/modules/comments/routes.js",
+    "src/lib/errors.js"
+  ],
+  "appliedAsPatch": true,
+  "forcePatchFromIncompleteFull": true
+}

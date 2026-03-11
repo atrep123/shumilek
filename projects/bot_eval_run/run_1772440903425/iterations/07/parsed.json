@@ -1,0 +1,61 @@
+{
+  "files": [
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst service = require('./service');\nrouter.post('/', (req, res) => {\n  if (!req.body.message) return sendError(res, 400, 'BadRequest', 'Message is required');\n  const commentId = randomUUID();\n  res.json({ comment: { id: commentId, message: req.body.message } });\n});\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const addComment = (req, res) => {\n  if (!req.body.message) return res.status(400).json({ error: { code: 'BadRequest', message: 'Message is required' } });\n  const commentId = randomUUID();\n  res.json({ comment: { id: commentId, message: req.body.message } });\n};\nmodule.exports = { addComment };\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst service = require('./service');\nrouter.post('/', (req, res) => {\n  if (!req.body.userId || !req.body.role) return sendError(res, 400, 'BadRequest', 'UserId and role are required');\n  const memberId = randomUUID();\n  res.json({ member: { id: memberId, userId: req.body.userId, role: req.body.role } });\n});\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const addMember = (req, res) => {\n  if (!req.body.userId || !req.body.role) return res.status(400).json({ error: { code: 'BadRequest', message: 'UserId and role are required' } });\n  const memberId = randomUUID();\n  res.json({ member: { id: memberId, userId: req.body.userId, role: req.body.role } });\n};\nmodule.exports = { addMember };\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst service = require('./service');\nrouter.post('/', (req, res) => {\n  if (!req.body.name) return sendError(res, 400, 'BadRequest', 'Name is required');\n  const projectId = randomUUID();\n  res.json({ project: { id: projectId, name: req.body.name } });\n});\nrouter.get('/:projectId/tasks', (req, res) => {\n  if (!req.query.status) return sendError(res, 400, 'BadRequest', 'Status is required');\n  const tasks = service.getTasksByProject(req.params.projectId);\n  const filteredTasks = tasks.filter(task => task.status === req.query.status);\n  res.json({ tasks: filteredTasks });\n});\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const projects = {};\nconst addProject = (projectId, name) => {\n  if (!name) return null;\n  projects[projectId] = { id: projectId, name };\n};\nconst getTasksByProject = (projectId) => Object.values(projects).find(proj => proj.id === projectId)?.tasks || [];\nmodule.exports = { addProject, getTasksByProject };\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst service = require('./service');\nrouter.post('/', (req, res) => {\n  if (!req.body.name) return sendError(res, 400, 'BadRequest', 'Name is required');\n  const taskId = randomUUID();\n  const newTask = { id: taskId, name: req.body.name, status: 'todo' };\n  service.addTaskToProject(req.params.projectId, newTask);\n  res.json({ task: newTask });\n});\nrouter.patch('/:taskId', (req, res) => {\n  const task = service.getTaskById(req.params.projectId, req.params.taskId);\n  if (!task) return sendError(res, 404, 'NotFound', 'Task not found');\n  if (['todo', 'done'].includes(req.body.status)) task.status = req.body.status;\n  res.json({ task });\n});\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const tasks = {};\nconst addTaskToProject = (projectId, task) => {\n  if (!task.name) return null;\n  if (!['todo', 'done'].includes(task.status)) return null;\n  if (!tasks[projectId]) tasks[projectId] = [];\n  tasks[projectId].push(task);\n};\nconst getTaskById = (projectId, taskId) => tasks[projectId]?.find(task => task.id === taskId);\nmodule.exports = { addTaskToProject, getTaskById };\n"
+    },
+    {
+      "path": "README.md",
+      "content": "# Project Management API\n\nThis is a simple project management API built using Node.js with Express for handling HTTP requests.\nIt includes endpoints for managing projects, tasks, and comments."
+    },
+    {
+      "path": "package.json",
+      "content": "  \"dependencies\": {\n    \"express\": \"^4.17.1\",\n    \"crypto\": \"^1.0.0\",\n    \"supertest\": \"^6.3.3\"\n  },\n  \"devDependencies\": {\n    \"supertest\": \"^6.3.3\"\n  }\n"
+    },
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst app = express();\nconst crypto = require('crypto');\nconst { randomUUID } = require('node:crypto');\nconst projectsRouter = require('./modules/projects/routes');\nconst tasksRouter = require('./modules/tasks/routes');\nconst membersRouter = require('./modules/members/routes');\nconst commentsRouter = require('./modules/comments/routes');\napp.use(express.json());\napp.get('/health', (req, res) => { res.json({ ok: true }); });\napp.use('/projects', projectsRouter);\napp.use('/projects/:projectId/members', membersRouter);\napp.use('/projects/:projectId/tasks', tasksRouter);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRouter);\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/server.js",
+      "content": "const app = require('./app');\nconst port = process.env.PORT || 3000;\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "class CustomError extends Error {\n  constructor(code, message) { super(message); this.code = code; }\n}\nconst sendError = (res, status, code, message) => res.status(status).json({ error: { code, message } });\nmodule.exports = { CustomError, sendError };"
+    },
+    {
+      "path": "src/lib/id.js",
+      "content": "const { randomUUID } = require('node:crypto');\nmodule.exports = { randomUUID };"
+    }
+  ],
+  "notes": "These changes are made to align the code with the given requirements and specifications."
+}

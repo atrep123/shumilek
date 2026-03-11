@@ -1,0 +1,4 @@
+botEval failed: Error: Cannot reach Ollama at http://localhost:11434 after 2 preflight attempt(s). Detail: request to http://localhost:11434/api/tags failed, reason: . Start Ollama server (e.g. "ollama serve").
+    at assertOllamaPreflightReady (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\scripts\botEval.ts:5885:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async main (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\scripts\botEval.ts:7684:3)

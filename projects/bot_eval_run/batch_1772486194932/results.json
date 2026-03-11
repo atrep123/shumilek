@@ -1,0 +1,177 @@
+[
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 1,
+    "ok": false,
+    "exitCode": 1,
+    "durationMs": 1159998,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772486194932\\node-project-api-large_run_01",
+    "diagnostics": [
+      "Failed to read validation.json: ENOENT: no such file or directory, open 'C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772486194932\\node-project-api-large_run_01\\validation.json'"
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 0,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 0,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 0
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 2,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 703179,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772486194932\\node-project-api-large_run_02",
+    "diagnostics": [
+      "Route-service contract mismatch (projects): routes call projectsService.getAllProjects() but service does not export \"getAllProjects\".",
+      "Route-service export map required (projects): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+      "Route-service contract mismatch (tasks): routes call tasksService.updateTaskStatus() but service does not export \"updateTaskStatus\".",
+      "Route-service export map required (tasks): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+      "Skipped oracle command checks because structural contract did not pass."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 1,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 1
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  },
+  {
+    "scenario": "node-project-api-large",
+    "runIndex": 3,
+    "ok": false,
+    "exitCode": 2,
+    "durationMs": 721762,
+    "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1772486194932\\node-project-api-large_run_03",
+    "diagnostics": [
+      "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)",
+      "Contract mismatch: Duplicate member add (same userId in one project) must return HTTP 409 with error payload.",
+      "Contract mismatch: GET /projects/:projectId/tasks?status=done must filter tasks and return only done items.",
+      "Contract mismatch: API must never return HTML error pages; return JSON error payloads even on failures."
+    ],
+    "timedOut": false,
+    "parseStats": {
+      "plannerFailures": 1,
+      "schemaFailures": 0,
+      "jsonRepairFailures": 0,
+      "parseFailures": 1,
+      "jsonParseFailures": 0,
+      "placeholderFailures": 0,
+      "otherFailures": 1
+    },
+    "deterministicFallback": {
+      "mode": "on-fail",
+      "tsTodo": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "nodeApi": {
+        "activations": 0,
+        "recoveries": 0,
+        "targetedActivations": 0,
+        "targetedRecoveries": 0,
+        "canonicalActivations": 0,
+        "canonicalRecoveries": 0,
+        "rawPasses": 0,
+        "rawFailures": 0,
+        "recoveredByFallback": 0
+      },
+      "totalActivations": 0,
+      "totalRecoveries": 0,
+      "totalTargetedActivations": 0,
+      "totalTargetedRecoveries": 0,
+      "totalCanonicalActivations": 0,
+      "totalCanonicalRecoveries": 0,
+      "totalRawPasses": 0,
+      "totalRawFailures": 0,
+      "totalRecoveredByFallback": 0,
+      "fallbackDependencyRate": 0
+    }
+  }
+]

@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:32b",
+  "created_at": "2026-03-03T05:05:54.2704646Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/modules/comments/routes.js\",\n      \"content\": \"const router = require('express').Router();\\nconst commentsService = require('./service');\\nconst { sendError } = require('../../lib/errors');\\n\\nrouter.get('/', async (req, res) => {\\n  const projectId = req.params.projectId;\\n  const taskId = req.params.taskId;\\n  if (!projectId || !taskId) return sendError(res, 400, 'BAD_REQUEST', 'Project ID and Task ID are required');\\n  const comments = await commentsService.getAllComments(projectId, taskId);\\n  if (comments === null) return sendError(res, 404, 'TASK_NOT_FOUND', 'Task not found');\\n  return res.json({ comments });\\n});\\n\\nrouter.post('/', async (req, res) => {\\n  const projectId = req.params.projectId;\\n  const taskId = req.params.taskId;\\n  if (!projectId || !taskId) return sendError(res, 400, 'BAD_REQUEST', 'Project ID and Task ID are required');\\n  const message = String(req.body?.message || '').trim();\\n  if (!message) return sendError(res, 400, 'BAD_REQUEST', 'Message is required');\\n  const comment = await commentsService.addComment(projectId, taskId, message);\\n  if (comment === null) return sendError(res, 404, 'TASK_NOT_FOUND', 'Task not found');\\n  return res.status(201).json({ comment });\\n});\\n\\nmodule.exports = router;\\n\"\n    },\n    {\n      \"path\": \"src/modules/members/routes.js\",\n      \"content\": \"const router = require('express').Router();\\nconst membersService = require('./service');\\nconst { sendError } = require('../../lib/errors');\\n\\nrouter.get('/', async (req, res) => {\\n  const projectId = req.params.projectId;\\n  if (!projectId) return sendError(res, 400, 'BAD_REQUEST', 'Project ID is required');\\n  const members = await membersService.getMembers(projectId);\\n  if (members === null) return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found');\\n  return res.json({ members });\\n});\\n\\nrouter.post('/', async (req, res) => {\\n  const projectId = req.params.projectId;\\n  if (!projectId) return sendError(res, 400, 'BAD_REQUEST', 'Project ID is required');\\n  const userId = String(req.body?.userId || '').trim();\\n  const role = String(req.body?.role || '').trim();\\n  if (!userId || !role) return sendError(res, 400, 'BAD_REQUEST', 'userId and role are required');\\n  const outcome = await membersService.addMember(projectId, userId, role);\\n  if (outcome === null) return sendError(res, 409, 'MEMBER_DUPLICATE', 'Member already exists');\\n  return res.status(201).json({ member: outcome });\\n});\\n\\nmodule.exports = router;\\n\"\n    }\n  ],\n  \"notes\": \"Removed unnecessary checks and corrected the comment response in comments/routes.js. Fixed the duplicate check logic in members/routes.js.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 273842485500,
+  "load_duration": 74618106400,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 3752442000,
+  "eval_count": 738,
+  "eval_duration": 180703180400
+}

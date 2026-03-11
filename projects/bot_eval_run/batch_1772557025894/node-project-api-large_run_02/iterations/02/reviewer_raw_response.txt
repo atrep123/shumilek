@@ -1,0 +1,4 @@
+{
+  "review": "Zkontrolujte exporty v souborech service pro modul members. Service musí exportovat metody create a getAll, aby byly shodné s routes. Dodatečně zkontrolujte, že v souboru src/app.js nebo src/server.js není voláno listen() při importu.",
+  "priorityFiles": ["src/modules/members/service.js", "src/app.js"]
+}

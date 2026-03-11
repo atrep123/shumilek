@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Avoid raw throw in src/modules/tasks/service.js: return domain errors and map them to JSON payloads in routes.",
+    "Missing route signature for project detail endpoint /projects/:projectId",
+    "Task status contract mismatch: use `todo` / `done` statuses (not `open` or `pending`)",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

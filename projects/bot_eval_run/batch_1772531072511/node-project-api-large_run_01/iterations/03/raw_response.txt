@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nlet projects = {};\n\nfunction getAllProjects() {\n  return Object.values(projects);\n}\n\nfunction getProjectById(projectId) {\n  return projects[projectId] || null;\n}\n\nfunction createProject(name) {\n  if (!name) return null;\n  const projectId = randomUUID();\n  projects[projectId] = { id: projectId, name, members: [], tasks: [] };\n  return projects[projectId];\n}\n\nmodule.exports = {\n  getAllProjects,\n  getProjectById,\n  createProject\n};\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst projectsService = require('../projects/service');\nconst errors = require('../../lib/errors');\n\nfunction addMemberToProject(projectId, userId, role) {\n  const project = projectsService.getProjectById(projectId);\n  if (!project) return null;\n  if (project.members.some(member => member.userId === userId)) return null;\n  const memberId = randomUUID();\n  project.members.push({ id: memberId, userId, role });\n  return { id: memberId, userId, role };\n}\n\nmodule.exports = {\n  addMemberToProject\n};\n"
+    }
+  ],
+  "notes": "Updated projects service to export getAllProjects and modified members service to use shared project repository."
+}

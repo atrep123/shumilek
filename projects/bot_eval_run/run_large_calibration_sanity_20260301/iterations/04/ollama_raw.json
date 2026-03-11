@@ -1,0 +1,16 @@
+{
+  "model": "deepseek-coder-v2:16b",
+  "created_at": "2026-03-01T20:01:30.3033637Z",
+  "message": {
+    "role": "assistant",
+    "content": "{ \"files\": [ {\"path\":\"README.md\",\"content\":\"...\\n\"}, {\"path\":\"package.json\",\"content\":\"...\\n\"}, {\"path\":\"src/app.js\",\"content\":\"...\\n\"}, {\"path\":\"src/server.js\",\"content\":\"...\\n\"}, {\"path\":\"src/modules/projects/routes.js\",\"content\":\"...\\n\"}, {\"path\":\"src/modules/projects/service.js\",\"content\":\"...\\n\"}, {\"path\":\"src/modules/tasks/routes.js\",\"content\":\"...\\n\"}, {\"path\":\"src/modules/tasks/service.js\",\"content\":\"...\\n\"}, {\"path\":\"src/modules/members/routes.js\",\"content\":\"...\\n\"}, {\"path\":\"src/modules/members/service.js\",\"content\":\"...\\n\"}, {\"path\":\"src/modules/comments/routes.js\",\"content\":\"...\\n\"}, {\"path\":\"src/modules/comments/service.js\",\"content\":\"...\\n\"}, {\"path\":\"src/lib/errors.js\",\"content\":\"...\\n\"}, {\"path\":\"src/lib/id.js\",\"content\":\"...\\n\"} ], \"notes\": \"optional\" }"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 5133840500,
+  "load_duration": 41287500,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 527485800,
+  "eval_count": 242,
+  "eval_duration": 1804768700
+}

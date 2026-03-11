@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst projectsRoutes = require('./modules/projects/routes');\nconst membersRoutes = require('./modules/members/routes');\nconst tasksRoutes = require('./modules/tasks/routes');\nconst commentsRoutes = require('./modules/comments/routes');\n\nconst app = express();\napp.use(express.json());\n\napp.get('/health', (req, res) => {\n  res.json({ ok: true });\n});\n\napp.use('/projects', projectsRoutes);\napp.use('/projects/:projectId/members', membersRoutes);\napp.use('/projects/:projectId/tasks', tasksRoutes);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRoutes);\n\nmodule.exports = app;\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst projectsService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nconst router = express.Router();\n\nrouter.get('/', async (req, res) => {\n  try {\n    const projects = await projectsService.getAllProjects();\n    res.json({ projects });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nrouter.get('/:projectId', async (req, res) => {\n  try {\n    const project = await projectsService.getProjectById(req.params.projectId);\n    if (!project) {\n      return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found');\n    }\n    res.json({ project });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nrouter.post('/', async (req, res) => {\n  const { name } = req.body;\n  if (!name || typeof name !== 'string' || name.trim() === '') {\n    return sendError(res, 400, 'INVALID_NAME', 'Name must be a non-empty string');\n  }\n\n  try {\n    const project = await projectsService.createProject(name);\n    res.status(201).json({ project });\n  } catch (error) {\n    sendError(res, 500, 'INTERNAL_ERROR', 'Internal server error');\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst tasksStore = [];\n\nasync function getAllTasks(projectId) {\n  return tasksStore.filter(task => task.projectId === projectId);\n}\n\nasync function getTaskById(projectId, taskId) {\n  return tasksStore.find(task => task.projectId === projectId && task.id === taskId);\n}\n\nasync function createTask(projectId, title) {\n  const task = { id: randomUUID(), projectId, title, status: 'todo' };\n  tasksStore.push(task);\n  return task;\n}\n\nasync function updateTaskStatus(projectId, taskId, newStatus) {\n  const task = await getTaskById(projectId, taskId);\n  if (!task) {\n    return null;\n  }\n  task.status = newStatus;\n  return task;\n}\n\nmodule.exports = {\n  getAllTasks,\n  getTaskById,\n  createTask,\n  updateTaskStatus,\n};\nmodule.exports.getTasks = module.exports.getAllTasks;\n"
+    }
+  ],
+  "notes": "Added missing route signatures and fixed service export mismatches."
+}

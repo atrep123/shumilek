@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "// src/modules/comments/service.js\nconst { randomUUID } = require('node:crypto');\nconst tasksService = require('../tasks/service');\nconst commentsStore = {};\n\nasync function createComment(projectId, taskId, message) {\n  const task = await tasksService.getCommentsForTask(projectId, taskId);\n  if (!task) return null;\n  const commentId = randomUUID();\n  const comment = { id: commentId, message };\n  commentsStore[taskId] = [...(commentsStore[taskId] || []), comment];\n  return comment;\n}\n\nmodule.exports = {\n  createComment,\n};"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "// src/modules/tasks/service.js\nconst { randomUUID } = require('node:crypto');\nconst projectsService = require('../projects/service');\nconst tasksStore = {};\n\nasync function getAllTasks(projectId) {\n  const project = await projectsService.getProjectById(projectId);\n  if (!project) return null;\n  return tasksStore[projectId] || [];\n}\n\nasync function getCommentsForTask(projectId, taskId) {\n  const project = await projectsService.getProjectById(projectId);\n  if (!project) return null;\n  const task = tasksStore[projectId]?.find(t => t.id === taskId);\n  if (!task) return null;\n  return task.comments || [];\n}\n\nasync function createTask(projectId, title, description) {\n  const project = await projectsService.getProjectById(projectId);\n  if (!project) return null;\n  const taskId = randomUUID();\n  const task = { id: taskId, title, description, status: 'todo', comments: [] };\n  tasksStore[projectId] = [...(tasksStore[projectId] || []), task];\n  return task;\n}\n\nasync function updateTaskStatus(projectId, taskId, status) {\n  const project = await projectsService.getProjectById(projectId);\n  if (!project) return null;\n  const taskIndex = tasksStore[projectId]?.findIndex(t => t.id === taskId);\n  if (taskIndex === -1) return null;\n  if (status !== 'todo' && status !== 'done') return null;\n  tasksStore[projectId][taskIndex].status = status;\n  return tasksStore[projectId][taskIndex];\n}\n\nmodule.exports = {\n  getAllTasks,\n  getCommentsForTask,\n  createTask,\n  updateTaskStatus,\n};"
+    }
+  ],
+  "notes": "Updated services to return null instead of throwing errors for domain issues."
+}

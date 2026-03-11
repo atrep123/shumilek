@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const tasksService = require('../tasks/service');\n\nconst addComment = async (projectId, taskId, content) => {\n  const project = tasksService.projectsStore.find(p => p.id === projectId);\n  if (!project) {\n    return null;\n  }\n  const task = project.tasks.find(t => t.id === taskId);\n  if (!task) {\n    return null;\n  }\n  const comment = { id: tasksService.randomUUID(), content };\n  task.comments = task.comments || [];\n  task.comments.push(comment);\n  return comment;\n};\n\nconst getAllComments = async (projectId, taskId) => {\n  const project = tasksService.projectsStore.find(p => p.id === projectId);\n  if (!project) {\n    return null;\n  }\n  const task = project.tasks.find(t => t.id === taskId);\n  if (!task) {\n    return null;\n  }\n  return task.comments || [];\n};\n\nmodule.exports = { addComment, getAllComments };\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const projectsService = require('../projects/service');\n\nconst addMember = async (projectId, userId, role) => {\n  const project = projectsService.projectsStore.find(p => p.id === projectId);\n  if (!project) {\n    return null;\n  }\n  const member = { id: userId, role };\n  project.members.push(member);\n  return member;\n};\n\nconst getAllMembers = async (projectId) => {\n  const project = projectsService.projectsStore.find(p => p.id === projectId);\n  if (!project) {\n    return null;\n  }\n  return project.members;\n};\n\nmodule.exports = { addMember, getAllMembers };\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const projectsService = require('../projects/service');\n\nconst createTask = async (projectId, title) => {\n  const project = projectsService.projectsStore.find(p => p.id === projectId);\n  if (!project) {\n    return null;\n  }\n  const task = { id: projectsService.randomUUID(), title, status: 'todo' };\n  project.tasks.push(task);\n  return task;\n};\n\nconst getAllTasks = async (projectId) => {\n  const project = projectsService.projectsStore.find(p => p.id === projectId);\n  if (!project) {\n    return null;\n  }\n  return project.tasks;\n};\n\nconst getDoneTasks = async (projectId) => {\n  const project = projectsService.projectsStore.find(p => p.id === projectId);\n  if (!project) {\n    return null;\n  }\n  return project.tasks.filter(task => task.status === 'done');\n};\n\nconst updateTaskStatus = async (projectId, taskId, status) => {\n  const project = projectsService.projectsStore.find(p => p.id === projectId);\n  if (!project) {\n    return null;\n  }\n  const task = project.tasks.find(t => t.id === taskId);\n  if (!task) {\n    return null;\n  }\n  task.status = status;\n  return task;\n};\n\nmodule.exports = { createTask, getAllTasks, getDoneTasks, updateTaskStatus };\n"
+    }
+  ],
+  "notes": "Updated services to return null instead of throwing errors for not found or project not found scenarios."
+}

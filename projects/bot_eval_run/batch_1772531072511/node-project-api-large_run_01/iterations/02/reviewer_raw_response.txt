@@ -1,0 +1,4 @@
+{
+  "review": "Zkontrolujte, že v službě pro projekty (src/modules/projects/service.js) exportujete metodu getAllProjects. Dodatečně upravte službu pro členy (src/modules/members/service.js), aby používala sdílenou databázi projektů, místo toho nevytvořte samostatné pole členů.",
+  "priorityFiles": ["src/modules/projects/service.js", "src/modules/members/service.js"]
+}

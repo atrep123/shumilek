@@ -1,0 +1,48 @@
+{
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"my-project\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A sample Node.js project\",\n  \"main\": \"src/app.js\",\n  \"scripts\": {\n    \"start\": \"node src/server.js\"\n  },\n  \"dependencies\": {},\n  \"devDependencies\": {}\n}"
+    },
+    {
+      "path": "src/lib/errors.js",
+      "content": "module.exports = {\n  sendError(res, status, code, message) {\n    res.status(status).json({ error: { code, message } });\n  }\n};\n"
+    },
+    {
+      "path": "src/lib/id.js",
+      "content": "const { randomUUID } = require(\"node:crypto\");\nmodule.exports = {\n  generateId() {\n    return randomUUID();\n  }\n};\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst commentsService = require('./service');\nrouter.post('/', (req, res) => {\n  const { message } = req.body;\n  if (!message) return sendError(res, 400, 'InvalidInput', 'Message is required');\n  commentsService.createComment(req.params.projectId, req.params.taskId, message).then((comment) => {\n    res.status(201).json({ comment });\n  }).catch((err) => sendError(res, err.status || 500, 'ServiceError', err.message));\n});\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { sendError } = require('../../lib/errors');\nconst projectsService = require('../projects/service');\nmodule.exports = {\n  createComment(projectId, taskId, message) {\n    return new Promise((resolve, reject) => {\n      const project = projectsService.getProject(projectId);\n      if (!project) return reject({ status: 404, message: 'Project not found' });\n      resolve({ id: generateId(), taskId, message });\n    })\n  }\n};\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst membersService = require('./service');\nrouter.post('/', (req, res) => {\n  const { userId, role } = req.body;\n  if (!userId || !role) return sendError(res, 400, 'InvalidInput', 'UserId and role are required');\n  membersService.addMember(req.params.projectId, { userId, role }).then((member) => {\n    res.status(201).json({ member });\n  }).catch((err) => sendError(res, err.status || 500, 'ServiceError', err.message));\n});\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const projectsService = require('../projects/service');\nmodule.exports = {\n  addMember(projectId, member) {\n    return new Promise((resolve, reject) => {\n      const project = projectsService.getProject(projectId);\n      if (!project) return reject({ status: 404, message: 'Project not found' });\n      if (project.members.some(m => m.userId === member.userId)) return sendError(res, 409, 'Duplicate', 'Member already exists');\n      project.members.push(member);\n      resolve(member);\n    })\n  }\n};\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst projectsService = require('./service');\nrouter.post('/', (req, res) => {\n  const { name } = req.body;\n  if (!name) return sendError(res, 400, 'InvalidInput', 'Name is required');\n  projectsService.createProject({ name }).then((project) => {\n    res.status(201).json({ project });\n  }).catch((err) => sendError(res, err.status || 500, 'ServiceError', err.message));\n});\nrouter.get('/:id/tasks', (req, res) => {\n  const tasks = projectsService.getTasks(req.params.id).filter(task => task.status === req.query.status);\n  res.json({ tasks });\n});\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const projects = [];\nmodule.exports = {\n  createProject(data) {\n    return new Promise((resolve, reject) => {\n      if (!data.name) return reject({ status: 400, message: 'Name is required' });\n      const project = { id: generateId(), ...data, members: [] };\n      projects.push(project);\n      resolve(project);\n    })\n  },\n  getProject(id) {\n    return projects.find(p => p.id === id);\n  },\n  getTasks(id) {\n    const project = this.getProject(id);\n    if (!project) return [];\n    return project.tasks || [];\n  }\n};\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst tasksService = require('./service');\nrouter.post('/', (req, res) => {\n  if (!req.body.status || req.body.status !== 'todo') return sendError(res, 400, 'InvalidInput', 'Status must be todo');\n  tasksService.createTask(req.params.projectId, { status: 'todo' }).then((task) => {\n    res.status(201).json({ task });\n  }).catch((err) => sendError(res, err.status || 500, 'ServiceError', err.message));\n});\nrouter.patch('/:taskId', (req, res) => {\n  if (!['todo', 'done'].includes(req.body.status)) return sendError(res, 400, 'InvalidInput', 'Status must be todo or done');\n  tasksService.updateTask(req.params.projectId, req.params.taskId, { status: req.body.status }).then((task) => {\n    res.json({ task });\n  }).catch((err) => sendError(res, err.status || 500, 'ServiceError', err.message));\n});\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const projectsService = require('../projects/service');\nconst tasks = [];\nmodule.exports = {\n  createTask(projectId, data) {\n    return new Promise((resolve, reject) => {\n      const project = projectsService.getProject(projectId);\n      if (!project) return reject({ status: 404, message: 'Project not found' });\n      const task = { id: generateId(), ...data };\n      tasks.push(task);\n      project.tasks = project.tasks || [];\n      project.tasks.push(task);\n      resolve(task);\n    })\n  },\n  updateTask(projectId, taskId, data) {\n    return new Promise((resolve, reject) => {\n      const project = projectsService.getProject(projectId);\n      if (!project) return reject({ status: 404, message: 'Project not found' });\n      const taskIndex = project.tasks.findIndex(t => t.id === taskId);\n      if (taskIndex === -1) return reject({ status: 404, message: 'Task not found' });\n      project.tasks[taskIndex] = { ...project.tasks[taskIndex], ...data };\n      resolve(project.tasks[taskIndex]);\n    })\n  }\n};\n"
+    }
+  ]
+}

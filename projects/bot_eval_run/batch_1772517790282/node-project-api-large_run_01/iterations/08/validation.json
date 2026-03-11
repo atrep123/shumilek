@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Route-service contract mismatch (tasks): routes call service.addTask() but service does not export \"addTask\".",
+    "Route-service contract mismatch (tasks): routes call service.getTasksByProjectId() but service does not export \"getTasksByProjectId\".",
+    "Route-service export map required (tasks): ensure service exports every route-called method (exact names) or add adapter wrappers.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

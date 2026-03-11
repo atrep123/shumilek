@@ -1,0 +1,12 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Do not use \"uuid\" package in node-project-api-large; use node:crypto randomUUID instead",
+    "Missing route signature for project detail endpoint /projects/:projectId",
+    "Uses `new BadRequestError(...)` but src/lib/errors.* does not define/export BadRequestError",
+    "Task filtering contract mismatch: support ?status=todo|done and PATCH status updates.",
+    "Status code contract mismatch: POST /projects should return HTTP 201 on create.",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

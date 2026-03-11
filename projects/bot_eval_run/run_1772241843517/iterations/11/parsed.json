@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\n\nconst router = express.Router();\n\nrouter.get('/', (req, res) => {\n  try {\n    const projects = service.getAllProjects();\n    res.json({ projects });\n  } catch (error) {\n    res.status(400).json({ error: { code: 'BAD_REQUEST', message: error.message } });\n  }\n});\n\nrouter.post('/', (req, res) => {\n  try {\n    const project = service.createProject(req.body);\n    res.status(201).json(project);\n  } catch (error) {\n    res.status(400).json({ error: { code: 'BAD_REQUEST', message: error.message } });\n  }\n});\n\nrouter.get('/:id/tasks', (req, res) => {\n  try {\n    const tasks = service.getTasksByProjectId(req.params.id);\n    res.json({ tasks });\n  } catch (error) {\n    res.status(404).json({ error: { code: 'NOT_FOUND', message: error.message } });\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst service = require('./service');\n\nconst router = express.Router();\n\nrouter.post('/', (req, res) => {\n  try {\n    const task = service.createTask(req.body);\n    res.status(201).json(task);\n  } catch (error) {\n    res.status(400).json({ error: { code: 'BAD_REQUEST', message: error.message } });\n  }\n});\n\nrouter.patch('/:id', (req, res) => {\n  try {\n    const task = service.updateTask(req.params.id, req.body);\n    res.json(task);\n  } catch (error) {\n    res.status(404).json({ error: { code: 'NOT_FOUND', message: error.message } });\n  }\n});\n\nrouter.get('/:id/comments', (req, res) => {\n  try {\n    const comments = service.getCommentsByTaskId(req.params.id);\n    res.json({ comments });\n  } catch (error) {\n    res.status(404).json({ error: { code: 'NOT_FOUND', message: error.message } });\n  }\n});\n\nmodule.exports = router;\n"
+    }
+  ],
+  "notes": "Updated routes to ensure correct HTTP status codes and error handling."
+}

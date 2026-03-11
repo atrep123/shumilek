@@ -1,0 +1,19 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "deepseek-r1:8b",
+      "ok": false,
+      "error": "request to http://localhost:11434/api/generate failed, reason: ",
+      "errorKind": "other"
+    },
+    {
+      "stage": "repair_schema",
+      "model": "deterministic-fallback",
+      "ok": true
+    }
+  ],
+  "finalOk": true,
+  "primaryError": "request to http://localhost:11434/api/generate failed, reason: ",
+  "primaryErrorKind": "other"
+}

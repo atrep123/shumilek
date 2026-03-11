@@ -1,0 +1,55 @@
+✔ health + empty project list (84.6658ms)
+✔ project create/list/get + duplicate + validation (32.8974ms)
+✖ members endpoints (8.5691ms)
+✖ tasks create/list/filter + patch status (8.5991ms)
+✖ comments + not-found and payload contract (10.0912ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 2
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 300.508
+
+✖ failing tests:
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (8.5691ms)
+  TypeError: errorHandler is not a function
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772533055234\node-project-api-large_run_01\workspace\src\modules\members\routes.js:13:5
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+test at tests\oracle.test.js:122:1
+✖ tasks create/list/filter + patch status (8.5991ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '[object Object]'
+  - 'Prepare spec'
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772533055234\node-project-api-large_run_01\workspace\tests\oracle.test.js:135:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '[object Object]',
+    expected: 'Prepare spec',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (10.0912ms)
+  TypeError: errorHandler is not a function
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772533055234\node-project-api-large_run_01\workspace\src\modules\comments\routes.js:12:5
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772533055234\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772533055234\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:149:13)
+      at Route.dispatch (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772533055234\node-project-api-large_run_01\workspace\node_modules\express\lib\router\route.js:119:3)
+      at Layer.handle [as handle_request] (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772533055234\node-project-api-large_run_01\workspace\node_modules\express\lib\router\layer.js:95:5)
+      at C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772533055234\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:284:15
+      at router.process_params (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772533055234\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:346:12)
+      at next (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772533055234\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:280:10)
+      at router.handle (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772533055234\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:175:3)
+      at router (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1772533055234\node-project-api-large_run_01\workspace\node_modules\express\lib\router\index.js:47:12)

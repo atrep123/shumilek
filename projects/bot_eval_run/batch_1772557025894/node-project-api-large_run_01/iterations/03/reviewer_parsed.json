@@ -1,0 +1,18 @@
+{
+  "review": "Zkontrolujte, že pro všechny POST requesty, kde je požadováno něco v body, zahrnete kontrolu na prázdné nebo chybějící pole. Pro GET requesty s query parametry zkontrolujte správný formát a existence parametrů. Upravte testy pro komplexnější scénáře, kde by mohlo nastat více chyb.",
+  "files": [
+    {
+      "file": "tests/oracle.test.js",
+      "changes": [
+        {
+          "line": 43,
+          "change": "Přidání kontroly na prázdné pole v `expectErrorPayload` funkci."
+        },
+        {
+          "line": 160,
+          "change": "Zlepšení testu pro komplexnější scénáře, kde by mohlo nastat více chyb."
+        }
+      ]
+    }
+  ]
+}
