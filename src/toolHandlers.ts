@@ -51,6 +51,7 @@ export interface MutationHandlerDeps {
   DEFAULT_MAX_READ_LINES: number;
   DEFAULT_MAX_SEARCH_RESULTS: number;
   DEFAULT_EXCLUDE_GLOB: string;
+  BINARY_EXTENSIONS: Set<string>;
   lastReadHashes: Map<string, { hash: string; updatedAt: number }>;
   asString: (value: unknown) => string | undefined;
   clampNumber: (value: unknown, fallback: number, min: number, max: number) => number;
@@ -79,6 +80,9 @@ export interface MutationHandlerDeps {
   revealWrittenDocument: (uri: vscode.Uri) => Promise<void>;
   notifyToolWrite: (action: 'created' | 'updated', uri: vscode.Uri) => Promise<void>;
   isBinaryExtension: (filePath: string) => boolean;
+  normalizeExtension: (ext: string | undefined) => string;
+  normalizeRouteText: (input: string) => string;
+  tokenizeRouteText: (input: string) => string[];
   buildAutoFileName: (options: { title?: string; suggestedName?: string; extension?: string; content?: string }) => string;
   resolveAutoSaveTargetUri: (fileName: string) => Promise<{ uri?: vscode.Uri; error?: string }>;
   isSafeUrl: (raw: string) => { safe: boolean; reason?: string };
@@ -1111,6 +1115,145 @@ export async function handleSearchInFilesTool(
       scannedFiles: files.length,
       skippedBinary,
       skippedLarge
+    }
+  };
+}
+
+export async function handleRouteFileTool(
+  name: string,
+  args: Record<string, unknown>,
+  deps: MutationHandlerDeps
+): Promise<ToolResultLike> {
+  const intent = deps.asString(args.intent);
+  if (!intent) return { ok: false, tool: name, message: 'intent je povinny' };
+
+  const preferredExtension = deps.normalizeExtension(deps.asString(args.preferredExtension));
+  const fileNameHint = deps.asString(args.fileNameHint) ?? deps.asString(args.suggestedName);
+  const maxResults = deps.clampNumber(args.maxResults, 5, 1, 15);
+  const glob = deps.asString(args.glob) ?? '**/*';
+  const allowCreate = typeof args.allowCreate === 'boolean' ? args.allowCreate : true;
+  const maxFilesToScan = Math.min(2000, Math.max(200, maxResults * 200));
+  const files = await vscode.workspace.findFiles(glob, deps.DEFAULT_EXCLUDE_GLOB, maxFilesToScan);
+  const activeUri = deps.getActiveWorkspaceFileUri();
+  const tokens = deps.tokenizeRouteText([intent, fileNameHint].filter(Boolean).join(' '));
+  const hintName = fileNameHint
+    ? deps.normalizeRouteText(path.parse(fileNameHint).name)
+    : '';
+  const candidates: Array<{ path: string; score: number; reason: string }> = [];
+
+  for (const uri of files) {
+    const relPath = deps.getRelativePathForWorkspace(uri);
+    const lowerPath = deps.normalizeRouteText(relPath);
+    const ext = path.extname(relPath).toLowerCase();
+    if (deps.BINARY_EXTENSIONS.has(ext)) continue;
+    const baseName = path.basename(lowerPath);
+    let score = 0;
+    const reasons: string[] = [];
+
+    if (preferredExtension && ext === preferredExtension) {
+      score += 6;
+      reasons.push('ext');
+    }
+    if (hintName) {
+      if (baseName === `${hintName}${ext}`) {
+        score += 10;
+        reasons.push('hint-exact');
+      } else if (baseName.includes(hintName)) {
+        score += 6;
+        reasons.push('hint-base');
+      } else if (lowerPath.includes(hintName)) {
+        score += 3;
+        reasons.push('hint-path');
+      }
+    }
+
+    let matchedTokens = 0;
+    for (const token of tokens) {
+      if (baseName.includes(token)) {
+        score += 2;
+        matchedTokens++;
+      } else if (lowerPath.includes(token)) {
+        score += 1;
+        matchedTokens++;
+      }
+    }
+    if (matchedTokens > 0) {
+      reasons.push(`tokens:${matchedTokens}`);
+    }
+
+    if (activeUri && uri.fsPath === activeUri.fsPath) {
+      score += 2;
+      reasons.push('active');
+    }
+
+    if (score > 0) {
+      candidates.push({
+        path: relPath,
+        score,
+        reason: reasons.join('+') || 'match'
+      });
+    }
+  }
+
+  candidates.sort((a, b) => b.score - a.score);
+  const topCandidates = candidates.slice(0, maxResults);
+  let bestPath = topCandidates[0]?.path;
+  let autoSavePath: string | undefined;
+
+  if (!bestPath && activeUri) {
+    bestPath = deps.getRelativePathForWorkspace(activeUri);
+  }
+
+  if (!bestPath && allowCreate) {
+    const fileName = deps.buildAutoFileName({
+      title: intent,
+      suggestedName: fileNameHint,
+      extension: preferredExtension
+    });
+    const resolved = await deps.resolveAutoSaveTargetUri(fileName);
+    if (resolved.uri) {
+      autoSavePath = deps.getRelativePathForWorkspace(resolved.uri);
+      bestPath = autoSavePath;
+    }
+  }
+
+  return {
+    ok: true,
+    tool: name,
+    data: {
+      bestPath,
+      candidates: topCandidates,
+      autoSavePath
+    }
+  };
+}
+
+export async function handlePickSavePathTool(
+  name: string,
+  args: Record<string, unknown>,
+  deps: MutationHandlerDeps
+): Promise<ToolResultLike> {
+  const title = deps.asString(args.title);
+  const suggestedNameRaw = deps.asString(args.suggestedName);
+  const extensionRaw = deps.asString(args.extension);
+  const fileName = deps.buildAutoFileName({
+    title,
+    suggestedName: suggestedNameRaw,
+    extension: extensionRaw
+  });
+  const resolved = await deps.resolveAutoSaveTargetUri(fileName);
+  if (!resolved.uri) {
+    return { ok: false, tool: name, message: resolved.error ?? 'nelze vytvorit cestu' };
+  }
+  const uri = resolved.uri;
+
+  return {
+    ok: true,
+    tool: name,
+    data: {
+      path: deps.getRelativePathForWorkspace(uri),
+      fileName: path.basename(uri.fsPath),
+      folder: deps.getRelativePathForWorkspace(vscode.Uri.file(path.dirname(uri.fsPath)))
     }
   };
 }
