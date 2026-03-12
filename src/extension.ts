@@ -61,7 +61,9 @@ import {
   handleGetDefinitionTool,
   handleGetDiagnosticsTool,
   handleGetReferencesTool,
+  handleGetSymbolsTool,
   handleGetTypeInfoTool,
+  handleGetWorkspaceSymbolsTool,
   handleFetchWebpageTool,
   handleRenameFileTool,
   handleReplaceLinesTool,
@@ -4878,6 +4880,7 @@ async function runToolCall(
     resolveSymbolPosition,
     serializeLocationInfo,
     serializeRange,
+    serializeSymbolKind,
     renderHoverContents,
     serializeDiagnosticSeverity,
     detectEol,
@@ -5223,83 +5226,10 @@ async function runToolCall(
         };
       }
       case 'get_symbols': {
-        const filePath = getFirstStringArg(args, ['path', 'file', 'filePath', 'filename']);
-        let uri: vscode.Uri | undefined;
-        if (filePath) {
-          const resolved = await resolveWorkspaceUri(filePath, true);
-          if (!resolved.uri) {
-            return {
-              ok: false,
-              tool: name,
-              message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
-              data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
-            };
-          }
-          uri = resolved.uri;
-        } else {
-          const activeUri = getActiveWorkspaceFileUri();
-          if (!activeUri) {
-            return { ok: false, tool: name, message: 'path je povinny nebo otevri aktivni soubor' };
-          }
-          uri = activeUri;
-        }
-
-        const maxResults = clampNumber(args.maxResults, DEFAULT_MAX_LSP_RESULTS, 1, 1000);
-        const maxDepth = clampNumber(args.maxDepth, 3, 0, 10);
-        const symbols = await vscode.commands.executeCommand<
-          Array<vscode.DocumentSymbol> | Array<vscode.SymbolInformation> | undefined
-        >('vscode.executeDocumentSymbolProvider', uri);
-        const relativePath = getRelativePathForWorkspace(uri);
-
-        if (!symbols || symbols.length === 0) {
-          return { ok: true, tool: name, data: { path: relativePath, symbols: [], total: 0 } };
-        }
-
-        const first = symbols[0] as any;
-        const payload = 'location' in first
-          ? collectSymbolInformation(symbols as vscode.SymbolInformation[], maxResults)
-          : collectDocumentSymbols(symbols as vscode.DocumentSymbol[], maxDepth, maxResults);
-
-        return {
-          ok: true,
-          tool: name,
-          data: {
-            path: relativePath,
-            maxDepth,
-            ...payload
-          }
-        };
+        return handleGetSymbolsTool(name, args, mutationHandlerDeps);
       }
       case 'get_workspace_symbols': {
-        const query = asString(args.query) ?? '';
-        const maxResults = clampNumber(args.maxResults, DEFAULT_MAX_LSP_RESULTS, 1, 1000);
-        const symbols = await vscode.commands.executeCommand<
-          Array<vscode.SymbolInformation> | undefined
-        >('vscode.executeWorkspaceSymbolProvider', query);
-        if (!symbols || symbols.length === 0) {
-          return { ok: true, tool: name, data: { query, symbols: [], total: 0 } };
-        }
-        const results: Array<Record<string, unknown>> = [];
-        for (const symbol of symbols) {
-          if (results.length >= maxResults) break;
-          const location = (symbol as any).location as vscode.Location | vscode.LocationLink | undefined;
-          results.push({
-            name: symbol.name,
-            kind: serializeSymbolKind(symbol.kind),
-            containerName: (symbol as any).containerName,
-            location: location ? serializeLocationInfo(location) : undefined
-          });
-        }
-        return {
-          ok: true,
-          tool: name,
-          data: {
-            query,
-            symbols: results,
-            total: symbols.length,
-            truncated: symbols.length > maxResults
-          }
-        };
+        return handleGetWorkspaceSymbolsTool(name, args, mutationHandlerDeps);
       }
       case 'get_definition': {
         return handleGetDefinitionTool(name, args, mutationHandlerDeps);
