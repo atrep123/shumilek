@@ -52,6 +52,12 @@ import {
   ExecutionMode,
   ValidationPolicy
 } from './types';
+import {
+  handleReplaceLinesTool,
+  handleRunTerminalCommandTool,
+  handleWriteFileTool,
+  MutationHandlerDeps
+} from './toolHandlers';
 // (Types imported from ./types)
 
 // Webview message types
@@ -5039,6 +5045,34 @@ async function runToolCall(
     });
   }
 
+  const mutationHandlerDeps: MutationHandlerDeps = {
+    DEFAULT_MAX_READ_BYTES,
+    DEFAULT_MAX_WRITE_BYTES,
+    lastReadHashes,
+    asString,
+    clampNumber,
+    getFirstStringArg,
+    resolveWorkspaceUri,
+    getActiveWorkspaceFileUri,
+    readFileForTool,
+    getRelativePathForWorkspace,
+    detectEol,
+    splitLines,
+    showDiffAndConfirm,
+    applyFileContent,
+    markToolMutation,
+    recordToolWrite,
+    computeContentHash,
+    getToolsAutoOpenAutoSaveSetting,
+    getToolsAutoOpenOnWriteSetting,
+    isInAutoSaveDir,
+    revealWrittenDocument,
+    notifyToolWrite,
+    isBinaryExtension,
+    buildAutoFileName,
+    resolveAutoSaveTargetUri
+  };
+
   try {
     switch (name) {
       case 'list_files': {
@@ -5768,272 +5802,10 @@ async function runToolCall(
         };
       }
       case 'replace_lines': {
-        const filePath = getFirstStringArg(args, ['path', 'file', 'filePath', 'filename']);
-        const startLine = typeof args.startLine === 'number'
-          ? args.startLine
-          : (typeof args.start === 'number' ? args.start : NaN);
-        const endLine = typeof args.endLine === 'number'
-          ? args.endLine
-          : (typeof args.end === 'number' ? args.end : NaN);
-        const replacement = getFirstStringArg(args, ['text', 'replacement', 'content', 'body', 'value']);
-        const expected = asString(args.expected);
-        const autoOpenOnWrite = getToolsAutoOpenOnWriteSetting();
-        const autoOpenAutoSave = getToolsAutoOpenAutoSaveSetting();
-
-        if (replacement === undefined || !Number.isFinite(startLine) || !Number.isFinite(endLine)) {
-          return { ok: false, tool: name, message: 'startLine, endLine, text jsou povinne' };
-        }
-
-        let uri: vscode.Uri | undefined;
-        if (filePath) {
-          const resolved = await resolveWorkspaceUri(filePath, true);
-          if (!resolved.uri) {
-            return {
-              ok: false,
-              tool: name,
-              message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
-              data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
-            };
-          }
-          uri = resolved.uri;
-        } else {
-          const activeUri = getActiveWorkspaceFileUri();
-          if (!activeUri) {
-            return { ok: false, tool: name, message: 'path je povinny nebo otevri aktivni soubor' };
-          }
-          uri = activeUri;
-        }
-
-        const readResult = await readFileForTool(uri, DEFAULT_MAX_READ_BYTES);
-        if (readResult.text === undefined) {
-          return {
-            ok: false,
-            tool: name,
-            message: readResult.error ?? 'soubor nelze precist',
-            data: {
-              sizeBytes: readResult.size,
-              binary: readResult.binary ?? false
-            }
-          };
-        }
-        const lastHash = lastReadHashes.get(uri.fsPath);
-        if (!lastHash && readResult.hash) {
-          lastReadHashes.set(uri.fsPath, { hash: readResult.hash, updatedAt: Date.now() });
-        } else if (readResult.hash && lastHash && lastHash.hash !== readResult.hash) {
-          const currentLineCount = readResult.text ? readResult.text.split(/\r\n|\n/).length : undefined;
-          return {
-            ok: false,
-            tool: name,
-            message: 'soubor se zmenil od posledniho cteni; nacti ho znovu (read_file) a opakuj replace_lines',
-            data: {
-              path: getRelativePathForWorkspace(uri),
-              lastHash: lastHash.hash,
-              lastReadAt: lastHash.updatedAt,
-              currentHash: readResult.hash,
-              currentSizeBytes: readResult.size,
-              currentLineCount
-            }
-          };
-        }
-
-        const eol = detectEol(readResult.text);
-        const lines = splitLines(readResult.text);
-        const totalLines = lines.length;
-        if (startLine < 1 || endLine < startLine || startLine > totalLines) {
-          return { ok: false, tool: name, message: 'neplatny rozsah radku' };
-        }
-
-        const currentBlock = lines.slice(startLine - 1, endLine).join('\n');
-        if (expected && expected.replace(/\r\n/g, '\n') !== currentBlock) {
-          return {
-            ok: false,
-            tool: name,
-            message: 'expected neodpovida aktualnimu obsahu',
-            data: { current: currentBlock }
-          };
-        }
-
-        const replacementLines = replacement.split(/\r\n|\n/);
-        const newLines = [
-          ...lines.slice(0, startLine - 1),
-          ...replacementLines,
-          ...lines.slice(endLine)
-        ];
-        const newText = newLines.join(eol);
-
-        let approved = true;
-        if (confirmEdits && !autoApprove.edit) {
-          approved = await showDiffAndConfirm(uri, newText, `Navrh zmen: ${vscode.workspace.asRelativePath(uri)}`);
-        }
-        if (!approved) {
-          return { ok: true, tool: name, approved: false, message: 'zmena zamitnuta uzivatelem' };
-        }
-
-        const applied = await applyFileContent(uri, newText);
-        if (applied) {
-          const relativePath = getRelativePathForWorkspace(uri);
-          markToolMutation(session, name);
-          recordToolWrite(session, 'updated', relativePath);
-          lastReadHashes.set(uri.fsPath, { hash: computeContentHash(newText), updatedAt: Date.now() });
-          const shouldOpenUpdated = autoOpenOnWrite || (autoOpenAutoSave && isInAutoSaveDir(uri));
-          if (shouldOpenUpdated) {
-            await revealWrittenDocument(uri);
-          }
-          await notifyToolWrite('updated', uri);
-        }
-        return {
-          ok: applied,
-          tool: name,
-          approved: applied,
-          message: applied ? 'zmena aplikovana' : 'nepodarilo se aplikovat zmenu',
-          data: applied ? { path: getRelativePathForWorkspace(uri), action: 'updated' } : undefined
-        };
+        return handleReplaceLinesTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
       }
       case 'write_file': {
-        let filePath = getFirstStringArg(args, ['path', 'file', 'filePath', 'filename']);
-        const text = getFirstStringArg(args, ['text', 'content', 'body', 'data', 'value']);
-        const title = asString(args.title);
-        const suggestedNameRaw = asString(args.suggestedName);
-        const extensionRaw = asString(args.extension);
-        const autoOpenAutoSave = getToolsAutoOpenAutoSaveSetting();
-        const autoOpenOnWrite = getToolsAutoOpenOnWriteSetting();
-        const hadExplicitPath = Boolean(filePath);
-        let autoSaveGenerated = false;
-        if (text === undefined) {
-          return { ok: false, tool: name, message: 'text je povinny' };
-        }
-        const textBytes = Buffer.byteLength(text, 'utf8');
-        if (textBytes > DEFAULT_MAX_WRITE_BYTES) {
-          return {
-            ok: false,
-            tool: name,
-            message: `obsah je moc velky (${textBytes} bytes), limit ${DEFAULT_MAX_WRITE_BYTES}`,
-            data: { sizeBytes: textBytes }
-          };
-        }
-
-        let uri: vscode.Uri | undefined;
-        if (filePath) {
-          if (isBinaryExtension(filePath)) {
-            return { ok: false, tool: name, message: 'cesta vypada jako binarni soubor (extenze)' };
-          }
-          const resolved = await resolveWorkspaceUri(filePath, false);
-          if (!resolved.uri) {
-            return {
-              ok: false,
-              tool: name,
-              message: resolved.error ?? 'soubor mimo workspace',
-              data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
-            };
-          }
-          uri = resolved.uri;
-        } else {
-          const activeUri = getActiveWorkspaceFileUri();
-          if (activeUri) {
-            if (isBinaryExtension(activeUri.fsPath)) {
-              return { ok: false, tool: name, message: 'aktivni soubor vypada jako binarni (extenze)' };
-            }
-            uri = activeUri;
-            filePath = getRelativePathForWorkspace(activeUri);
-          } else {
-            const fileName = buildAutoFileName({
-              title,
-              suggestedName: suggestedNameRaw,
-              extension: extensionRaw,
-              content: text
-            });
-            const resolved = await resolveAutoSaveTargetUri(fileName);
-            if (!resolved.uri) {
-              return { ok: false, tool: name, message: resolved.error ?? 'nelze vytvorit cestu' };
-            }
-            uri = resolved.uri;
-            filePath = getRelativePathForWorkspace(uri);
-            autoSaveGenerated = true;
-          }
-        }
-
-        let exists = true;
-        try {
-          await vscode.workspace.fs.stat(uri);
-        } catch {
-          exists = false;
-        }
-
-        let approved = true;
-        if (confirmEdits && !autoApprove.edit) {
-          if (exists) {
-            approved = await showDiffAndConfirm(uri, text, `Navrh zmen: ${vscode.workspace.asRelativePath(uri)}`);
-          } else {
-            const previewDoc = await vscode.workspace.openTextDocument({ content: text });
-            await vscode.window.showTextDocument(previewDoc, { preview: true });
-            const choice = await vscode.window.showInformationMessage(
-              `Vytvorit novy soubor ${vscode.workspace.asRelativePath(uri)}?`,
-              { modal: true },
-              'Vytvorit',
-              'Zamitnout'
-            );
-            approved = choice === 'Vytvorit';
-          }
-        }
-
-        if (!approved) {
-          return { ok: true, tool: name, approved: false, message: 'zmena zamitnuta uzivatelem' };
-        }
-
-        if (exists) {
-          const existing = await readFileForTool(uri, DEFAULT_MAX_WRITE_BYTES);
-          if (existing.text === undefined) {
-            return {
-              ok: false,
-              tool: name,
-              message: existing.error ?? 'soubor nelze precist',
-              data: {
-                sizeBytes: existing.size,
-                binary: existing.binary ?? false
-              }
-            };
-          }
-          const applied = await applyFileContent(uri, text);
-          if (applied) {
-            const relativePath = getRelativePathForWorkspace(uri);
-            markToolMutation(session, name);
-            recordToolWrite(session, 'updated', relativePath);
-            lastReadHashes.set(uri.fsPath, { hash: computeContentHash(text), updatedAt: Date.now() });
-            const shouldOpenUpdated = autoOpenOnWrite || (autoOpenAutoSave && isInAutoSaveDir(uri));
-            if (shouldOpenUpdated) {
-              await revealWrittenDocument(uri);
-            }
-            await notifyToolWrite('updated', uri);
-          }
-          return {
-            ok: applied,
-            tool: name,
-            approved: applied,
-            message: applied ? 'soubor upraven' : 'nepodarilo se upravit soubor',
-            data: applied ? { path: getRelativePathForWorkspace(uri), action: 'updated' } : undefined
-          };
-        }
-
-        const parent = vscode.Uri.file(path.dirname(uri.fsPath));
-        await vscode.workspace.fs.createDirectory(parent);
-        await vscode.workspace.fs.writeFile(uri, Buffer.from(text, 'utf8'));
-        const shouldOpenCreated = autoOpenOnWrite || (autoOpenAutoSave && (autoSaveGenerated || isInAutoSaveDir(uri)));
-        if (shouldOpenCreated) {
-          const opened = await vscode.workspace.openTextDocument(uri);
-          await vscode.window.showTextDocument(opened, { preview: false });
-        }
-        await notifyToolWrite('created', uri);
-        const createdPath = getRelativePathForWorkspace(uri);
-        markToolMutation(session, name);
-        recordToolWrite(session, 'created', createdPath);
-        lastReadHashes.set(uri.fsPath, { hash: computeContentHash(text), updatedAt: Date.now() });
-        return {
-          ok: true,
-          tool: name,
-          approved: true,
-          message: 'soubor vytvoren',
-          data: { path: createdPath, action: 'created' }
-        };
+        return handleWriteFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
       }
       case 'rename_file': {
         const fromPath = asString(args.from);
