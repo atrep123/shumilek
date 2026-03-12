@@ -57,6 +57,7 @@ import { buildCompressedMessages } from './contextMemory';
 import { humanizeApiError, isTransientError, isSafeUrl, normalizeTaskWeight, isChatMessage, normalizeScore, pickBrainModel, getNonce } from './utils';
 import { ChatRequestConcurrencyGuard } from './chatConcurrency';
 import {
+  handleApplyPatchTool,
   handleDeleteFileTool,
   handleGetActiveFileTool,
   handleGetDefinitionTool,
@@ -4906,6 +4907,8 @@ async function runToolCall(
     isInAutoSaveDir,
     revealWrittenDocument,
     notifyToolWrite,
+    parseUnifiedDiff,
+    applyUnifiedDiffToText,
     isBinaryExtension,
     normalizeExtension,
     normalizeRouteText,
@@ -4922,161 +4925,7 @@ async function runToolCall(
       case 'get_active_file': return handleGetActiveFileTool(name, args, mutationHandlerDeps);
       case 'search_in_files': return handleSearchInFilesTool(name, args, mutationHandlerDeps);
       case 'apply_patch': {
-        const diffText = getFirstStringArg(args, ['diff', 'patch', 'text', 'content']);
-        if (!diffText) return { ok: false, tool: name, message: 'diff je povinny' };
-        const patches = parseUnifiedDiff(diffText);
-        if (patches.length === 0) {
-          return { ok: false, tool: name, message: 'neplatny diff' };
-        }
-        const autoOpenAutoSave = getToolsAutoOpenAutoSaveSetting();
-        const autoOpenOnWrite = getToolsAutoOpenOnWriteSetting();
-        const appliedFiles: Array<{ path: string; action: 'created' | 'updated' | 'deleted'; hunksApplied: number; hunksTotal: number }> = [];
-
-        for (const patch of patches) {
-          const targetPath = patch.newPath || patch.oldPath;
-          if (!targetPath) continue;
-          const isDelete = Boolean(patch.oldPath) && !patch.newPath;
-          if (isBinaryExtension(targetPath)) {
-            return { ok: false, tool: name, message: 'cesta vypada jako binarni soubor (extenze)' };
-          }
-          const resolved = await resolveWorkspaceUri(targetPath, !isDelete);
-          if (!resolved.uri) {
-            const data: Record<string, unknown> = {};
-            if (resolved.conflicts) data.conflicts = resolved.conflicts;
-            if (appliedFiles.length > 0) data.appliedFiles = appliedFiles;
-            return {
-              ok: false,
-              tool: name,
-              message: resolved.error ?? 'soubor mimo workspace',
-              data: Object.keys(data).length > 0 ? data : undefined
-            };
-          }
-          const uri = resolved.uri;
-          let exists = true;
-          try {
-            await vscode.workspace.fs.stat(uri);
-          } catch {
-            exists = false;
-          }
-
-          let originalText = '';
-          if (exists) {
-            const readResult = await readFileForTool(uri, DEFAULT_MAX_WRITE_BYTES);
-            if (readResult.text === undefined) {
-              const data: Record<string, unknown> = {
-                sizeBytes: readResult.size,
-                binary: readResult.binary ?? false
-              };
-              if (appliedFiles.length > 0) data.appliedFiles = appliedFiles;
-              return {
-                ok: false,
-                tool: name,
-                message: readResult.error ?? 'soubor nelze precist',
-                data
-              };
-            }
-            originalText = readResult.text;
-          }
-
-          const applied = applyUnifiedDiffToText(originalText, patch.hunks);
-          if (applied.text === undefined) {
-            return {
-              ok: false,
-              tool: name,
-              message: applied.error ?? 'nelze aplikovat diff',
-              data: {
-                path: getRelativePathForWorkspace(uri),
-                appliedHunks: applied.appliedHunks,
-                totalHunks: applied.totalHunks,
-                appliedFiles
-              }
-            };
-          }
-
-          let approved = true;
-          if (confirmEdits && !autoApprove.edit) {
-            if (exists) {
-              approved = await showDiffAndConfirm(uri, applied.text, `Navrh zmen: ${vscode.workspace.asRelativePath(uri)}`);
-            } else {
-              const previewDoc = await vscode.workspace.openTextDocument({ content: applied.text });
-              await vscode.window.showTextDocument(previewDoc, { preview: true });
-              const choice = await vscode.window.showInformationMessage(
-                `Vytvorit novy soubor ${vscode.workspace.asRelativePath(uri)}?`,
-                { modal: true },
-                'Vytvorit',
-                'Zamitnout'
-              );
-              approved = choice === 'Vytvorit';
-            }
-          }
-
-          if (!approved) {
-            return { ok: true, tool: name, approved: false, message: 'zmena zamitnuta uzivatelem' };
-          }
-
-          if (isDelete) {
-            await vscode.workspace.fs.delete(uri, { recursive: false });
-            markToolMutation(session, name);
-            appliedFiles.push({
-              path: getRelativePathForWorkspace(uri),
-              action: 'deleted',
-              hunksApplied: applied.appliedHunks,
-              hunksTotal: applied.totalHunks
-            });
-            continue;
-          }
-
-          if (exists) {
-            const appliedOk = await applyFileContent(uri, applied.text);
-            if (!appliedOk) {
-              const data = appliedFiles.length > 0 ? { appliedFiles } : undefined;
-              return { ok: false, tool: name, message: 'nepodarilo se aplikovat diff', data };
-            }
-            const relativePath = getRelativePathForWorkspace(uri);
-            markToolMutation(session, name);
-            recordToolWrite(session, 'updated', relativePath);
-            lastReadHashes.set(uri.fsPath, { hash: computeContentHash(applied.text), updatedAt: Date.now() });
-            const shouldOpenUpdated = autoOpenOnWrite || (autoOpenAutoSave && isInAutoSaveDir(uri));
-            if (shouldOpenUpdated) {
-              await revealWrittenDocument(uri);
-            }
-            await notifyToolWrite('updated', uri);
-            appliedFiles.push({
-              path: relativePath,
-              action: 'updated',
-              hunksApplied: applied.appliedHunks,
-              hunksTotal: applied.totalHunks
-            });
-          } else {
-            const parent = vscode.Uri.file(path.dirname(uri.fsPath));
-            await vscode.workspace.fs.createDirectory(parent);
-            await vscode.workspace.fs.writeFile(uri, Buffer.from(applied.text, 'utf8'));
-            const shouldOpenCreated = autoOpenOnWrite || (autoOpenAutoSave && isInAutoSaveDir(uri));
-            if (shouldOpenCreated) {
-              const opened = await vscode.workspace.openTextDocument(uri);
-              await vscode.window.showTextDocument(opened, { preview: false });
-            }
-            await notifyToolWrite('created', uri);
-            const createdPath = getRelativePathForWorkspace(uri);
-            markToolMutation(session, name);
-            recordToolWrite(session, 'created', createdPath);
-            lastReadHashes.set(uri.fsPath, { hash: computeContentHash(applied.text), updatedAt: Date.now() });
-            appliedFiles.push({
-              path: createdPath,
-              action: 'created',
-              hunksApplied: applied.appliedHunks,
-              hunksTotal: applied.totalHunks
-            });
-          }
-        }
-
-        return {
-          ok: true,
-          tool: name,
-          approved: true,
-          message: 'diff aplikovan',
-          data: { files: appliedFiles }
-        };
+        return handleApplyPatchTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
       }
       case 'get_symbols': {
         return handleGetSymbolsTool(name, args, mutationHandlerDeps);
