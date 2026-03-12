@@ -16,6 +16,17 @@ describe('toolingProtocol', () => {
       assert.equal(resolveToolPermissionScope('run_terminal_command'), 'commands');
     });
 
+    it('classifies browser and mcp prefixes into dedicated scopes', () => {
+      assert.equal(resolveToolPermissionScope('browser_open_page'), 'browser');
+      assert.equal(resolveToolPermissionScope('mcp_git_status'), 'mcp');
+    });
+
+    it('normalizes tool names before scope resolution', () => {
+      assert.equal(resolveToolPermissionScope('  WRITE_FILE  '), 'edit');
+      assert.equal(resolveToolPermissionScope('\nRead_File\t'), 'read');
+      assert.equal(resolveToolPermissionScope('  RUN_TERMINAL_COMMAND  '), 'commands');
+    });
+
     it('keeps run_terminal_command variants out of edit scope', () => {
       const commandLikeTools = [
         'run_terminal_command',
