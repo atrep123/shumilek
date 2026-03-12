@@ -57,6 +57,9 @@ import { buildCompressedMessages } from './contextMemory';
 import { humanizeApiError, isTransientError, isSafeUrl, normalizeTaskWeight, isChatMessage, normalizeScore, pickBrainModel, getNonce } from './utils';
 import { ChatRequestConcurrencyGuard } from './chatConcurrency';
 import {
+  handleDeleteFileTool,
+  handleFetchWebpageTool,
+  handleRenameFileTool,
   handleReplaceLinesTool,
   handleRunTerminalCommandTool,
   handleWriteFileTool,
@@ -4880,7 +4883,8 @@ async function runToolCall(
     notifyToolWrite,
     isBinaryExtension,
     buildAutoFileName,
-    resolveAutoSaveTargetUri
+    resolveAutoSaveTargetUri,
+    isSafeUrl
   };
 
   try {
@@ -5633,111 +5637,16 @@ async function runToolCall(
         return handleWriteFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
       }
       case 'rename_file': {
-        const fromPath = asString(args.from);
-        const toPath = asString(args.to);
-        if (!fromPath || !toPath) return { ok: false, tool: name, message: 'from a to jsou povinne' };
-        const fromResolved = await resolveWorkspaceUri(fromPath, true);
-        const toResolved = await resolveWorkspaceUri(toPath, false);
-        if (!fromResolved.uri || !toResolved.uri) {
-          return {
-            ok: false,
-            tool: name,
-            message: fromResolved.error ?? toResolved.error ?? 'soubor mimo workspace nebo nenalezen',
-            data: fromResolved.conflicts || toResolved.conflicts
-              ? { conflicts: fromResolved.conflicts ?? toResolved.conflicts }
-              : undefined
-          };
-        }
-        const fromUri = fromResolved.uri;
-        const toUri = toResolved.uri;
-
-        let approved = true;
-        if (confirmEdits && !autoApprove.edit) {
-          const choice = await vscode.window.showInformationMessage(
-            `Prejmenovat ${vscode.workspace.asRelativePath(fromUri)} na ${vscode.workspace.asRelativePath(toUri)}?`,
-            { modal: true },
-            'Prejmenovat',
-            'Zamitnout'
-          );
-          approved = choice === 'Prejmenovat';
-        }
-        if (!approved) return { ok: true, tool: name, approved: false, message: 'zmena zamitnuta uzivatelem' };
-
-        await vscode.workspace.fs.rename(fromUri, toUri, { overwrite: false });
-        markToolMutation(session, name);
-        return { ok: true, tool: name, approved: true, message: 'soubor prejmenovan' };
+        return handleRenameFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
       }
       case 'delete_file': {
-        const filePath = asString(args.path);
-        if (!filePath) return { ok: false, tool: name, message: 'path je povinny' };
-        const resolved = await resolveWorkspaceUri(filePath, true);
-        if (!resolved.uri) {
-          return {
-            ok: false,
-            tool: name,
-            message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
-            data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
-          };
-        }
-        const uri = resolved.uri;
-
-        let approved = true;
-        if (confirmEdits && !autoApprove.edit) {
-          const choice = await vscode.window.showInformationMessage(
-            `Smazat soubor ${vscode.workspace.asRelativePath(uri)}?`,
-            { modal: true },
-            'Smazat',
-            'Zamitnout'
-          );
-          approved = choice === 'Smazat';
-        }
-        if (!approved) return { ok: true, tool: name, approved: false, message: 'zmena zamitnuta uzivatelem' };
-
-        await vscode.workspace.fs.delete(uri, { recursive: false });
-        markToolMutation(session, name);
-        return { ok: true, tool: name, approved: true, message: 'soubor smazan' };
+        return handleDeleteFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
       }
       case 'run_terminal_command': {
         return handleRunTerminalCommandTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps);
       }
       case 'fetch_webpage': {
-        const url = asString(args.url);
-        if (!url) return { ok: false, tool: name, message: 'url je povinne' };
-
-        const urlCheck = isSafeUrl(url);
-        if (!urlCheck.safe) {
-          return { ok: false, tool: name, message: `URL blokována: ${urlCheck.reason}` };
-        }
-
-        try {
-          const fetch = require('node-fetch');
-          let response = await fetch(url, { redirect: 'manual' });
-
-          // Follow redirects safely — re-validate each Location header
-          const MAX_REDIRECTS = 5;
-          for (let i = 0; i < MAX_REDIRECTS && [301, 302, 303, 307, 308].includes(response.status); i++) {
-            const location = response.headers.get('location');
-            if (!location) break;
-            const resolved = new URL(location, url).toString();
-            const redirectCheck = isSafeUrl(resolved);
-            if (!redirectCheck.safe) {
-              return { ok: false, tool: name, message: `Redirect blokován: ${redirectCheck.reason}` };
-            }
-            response = await fetch(resolved, { redirect: 'manual' });
-          }
-
-          const html = await response.text();
-
-          // simple string manipulation to strip script and style tags, to save tokens
-          let stripped = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-          stripped = stripped.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
-          stripped = stripped.replace(/<[^>]+>/g, ' '); // remove remaining html tags
-          stripped = stripped.replace(/\s+/g, ' ').trim(); // normalize whitespace
-
-          return { ok: true, tool: name, message: stripped.substring(0, 50000) };
-        } catch (e) {
-          return { ok: false, tool: name, message: 'Failed to fetch: ' + String(e) };
-        }
+        return handleFetchWebpageTool(name, args, mutationHandlerDeps);
       }
 
       default:
