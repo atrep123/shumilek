@@ -1157,10 +1157,23 @@ export function normalizeTsTodoCliContract(content: string): string {
 
   // Common TS inference trap in parser helpers (`null` inferred too narrowly).
   next = next.replace(/\blet\s+currentOption\s*=\s*null\s*;/g, 'let currentOption: string | null = null;');
-  // Avoid TS2451 redeclare errors in script-style CLI files.
-  next = next.replace(/^\s*declare const require:\s*any;\s*$/gm, '');
-  next = next.replace(/^\s*declare const process:\s*any;\s*$/gm, '');
+  // Avoid TS2451 redeclare errors from local process shadowing while preserving TS globals.
   next = next.replace(/^\s*(?:const|let|var)\s+process\s*=\s*require\(\s*['"]node:process['"]\s*\)\s*;?\s*$/gm, '');
+  const dedupeDeclareLine = (source: string, lineRe: RegExp, canonicalLine: string): string => {
+    const had = lineRe.test(source);
+    let out = source.replace(lineRe, '');
+    if (!had) return out;
+    out = out.replace(/^\s*\n+/g, '');
+    return `${canonicalLine}\n${out}`;
+  };
+  next = dedupeDeclareLine(next, /^\s*declare const require:\s*any;\s*$/gm, 'declare const require: any;');
+  next = dedupeDeclareLine(next, /^\s*declare const process:\s*any;\s*$/gm, 'declare const process: any;');
+  if (/\brequire\s*\(/.test(next) && !/^\s*declare const require:\s*any;\s*$/m.test(next)) {
+    next = `declare const require: any;\n${next}`;
+  }
+  if (/\bprocess\b/.test(next) && !/^\s*declare const process:\s*any;\s*$/m.test(next)) {
+    next = `declare const process: any;\n${next}`;
+  }
 
   // Ensure --help exits 0 even when parser stores flags separately from positional cmd.
   next = next.replace(

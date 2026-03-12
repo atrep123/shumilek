@@ -228,7 +228,7 @@ describe('botEval deterministic fallback helpers', () => {
     assert.ok(out.includes("if (cmd === '--help' || process.argv.slice(2).includes('--help')) {"));
   });
 
-  it('removes cli local process/require declarations that trigger TS redeclare errors', () => {
+  it('removes local process require shadowing while preserving single TS global declarations', () => {
     const src = [
       'declare const require: any;',
       'declare const process: any;',
@@ -241,8 +241,8 @@ describe('botEval deterministic fallback helpers', () => {
       ''
     ].join('\n');
     const out = normalizeTsTodoCliContract(src);
-    assert.ok(!/declare const require:\s*any;/.test(out));
-    assert.ok(!/declare const process:\s*any;/.test(out));
+    assert.equal((out.match(/declare const require:\s*any;/g) || []).length, 1);
+    assert.equal((out.match(/declare const process:\s*any;/g) || []).length, 1);
     assert.ok(!/const process = require\('node:process'\);/.test(out));
     assert.ok(out.includes('process.argv.slice(2)'));
   });
