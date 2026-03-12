@@ -52,6 +52,28 @@ import {
   ExecutionMode,
   ValidationPolicy
 } from './types';
+import {
+  handleApplyPatchTool,
+  handleDeleteFileTool,
+  handleGetActiveFileTool,
+  handleGetDefinitionTool,
+  handleGetDiagnosticsTool,
+  handlePickSavePathTool,
+  handleGetReferencesTool,
+  handleGetSymbolsTool,
+  handleGetTypeInfoTool,
+  handleGetWorkspaceSymbolsTool,
+  handleFetchWebpageTool,
+  handleListFilesTool,
+  handleReadFileTool,
+  handleRenameFileTool,
+  handleReplaceLinesTool,
+  handleRouteFileTool,
+  handleRunTerminalCommandTool,
+  handleSearchInFilesTool,
+  handleWriteFileTool,
+  MutationHandlerDeps
+} from './toolHandlers';
 // (Types imported from ./types)
 
 // Webview message types
@@ -5039,1067 +5061,74 @@ async function runToolCall(
     });
   }
 
+  const mutationHandlerDeps: MutationHandlerDeps = {
+    DEFAULT_MAX_LSP_RESULTS,
+    DEFAULT_MAX_READ_BYTES,
+    DEFAULT_MAX_WRITE_BYTES,
+    DEFAULT_MAX_LIST_RESULTS,
+    DEFAULT_MAX_READ_LINES,
+    DEFAULT_MAX_SEARCH_RESULTS,
+    DEFAULT_EXCLUDE_GLOB,
+    BINARY_EXTENSIONS,
+    lastReadHashes,
+    asString,
+    clampNumber,
+    getFirstStringArg,
+    resolveWorkspaceUri,
+    getActiveWorkspaceFileUri,
+    readFileForTool,
+    getRelativePathForWorkspace,
+    getPositionFromArgs,
+    resolveSymbolPosition,
+    serializeLocationInfo,
+    serializeRange,
+    serializeSymbolKind,
+    renderHoverContents,
+    serializeDiagnosticSeverity,
+    detectEol,
+    splitLines,
+    showDiffAndConfirm,
+    applyFileContent,
+    markToolMutation,
+    recordToolWrite,
+    computeContentHash,
+    getToolsAutoOpenAutoSaveSetting,
+    getToolsAutoOpenOnWriteSetting,
+    isInAutoSaveDir,
+    revealWrittenDocument,
+    notifyToolWrite,
+    parseUnifiedDiff,
+    applyUnifiedDiffToText,
+    isBinaryExtension,
+    normalizeExtension,
+    normalizeRouteText,
+    tokenizeRouteText,
+    buildAutoFileName,
+    resolveAutoSaveTargetUri,
+    isSafeUrl
+  };
+
   try {
     switch (name) {
-      case 'list_files': {
-        const glob = asString(args.glob) ?? '**/*';
-        const maxResults = clampNumber(args.maxResults, DEFAULT_MAX_LIST_RESULTS, 1, 1000);
-        const files = await vscode.workspace.findFiles(glob, DEFAULT_EXCLUDE_GLOB, maxResults);
-        return {
-          ok: true,
-          tool: name,
-          data: { files: files.map(uri => getRelativePathForWorkspace(uri)) }
-        };
-      }
-      case 'read_file': {
-        const filePath = asString(args.path);
-        let uri: vscode.Uri | undefined;
-        if (filePath) {
-          const resolved = await resolveWorkspaceUri(filePath, true);
-          if (!resolved.uri) {
-            return {
-              ok: false,
-              tool: name,
-              message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
-              data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
-            };
-          }
-          uri = resolved.uri;
-        } else {
-          const activeUri = getActiveWorkspaceFileUri();
-          if (!activeUri) {
-            return { ok: false, tool: name, message: 'path je povinny nebo otevri aktivni soubor' };
-          }
-          uri = activeUri;
-        }
-        const readResult = await readFileForTool(uri, DEFAULT_MAX_READ_BYTES);
-        if (readResult.text === undefined) {
-          return {
-            ok: false,
-            tool: name,
-            message: readResult.error ?? 'soubor nelze precist',
-            data: {
-              sizeBytes: readResult.size,
-              binary: readResult.binary ?? false
-            }
-          };
-        }
-        const lines = splitLines(readResult.text);
-        const totalLines = lines.length;
-        let startLine = clampNumber(args.startLine, 1, 1, totalLines || 1);
-        let endLine = clampNumber(args.endLine, totalLines || 1, startLine, totalLines || 1);
-        let truncated = false;
-        if (endLine - startLine + 1 > DEFAULT_MAX_READ_LINES) {
-          endLine = startLine + DEFAULT_MAX_READ_LINES - 1;
-          truncated = true;
-        }
-        const eol = detectEol(readResult.text);
-        const content = lines.slice(startLine - 1, endLine).join(eol);
-        if (readResult.hash) {
-          lastReadHashes.set(uri.fsPath, { hash: readResult.hash, updatedAt: Date.now() });
-        }
-        return {
-          ok: true,
-          tool: name,
-          message: truncated ? 'obsah zkracen' : undefined,
-          data: {
-            path: getRelativePathForWorkspace(uri),
-            startLine,
-            endLine,
-            totalLines,
-            sizeBytes: readResult.size,
-            hash: readResult.hash,
-            content
-          }
-        };
-      }
-      case 'get_active_file': {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) return { ok: false, tool: name, message: 'zadny aktivni editor' };
-        const doc = editor.document;
-        if (isBinaryExtension(doc.fileName)) {
-          return { ok: false, tool: name, message: 'soubor vypada jako binarni (extenze)', data: { binary: true } };
-        }
-        const text = doc.getText();
-        const size = Buffer.byteLength(text, 'utf8');
-        if (size > DEFAULT_MAX_READ_BYTES) {
-          return { ok: false, tool: name, message: `soubor je moc velky (${size} bytes), limit ${DEFAULT_MAX_READ_BYTES}`, data: { sizeBytes: size } };
-        }
-        const lines = splitLines(text);
-        const totalLines = lines.length;
-        const eol = detectEol(text);
-        const endLine = Math.min(totalLines || 1, DEFAULT_MAX_READ_LINES);
-        const content = lines.slice(0, endLine).join(eol);
-        const hash = computeContentHash(text);
-        lastReadHashes.set(doc.uri.fsPath, { hash, updatedAt: Date.now() });
-        return {
-          ok: true,
-          tool: name,
-          data: {
-            path: getRelativePathForWorkspace(doc.uri),
-            startLine: 1,
-            endLine,
-            totalLines,
-            sizeBytes: size,
-            hash,
-            content
-          }
-        };
-      }
-      case 'search_in_files': {
-        const query = asString(args.query);
-        if (!query) return { ok: false, tool: name, message: 'query je povinny' };
-        const glob = asString(args.glob);
-        const maxResults = clampNumber(args.maxResults, DEFAULT_MAX_SEARCH_RESULTS, 1, 200);
-        const matches: Array<{ path: string; line: number; text: string }> = [];
-        const include = glob ?? '**/*';
-        const maxFilesToScan = Math.min(500, Math.max(50, maxResults * 25));
-        const files = await vscode.workspace.findFiles(include, DEFAULT_EXCLUDE_GLOB, maxFilesToScan);
-        let skippedBinary = 0;
-        let skippedLarge = 0;
-
-        for (const uri of files) {
-          if (matches.length >= maxResults) break;
-          const readResult = await readFileForTool(uri, DEFAULT_MAX_READ_BYTES);
-          if (readResult.text === undefined) {
-            if (readResult.binary) skippedBinary++;
-            if (readResult.size && readResult.size > DEFAULT_MAX_READ_BYTES) skippedLarge++;
-            continue;
-          }
-
-          const lines = splitLines(readResult.text);
-          for (let i = 0; i < lines.length; i++) {
-            if (matches.length >= maxResults) break;
-            const lineText = lines[i];
-            if (lineText.includes(query)) {
-              matches.push({
-                path: getRelativePathForWorkspace(uri),
-                line: i + 1,
-                text: lineText.trim()
-              });
-            }
-          }
-        }
-        return {
-          ok: true,
-          tool: name,
-          data: {
-            matches,
-            scannedFiles: files.length,
-            skippedBinary,
-            skippedLarge
-          }
-        };
-      }
-      case 'apply_patch': {
-        const diffText = getFirstStringArg(args, ['diff', 'patch', 'text', 'content']);
-        if (!diffText) return { ok: false, tool: name, message: 'diff je povinny' };
-        const patches = parseUnifiedDiff(diffText);
-        if (patches.length === 0) {
-          return { ok: false, tool: name, message: 'neplatny diff' };
-        }
-        const autoOpenAutoSave = getToolsAutoOpenAutoSaveSetting();
-        const autoOpenOnWrite = getToolsAutoOpenOnWriteSetting();
-        const appliedFiles: Array<{ path: string; action: 'created' | 'updated' | 'deleted'; hunksApplied: number; hunksTotal: number }> = [];
-
-        for (const patch of patches) {
-          const targetPath = patch.newPath || patch.oldPath;
-          if (!targetPath) continue;
-          const isDelete = Boolean(patch.oldPath) && !patch.newPath;
-          if (isBinaryExtension(targetPath)) {
-            return { ok: false, tool: name, message: 'cesta vypada jako binarni soubor (extenze)' };
-          }
-          const resolved = await resolveWorkspaceUri(targetPath, !isDelete);
-          if (!resolved.uri) {
-            const data: Record<string, unknown> = {};
-            if (resolved.conflicts) data.conflicts = resolved.conflicts;
-            if (appliedFiles.length > 0) data.appliedFiles = appliedFiles;
-            return {
-              ok: false,
-              tool: name,
-              message: resolved.error ?? 'soubor mimo workspace',
-              data: Object.keys(data).length > 0 ? data : undefined
-            };
-          }
-          const uri = resolved.uri;
-          let exists = true;
-          try {
-            await vscode.workspace.fs.stat(uri);
-          } catch {
-            exists = false;
-          }
-
-          let originalText = '';
-          if (exists) {
-            const readResult = await readFileForTool(uri, DEFAULT_MAX_WRITE_BYTES);
-            if (readResult.text === undefined) {
-              const data: Record<string, unknown> = {
-                sizeBytes: readResult.size,
-                binary: readResult.binary ?? false
-              };
-              if (appliedFiles.length > 0) data.appliedFiles = appliedFiles;
-              return {
-                ok: false,
-                tool: name,
-                message: readResult.error ?? 'soubor nelze precist',
-                data
-              };
-            }
-            originalText = readResult.text;
-          }
-
-          const applied = applyUnifiedDiffToText(originalText, patch.hunks);
-          if (applied.text === undefined) {
-            return {
-              ok: false,
-              tool: name,
-              message: applied.error ?? 'nelze aplikovat diff',
-              data: {
-                path: getRelativePathForWorkspace(uri),
-                appliedHunks: applied.appliedHunks,
-                totalHunks: applied.totalHunks,
-                appliedFiles
-              }
-            };
-          }
-
-          let approved = true;
-          if (confirmEdits && !autoApprove.edit) {
-            if (exists) {
-              approved = await showDiffAndConfirm(uri, applied.text, `Navrh zmen: ${vscode.workspace.asRelativePath(uri)}`);
-            } else {
-              const previewDoc = await vscode.workspace.openTextDocument({ content: applied.text });
-              await vscode.window.showTextDocument(previewDoc, { preview: true });
-              const choice = await vscode.window.showInformationMessage(
-                `Vytvorit novy soubor ${vscode.workspace.asRelativePath(uri)}?`,
-                { modal: true },
-                'Vytvorit',
-                'Zamitnout'
-              );
-              approved = choice === 'Vytvorit';
-            }
-          }
-
-          if (!approved) {
-            return { ok: true, tool: name, approved: false, message: 'zmena zamitnuta uzivatelem' };
-          }
-
-          if (isDelete) {
-            await vscode.workspace.fs.delete(uri, { recursive: false });
-            markToolMutation(session, name);
-            appliedFiles.push({
-              path: getRelativePathForWorkspace(uri),
-              action: 'deleted',
-              hunksApplied: applied.appliedHunks,
-              hunksTotal: applied.totalHunks
-            });
-            continue;
-          }
-
-          if (exists) {
-            const appliedOk = await applyFileContent(uri, applied.text);
-            if (!appliedOk) {
-              const data = appliedFiles.length > 0 ? { appliedFiles } : undefined;
-              return { ok: false, tool: name, message: 'nepodarilo se aplikovat diff', data };
-            }
-            const relativePath = getRelativePathForWorkspace(uri);
-            markToolMutation(session, name);
-            recordToolWrite(session, 'updated', relativePath);
-            lastReadHashes.set(uri.fsPath, { hash: computeContentHash(applied.text), updatedAt: Date.now() });
-            const shouldOpenUpdated = autoOpenOnWrite || (autoOpenAutoSave && isInAutoSaveDir(uri));
-            if (shouldOpenUpdated) {
-              await revealWrittenDocument(uri);
-            }
-            await notifyToolWrite('updated', uri);
-            appliedFiles.push({
-              path: relativePath,
-              action: 'updated',
-              hunksApplied: applied.appliedHunks,
-              hunksTotal: applied.totalHunks
-            });
-          } else {
-            const parent = vscode.Uri.file(path.dirname(uri.fsPath));
-            await vscode.workspace.fs.createDirectory(parent);
-            await vscode.workspace.fs.writeFile(uri, Buffer.from(applied.text, 'utf8'));
-            const shouldOpenCreated = autoOpenOnWrite || (autoOpenAutoSave && isInAutoSaveDir(uri));
-            if (shouldOpenCreated) {
-              const opened = await vscode.workspace.openTextDocument(uri);
-              await vscode.window.showTextDocument(opened, { preview: false });
-            }
-            await notifyToolWrite('created', uri);
-            const createdPath = getRelativePathForWorkspace(uri);
-            markToolMutation(session, name);
-            recordToolWrite(session, 'created', createdPath);
-            lastReadHashes.set(uri.fsPath, { hash: computeContentHash(applied.text), updatedAt: Date.now() });
-            appliedFiles.push({
-              path: createdPath,
-              action: 'created',
-              hunksApplied: applied.appliedHunks,
-              hunksTotal: applied.totalHunks
-            });
-          }
-        }
-
-        return {
-          ok: true,
-          tool: name,
-          approved: true,
-          message: 'diff aplikovan',
-          data: { files: appliedFiles }
-        };
-      }
-      case 'get_symbols': {
-        const filePath = getFirstStringArg(args, ['path', 'file', 'filePath', 'filename']);
-        let uri: vscode.Uri | undefined;
-        if (filePath) {
-          const resolved = await resolveWorkspaceUri(filePath, true);
-          if (!resolved.uri) {
-            return {
-              ok: false,
-              tool: name,
-              message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
-              data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
-            };
-          }
-          uri = resolved.uri;
-        } else {
-          const activeUri = getActiveWorkspaceFileUri();
-          if (!activeUri) {
-            return { ok: false, tool: name, message: 'path je povinny nebo otevri aktivni soubor' };
-          }
-          uri = activeUri;
-        }
-
-        const maxResults = clampNumber(args.maxResults, DEFAULT_MAX_LSP_RESULTS, 1, 1000);
-        const maxDepth = clampNumber(args.maxDepth, 3, 0, 10);
-        const symbols = await vscode.commands.executeCommand<
-          Array<vscode.DocumentSymbol> | Array<vscode.SymbolInformation> | undefined
-        >('vscode.executeDocumentSymbolProvider', uri);
-        const relativePath = getRelativePathForWorkspace(uri);
-
-        if (!symbols || symbols.length === 0) {
-          return { ok: true, tool: name, data: { path: relativePath, symbols: [], total: 0 } };
-        }
-
-        const first = symbols[0] as any;
-        const payload = 'location' in first
-          ? collectSymbolInformation(symbols as vscode.SymbolInformation[], maxResults)
-          : collectDocumentSymbols(symbols as vscode.DocumentSymbol[], maxDepth, maxResults);
-
-        return {
-          ok: true,
-          tool: name,
-          data: {
-            path: relativePath,
-            maxDepth,
-            ...payload
-          }
-        };
-      }
-      case 'get_workspace_symbols': {
-        const query = asString(args.query) ?? '';
-        const maxResults = clampNumber(args.maxResults, DEFAULT_MAX_LSP_RESULTS, 1, 1000);
-        const symbols = await vscode.commands.executeCommand<
-          Array<vscode.SymbolInformation> | undefined
-        >('vscode.executeWorkspaceSymbolProvider', query);
-        if (!symbols || symbols.length === 0) {
-          return { ok: true, tool: name, data: { query, symbols: [], total: 0 } };
-        }
-        const results: Array<Record<string, unknown>> = [];
-        for (const symbol of symbols) {
-          if (results.length >= maxResults) break;
-          const location = (symbol as any).location as vscode.Location | vscode.LocationLink | undefined;
-          results.push({
-            name: symbol.name,
-            kind: serializeSymbolKind(symbol.kind),
-            containerName: (symbol as any).containerName,
-            location: location ? serializeLocationInfo(location) : undefined
-          });
-        }
-        return {
-          ok: true,
-          tool: name,
-          data: {
-            query,
-            symbols: results,
-            total: symbols.length,
-            truncated: symbols.length > maxResults
-          }
-        };
-      }
-      case 'get_definition': {
-        const filePath = getFirstStringArg(args, ['path', 'file', 'filePath', 'filename']);
-        let uri: vscode.Uri | undefined;
-        if (filePath) {
-          const resolved = await resolveWorkspaceUri(filePath, true);
-          if (!resolved.uri) {
-            return {
-              ok: false,
-              tool: name,
-              message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
-              data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
-            };
-          }
-          uri = resolved.uri;
-        } else {
-          const activeUri = getActiveWorkspaceFileUri();
-          if (!activeUri) {
-            return { ok: false, tool: name, message: 'path je povinny nebo otevri aktivni soubor' };
-          }
-          uri = activeUri;
-        }
-
-        const doc = await vscode.workspace.openTextDocument(uri);
-        const symbolName = asString(args.symbol);
-        let posInfo = getPositionFromArgs(args, doc);
-        let position = posInfo.position;
-        if (!position && symbolName) {
-          position = await resolveSymbolPosition(uri, symbolName);
-          if (position) {
-            posInfo = { position, line: position.line + 1, character: position.character + 1 };
-          }
-        }
-        if (!position) {
-          return { ok: false, tool: name, message: posInfo.error ?? 'pozice nenalezena' };
-        }
-
-        const definitions = await vscode.commands.executeCommand<
-          Array<vscode.Location | vscode.LocationLink> | vscode.Location | undefined
-        >('vscode.executeDefinitionProvider', uri, position);
-        const list = Array.isArray(definitions) ? definitions : (definitions ? [definitions] : []);
-        const maxResults = clampNumber(args.maxResults, DEFAULT_MAX_LSP_RESULTS, 1, 1000);
-        const results = list.slice(0, maxResults).map(loc => serializeLocationInfo(loc));
-
-        return {
-          ok: true,
-          tool: name,
-          data: {
-            path: getRelativePathForWorkspace(uri),
-            position: { line: posInfo.line ?? position.line + 1, character: posInfo.character ?? position.character + 1 },
-            definitions: results,
-            total: list.length,
-            truncated: list.length > maxResults
-          }
-        };
-      }
-      case 'get_references': {
-        const filePath = getFirstStringArg(args, ['path', 'file', 'filePath', 'filename']);
-        let uri: vscode.Uri | undefined;
-        if (filePath) {
-          const resolved = await resolveWorkspaceUri(filePath, true);
-          if (!resolved.uri) {
-            return {
-              ok: false,
-              tool: name,
-              message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
-              data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
-            };
-          }
-          uri = resolved.uri;
-        } else {
-          const activeUri = getActiveWorkspaceFileUri();
-          if (!activeUri) {
-            return { ok: false, tool: name, message: 'path je povinny nebo otevri aktivni soubor' };
-          }
-          uri = activeUri;
-        }
-
-        const doc = await vscode.workspace.openTextDocument(uri);
-        const posInfo = getPositionFromArgs(args, doc);
-        if (!posInfo.position) {
-          return { ok: false, tool: name, message: posInfo.error ?? 'pozice nenalezena' };
-        }
-        const includeDeclaration = typeof args.includeDeclaration === 'boolean' ? args.includeDeclaration : false;
-        const references = await vscode.commands.executeCommand<vscode.Location[]>(
-          'vscode.executeReferenceProvider',
-          uri,
-          posInfo.position,
-          { includeDeclaration }
-        );
-        const list = references ?? [];
-        const maxResults = clampNumber(args.maxResults, DEFAULT_MAX_LSP_RESULTS, 1, 1000);
-        const results = list.slice(0, maxResults).map(loc => serializeLocationInfo(loc));
-        return {
-          ok: true,
-          tool: name,
-          data: {
-            path: getRelativePathForWorkspace(uri),
-            position: { line: posInfo.line ?? posInfo.position.line + 1, character: posInfo.character ?? posInfo.position.character + 1 },
-            includeDeclaration,
-            references: results,
-            total: list.length,
-            truncated: list.length > maxResults
-          }
-        };
-      }
-      case 'get_type_info': {
-        const filePath = getFirstStringArg(args, ['path', 'file', 'filePath', 'filename']);
-        let uri: vscode.Uri | undefined;
-        if (filePath) {
-          const resolved = await resolveWorkspaceUri(filePath, true);
-          if (!resolved.uri) {
-            return {
-              ok: false,
-              tool: name,
-              message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
-              data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
-            };
-          }
-          uri = resolved.uri;
-        } else {
-          const activeUri = getActiveWorkspaceFileUri();
-          if (!activeUri) {
-            return { ok: false, tool: name, message: 'path je povinny nebo otevri aktivni soubor' };
-          }
-          uri = activeUri;
-        }
-
-        const doc = await vscode.workspace.openTextDocument(uri);
-        const posInfo = getPositionFromArgs(args, doc);
-        if (!posInfo.position) {
-          return { ok: false, tool: name, message: posInfo.error ?? 'pozice nenalezena' };
-        }
-        const hovers = await vscode.commands.executeCommand<vscode.Hover[]>(
-          'vscode.executeHoverProvider',
-          uri,
-          posInfo.position
-        );
-        const list = hovers ?? [];
-        const maxResults = clampNumber(args.maxResults, DEFAULT_MAX_LSP_RESULTS, 1, 1000);
-        const results = list.slice(0, maxResults).map(hover => ({
-          range: hover.range ? serializeRange(hover.range) : undefined,
-          contents: renderHoverContents(hover.contents)
-        }));
-        return {
-          ok: true,
-          tool: name,
-          data: {
-            path: getRelativePathForWorkspace(uri),
-            position: { line: posInfo.line ?? posInfo.position.line + 1, character: posInfo.character ?? posInfo.position.character + 1 },
-            hovers: results,
-            total: list.length,
-            truncated: list.length > maxResults
-          }
-        };
-      }
-      case 'get_diagnostics': {
-        const filePath = getFirstStringArg(args, ['path', 'file', 'filePath', 'filename']);
-        const maxResults = clampNumber(args.maxResults, DEFAULT_MAX_LSP_RESULTS, 1, 1000);
-        const results: Array<Record<string, unknown>> = [];
-        let total = 0;
-        if (filePath) {
-          const resolved = await resolveWorkspaceUri(filePath, true);
-          if (!resolved.uri) {
-            return {
-              ok: false,
-              tool: name,
-              message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
-              data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
-            };
-          }
-          const uri = resolved.uri;
-          const diagnostics = vscode.languages.getDiagnostics(uri);
-          total = diagnostics.length;
-          for (const diag of diagnostics) {
-            if (results.length >= maxResults) break;
-            results.push({
-              path: getRelativePathForWorkspace(uri),
-              severity: serializeDiagnosticSeverity(diag.severity),
-              message: diag.message,
-              range: serializeRange(diag.range),
-              source: diag.source,
-              code: typeof diag.code === 'object' ? (diag.code as any).value : diag.code
-            });
-          }
-        } else {
-          const allDiagnostics = vscode.languages.getDiagnostics();
-          for (const [uri, diagnostics] of allDiagnostics) {
-            total += diagnostics.length;
-            for (const diag of diagnostics) {
-              if (results.length >= maxResults) break;
-              results.push({
-                path: getRelativePathForWorkspace(uri),
-                severity: serializeDiagnosticSeverity(diag.severity),
-                message: diag.message,
-                range: serializeRange(diag.range),
-                source: diag.source,
-                code: typeof diag.code === 'object' ? (diag.code as any).value : diag.code
-              });
-            }
-            if (results.length >= maxResults) break;
-          }
-        }
-        return {
-          ok: true,
-          tool: name,
-          data: {
-            diagnostics: results,
-            total,
-            truncated: total > maxResults
-          }
-        };
-      }
-      case 'route_file': {
-        const intent = asString(args.intent);
-        if (!intent) return { ok: false, tool: name, message: 'intent je povinny' };
-        const preferredExtension = normalizeExtension(asString(args.preferredExtension));
-        const fileNameHint = asString(args.fileNameHint) ?? asString(args.suggestedName);
-        const maxResults = clampNumber(args.maxResults, 5, 1, 15);
-        const glob = asString(args.glob) ?? '**/*';
-        const allowCreate = typeof args.allowCreate === 'boolean' ? args.allowCreate : true;
-        const maxFilesToScan = Math.min(2000, Math.max(200, maxResults * 200));
-        const files = await vscode.workspace.findFiles(glob, DEFAULT_EXCLUDE_GLOB, maxFilesToScan);
-        const activeUri = getActiveWorkspaceFileUri();
-        const tokens = tokenizeRouteText([intent, fileNameHint].filter(Boolean).join(' '));
-        const hintName = fileNameHint
-          ? normalizeRouteText(path.parse(fileNameHint).name)
-          : '';
-        const candidates: Array<{ path: string; score: number; reason: string }> = [];
-
-        for (const uri of files) {
-          const relPath = getRelativePathForWorkspace(uri);
-          const lowerPath = normalizeRouteText(relPath);
-          const ext = path.extname(relPath).toLowerCase();
-          if (BINARY_EXTENSIONS.has(ext)) continue;
-          const baseName = path.basename(lowerPath);
-          let score = 0;
-          const reasons: string[] = [];
-
-          if (preferredExtension && ext === preferredExtension) {
-            score += 6;
-            reasons.push('ext');
-          }
-          if (hintName) {
-            if (baseName === `${hintName}${ext}`) {
-              score += 10;
-              reasons.push('hint-exact');
-            } else if (baseName.includes(hintName)) {
-              score += 6;
-              reasons.push('hint-base');
-            } else if (lowerPath.includes(hintName)) {
-              score += 3;
-              reasons.push('hint-path');
-            }
-          }
-
-          let matchedTokens = 0;
-          for (const token of tokens) {
-            if (baseName.includes(token)) {
-              score += 2;
-              matchedTokens++;
-            } else if (lowerPath.includes(token)) {
-              score += 1;
-              matchedTokens++;
-            }
-          }
-          if (matchedTokens > 0) {
-            reasons.push(`tokens:${matchedTokens}`);
-          }
-
-          if (activeUri && uri.fsPath === activeUri.fsPath) {
-            score += 2;
-            reasons.push('active');
-          }
-
-          if (score > 0) {
-            candidates.push({
-              path: relPath,
-              score,
-              reason: reasons.join('+') || 'match'
-            });
-          }
-        }
-
-        candidates.sort((a, b) => b.score - a.score);
-        const topCandidates = candidates.slice(0, maxResults);
-        let bestPath = topCandidates[0]?.path;
-        let autoSavePath: string | undefined;
-
-        if (!bestPath && activeUri) {
-          bestPath = getRelativePathForWorkspace(activeUri);
-        }
-
-        if (!bestPath && allowCreate) {
-          const fileName = buildAutoFileName({
-            title: intent,
-            suggestedName: fileNameHint,
-            extension: preferredExtension
-          });
-          const resolved = await resolveAutoSaveTargetUri(fileName);
-          if (resolved.uri) {
-            autoSavePath = getRelativePathForWorkspace(resolved.uri);
-            bestPath = autoSavePath;
-          }
-        }
-
-        return {
-          ok: true,
-          tool: name,
-          data: {
-            bestPath,
-            candidates: topCandidates,
-            autoSavePath
-          }
-        };
-      }
-      case 'pick_save_path': {
-        const title = asString(args.title);
-        const suggestedNameRaw = asString(args.suggestedName);
-        const extensionRaw = asString(args.extension);
-        const fileName = buildAutoFileName({
-          title,
-          suggestedName: suggestedNameRaw,
-          extension: extensionRaw
-        });
-        const resolved = await resolveAutoSaveTargetUri(fileName);
-        if (!resolved.uri) {
-          return { ok: false, tool: name, message: resolved.error ?? 'nelze vytvorit cestu' };
-        }
-        const uri = resolved.uri;
-
-        return {
-          ok: true,
-          tool: name,
-          data: {
-            path: getRelativePathForWorkspace(uri),
-            fileName: path.basename(uri.fsPath),
-            folder: getRelativePathForWorkspace(vscode.Uri.file(path.dirname(uri.fsPath)))
-          }
-        };
-      }
-      case 'replace_lines': {
-        const filePath = getFirstStringArg(args, ['path', 'file', 'filePath', 'filename']);
-        const startLine = typeof args.startLine === 'number'
-          ? args.startLine
-          : (typeof args.start === 'number' ? args.start : NaN);
-        const endLine = typeof args.endLine === 'number'
-          ? args.endLine
-          : (typeof args.end === 'number' ? args.end : NaN);
-        const replacement = getFirstStringArg(args, ['text', 'replacement', 'content', 'body', 'value']);
-        const expected = asString(args.expected);
-        const autoOpenOnWrite = getToolsAutoOpenOnWriteSetting();
-        const autoOpenAutoSave = getToolsAutoOpenAutoSaveSetting();
-
-        if (replacement === undefined || !Number.isFinite(startLine) || !Number.isFinite(endLine)) {
-          return { ok: false, tool: name, message: 'startLine, endLine, text jsou povinne' };
-        }
-
-        let uri: vscode.Uri | undefined;
-        if (filePath) {
-          const resolved = await resolveWorkspaceUri(filePath, true);
-          if (!resolved.uri) {
-            return {
-              ok: false,
-              tool: name,
-              message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
-              data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
-            };
-          }
-          uri = resolved.uri;
-        } else {
-          const activeUri = getActiveWorkspaceFileUri();
-          if (!activeUri) {
-            return { ok: false, tool: name, message: 'path je povinny nebo otevri aktivni soubor' };
-          }
-          uri = activeUri;
-        }
-
-        const readResult = await readFileForTool(uri, DEFAULT_MAX_READ_BYTES);
-        if (readResult.text === undefined) {
-          return {
-            ok: false,
-            tool: name,
-            message: readResult.error ?? 'soubor nelze precist',
-            data: {
-              sizeBytes: readResult.size,
-              binary: readResult.binary ?? false
-            }
-          };
-        }
-        const lastHash = lastReadHashes.get(uri.fsPath);
-        if (!lastHash && readResult.hash) {
-          lastReadHashes.set(uri.fsPath, { hash: readResult.hash, updatedAt: Date.now() });
-        } else if (readResult.hash && lastHash && lastHash.hash !== readResult.hash) {
-          const currentLineCount = readResult.text ? readResult.text.split(/\r\n|\n/).length : undefined;
-          return {
-            ok: false,
-            tool: name,
-            message: 'soubor se zmenil od posledniho cteni; nacti ho znovu (read_file) a opakuj replace_lines',
-            data: {
-              path: getRelativePathForWorkspace(uri),
-              lastHash: lastHash.hash,
-              lastReadAt: lastHash.updatedAt,
-              currentHash: readResult.hash,
-              currentSizeBytes: readResult.size,
-              currentLineCount
-            }
-          };
-        }
-
-        const eol = detectEol(readResult.text);
-        const lines = splitLines(readResult.text);
-        const totalLines = lines.length;
-        if (startLine < 1 || endLine < startLine || startLine > totalLines) {
-          return { ok: false, tool: name, message: 'neplatny rozsah radku' };
-        }
-
-        const currentBlock = lines.slice(startLine - 1, endLine).join('\n');
-        if (expected && expected.replace(/\r\n/g, '\n') !== currentBlock) {
-          return {
-            ok: false,
-            tool: name,
-            message: 'expected neodpovida aktualnimu obsahu',
-            data: { current: currentBlock }
-          };
-        }
-
-        const replacementLines = replacement.split(/\r\n|\n/);
-        const newLines = [
-          ...lines.slice(0, startLine - 1),
-          ...replacementLines,
-          ...lines.slice(endLine)
-        ];
-        const newText = newLines.join(eol);
-
-        let approved = true;
-        if (confirmEdits && !autoApprove.edit) {
-          approved = await showDiffAndConfirm(uri, newText, `Navrh zmen: ${vscode.workspace.asRelativePath(uri)}`);
-        }
-        if (!approved) {
-          return { ok: true, tool: name, approved: false, message: 'zmena zamitnuta uzivatelem' };
-        }
-
-        const applied = await applyFileContent(uri, newText);
-        if (applied) {
-          const relativePath = getRelativePathForWorkspace(uri);
-          markToolMutation(session, name);
-          recordToolWrite(session, 'updated', relativePath);
-          lastReadHashes.set(uri.fsPath, { hash: computeContentHash(newText), updatedAt: Date.now() });
-          const shouldOpenUpdated = autoOpenOnWrite || (autoOpenAutoSave && isInAutoSaveDir(uri));
-          if (shouldOpenUpdated) {
-            await revealWrittenDocument(uri);
-          }
-          await notifyToolWrite('updated', uri);
-        }
-        return {
-          ok: applied,
-          tool: name,
-          approved: applied,
-          message: applied ? 'zmena aplikovana' : 'nepodarilo se aplikovat zmenu',
-          data: applied ? { path: getRelativePathForWorkspace(uri), action: 'updated' } : undefined
-        };
-      }
-      case 'write_file': {
-        let filePath = getFirstStringArg(args, ['path', 'file', 'filePath', 'filename']);
-        const text = getFirstStringArg(args, ['text', 'content', 'body', 'data', 'value']);
-        const title = asString(args.title);
-        const suggestedNameRaw = asString(args.suggestedName);
-        const extensionRaw = asString(args.extension);
-        const autoOpenAutoSave = getToolsAutoOpenAutoSaveSetting();
-        const autoOpenOnWrite = getToolsAutoOpenOnWriteSetting();
-        const hadExplicitPath = Boolean(filePath);
-        let autoSaveGenerated = false;
-        if (text === undefined) {
-          return { ok: false, tool: name, message: 'text je povinny' };
-        }
-        const textBytes = Buffer.byteLength(text, 'utf8');
-        if (textBytes > DEFAULT_MAX_WRITE_BYTES) {
-          return {
-            ok: false,
-            tool: name,
-            message: `obsah je moc velky (${textBytes} bytes), limit ${DEFAULT_MAX_WRITE_BYTES}`,
-            data: { sizeBytes: textBytes }
-          };
-        }
-
-        let uri: vscode.Uri | undefined;
-        if (filePath) {
-          if (isBinaryExtension(filePath)) {
-            return { ok: false, tool: name, message: 'cesta vypada jako binarni soubor (extenze)' };
-          }
-          const resolved = await resolveWorkspaceUri(filePath, false);
-          if (!resolved.uri) {
-            return {
-              ok: false,
-              tool: name,
-              message: resolved.error ?? 'soubor mimo workspace',
-              data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
-            };
-          }
-          uri = resolved.uri;
-        } else {
-          const activeUri = getActiveWorkspaceFileUri();
-          if (activeUri) {
-            if (isBinaryExtension(activeUri.fsPath)) {
-              return { ok: false, tool: name, message: 'aktivni soubor vypada jako binarni (extenze)' };
-            }
-            uri = activeUri;
-            filePath = getRelativePathForWorkspace(activeUri);
-          } else {
-            const fileName = buildAutoFileName({
-              title,
-              suggestedName: suggestedNameRaw,
-              extension: extensionRaw,
-              content: text
-            });
-            const resolved = await resolveAutoSaveTargetUri(fileName);
-            if (!resolved.uri) {
-              return { ok: false, tool: name, message: resolved.error ?? 'nelze vytvorit cestu' };
-            }
-            uri = resolved.uri;
-            filePath = getRelativePathForWorkspace(uri);
-            autoSaveGenerated = true;
-          }
-        }
-
-        let exists = true;
-        try {
-          await vscode.workspace.fs.stat(uri);
-        } catch {
-          exists = false;
-        }
-
-        let approved = true;
-        if (confirmEdits && !autoApprove.edit) {
-          if (exists) {
-            approved = await showDiffAndConfirm(uri, text, `Navrh zmen: ${vscode.workspace.asRelativePath(uri)}`);
-          } else {
-            const previewDoc = await vscode.workspace.openTextDocument({ content: text });
-            await vscode.window.showTextDocument(previewDoc, { preview: true });
-            const choice = await vscode.window.showInformationMessage(
-              `Vytvorit novy soubor ${vscode.workspace.asRelativePath(uri)}?`,
-              { modal: true },
-              'Vytvorit',
-              'Zamitnout'
-            );
-            approved = choice === 'Vytvorit';
-          }
-        }
-
-        if (!approved) {
-          return { ok: true, tool: name, approved: false, message: 'zmena zamitnuta uzivatelem' };
-        }
-
-        if (exists) {
-          const existing = await readFileForTool(uri, DEFAULT_MAX_WRITE_BYTES);
-          if (existing.text === undefined) {
-            return {
-              ok: false,
-              tool: name,
-              message: existing.error ?? 'soubor nelze precist',
-              data: {
-                sizeBytes: existing.size,
-                binary: existing.binary ?? false
-              }
-            };
-          }
-          const applied = await applyFileContent(uri, text);
-          if (applied) {
-            const relativePath = getRelativePathForWorkspace(uri);
-            markToolMutation(session, name);
-            recordToolWrite(session, 'updated', relativePath);
-            lastReadHashes.set(uri.fsPath, { hash: computeContentHash(text), updatedAt: Date.now() });
-            const shouldOpenUpdated = autoOpenOnWrite || (autoOpenAutoSave && isInAutoSaveDir(uri));
-            if (shouldOpenUpdated) {
-              await revealWrittenDocument(uri);
-            }
-            await notifyToolWrite('updated', uri);
-          }
-          return {
-            ok: applied,
-            tool: name,
-            approved: applied,
-            message: applied ? 'soubor upraven' : 'nepodarilo se upravit soubor',
-            data: applied ? { path: getRelativePathForWorkspace(uri), action: 'updated' } : undefined
-          };
-        }
-
-        const parent = vscode.Uri.file(path.dirname(uri.fsPath));
-        await vscode.workspace.fs.createDirectory(parent);
-        await vscode.workspace.fs.writeFile(uri, Buffer.from(text, 'utf8'));
-        const shouldOpenCreated = autoOpenOnWrite || (autoOpenAutoSave && (autoSaveGenerated || isInAutoSaveDir(uri)));
-        if (shouldOpenCreated) {
-          const opened = await vscode.workspace.openTextDocument(uri);
-          await vscode.window.showTextDocument(opened, { preview: false });
-        }
-        await notifyToolWrite('created', uri);
-        const createdPath = getRelativePathForWorkspace(uri);
-        markToolMutation(session, name);
-        recordToolWrite(session, 'created', createdPath);
-        lastReadHashes.set(uri.fsPath, { hash: computeContentHash(text), updatedAt: Date.now() });
-        return {
-          ok: true,
-          tool: name,
-          approved: true,
-          message: 'soubor vytvoren',
-          data: { path: createdPath, action: 'created' }
-        };
-      }
-      case 'rename_file': {
-        const fromPath = asString(args.from);
-        const toPath = asString(args.to);
-        if (!fromPath || !toPath) return { ok: false, tool: name, message: 'from a to jsou povinne' };
-        const fromResolved = await resolveWorkspaceUri(fromPath, true);
-        const toResolved = await resolveWorkspaceUri(toPath, false);
-        if (!fromResolved.uri || !toResolved.uri) {
-          return {
-            ok: false,
-            tool: name,
-            message: fromResolved.error ?? toResolved.error ?? 'soubor mimo workspace nebo nenalezen',
-            data: fromResolved.conflicts || toResolved.conflicts
-              ? { conflicts: fromResolved.conflicts ?? toResolved.conflicts }
-              : undefined
-          };
-        }
-        const fromUri = fromResolved.uri;
-        const toUri = toResolved.uri;
-
-        let approved = true;
-        if (confirmEdits && !autoApprove.edit) {
-          const choice = await vscode.window.showInformationMessage(
-            `Prejmenovat ${vscode.workspace.asRelativePath(fromUri)} na ${vscode.workspace.asRelativePath(toUri)}?`,
-            { modal: true },
-            'Prejmenovat',
-            'Zamitnout'
-          );
-          approved = choice === 'Prejmenovat';
-        }
-        if (!approved) return { ok: true, tool: name, approved: false, message: 'zmena zamitnuta uzivatelem' };
-
-        await vscode.workspace.fs.rename(fromUri, toUri, { overwrite: false });
-        markToolMutation(session, name);
-        return { ok: true, tool: name, approved: true, message: 'soubor prejmenovan' };
-      }
-      case 'delete_file': {
-        const filePath = asString(args.path);
-        if (!filePath) return { ok: false, tool: name, message: 'path je povinny' };
-        const resolved = await resolveWorkspaceUri(filePath, true);
-        if (!resolved.uri) {
-          return {
-            ok: false,
-            tool: name,
-            message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
-            data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
-          };
-        }
-        const uri = resolved.uri;
-
-        let approved = true;
-        if (confirmEdits && !autoApprove.edit) {
-          const choice = await vscode.window.showInformationMessage(
-            `Smazat soubor ${vscode.workspace.asRelativePath(uri)}?`,
-            { modal: true },
-            'Smazat',
-            'Zamitnout'
-          );
-          approved = choice === 'Smazat';
-        }
-        if (!approved) return { ok: true, tool: name, approved: false, message: 'zmena zamitnuta uzivatelem' };
-
-        await vscode.workspace.fs.delete(uri, { recursive: false });
-        markToolMutation(session, name);
-        return { ok: true, tool: name, approved: true, message: 'soubor smazan' };
-      }
+      case 'list_files': return handleListFilesTool(name, args, mutationHandlerDeps);
+      case 'read_file': return handleReadFileTool(name, args, mutationHandlerDeps);
+      case 'get_active_file': return handleGetActiveFileTool(name, args, mutationHandlerDeps);
+      case 'search_in_files': return handleSearchInFilesTool(name, args, mutationHandlerDeps);
+      case 'apply_patch': return handleApplyPatchTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
+      case 'get_symbols': return handleGetSymbolsTool(name, args, mutationHandlerDeps);
+      case 'get_workspace_symbols': return handleGetWorkspaceSymbolsTool(name, args, mutationHandlerDeps);
+      case 'get_definition': return handleGetDefinitionTool(name, args, mutationHandlerDeps);
+      case 'get_references': return handleGetReferencesTool(name, args, mutationHandlerDeps);
+      case 'get_type_info': return handleGetTypeInfoTool(name, args, mutationHandlerDeps);
+      case 'get_diagnostics': return handleGetDiagnosticsTool(name, args, mutationHandlerDeps);
+      case 'route_file': return handleRouteFileTool(name, args, mutationHandlerDeps);
+      case 'pick_save_path': return handlePickSavePathTool(name, args, mutationHandlerDeps);
+      case 'replace_lines': return handleReplaceLinesTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
+      case 'write_file': return handleWriteFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
+      case 'rename_file': return handleRenameFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
+      case 'delete_file': return handleDeleteFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
+      case 'run_terminal_command': return handleRunTerminalCommandTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps);
+      case 'fetch_webpage': return handleFetchWebpageTool(name, args, mutationHandlerDeps);
       default:
         return { ok: false, tool: name, message: 'neznamy nastroj' };
     }
@@ -7470,12 +6499,44 @@ function getWebviewContent(webview: vscode.Webview, initialMessages: ChatMessage
 }
 
 function getNonce(): string {
-  let text = '';
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  for (let i = 0; i < 32; i++) {
-    text += chars.charAt(Math.floor(Math.random() * chars.length));
+  return crypto.randomBytes(16)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
+
+function isSafeUrl(url: string): { safe: boolean; reason?: string } {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return { safe: false, reason: 'only http/https are allowed' };
+    }
+
+    const host = parsed.hostname.toLowerCase();
+    if (host === 'localhost' || host === '::1') {
+      return { safe: false, reason: 'localhost is not allowed' };
+    }
+    if (/^127\./.test(host)) {
+      return { safe: false, reason: 'loopback address is not allowed' };
+    }
+    if (/^10\./.test(host)) {
+      return { safe: false, reason: 'private network is not allowed' };
+    }
+    if (/^192\.168\./.test(host)) {
+      return { safe: false, reason: 'private network is not allowed' };
+    }
+    if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(host)) {
+      return { safe: false, reason: 'private network is not allowed' };
+    }
+    if (host === '169.254.169.254') {
+      return { safe: false, reason: 'metadata endpoint is not allowed' };
+    }
+
+    return { safe: true };
+  } catch {
+    return { safe: false, reason: 'invalid URL' };
   }
-  return text;
 }
 
 // Export helpers for unit testing
