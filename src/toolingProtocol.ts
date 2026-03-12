@@ -37,10 +37,11 @@ const EDIT_TOOL_NAMES = new Set<string>([
 ]);
 
 export function resolveToolPermissionScope(name: string): ToolPermissionScope {
-  if (EDIT_TOOL_NAMES.has(name)) return 'edit';
-  if (READ_TOOL_NAMES.has(name)) return 'read';
-  if (name.startsWith('browser_')) return 'browser';
-  if (name.startsWith('mcp_')) return 'mcp';
+  const normalizedName = String(name).trim().toLowerCase();
+  if (EDIT_TOOL_NAMES.has(normalizedName)) return 'edit';
+  if (READ_TOOL_NAMES.has(normalizedName)) return 'read';
+  if (normalizedName.startsWith('browser_')) return 'browser';
+  if (normalizedName.startsWith('mcp_')) return 'mcp';
   return 'commands';
 }
 
