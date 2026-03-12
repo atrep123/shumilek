@@ -6499,12 +6499,44 @@ function getWebviewContent(webview: vscode.Webview, initialMessages: ChatMessage
 }
 
 function getNonce(): string {
-  let text = '';
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  for (let i = 0; i < 32; i++) {
-    text += chars.charAt(Math.floor(Math.random() * chars.length));
+  return crypto.randomBytes(16)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
+
+function isSafeUrl(url: string): { safe: boolean; reason?: string } {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return { safe: false, reason: 'only http/https are allowed' };
+    }
+
+    const host = parsed.hostname.toLowerCase();
+    if (host === 'localhost' || host === '::1') {
+      return { safe: false, reason: 'localhost is not allowed' };
+    }
+    if (/^127\./.test(host)) {
+      return { safe: false, reason: 'loopback address is not allowed' };
+    }
+    if (/^10\./.test(host)) {
+      return { safe: false, reason: 'private network is not allowed' };
+    }
+    if (/^192\.168\./.test(host)) {
+      return { safe: false, reason: 'private network is not allowed' };
+    }
+    if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(host)) {
+      return { safe: false, reason: 'private network is not allowed' };
+    }
+    if (host === '169.254.169.254') {
+      return { safe: false, reason: 'metadata endpoint is not allowed' };
+    }
+
+    return { safe: true };
+  } catch {
+    return { safe: false, reason: 'invalid URL' };
   }
-  return text;
 }
 
 // Export helpers for unit testing
