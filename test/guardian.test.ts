@@ -96,6 +96,69 @@ describe('ResponseGuardian', () => {
     const res = g.analyze('First response', 'prompt1');
     expect(res.issues).to.not.include('Odpověď je velmi podobná předchozí - model může být zaseklý');
   });
+
+  // ── Truncation detection & auto-repair ──────────────────────────
+
+  it('should auto-close unclosed code fence', () => {
+    const g = new ResponseGuardian();
+    const text = 'Here is the code:\n```typescript\nconst x = 1;\nconst y = 2;';
+    const res = g.analyze(text, 'show me code');
+    expect(res.cleanedResponse).to.include('```\n\n[⚠️');
+    expect(res.issues.some((i: string) => i.includes('automaticky opraven'))).to.be.true;
+  });
+
+  it('should not modify response with matched code fences', () => {
+    const g = new ResponseGuardian();
+    const text = 'Here is the code:\n```typescript\nconst x = 1;\n```\nDone.';
+    const res = g.analyze(text, 'show me code');
+    expect(res.cleanedResponse).to.not.include('[⚠️');
+    expect(res.issues.some((i: string) => i.includes('automaticky opraven'))).to.be.false;
+  });
+
+  it('should detect mid-sentence truncation', () => {
+    const g = new ResponseGuardian();
+    const text = 'This is a complete sentence. But this one ends abruptly without any finishing punctuation and keeps going on for a while to be long enough to trigger the';
+    const res = g.analyze(text, 'explain something');
+    expect(res.cleanedResponse).to.include('…');
+    expect(res.cleanedResponse).to.include('zkrácena');
+    expect(res.issues.some((i: string) => i.includes('uprostřed věty'))).to.be.true;
+  });
+
+  it('should not flag response ending with period as truncated', () => {
+    const g = new ResponseGuardian();
+    const text = 'This is a complete response that ends properly with a period.';
+    const res = g.analyze(text, 'question');
+    expect(res.issues.some((i: string) => i.includes('uprostřed věty'))).to.be.false;
+  });
+
+  it('should not flag response ending with code fence as truncated', () => {
+    const g = new ResponseGuardian();
+    const text = 'Here:\n```typescript\nconst x = 1;\n```';
+    const res = g.analyze(text, 'show code');
+    expect(res.issues.some((i: string) => i.includes('uprostřed věty'))).to.be.false;
+  });
+
+  it('should not flag short responses for mid-sentence truncation', () => {
+    const g = new ResponseGuardian();
+    const text = 'Short answer here';
+    const res = g.analyze(text, 'question');
+    expect(res.issues.some((i: string) => i.includes('uprostřed věty'))).to.be.false;
+  });
+
+  it('should not flag response ending with closing bracket', () => {
+    const g = new ResponseGuardian();
+    const text = 'The function returns the result of the computation (as described above)';
+    const res = g.analyze(text, 'question');
+    expect(res.issues.some((i: string) => i.includes('uprostřed věty'))).to.be.false;
+  });
+
+  it('should track truncation repairs in stats', () => {
+    const g = new ResponseGuardian();
+    const text = 'Here is the code:\n```typescript\nconst x = 1;';
+    g.analyze(text, 'code');
+    const stats = g.getStats();
+    expect(stats.truncationsRepaired).to.be.greaterThan(0);
+  });
 });
 
 describe('HallucinationDetector', () => {

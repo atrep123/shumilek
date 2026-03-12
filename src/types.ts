@@ -43,6 +43,7 @@ export interface GuardianStats {
   miniModelRejections: number;
   hallucinationsDetected: number;
   similarResponsesBlocked: number;
+  truncationsRepaired: number;
 }
 
 export interface HallucinationResult {

@@ -248,46 +248,40 @@ export class SvedomiValidator {
    * Build validation prompt for mini-model
    */
   buildValidationPrompt(userPrompt: string, response: string, relevantTasks: Task[] = []): string {
-    const truncatedResponse = response.slice(0, 2000); // More context for thorough validation
-    const truncatedPrompt = userPrompt.slice(0, 600);
+    const truncatedResponse = response.slice(0, 6000); // More context for thorough validation
+    const truncatedPrompt = userPrompt.slice(0, 2500);
 
-    const tasksInstruction = relevantTasks.length > 0 
-      ? `\nKONTROLUJ SPECIFICKE UKOLY:\n${relevantTasks.map(t => `- ${t.title} (Hmotnost: ${t.weight})`).join('\n')}`
+    const tasksInstruction = relevantTasks.length > 0
+      ? `\nCHECK SPECIFIC TASKS:\n${relevantTasks.map(t => `- ${t.title} (Weight: ${t.weight})`).join('\n')}`
       : '';
 
-    return `Jsi validator kvality AI odpovedi jmenem "Svedomi". Analyzuj odpoved a ohodnot ji prisne.
+    return `You are an AI quality validator named "Svedomi". Analyze the given answer strictly against the user prompt.
 
-UZIVATELUV DOTAZ:
+USER PROMPT:
 ${truncatedPrompt}
 
-AI ODPOVED:
+AI ANSWER TO EVALUATE:
 ${truncatedResponse}
 ${tasksInstruction}
 
-KRITERIA HODNOCENI (PRISNA KONTROLA):
-1. Relevance - odpovida presne na dotaz? Neni to vyhybave?
-2. Uplnost - jsou vsechny aspekty dotazu pokryte?
-3. Gramatika - je text bez preklepu a gramatickych chyb? (KRITICKE)
-4. Kvalita - neobsahuje smycky, opakovani nebo halucinace?
-5. Srozumitelnost - je odpoved jasna a logicka?
-6. Konkretnost - jsou uvedeny konkretni detaily (cisla radku, nazvy souboru)?
+EVALUATION CRITERIA (STRICT):
+1. Relevance - Does it directly address the prompt without evasiveness?
+2. Completeness - Are all aspects covered?
+3. Grammar/Formatting - Is it free of syntax errors or bad Markdown?
+4. Hallucinations - Did it make up APIs, files, or facts not present?
+5. Clarity - Is it logical and concise?
 
-SKALA HODNOCENI:
-10 = Perfektni, bez chyb
-7-9 = Velmi dobre, drobne nedostatky
-5-6 = Prijatelne, ale ma problemy
-3-4 = Spatne, vyzaduje opravu
-1-2 = Zcela nevyhovujici
+SCORING SCALE:
+10 = Perfect
+7-9 = Good, minor issues
+5-6 = Acceptable, noticeable flaws
+3-4 = Bad, requires rewrite
+1-2 = Completely wrong
 
-PRIKLADY CHYB (sniz skore):
-- Preklepy nebo gramaticke chyby
-- Vagni formulace bez konkretni odpovedi
-- Nekompletnost: odpoved jen na cast dotazu
-
-ODPOVEZ POUZE V TOMTO FORMATU:
+YOU MUST RESPOND ONLY IN THIS EXACT FORMAT - NO OTHER TEXT:
 SKORE: [1-10]
 VALIDNI: [ANO/NE]
-DUVOD: [konkretni vysvetleni max 30 slov - CO PRESNE je spatne a KDE]`;
+DUVOD: [Short reasoning in exactly 1 sentence explaining the flaws]`;
   }
 }
 

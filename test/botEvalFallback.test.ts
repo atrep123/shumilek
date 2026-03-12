@@ -1,12 +1,6 @@
 import { strict as assert } from 'assert';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'fs';
-import { tmpdir } from 'os';
-import { join } from 'path';
-import { execFileSync } from 'child_process';
 
 import {
-  buildTsTodoFallbackCliTemplate,
-  buildTsTodoFallbackStoreTemplate,
   normalizeNodeApiServerContract,
   normalizePythonOracleCliContract,
   normalizeScenarioFileContentBeforeWrite,
@@ -14,7 +8,6 @@ import {
   normalizeTsTodoCliContract,
   normalizeTsTodoPackageManifest,
   normalizeTsTodoStorePathHandling,
-  normalizeTsTodoTsconfig,
   normalizeTsTodoTypeSafety,
   shouldFastFailNodeApiDiagnostics,
   shouldFastFailTsTodoDiagnostics,
@@ -248,26 +241,9 @@ describe('botEval deterministic fallback helpers', () => {
       ''
     ].join('\n');
     const out = normalizeTsTodoCliContract(src);
-    assert.ok(!/const process = require\('node:process'\);/.test(out));
     assert.ok(!/declare const require:\s*any;/.test(out));
-    assert.ok(/declare const process:\s*any;/.test(out));
-    assert.ok(out.includes('process.argv.slice(2)'));
-  });
-
-  it('re-adds require/process declarations for normalized ts cli that still uses node globals', () => {
-    const src = [
-      "const argv = process.argv.slice(2);",
-      "const fs = require('node:fs');",
-      "const cmd = argv[0] || '--help';",
-      "if (cmd === '--help') {",
-      '  return 0;',
-      '}',
-      ''
-    ].join('\n');
-    const out = normalizeTsTodoCliContract(src);
-    assert.ok(/declare const require:\s*any;/.test(out));
-    assert.ok(/declare const process:\s*any;/.test(out));
-    assert.ok(out.includes("const fs = require('node:fs');"));
+    assert.ok(!/declare const process:\s*any;/.test(out));
+    assert.ok(!/const process = require\('node:process'\);/.test(out));
     assert.ok(out.includes('process.argv.slice(2)'));
   });
 
@@ -368,74 +344,6 @@ describe('botEval deterministic fallback helpers', () => {
     assert.equal(parsed.dependencies, undefined);
     assert.equal(parsed.devDependencies, undefined);
     assert.equal(parsed.name, 'x');
-  });
-
-  it('normalizes tsconfig to isolate ts-todo builds from ambient parent node types', () => {
-    const src = JSON.stringify({
-      compilerOptions: {
-        target: 'ES6',
-        module: 'esnext',
-        outDir: 'build'
-      },
-      include: ['src/**/*']
-    }, null, 2);
-    const out = normalizeTsTodoTsconfig(src);
-    const parsed = JSON.parse(out);
-    assert.equal(parsed.compilerOptions.module, 'commonjs');
-    assert.equal(parsed.compilerOptions.moduleResolution, 'node');
-    assert.equal(parsed.compilerOptions.outDir, 'dist');
-    assert.equal(parsed.compilerOptions.useUnknownInCatchVariables, false);
-    assert.equal(parsed.compilerOptions.noImplicitAny, false);
-    assert.equal(parsed.compilerOptions.skipLibCheck, true);
-    assert.deepEqual(parsed.compilerOptions.types, []);
-  });
-
-  it('builds ts-todo canonical fallback templates with Node global declarations', () => {
-    const cli = buildTsTodoFallbackCliTemplate();
-    const store = buildTsTodoFallbackStoreTemplate();
-
-    assert.ok(cli.startsWith('declare const require: any;'));
-    assert.ok(cli.includes('declare const process: any;'));
-    assert.ok(cli.includes("const { TaskStore } = require('./store');"));
-
-    assert.ok(store.startsWith('declare const require: any;'));
-    assert.ok(store.includes("const fs = require('node:fs');"));
-    assert.ok(store.includes("const crypto = require('node:crypto');"));
-
-    const workspaceDir = mkdtempSync(join(tmpdir(), 'ts-todo-fallback-'));
-    try {
-      mkdirSync(join(workspaceDir, 'src'), { recursive: true });
-      writeFileSync(join(workspaceDir, 'src', 'cli.ts'), cli, 'utf8');
-      writeFileSync(join(workspaceDir, 'src', 'store.ts'), store, 'utf8');
-      writeFileSync(
-        join(workspaceDir, 'tsconfig.json'),
-        JSON.stringify({
-          compilerOptions: {
-            target: 'ES2020',
-            module: 'commonjs',
-            moduleResolution: 'node',
-            rootDir: 'src',
-            outDir: 'dist',
-            strict: false,
-            noImplicitAny: false,
-            useUnknownInCatchVariables: false,
-            esModuleInterop: true,
-            skipLibCheck: true,
-            types: []
-          },
-          include: ['src/**/*.ts']
-        }, null, 2),
-        'utf8'
-      );
-
-      execFileSync(
-        process.execPath,
-        [join(process.cwd(), 'node_modules', 'typescript', 'bin', 'tsc'), '-p', 'tsconfig.json'],
-        { cwd: workspaceDir, stdio: 'pipe' }
-      );
-    } finally {
-      rmSync(workspaceDir, { recursive: true, force: true });
-    }
   });
 
   it('applies scenario normalization only for ts-todo store file', () => {

@@ -1,5 +1,51 @@
 // Utility functions
 
+import { URL } from 'url';
+import * as crypto from 'crypto';
+
+const PRIVATE_IP_RANGES = [
+  /^127\./,
+  /^10\./,
+  /^172\.(1[6-9]|2\d|3[01])\./,
+  /^192\.168\./,
+  /^169\.254\./,
+  /^0\./,
+  /^::1$/,
+  /^fc00:/i,
+  /^fd/i,
+  /^fe80:/i,
+];
+
+/**
+ * Validate a URL for safe external fetching.
+ * Blocks private/reserved IPs, non-http(s) schemes, and cloud metadata endpoints.
+ */
+export function isSafeUrl(raw: string): { safe: boolean; reason?: string } {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return { safe: false, reason: 'Neplatná URL' };
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return { safe: false, reason: `Nepovolený protokol: ${parsed.protocol}` };
+  }
+  const hostname = parsed.hostname.toLowerCase();
+  if (hostname === 'localhost' || hostname === '[::1]') {
+    return { safe: false, reason: 'Přístup na localhost je zakázán' };
+  }
+  for (const re of PRIVATE_IP_RANGES) {
+    if (re.test(hostname)) {
+      return { safe: false, reason: 'Přístup na privátní IP je zakázán' };
+    }
+  }
+  // Block cloud metadata endpoints
+  if (hostname === '169.254.169.254' || hostname === 'metadata.google.internal') {
+    return { safe: false, reason: 'Přístup ke cloud metadata je zakázán' };
+  }
+  return { safe: true };
+}
+
 export function normalizeTaskWeight(w: number | undefined): number {
   // Normalize existing 0.1-1.0 scale to 1-10, and clamp any value to [1,10]
   if (typeof w !== 'number' || isNaN(w)) return 5;
@@ -20,12 +66,7 @@ export function isChatMessage(value: unknown): value is { role: string; content:
 }
 
 export function getNonce(): string {
-  let text = '';
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  for (let i = 0; i < 32; i++) {
-    text += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return text;
+  return crypto.randomBytes(16).toString('base64url');
 }
 
 export function pickBrainModel(prompt: string, candidates: string[], fallback: string): string {
@@ -49,4 +90,57 @@ export function normalizeScore(value: unknown): number | undefined {
     if (!Number.isNaN(parsed)) return parsed;
   }
   return undefined;
+}
+
+/**
+ * Translate raw API/network error messages into user-friendly Czech messages
+ * with actionable guidance. Returns the original message if no pattern matches.
+ */
+export function humanizeApiError(raw: string): string {
+  const lower = raw.toLowerCase();
+
+  if (lower.includes('econnrefused') || lower.includes('connect econnrefused')) {
+    return 'Nelze se připojit k Ollama serveru. Zkontrolujte, že Ollama běží (spusťte `ollama serve`).';
+  }
+  if (lower.includes('enotfound') || lower.includes('getaddrinfo')) {
+    return 'Server nenalezen — zkontrolujte URL v nastavení (shumilek.baseUrl).';
+  }
+  if (lower.includes('etimedout') || lower.includes('socket hang up') || lower.includes('network timeout')) {
+    return 'Spojení s modelem vypršelo. Model může být přetížený nebo pomalý — zkuste zmenšit kontext nebo použít menší model.';
+  }
+  if (lower.includes('econnreset')) {
+    return 'Spojení bylo neočekávaně přerušeno. Ollama mohla spadnout — restartujte ji příkazem `ollama serve`.';
+  }
+  if (lower.includes('model') && lower.includes('not found')) {
+    const modelMatch = raw.match(/model\s+['"]?([^\s'"]+)['"]?/i);
+    const modelName = modelMatch?.[1] ?? '';
+    return `Model ${modelName ? `"${modelName}" ` : ''}nenalezen. Stáhněte ho příkazem \`ollama pull ${modelName || '<model>'}\`.`;
+  }
+  if (/http\s+5\d{2}/.test(lower)) {
+    return 'Ollama server vrátil interní chybu (5xx). Restartujte Ollama a zkuste to znovu.';
+  }
+  if (lower.includes('http 404')) {
+    return 'Endpoint nenalezen (404). Zkontrolujte verzi Ollama a baseUrl v nastavení.';
+  }
+  if (lower.includes('aborted') || lower.includes('abort')) {
+    return raw;
+  }
+
+  return raw;
+}
+
+/**
+ * Detect transient network/server errors that are worth retrying.
+ * Returns true for ECONNRESET, ETIMEDOUT, socket hang up, HTTP 5xx, etc.
+ */
+export function isTransientError(error: Error | string): boolean {
+  const msg = (typeof error === 'string' ? error : error.message ?? '').toLowerCase();
+  if (msg.includes('econnreset')) return true;
+  if (msg.includes('etimedout')) return true;
+  if (msg.includes('socket hang up')) return true;
+  if (msg.includes('network timeout')) return true;
+  if (/http\s+5\d{2}/.test(msg)) return true;
+  if (msg.includes('epipe')) return true;
+  if (msg.includes('econnaborted')) return true;
+  return false;
 }

@@ -510,7 +510,7 @@ const OLLAMA_UNREACHABLE_PATTERNS: RegExp[] = [
   /start ollama server/i,
   /\/api\/tags failed/i,
   /ollama request failed:\s*request to .*\/api\/generate failed/i,
-  /econnrefused/i,
+  /ecconnrefused/i,
   /connect econnrefused/i
 ];
 
@@ -638,7 +638,7 @@ export async function executeShellCommand(params: {
   const shell = process.platform === 'win32' ? 'cmd.exe' : '/bin/sh';
   const shellArgs = process.platform === 'win32'
     ? ['/d', '/s', '/c', command]
-    : ['-c', command];
+    : ['-lc', command];
 
   return await new Promise<InfraRestartResult>((resolve) => {
     const child = spawn(shell, shellArgs, { stdio: 'ignore', windowsHide: true });

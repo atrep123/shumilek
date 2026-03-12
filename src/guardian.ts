@@ -9,7 +9,8 @@ let guardianStats: GuardianStats = {
   miniModelValidations: 0,
   miniModelRejections: 0,
   hallucinationsDetected: 0,
-  similarResponsesBlocked: 0
+  similarResponsesBlocked: 0,
+  truncationsRepaired: 0
 };
 
 // Logger function - can be set by extension
@@ -103,6 +104,15 @@ export class ResponseGuardian {
     }
 
     this.addToPreviousResponses(cleanedResponse);
+
+    // 7. Detect and repair truncated responses (unclosed fences, mid-sentence)
+    const truncationResult = this.detectAndRepairTruncation(cleanedResponse);
+    if (truncationResult.repaired) {
+      cleanedResponse = truncationResult.text;
+      issues.push(...truncationResult.issues);
+      guardianStats.truncationsRepaired++;
+      logFn?.(`[Guardian] Truncation repaired: ${truncationResult.issues.join('; ')}`);
+    }
 
     if (shouldRetry) {
       guardianStats.retriesTriggered++;
@@ -378,5 +388,56 @@ export class ResponseGuardian {
 
   resetHistory(): void {
     this.previousResponses = [];
+  }
+
+  /**
+   * Detect truncated responses and auto-repair them.
+   * Handles: unclosed code fences, mid-sentence cuts.
+   */
+  private detectAndRepairTruncation(text: string): { text: string; repaired: boolean; issues: string[] } {
+    let result = text;
+    let repaired = false;
+    const issues: string[] = [];
+
+    // 1. Repair unclosed code fences
+    const fenceCount = (result.match(/```/g) || []).length;
+    if (fenceCount % 2 !== 0) {
+      result = result.trimEnd() + '\n```\n\n[⚠️ Kód byl automaticky uzavřen — odpověď mohla být zkrácena]';
+      repaired = true;
+      issues.push('Neuzavřený blok kódu automaticky opraven');
+    }
+
+    // 2. Detect mid-sentence truncation
+    // Only check if response is long enough and doesn't already end with a fence-repair marker
+    if (!repaired && result.length > 60) {
+      const trimmed = result.trimEnd();
+      // Get last meaningful line (skip empty lines)
+      const lines = trimmed.split('\n');
+      let lastLine = '';
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const l = lines[i].trim();
+        if (l.length > 0) {
+          lastLine = l;
+          break;
+        }
+      }
+
+      if (lastLine.length > 0) {
+        const lastChar = lastLine[lastLine.length - 1];
+        // Acceptable endings: sentence punctuation, code fence, closing brackets, list/heading markers
+        const validEndings = /[.!?;:)\]}>`"'\-—…*#|\\]$/;
+        const isCodeFence = lastLine.startsWith('```');
+        const isListOrHeading = /^[-*+#>|\d]/.test(lastLine);
+        const endsWithWord = /\w$/.test(lastLine);
+
+        if (endsWithWord && !validEndings.test(lastLine) && !isCodeFence && !isListOrHeading && lastLine.length > 15) {
+          result = trimmed + '…\n\n[⚠️ Odpověď byla pravděpodobně zkrácena]';
+          repaired = true;
+          issues.push('Odpověď končí uprostřed věty — pravděpodobně zkrácena modelem');
+        }
+      }
+    }
+
+    return { text: result, repaired, issues };
   }
 }

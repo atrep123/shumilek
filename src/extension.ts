@@ -1,4 +1,5 @@
 ﻿import * as vscode from 'vscode';
+import { Logger } from './logger';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { exec } from 'child_process';
@@ -52,6 +53,9 @@ import {
   ExecutionMode,
   ValidationPolicy
 } from './types';
+import { buildCompressedMessages } from './contextMemory';
+import { humanizeApiError, isTransientError, isSafeUrl, normalizeTaskWeight, isChatMessage, normalizeScore, pickBrainModel, getNonce } from './utils';
+import { ChatRequestConcurrencyGuard } from './chatConcurrency';
 import {
   handleApplyPatchTool,
   handleDeleteFileTool,
@@ -74,7 +78,6 @@ import {
   handleWriteFileTool,
   MutationHandlerDeps
 } from './toolHandlers';
-import { ChatRequestConcurrencyGuard } from './chatConcurrency';
 // (Types imported from ./types)
 
 // Webview message types
@@ -113,11 +116,19 @@ interface ToolResult {
   approved?: boolean;
 }
 
+interface ToolCallRecord {
+  tool: string;
+  args: Record<string, unknown>;
+  ok: boolean;
+  message?: string;
+}
+
 interface ToolSessionState {
   hadMutations: boolean;
   mutationTools: string[];
   lastWritePath?: string;
   lastWriteAction?: 'created' | 'updated';
+  toolCallRecords?: ToolCallRecord[];
 }
 
 interface RangeInfo {
@@ -480,7 +491,8 @@ let guardianStats: GuardianStats = {
   miniModelValidations: 0,
   miniModelRejections: 0,
   hallucinationsDetected: 0,
-  similarResponsesBlocked: 0
+  similarResponsesBlocked: 0,
+  truncationsRepaired: 0
 };
 
 // Backup for clear/undo flow
@@ -556,15 +568,6 @@ function extractPreferredFencedCodeBlock(text: string): { code: string; lang?: s
   const preferred = ['ino', 'arduino', 'cpp', 'c', 'c++'];
   const best = matches.find(m => m.lang && preferred.includes(m.lang)) ?? matches[0];
   return { code: best.code.replace(/\r\n/g, '\n').trimEnd(), lang: best.lang };
-}
-
-function isChatMessage(value: unknown): value is ChatMessage {
-  if (!value || typeof value !== 'object') return false;
-  const v = value as any;
-  const roleOk = v.role === 'system' || v.role === 'user' || v.role === 'assistant';
-  const contentOk = typeof v.content === 'string';
-  const timestampOk = v.timestamp === undefined || typeof v.timestamp === 'number';
-  return roleOk && contentOk && timestampOk;
 }
 
 function sanitizeChatMessages(raw: unknown): ChatMessage[] {
@@ -683,15 +686,6 @@ async function summarizeResponse(
   }
 }
 
-function normalizeScore(value: unknown): number | undefined {
-  if (typeof value === 'number' && !Number.isNaN(value)) return value;
-  if (typeof value === 'string') {
-    const parsed = Number(value);
-    if (!Number.isNaN(parsed)) return parsed;
-  }
-  return undefined;
-}
-
 function normalizeExternalScore(
   score: number | undefined,
   threshold?: number
@@ -704,24 +698,10 @@ function normalizeExternalScore(
   return { score, rawScore };
 }
 
-function pickBrainModel(prompt: string, candidates: string[], fallback: string): string {
-  const normalized = prompt.toLowerCase();
-  const prefersCode = /refaktor|bug|chyba|code|k[oó]d|test|typ|lint/.test(normalized);
-  if (candidates.length === 0) return fallback;
-  if (candidates.length === 1) return candidates[0];
-
-  // Heuristic: prefer coder model for code-heavy tasks, otherwise first in list.
-  if (prefersCode) {
-    const match = candidates.find(m => m.toLowerCase().includes('coder')) ?? candidates[0];
-    return match;
-  }
-  return candidates[0];
-}
-
 function getToolRequirements(prompt: string): { requireToolCall: boolean; requireMutation: boolean } {
   const normalized = prompt.toLowerCase();
-  const requireMutation = /(vytvo[rř]|ulo[zž]|zapi[sš]|napi[sš]|uprav|upravit|přepi[sš]|prepis|přidej|pridej|sma[zž]|smaz|smazat|prejmenuj|přejmenuj|rename|delete|write|edit|modify|create|replace|patch|apply_patch|write_file|replace_lines)/.test(normalized);
-  const requireToolCall = requireMutation || /(přečti|precti|zobraz|otevri|otevř|najdi|hledej|search|list_files|read_file|get_active_file|symboly|symbol|definice|definition|reference|references|diagnostik|diagnostics|lsp|get_symbols|get_workspace_symbols|get_definition|get_references|get_type_info|get_diagnostics)/.test(normalized);
+  const requireMutation = /(vytvo[rř]|ulo[zž]|zapi[sš]|napi[sš]|uprav|upravit|přepi[sš]|prepis|přidej|pridej|sma[zž]|smaz|smazat|prejmenuj|přejmenuj|rename|delete|write|edit|modify|create|replace|patch|apply_patch|write_file|replace_lines|run_terminal_command|spust|spustit|prikaz|přikaz|terminal)/.test(normalized);
+  const requireToolCall = requireMutation || /(přečti|precti|zobraz|otevri|otevř|najdi|hledej|search|list_files|read_file|get_active_file|symboly|symbol|definice|definition|reference|references|diagnostik|diagnostics|lsp|get_symbols|get_workspace_symbols|get_definition|get_references|get_type_info|get_diagnostics|run_terminal_command|fetch|web|stahni|stáhni|url)/.test(normalized);
   return { requireToolCall, requireMutation };
 }
 
@@ -1113,86 +1093,7 @@ class ShumilekViewProvider implements vscode.WebviewViewProvider {
 
   private async handleMessage(msg: WebviewMessage) {
     if (!this._view) return;
-
-    switch (msg.type) {
-      case 'debugLog':
-        outputChannel?.appendLine(`[Webview] ${String(msg.text ?? '')}`);
-        break;
-
-      case 'chat':
-        if (msg.prompt) {
-          await handleChatForView(this._view, this._context, msg.prompt, chatMessages);
-        }
-        break;
-
-      case 'stop':
-        if (abortController) {
-          abortController.abort();
-          abortController = undefined;
-        }
-        break;
-
-      case 'requestActiveFile':
-        const content = getActiveEditorContent();
-        const fileName = getActiveFileName();
-        this._view.webview.postMessage({
-          type: 'activeFileContent',
-          text: content,
-          fileName
-        });
-        break;
-
-      case 'clearHistory':
-        lastClearedMessages = chatMessages.slice();
-        lastClearedAt = Date.now();
-        chatMessages.length = 0;
-        guardian.resetHistory();
-        await saveChatMessages(this._context, chatMessages);
-        postToAllWebviews({ type: 'historyCleared' });
-        break;
-
-      case 'restoreHistory':
-        if (lastClearedMessages && lastClearedMessages.length > 0) {
-          if (lastClearedAt && (Date.now() - lastClearedAt) > 300000) {
-            outputChannel?.appendLine('[Warning] Undo expired (>5 minutes)');
-            postToAllWebviews({ type: 'historyRestoreFailed' });
-            lastClearedMessages = undefined;
-            lastClearedAt = undefined;
-            break;
-          }
-          
-          chatMessages.length = 0;
-          chatMessages.push(...lastClearedMessages);
-          try {
-            await saveChatMessages(this._context, chatMessages);
-            postToAllWebviews({ type: 'historyRestored', messages: chatMessages });
-          } catch (err) {
-            outputChannel?.appendLine(`[Error] Failed to restore history: ${String(err)}`);
-            postToAllWebviews({ type: 'historyRestoreFailed' });
-          }
-          lastClearedMessages = undefined;
-          lastClearedAt = undefined;
-        } else {
-          postToAllWebviews({ type: 'historyRestoreFailed' });
-        }
-        break;
-
-      case 'getGuardianStats':
-        this._view.webview.postMessage({ 
-          type: 'guardianStats', 
-          stats: guardian.getStats() 
-        });
-        break;
-      case 'toggleSafeMode':
-        try {
-          const enabled = await toggleSafeModeSetting();
-          postToAllWebviews({ type: 'safeModeUpdated', enabled });
-        } catch (err) {
-          outputChannel?.appendLine(`[Tools] Failed to toggle safe mode: ${String(err)}`);
-          postToAllWebviews({ type: 'safeModeUpdated', enabled: getSafeModeSetting() });
-        }
-        break;
-    }
+    await handleWebviewMessage(wrapView(this._view), this._context, msg, chatMessages);
   }
 
   public postMessage(message: WebviewMessage) {
@@ -1217,6 +1118,7 @@ let sidebarProvider: ShumilekViewProvider | undefined;
 export function activate(context: vscode.ExtensionContext) {
   // Initialize output channel for logging
   outputChannel = vscode.window.createOutputChannel('Shumilek');
+  Logger.initialize(context, outputChannel);
   context.subscriptions.push(outputChannel);
   const rawAppendLine = outputChannel.appendLine.bind(outputChannel);
   const rawAppend = outputChannel.append.bind(outputChannel);
@@ -1264,10 +1166,10 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }
   }));
-  setRozumLogger(outputChannel);
-  setGuardianLogger((msg: string) => outputChannel?.appendLine(msg));
+  setRozumLogger({ appendLine: (msg: string) => Logger.info(msg) } as any);
+  setGuardianLogger((msg: string) => Logger.info(msg));
   setGuardianStats(guardianStats);
-  setHallucinationLogger((msg: string) => outputChannel?.appendLine(msg));
+  setHallucinationLogger((msg: string) => Logger.info(msg));
   setSvedomiLogger(outputChannel);
   setSvedomiStats(guardianStats);
 
@@ -1340,93 +1242,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Store message handler to prevent duplicates
     const messageHandler = async (msg: WebviewMessage) => {
       if (!currentPanel) return;
-
-      switch (msg.type) {
-        case 'debugLog':
-          outputChannel?.appendLine(`[Webview] ${String(msg.text ?? '')}`);
-          break;
-
-        case 'chat':
-          if (msg.prompt) {
-            await handleChat(currentPanel, context, msg.prompt, chatMessages);
-          }
-          break;
-
-        case 'stop':
-          if (abortController) {
-            abortController.abort();
-            abortController = undefined;
-          }
-          break;
-
-        case 'requestActiveFile':
-          const content = getActiveEditorContent();
-          const fileName = getActiveFileName();
-          currentPanel.webview.postMessage({
-            type: 'activeFileContent',
-            text: content,
-            fileName
-          });
-          break;
-
-        case 'clearHistory':
-          // Save backup for potential undo
-          lastClearedMessages = chatMessages.slice();
-          lastClearedAt = Date.now();
-
-          chatMessages.length = 0;
-          guardian.resetHistory();
-          await saveChatMessages(context, chatMessages);
-          postToAllWebviews({ type: 'historyCleared' });
-          break;
-
-        case 'restoreHistory':
-          if (!currentPanel) break; // Panel may have been disposed
-          if (lastClearedMessages && lastClearedMessages.length > 0) {
-            // Check if undo is still valid (within 5 minutes)
-            if (lastClearedAt && (Date.now() - lastClearedAt) > 300000) {
-              outputChannel?.appendLine('[Warning] Undo expired (>5 minutes)');
-              currentPanel.webview.postMessage({ type: 'historyRestoreFailed' });
-              lastClearedMessages = undefined;
-              lastClearedAt = undefined;
-              break;
-            }
-            
-            // Update array contents instead of reassigning const
-            chatMessages.length = 0;
-            chatMessages.push(...lastClearedMessages);
-            try {
-              await saveChatMessages(context, chatMessages);
-              postToAllWebviews({ type: 'historyRestored', messages: chatMessages });
-            } catch (err) {
-              outputChannel?.appendLine(`[Error] Failed to restore history: ${String(err)}`);
-              postToAllWebviews({ type: 'historyRestoreFailed' });
-            }
-            lastClearedMessages = undefined;
-            lastClearedAt = undefined;
-          } else {
-            postToAllWebviews({ type: 'historyRestoreFailed' });
-          }
-          break;
-
-        case 'getGuardianStats':
-          if (currentPanel) {
-            currentPanel.webview.postMessage({ 
-              type: 'guardianStats', 
-              stats: guardian.getStats() 
-            });
-          }
-          break;
-        case 'toggleSafeMode':
-          try {
-            const enabled = await toggleSafeModeSetting();
-            postToAllWebviews({ type: 'safeModeUpdated', enabled });
-          } catch (err) {
-            outputChannel?.appendLine(`[Tools] Failed to toggle safe mode: ${String(err)}`);
-            postToAllWebviews({ type: 'safeModeUpdated', enabled: getSafeModeSetting() });
-          }
-          break;
-      }
+      await handleWebviewMessage(wrapPanel(currentPanel), context, msg, chatMessages);
     };
 
     // Subscribe to message handler
@@ -1708,7 +1524,7 @@ export function activate(context: vscode.ExtensionContext) {
   setSvedomiTasks(tasksDatabase);
 
   // Workspace indexer commands
-  setWorkspaceLogger(outputChannel);
+  setWorkspaceLogger({ appendLine: (msg: string) => Logger.info(msg) } as any);
 
   // Auto-scan workspace on extension load for deep work
   (async () => {
@@ -1896,6 +1712,95 @@ function wrapView(view: vscode.WebviewView): WebviewWrapper {
   };
 }
 
+// Shared message handler for both sidebar and panel webviews
+async function handleWebviewMessage(
+  wrapper: WebviewWrapper,
+  context: vscode.ExtensionContext,
+  msg: WebviewMessage,
+  messages: ChatMessage[]
+): Promise<void> {
+  switch (msg.type) {
+    case 'debugLog':
+      outputChannel?.appendLine(`[Webview] ${String(msg.text ?? '')}`);
+      break;
+
+    case 'chat':
+      if (msg.prompt) {
+        await handleChatInternal(wrapper, context, msg.prompt, messages);
+      }
+      break;
+
+    case 'stop':
+      if (abortController) {
+        abortController.abort();
+        abortController = undefined;
+      }
+      break;
+
+    case 'requestActiveFile':
+      const content = getActiveEditorContent();
+      const fileName = getActiveFileName();
+      wrapper.webview.postMessage({
+        type: 'activeFileContent',
+        text: content,
+        fileName
+      });
+      break;
+
+    case 'clearHistory':
+      lastClearedMessages = messages.slice();
+      lastClearedAt = Date.now();
+      messages.length = 0;
+      guardian.resetHistory();
+      await saveChatMessages(context, messages);
+      postToAllWebviews({ type: 'historyCleared' });
+      break;
+
+    case 'restoreHistory':
+      if (lastClearedMessages && lastClearedMessages.length > 0) {
+        if (lastClearedAt && (Date.now() - lastClearedAt) > 300000) {
+          outputChannel?.appendLine('[Warning] Undo expired (>5 minutes)');
+          postToAllWebviews({ type: 'historyRestoreFailed' });
+          lastClearedMessages = undefined;
+          lastClearedAt = undefined;
+          break;
+        }
+
+        messages.length = 0;
+        messages.push(...lastClearedMessages);
+        try {
+          await saveChatMessages(context, messages);
+          postToAllWebviews({ type: 'historyRestored', messages });
+        } catch (err) {
+          outputChannel?.appendLine(`[Error] Failed to restore history: ${String(err)}`);
+          postToAllWebviews({ type: 'historyRestoreFailed' });
+        }
+        lastClearedMessages = undefined;
+        lastClearedAt = undefined;
+      } else {
+        postToAllWebviews({ type: 'historyRestoreFailed' });
+      }
+      break;
+
+    case 'getGuardianStats':
+      wrapper.webview.postMessage({
+        type: 'guardianStats',
+        stats: guardian.getStats()
+      });
+      break;
+
+    case 'toggleSafeMode':
+      try {
+        const enabled = await toggleSafeModeSetting();
+        postToAllWebviews({ type: 'safeModeUpdated', enabled });
+      } catch (err) {
+        outputChannel?.appendLine(`[Tools] Failed to toggle safe mode: ${String(err)}`);
+        postToAllWebviews({ type: 'safeModeUpdated', enabled: getSafeModeSetting() });
+      }
+      break;
+  }
+}
+
 // Handle chat for WebviewView (sidebar)
 async function handleChatForView(
   view: vscode.WebviewView,
@@ -1915,6 +1820,327 @@ async function handleChat(
   retryCount: number = 0
 ): Promise<void> {
   return handleChatInternal(wrapPanel(panel), context, prompt, messages, retryCount);
+}
+
+// === VALIDATION PIPELINE (shared between step-mode and single-call) ===
+
+interface ValidationPipelineConfig {
+  trimmedPrompt: string;
+  chatMessages: ChatMessage[];
+  stepMode: boolean;
+  panel: WebviewWrapper;
+  // Self-correction
+  toolCallsEnabled: boolean;
+  baseUrl: string;
+  writerModel: string;
+  toolPromptForMain: string;
+  toolPrimaryModel: string;
+  toolsFallbackModel: string;
+  toolsConfirmEdits: boolean;
+  stepTimeout: number;
+  autoApprovePolicy: AutoApprovePolicy;
+  abortSignal?: AbortSignal;
+  // Validators
+  guardianEnabled: boolean;
+  miniModelEnabled: boolean;
+  validationPolicy: ValidationPolicy;
+  validatorLogsEnabled: boolean;
+  summarizerEnabled: boolean;
+  summarizerModel: string;
+  timeout: number;
+  // External validators
+  rewardEnabled: boolean;
+  rewardEndpoint: string;
+  rewardThreshold: number;
+  hhemEnabled: boolean;
+  hhemEndpoint: string;
+  hhemThreshold: number;
+  ragasEnabled: boolean;
+  ragasEndpoint: string;
+  ragasThreshold: number;
+}
+
+interface ValidationPipelineResult {
+  fullResponse: string;
+  postEditVerification: VerificationSummary | null;
+  hallucinationResult: HallucinationResult;
+  guardianResult: GuardianResult;
+  miniResult: MiniModelResult | null;
+  qualityChecks: QualityCheckResult[];
+  external: {
+    rewardResult: QualityCheckResult;
+    hhemResult: QualityCheckResult;
+    ragasResult: QualityCheckResult;
+    results: QualityCheckResult[];
+  };
+  summary: string | null;
+  structuredOutput: string;
+}
+
+/**
+ * Runs the full validation pipeline: post-edit verification, hallucination detection,
+ * Guardian analysis, response history check, Svedomi validation, quality checks,
+ * external validators, summarizer, and structured output assembly.
+ *
+ * Returns null if publishing is blocked by fail-closed verification failure.
+ */
+async function runValidationPipeline(
+  fullResponse: string,
+  toolSession: ToolSessionState,
+  cfg: ValidationPipelineConfig
+): Promise<ValidationPipelineResult | null> {
+
+  // === POST-EDIT VERIFICATION ===
+  let postEditVerification: VerificationSummary | null = null;
+  if (fullResponse && toolSession.hadMutations) {
+    postToAllWebviews({ type: 'pipelineStatus', icon: '✅', text: 'Overuji lint/test/build po editaci...', statusType: 'validation', loading: true });
+    postEditVerification = await runPostEditVerification(cfg.stepTimeout);
+    if (postEditVerification.ran.length > 0) {
+      for (const cmd of postEditVerification.ran) {
+        outputChannel?.appendLine(`[Verify] ${cmd.command} => ${cmd.ok ? 'OK' : `FAIL(${cmd.exitCode})`}`);
+      }
+    }
+    if (!postEditVerification.ok) {
+      const firstFail = postEditVerification.failed[0];
+      const detail = firstFail ? `${firstFail.command} failed` : 'verification failed';
+
+      const errorOutput = firstFail
+        ? (firstFail.stderr || firstFail.stdout || '').slice(0, 3000)
+        : '';
+      if (errorOutput && cfg.toolCallsEnabled) {
+        outputChannel?.appendLine(`[SelfCorrect] Post-edit verification failed, attempting auto-fix for: ${detail}`);
+        postToAllWebviews({ type: 'pipelineStatus', icon: '🔧', text: `Auto-oprava: ${detail}`, statusType: 'step', loading: true });
+        const fixPrompt = [
+          'SELF-CORRECTION: The code changes you made caused build/test/lint errors.',
+          `FAILED COMMAND: ${firstFail?.command ?? 'unknown'}`,
+          'ERROR OUTPUT:',
+          errorOutput,
+          '',
+          'Fix ALL errors using write_file or replace_lines. Do not explain, just fix.'
+        ].join('\n');
+        const fixMessages: ChatMessage[] = [
+          ...cfg.chatMessages.slice(-3),
+          { role: 'system', content: fixPrompt }
+        ];
+        const fixResult = await generateWithTools(
+          cfg.panel, cfg.baseUrl, cfg.writerModel, cfg.toolPromptForMain, fixMessages, cfg.stepTimeout,
+          3, cfg.toolsConfirmEdits, { requireToolCall: true, requireMutation: true },
+          { systemPromptOverride: cfg.toolPromptForMain, primaryModel: cfg.toolPrimaryModel, fallbackModel: cfg.toolsFallbackModel },
+          cfg.abortSignal, toolSession, cfg.autoApprovePolicy
+        );
+        outputChannel?.appendLine(`[SelfCorrect] Fix result: ${fixResult.slice(0, 200)}`);
+
+        const reVerify = await runPostEditVerification(cfg.stepTimeout);
+        if (reVerify.ok) {
+          outputChannel?.appendLine('[SelfCorrect] Post-edit re-verification PASSED');
+          postToAllWebviews({ type: 'pipelineStatus', icon: '✅', text: 'Auto-oprava uspesna!', statusType: 'step', loading: false });
+          fullResponse += `\n\n[Auto-corrected: ${detail}]`;
+          postEditVerification = reVerify;
+        } else {
+          outputChannel?.appendLine('[SelfCorrect] Post-edit re-verification still FAILED');
+          if (cfg.validationPolicy === 'fail-closed') {
+            postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
+            return null;
+          }
+          postToAllWebviews({ type: 'guardianAlert', message: `Verify warning (auto-fix failed): ${detail}` });
+          fullResponse += `\n\n[Verify warning] ${detail} (auto-fix attempted but failed)`;
+        }
+      } else {
+        if (cfg.validationPolicy === 'fail-closed') {
+          postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
+          return null;
+        }
+        postToAllWebviews({ type: 'guardianAlert', message: `Verify warning: ${detail}` });
+        fullResponse += `\n\n[Verify warning] ${detail}`;
+      }
+    }
+  }
+
+  // === HALLUCINATION DETECTION ===
+  postToAllWebviews({ type: 'pipelineStatus', icon: '🔮', text: 'Kontrola halucinací...', statusType: 'validation', loading: true });
+
+  const hallucinationResult = hallucinationDetector.analyze(fullResponse, cfg.trimmedPrompt, cfg.chatMessages);
+  if (hallucinationResult.isHallucination) {
+    guardianStats.hallucinationsDetected++;
+    outputChannel?.appendLine(`[HallucinationDetector] HALUCINACE detekovana (${(hallucinationResult.confidence * 100).toFixed(1)}%)`);
+    outputChannel?.appendLine(`[HallucinationDetector] Kategorie: ${hallucinationResult.category}`);
+    postToAllWebviews({
+      type: 'guardianAlert',
+      message: `🔮 Halucinace: ${hallucinationDetector.getSummary(hallucinationResult)}`
+    });
+  } else {
+    outputChannel?.appendLine(`[HallucinationDetector] OK: ${hallucinationDetector.getSummary(hallucinationResult)}`);
+  }
+
+  // === GUARDIAN ANALYSIS ===
+  let guardianResult: GuardianResult = {
+    isOk: true,
+    cleanedResponse: fullResponse,
+    issues: [],
+    shouldRetry: false,
+    loopDetected: false,
+    repetitionScore: 0
+  };
+
+  if (cfg.guardianEnabled) {
+    postToAllWebviews({ type: 'pipelineStatus', icon: '🛡️', text: 'Guardian kontroluje vzory...', statusType: 'validation', loading: true });
+
+    guardianResult = guardian.analyze(fullResponse, cfg.trimmedPrompt);
+
+    outputChannel?.appendLine(`[ResponseGuardian] isOk: ${guardianResult.isOk}, loopDetected: ${guardianResult.loopDetected}, repetitionScore: ${(guardianResult.repetitionScore * 100).toFixed(1)}%`);
+    if (guardianResult.issues.length > 0) {
+      guardianResult.issues.forEach(issue => {
+        outputChannel?.appendLine(`[ResponseGuardian]   - ${issue}`);
+      });
+    }
+
+    postToAllWebviews({
+      type: 'guardianStatus',
+      result: {
+        isOk: guardianResult.isOk,
+        issues: guardianResult.issues,
+        repetitionScore: guardianResult.repetitionScore,
+        loopDetected: guardianResult.loopDetected
+      }
+    });
+
+    if (!guardianResult.isOk) {
+      fullResponse = guardianResult.cleanedResponse;
+      if (guardianResult.issues.length > 0) {
+        postToAllWebviews({
+          type: 'guardianAlert',
+          message: `Guardian: ${guardianResult.issues.join(', ')}`
+        });
+      }
+    }
+  }
+
+  // === RESPONSE HISTORY CHECK ===
+  postToAllWebviews({
+    type: 'pipelineStatus',
+    icon: PIPELINE_STATUS_ICONS.history,
+    text: PIPELINE_STATUS_TEXT.checkingHistory,
+    statusType: 'validation',
+    loading: true
+  });
+
+  const similarityCheck = responseHistoryManager.checkSimilarity(fullResponse, cfg.trimmedPrompt);
+  if (similarityCheck.isSimilar) {
+    outputChannel?.appendLine(`[ResponseHistory] Podobna odpoved nalezena (${(similarityCheck.similarity * 100).toFixed(1)}%)`);
+    postToAllWebviews({
+      type: 'guardianAlert',
+      message: `📋 Podobná odpověď v historii (${(similarityCheck.similarity * 100).toFixed(0)}%)`
+    });
+  } else {
+    outputChannel?.appendLine('[ResponseHistory] Odpověď je unikátní');
+  }
+
+  // === SVEDOMI (MINI-MODEL VALIDATION) ===
+  let miniResult: MiniModelResult | null = null;
+  if (cfg.miniModelEnabled) {
+    postToAllWebviews({
+      type: 'pipelineStatus',
+      icon: PIPELINE_STATUS_ICONS.svedomi,
+      text: PIPELINE_STATUS_TEXT.svedomiValidation,
+      statusType: 'validation',
+      loading: true
+    });
+    postToAllWebviews({ type: 'svedomiValidating' });
+    miniResult = await svedomi.validate(
+      cfg.trimmedPrompt,
+      fullResponse,
+      (status: string) => {
+        postToAllWebviews({ type: 'pipelineStatus', icon: '🧠', text: status, statusType: 'validation', loading: true });
+      }
+    );
+    postToAllWebviews({ type: 'svedomiValidationDone' });
+    postToAllWebviews({ type: 'miniModelResult', result: miniResult });
+  } else {
+    outputChannel?.appendLine('[Svedomi] Mini-model je vypnut');
+  }
+  if (miniResult?.unavailable) {
+    postToAllWebviews({
+      type: 'guardianAlert',
+      message: getMiniUnavailableMessage(cfg.validationPolicy, true)
+    });
+  }
+
+  // === QUALITY CHECKS ARRAY ===
+  const qualityChecks: QualityCheckResult[] = [];
+  qualityChecks.push({
+    name: 'Guardian',
+    ok: cfg.guardianEnabled ? guardianResult.isOk : true,
+    unavailable: !cfg.guardianEnabled,
+    details: cfg.guardianEnabled
+      ? (guardianResult.issues.length > 0 ? guardianResult.issues.join(', ') : undefined)
+      : 'Vypnuto'
+  });
+  qualityChecks.push({
+    name: 'HallucinationDetector',
+    ok: !hallucinationResult.isHallucination,
+    score: hallucinationResult.confidence,
+    threshold: 0.7,
+    details: hallucinationDetector.getSummary(hallucinationResult)
+  });
+  if (miniResult) {
+    const svedomiOk = isMiniAccepted(miniResult, cfg.validationPolicy);
+    qualityChecks.push({
+      name: 'svedomi',
+      ok: svedomiOk,
+      score: miniResult.score,
+      threshold: 5,
+      details: miniResult.reason,
+      unavailable: miniResult.unavailable
+    });
+  }
+  if (postEditVerification) {
+    qualityChecks.push({
+      name: 'post-edit verify',
+      ok: postEditVerification.ok,
+      unavailable: postEditVerification.ran.length === 0,
+      details: postEditVerification.ok
+        ? (postEditVerification.ran.length > 0 ? 'lint/test/build OK' : 'No verification scripts')
+        : (postEditVerification.failed[0]?.command || 'Verification failed')
+    });
+  }
+
+  // === EXTERNAL VALIDATORS ===
+  const external = await runExternalValidators(cfg.panel, cfg.trimmedPrompt, fullResponse, {
+    rewardEnabled: cfg.rewardEnabled,
+    rewardEndpoint: cfg.rewardEndpoint,
+    rewardThreshold: cfg.rewardThreshold,
+    hhemEnabled: cfg.hhemEnabled,
+    hhemEndpoint: cfg.hhemEndpoint,
+    hhemThreshold: cfg.hhemThreshold,
+    ragasEnabled: cfg.ragasEnabled,
+    ragasEndpoint: cfg.ragasEndpoint,
+    ragasThreshold: cfg.ragasThreshold,
+    timeoutMs: cfg.timeout
+  }, cfg.validatorLogsEnabled);
+  qualityChecks.push(...external.results);
+
+  // === SUMMARIZER + STRUCTURED OUTPUT ===
+  const summary = cfg.summarizerEnabled
+    ? await summarizeResponse(cfg.baseUrl, cfg.summarizerModel, cfg.trimmedPrompt, fullResponse, cfg.timeout)
+    : null;
+  const structuredOutput = buildStructuredOutput(fullResponse, summary, qualityChecks, !cfg.stepMode);
+
+  return {
+    fullResponse,
+    postEditVerification,
+    hallucinationResult,
+    guardianResult,
+    miniResult,
+    qualityChecks,
+    external: {
+      rewardResult: external.rewardResult,
+      hhemResult: external.hhemResult,
+      ragasResult: external.ragasResult,
+      results: external.results
+    },
+    summary,
+    structuredOutput
+  };
 }
 
 async function handleChatInternal(
@@ -2372,203 +2598,32 @@ PŘÍSTUP K PRÁCI:
         return result;
       }).join('\n\n---\n\n');
 
-      let postEditVerification: VerificationSummary | null = null;
-      if (toolSession.hadMutations) {
-        postToAllWebviews({ type: 'pipelineStatus', icon: '✅', text: 'Overuji lint/test/build po editaci...', statusType: 'validation', loading: true });
-        postEditVerification = await runPostEditVerification(stepTimeout);
-        if (postEditVerification.ran.length > 0) {
-          for (const cmd of postEditVerification.ran) {
-            outputChannel?.appendLine(`[Verify] ${cmd.command} => ${cmd.ok ? 'OK' : `FAIL(${cmd.exitCode})`}`);
-          }
-        }
-        if (!postEditVerification.ok) {
-          const firstFail = postEditVerification.failed[0];
-          const detail = firstFail ? `${firstFail.command} failed` : 'verification failed';
-          if (validationPolicy === 'fail-closed') {
-            postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
-            return;
-          }
-          postToAllWebviews({ type: 'guardianAlert', message: `Verify warning: ${detail}` });
-          fullResponse += `\n\n[Verify warning] ${detail}`;
-        }
-      }
       orchestrator.transition('verify', { stepMode: true, hadMutations: toolSession.hadMutations });
-      
-      // === LOCAL VALIDATION ===
-      if (panel && panel.visible) {
-        panel.webview.postMessage({ type: 'pipelineStatus', icon: '[H]', text: 'Kontrola halucinaci...', statusType: 'validation', loading: true });
-      }
 
-      const hallucinationResult = hallucinationDetector.analyze(fullResponse, trimmedPrompt, chatMessages);
-      if (hallucinationResult.isHallucination) {
-        guardianStats.hallucinationsDetected++;
-        outputChannel?.appendLine(`[HallucinationDetector] HALUCINACE detekovana (${(hallucinationResult.confidence * 100).toFixed(1)}%)`);
-        postToAllWebviews({ 
-          type: 'guardianAlert', 
-          message: `Halucinace: ${hallucinationDetector.getSummary(hallucinationResult)}` 
-        });
-      } else {
-        outputChannel?.appendLine(`[HallucinationDetector] OK: ${hallucinationDetector.getSummary(hallucinationResult)}`);
-      }
+      const vResult = await runValidationPipeline(fullResponse, toolSession, {
+        trimmedPrompt, chatMessages, stepMode: true, panel,
+        toolCallsEnabled, baseUrl, writerModel, toolPromptForMain,
+        toolPrimaryModel, toolsFallbackModel, toolsConfirmEdits,
+        stepTimeout, autoApprovePolicy, abortSignal: abortController?.signal,
+        guardianEnabled, miniModelEnabled, validationPolicy,
+        validatorLogsEnabled, summarizerEnabled, summarizerModel, timeout,
+        rewardEnabled, rewardEndpoint, rewardThreshold,
+        hhemEnabled, hhemEndpoint, hhemThreshold,
+        ragasEnabled, ragasEndpoint, ragasThreshold,
+      });
+      if (!vResult) return; // blocked by fail-closed verification
 
-      let guardianResult: GuardianResult = {
-        isOk: true,
-        cleanedResponse: fullResponse,
-        issues: [],
-        shouldRetry: false,
-        loopDetected: false,
-        repetitionScore: 0
-      };
-
-      if (guardianEnabled) {
-        if (panel && panel.visible) {
-          panel.webview.postMessage({ type: 'pipelineStatus', icon: '[G]', text: 'Guardian kontroluje vzory...', statusType: 'validation', loading: true });
-        }
-
-        guardianResult = guardian.analyze(fullResponse, trimmedPrompt);
-
-        if (panel && panel.visible) {
-          panel.webview.postMessage({
-            type: 'guardianStatus',
-            result: {
-              isOk: guardianResult.isOk,
-              issues: guardianResult.issues,
-              repetitionScore: guardianResult.repetitionScore,
-              loopDetected: guardianResult.loopDetected
-            }
-          });
-        }
-
-        if (!guardianResult.isOk) {
-          fullResponse = guardianResult.cleanedResponse;
-          if (panel && panel.visible && guardianResult.issues.length > 0) {
-            panel.webview.postMessage({
-              type: 'guardianAlert',
-              message: `Guardian: ${guardianResult.issues.join(', ')}`
-            });
-          }
-        }
-      }
-
-      if (panel && panel.visible) {
-        postToAllWebviews({
-          type: 'pipelineStatus',
-          icon: PIPELINE_STATUS_ICONS.history,
-          text: PIPELINE_STATUS_TEXT.checkingHistory,
-          statusType: 'validation',
-          loading: true
-        });
-      }
-
-      const similarityCheck = responseHistoryManager.checkSimilarity(fullResponse, trimmedPrompt);
-      if (similarityCheck.isSimilar) {
-        outputChannel?.appendLine(`[ResponseHistory] Podobna odpoved nalezena (${(similarityCheck.similarity * 100).toFixed(1)}%)`);
-        postToAllWebviews({ 
-          type: 'guardianAlert', 
-          message: `Podobna odpoved v historii (${(similarityCheck.similarity * 100).toFixed(0)}%)` 
-        });
-      } else {
-        outputChannel?.appendLine('[ResponseHistory] Odpověď je unikátní');
-      }
-
-      let miniResult: MiniModelResult | null = null;
-      if (miniModelEnabled) {
-        // Show validation status in chat
-        postToAllWebviews({
-          type: 'pipelineStatus',
-          icon: PIPELINE_STATUS_ICONS.svedomi,
-          text: PIPELINE_STATUS_TEXT.svedomiValidation,
-          statusType: 'validation',
-          loading: true
-        });
-        // Signal loader start
-        postToAllWebviews({ type: 'svedomiValidating' });
-        miniResult = await svedomi.validate(
-          trimmedPrompt,
-          fullResponse,
-          (status: string) => {
-            postToAllWebviews({ type: 'pipelineStatus', icon: '🧠', text: status, statusType: 'validation', loading: true });
-          }
-        );
-      
-        // Signal loader done
-        postToAllWebviews({ type: 'svedomiValidationDone' });
-        postToAllWebviews({ type: 'miniModelResult', result: miniResult });
-      } else {
-        outputChannel?.appendLine('[Svedomi] Mini-model je vypnut');
-      }
-
-      if (miniResult?.unavailable) {
-        const policyMessage = getMiniUnavailableMessage(validationPolicy);
-        postToAllWebviews({ type: 'guardianAlert', message: policyMessage });
-      }
-      if (validationPolicy === 'fail-closed' && !isMiniAccepted(miniResult, validationPolicy)) {
+      // Step-mode: fail-closed svedomi check
+      if (validationPolicy === 'fail-closed' && !isMiniAccepted(vResult.miniResult, validationPolicy)) {
         postToAllWebviews({
           type: 'responseError',
-          text: `Publish blocked by validation policy: ${miniResult?.reason ?? 'Validation failed'}`
+          text: `Publish blocked by validation policy: ${vResult.miniResult?.reason ?? 'Validation failed'}`
         });
         return;
       }
 
-      const qualityChecks: QualityCheckResult[] = [];
-      qualityChecks.push({
-        name: 'Guardian',
-        ok: guardianEnabled ? guardianResult.isOk : true,
-        unavailable: !guardianEnabled,
-        details: guardianEnabled
-          ? (guardianResult.issues.length > 0 ? guardianResult.issues.join(', ') : undefined)
-          : 'Vypnuto'
-      });
-      qualityChecks.push({
-        name: 'HallucinationDetector',
-        ok: !hallucinationResult.isHallucination,
-        score: hallucinationResult.confidence,
-        threshold: 0.7,
-        details: hallucinationDetector.getSummary(hallucinationResult)
-      });
-      if (miniResult) {
-        const svedomiOk = isMiniAccepted(miniResult, validationPolicy);
-        qualityChecks.push({
-          name: 'svedomi',
-          ok: svedomiOk,
-          score: miniResult.score,
-          threshold: 5,
-          details: miniResult.reason,
-          unavailable: miniResult.unavailable
-        });
-      }
-      if (postEditVerification) {
-        qualityChecks.push({
-          name: 'post-edit verify',
-          ok: postEditVerification.ok,
-          unavailable: postEditVerification.ran.length === 0,
-          details: postEditVerification.ok
-            ? (postEditVerification.ran.length > 0 ? 'lint/test/build OK' : 'No verification scripts')
-            : (postEditVerification.failed[0]?.command || 'Verification failed')
-        });
-      }
-
-      const external = await runExternalValidators(panel, trimmedPrompt, fullResponse, {
-        rewardEnabled,
-        rewardEndpoint,
-        rewardThreshold,
-        hhemEnabled,
-        hhemEndpoint,
-        hhemThreshold,
-        ragasEnabled,
-        ragasEndpoint,
-        ragasThreshold,
-        timeoutMs: timeout
-      }, validatorLogsEnabled);
-      qualityChecks.push(...external.results);
-
-      const summary = summarizerEnabled
-        ? await summarizeResponse(baseUrl, summarizerModel, trimmedPrompt, fullResponse, timeout)
-        : null;
-      const responseForHistory = fullResponse;
-      const appendix = buildStructuredOutput('', summary, qualityChecks, false).trim();
-      fullResponse = buildStructuredOutput(fullResponse, summary, qualityChecks, false);
-
+      fullResponse = vResult.structuredOutput;
+      const appendix = buildStructuredOutput('', vResult.summary, vResult.qualityChecks, false).trim();
       if (appendix) {
         postToAllWebviews({ type: 'responseChunk', text: `\n\n${appendix}` });
       }
@@ -2576,28 +2631,17 @@ PŘÍSTUP K PRÁCI:
       postToAllWebviews({ type: 'rozumPlanningDone' });
       postToAllWebviews({ type: 'allStepsComplete', totalSteps: rozumPlan!.totalSteps });
       
-      // === SEND FULL RESPONSE AFTER PIPELINE APPROVAL ===
       orchestrator.transition('publish', { stepMode: true, checkpoints: orchestrator.getCheckpoints().length });
-      postToAllWebviews({ 
-        type: 'pipelineApproved',
-        message: 'Odpoved schvalena Rozumem a validaci'
-      });
+      postToAllWebviews({ type: 'pipelineApproved', message: 'Odpoved schvalena Rozumem a validaci' });
       postToAllWebviews({ type: 'responseChunk', text: fullResponse });
 
-      // Log final pipeline summary
       outputChannel?.appendLine('');
-      outputChannel?.appendLine('╔══════════════════════════════════════════════════════════════╗');
-      outputChannel?.appendLine('║          ✅ PIPELINE DOKONČEN                                ║');
-      outputChannel?.appendLine('╚══════════════════════════════════════════════════════════════╝');
-      outputChannel?.appendLine(`[Pipeline] Celkem kroků: ${rozumPlan.totalSteps}`);
-      outputChannel?.appendLine(`[Pipeline] Úspěšně dokončeno: ${stepResults.length}`);
-      outputChannel?.appendLine('');
+      outputChannel?.appendLine(`[Pipeline] Celkem kroků: ${rozumPlan.totalSteps}, dokončeno: ${stepResults.length}`);
 
-      // Save assistant response
       messages.push({ role: 'assistant', content: fullResponse, timestamp: Date.now() });
       await saveChatMessages(context, messages);
-      const finalScore = miniResult?.score || 7;
-      responseHistoryManager.addResponse(responseForHistory, trimmedPrompt, finalScore);
+      const finalScore = vResult.miniResult?.score || 7;
+      responseHistoryManager.addResponse(vResult.fullResponse, trimmedPrompt, finalScore);
 
       postToAllWebviews({ type: 'responseDone' });
 
@@ -2621,13 +2665,23 @@ PŘÍSTUP K PRÁCI:
   }
 
   // === STANDARD SINGLE-CALL MODE (no steps) ===
-  const apiMessages: ChatMessage[] = [
-    { role: 'system', content: toolSystemPrompt },
-    ...messages
-  ];
+  const contextTokens = getContextTokens();
+  const { apiMessages, compressed: compressionResult } = buildCompressedMessages(
+    toolSystemPrompt,
+    messages,
+    contextTokens
+  );
+  if (compressionResult.wasCompressed) {
+    outputChannel?.appendLine(
+      `[ContextMemory] Compressed: ${compressionResult.stats.originalCount} msgs -> ` +
+      `${compressionResult.stats.summarizedCount} summarized + ${compressionResult.stats.recentCount} recent ` +
+      `(~${compressionResult.stats.estimatedTokensSaved} tokens saved)`
+    );
+  }
 
   const url = `${baseUrl}/api/chat`;
-  abortController = new AbortController();
+  const localAbortController = new AbortController();
+  abortController = localAbortController;
 
   let fullResponse = '';
   let streamedToUi = false;
@@ -2822,300 +2876,39 @@ PŘÍSTUP K PRÁCI:
     }
   }
 
-    let postEditVerification: VerificationSummary | null = null;
-    if (fullResponse && toolSession.hadMutations) {
-      postToAllWebviews({ type: 'pipelineStatus', icon: '✅', text: 'Overuji lint/test/build po editaci...', statusType: 'validation', loading: true });
-      postEditVerification = await runPostEditVerification(stepTimeout);
-      if (postEditVerification.ran.length > 0) {
-        for (const cmd of postEditVerification.ran) {
-          outputChannel?.appendLine(`[Verify] ${cmd.command} => ${cmd.ok ? 'OK' : `FAIL(${cmd.exitCode})`}`);
-        }
-      }
-      if (!postEditVerification.ok) {
-        const firstFail = postEditVerification.failed[0];
-        const detail = firstFail ? `${firstFail.command} failed` : 'verification failed';
-        if (validationPolicy === 'fail-closed') {
-          postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
-          return;
-        }
-        postToAllWebviews({ type: 'guardianAlert', message: `Verify warning: ${detail}` });
-        fullResponse += `\n\n[Verify warning] ${detail}`;
-      }
-    }
     orchestrator.transition('verify', { stepMode: false, hadMutations: toolSession.hadMutations });
 
-    // === GUARDIAN POST-PROCESSING ===
     if (fullResponse) {
-      outputChannel?.appendLine('');
-      outputChannel?.appendLine('╔══════════════════════════════════════════════════════════════╗');
-      outputChannel?.appendLine('║          🛡️ VALIDAČNÍ SYSTÉMY - ANALÝZA ODPOVĚDI            ║');
-      outputChannel?.appendLine('╚══════════════════════════════════════════════════════════════╝');
-      outputChannel?.appendLine(`[Prompt] ${trimmedPrompt.slice(0, 100)}...`);
-      outputChannel?.appendLine(`[Response] ${fullResponse.slice(0, 200)}...`);
-      outputChannel?.appendLine('');
-
-      // === SYSTEM 1: HALLUCINATION DETECTOR ===
-      outputChannel?.appendLine('┌─────────────────────────────────────────────────────────────┐');
-      outputChannel?.appendLine('│ SYSTÉM 1: HallucinationDetector                             │');
-      outputChannel?.appendLine('└─────────────────────────────────────────────────────────────┘');
-      
-      // Show hallucination check status in chat
-      if (panel && panel.visible) {
-        panel.webview.postMessage({ type: 'pipelineStatus', icon: '🔮', text: 'Kontrola halucinací...', statusType: 'validation', loading: true });
-      }
-      
-      const hallucinationResult = hallucinationDetector.analyze(fullResponse, trimmedPrompt, chatMessages);
-      if (hallucinationResult.isHallucination) {
-        guardianStats.hallucinationsDetected++;
-        outputChannel?.appendLine(`[HallucinationDetector] 🚨 HALUCINACE DETEKOVÁNA!`);
-        outputChannel?.appendLine(`[HallucinationDetector] Kategorie: ${hallucinationResult.category}`);
-        outputChannel?.appendLine(`[HallucinationDetector] Confidence: ${(hallucinationResult.confidence * 100).toFixed(1)}%`);
-        
-        // Notify UI
-        postToAllWebviews({ 
-          type: 'guardianAlert', 
-          message: `🔮 Halucinace: ${hallucinationDetector.getSummary(hallucinationResult)}` 
-        });
-      } else {
-        outputChannel?.appendLine(`[HallucinationDetector] ✅ ${hallucinationDetector.getSummary(hallucinationResult)}`);
-      }
-      outputChannel?.appendLine('');
-
-      let guardianResult: GuardianResult = {
-        isOk: true,
-        cleanedResponse: fullResponse,
-        issues: [],
-        shouldRetry: false,
-        loopDetected: false,
-        repetitionScore: 0
-      };
-
-      if (guardianEnabled) {
-      // === SYSTEM 2: RESPONSE GUARDIAN ===
-      outputChannel?.appendLine('┌─────────────────────────────────────────────────────────────┐');
-      outputChannel?.appendLine('│ SYSTÉM 2: ResponseGuardian                                  │');
-      outputChannel?.appendLine('└─────────────────────────────────────────────────────────────┘');
-      
-            
-      // Show Guardian status in chat
-      
-      postToAllWebviews({ type: 'pipelineStatus', icon: '🛡️', text: 'Guardian kontroluje vzory...', statusType: 'validation', loading: true });
-      
-      
-      guardianResult = guardian.analyze(fullResponse, trimmedPrompt);
-      
-      
-      outputChannel?.appendLine(`[ResponseGuardian] isOk: ${guardianResult.isOk}`);
-      
-      outputChannel?.appendLine(`[ResponseGuardian] loopDetected: ${guardianResult.loopDetected}`);
-      
-      outputChannel?.appendLine(`[ResponseGuardian] repetitionScore: ${(guardianResult.repetitionScore * 100).toFixed(1)}%`);
-      
-      if (guardianResult.issues.length > 0) {
-      
-        outputChannel?.appendLine(`[ResponseGuardian] Issues:`);
-      
-        guardianResult.issues.forEach(issue => {
-      
-          outputChannel?.appendLine(`[ResponseGuardian]   - ${issue}`);
-      
-        });
-      
-      }
-      
-      outputChannel?.appendLine('');
-      
-      
-      // Send guardian status to UI
-      
-      postToAllWebviews({ 
-      
-        type: 'guardianStatus', 
-      
-        result: {
-      
-          isOk: guardianResult.isOk,
-      
-          issues: guardianResult.issues,
-      
-          repetitionScore: guardianResult.repetitionScore,
-      
-          loopDetected: guardianResult.loopDetected
-      
-        }
-      
+      const vResult = await runValidationPipeline(fullResponse, toolSession, {
+        trimmedPrompt, chatMessages, stepMode: false, panel,
+        toolCallsEnabled, baseUrl, writerModel, toolPromptForMain,
+        toolPrimaryModel, toolsFallbackModel, toolsConfirmEdits,
+        stepTimeout, autoApprovePolicy, abortSignal: abortController?.signal,
+        guardianEnabled, miniModelEnabled, validationPolicy,
+        validatorLogsEnabled, summarizerEnabled, summarizerModel, timeout,
+        rewardEnabled, rewardEndpoint, rewardThreshold,
+        hhemEnabled, hhemEndpoint, hhemThreshold,
+        ragasEnabled, ragasEndpoint, ragasThreshold,
       });
+      if (!vResult) return; // blocked by fail-closed verification
 
-      
-      // Apply cleaned response
-      
-      if (!guardianResult.isOk) {
-      
-        fullResponse = guardianResult.cleanedResponse;
-  
-      
-        // Notify UI about cleaning
-      
-        if (guardianResult.issues.length > 0) {
-      
-          postToAllWebviews({ 
-      
-            type: 'guardianAlert', 
-      
-            message: `Guardian: ${guardianResult.issues.join(', ')}` 
-      
-          });
-      
-        }
-      
-      }
+      // === UNIFIED RETRY LOGIC (single-call only) ===
+      const { hallucinationResult, guardianResult, miniResult, external } = vResult;
+      const { rewardResult, hhemResult, ragasResult } = external;
 
-      }
-
-// === RESPONSE HISTORY CHECK ===
-      outputChannel?.appendLine('┌─────────────────────────────────────────────────────────────┐');
-      outputChannel?.appendLine('│ SYSTÉM 3: ResponseHistoryManager                            │');
-      outputChannel?.appendLine('└─────────────────────────────────────────────────────────────┘');
-      
-      // Show history check status
-      postToAllWebviews({
-        type: 'pipelineStatus',
-        icon: PIPELINE_STATUS_ICONS.history,
-        text: PIPELINE_STATUS_TEXT.checkingHistory,
-        statusType: 'validation',
-        loading: true
-      });
-      
-      const similarityCheck = responseHistoryManager.checkSimilarity(fullResponse, trimmedPrompt);
-      if (similarityCheck.isSimilar) {
-        outputChannel?.appendLine(`[ResponseHistory] ⚠️ Podobná odpověď nalezena!`);
-        outputChannel?.appendLine(`[ResponseHistory] Podobnost: ${(similarityCheck.similarity * 100).toFixed(1)}%`);
-        outputChannel?.appendLine(`[ResponseHistory] Index v historii: ${similarityCheck.matchedIndex}`);
-        
-        postToAllWebviews({ 
-          type: 'guardianAlert', 
-          message: `📋 Podobná odpověď v historii (${(similarityCheck.similarity * 100).toFixed(0)}%)` 
-        });
-      } else {
-        outputChannel?.appendLine(`[ResponseHistory] ✅ Odpověď je unikátní`);
-      }
-      
-      const historyStats = responseHistoryManager.getStats();
-      outputChannel?.appendLine(`[ResponseHistory] Historie: ${historyStats.total} odpovědí, průměrné skóre: ${historyStats.avgScore.toFixed(1)}`);
-      outputChannel?.appendLine('');
-
-      // === MINI-MODEL VALIDATION (SVĚDOMÍ) ===
-      outputChannel?.appendLine('┌─────────────────────────────────────────────────────────────┐');
-      outputChannel?.appendLine('│ SYSTÉM 4: svedomi (Mini-model Validator)                    │');
-      outputChannel?.appendLine('└─────────────────────────────────────────────────────────────┘');
-      
-      // Run even if Guardian wants retry to get comprehensive feedback
-      let miniResult: MiniModelResult | null = null;
-      if (miniModelEnabled) {
-        // Show validation status in chat
-        postToAllWebviews({
-          type: 'pipelineStatus',
-          icon: PIPELINE_STATUS_ICONS.svedomi,
-          text: PIPELINE_STATUS_TEXT.svedomiValidation,
-          statusType: 'validation',
-          loading: true
-        });
-        // Signal loader start
-        postToAllWebviews({ type: 'svedomiValidating' });
-        miniResult = await svedomi.validate(
-          trimmedPrompt,
-          fullResponse,
-          (status: string) => {
-            postToAllWebviews({ type: 'pipelineStatus', icon: '🧠', text: status, statusType: 'validation', loading: true });
-          }
-        );
-      
-        // Signal loader done
-        postToAllWebviews({ type: 'svedomiValidationDone' });
-        postToAllWebviews({ type: 'miniModelResult', result: miniResult });
-      } else {
-        outputChannel?.appendLine('[Svedomi] Mini-model je vypnut');
-      }
-      const miniUnavailable = Boolean(miniResult?.unavailable);
-      if (miniUnavailable) {
-        postToAllWebviews({
-          type: 'guardianAlert',
-          message: getMiniUnavailableMessage(validationPolicy, true)
-        });
-      }
-      outputChannel?.appendLine('');
-
-      const qualityChecks: QualityCheckResult[] = [];
-      qualityChecks.push({
-        name: 'Guardian',
-        ok: guardianEnabled ? guardianResult.isOk : true,
-        unavailable: !guardianEnabled,
-        details: guardianEnabled
-          ? (guardianResult.issues.length > 0 ? guardianResult.issues.join(', ') : undefined)
-          : 'Vypnuto'
-      });
-      qualityChecks.push({
-        name: 'HallucinationDetector',
-        ok: !hallucinationResult.isHallucination,
-        score: hallucinationResult.confidence,
-        threshold: 0.7,
-        details: hallucinationDetector.getSummary(hallucinationResult)
-      });
-      if (miniResult) {
-        const svedomiOk = isMiniAccepted(miniResult, validationPolicy);
-        qualityChecks.push({
-          name: 'svedomi',
-          ok: svedomiOk,
-          score: miniResult.score,
-          threshold: 5,
-          details: miniResult.reason,
-          unavailable: miniResult.unavailable
-        });
-      }
-      if (postEditVerification) {
-        qualityChecks.push({
-          name: 'post-edit verify',
-          ok: postEditVerification.ok,
-          unavailable: postEditVerification.ran.length === 0,
-          details: postEditVerification.ok
-            ? (postEditVerification.ran.length > 0 ? 'lint/test/build OK' : 'No verification scripts')
-            : (postEditVerification.failed[0]?.command || 'Verification failed')
-        });
-      }
-
-      // === EXTERNAL VALIDATORS (Reward / HHEM / RAGAS) ===
-      const external = await runExternalValidators(panel, trimmedPrompt, fullResponse, {
-        rewardEnabled,
-        rewardEndpoint,
-        rewardThreshold,
-        hhemEnabled,
-        hhemEndpoint,
-        hhemThreshold,
-        ragasEnabled,
-        ragasEndpoint,
-        ragasThreshold,
-        timeoutMs: timeout
-      }, validatorLogsEnabled);
-      const rewardResult = external.rewardResult;
-      const hhemResult = external.hhemResult;
-      const ragasResult = external.ragasResult;
-      qualityChecks.push(...external.results);
-
-      // === UNIFIED RETRY LOGIC ===
-      // Prioritize mini-model decision, fallback to Guardian
       const shouldRetryMini = shouldRetryMiniValidation(miniResult, validationPolicy);
       const shouldRetryGuardian = guardianResult.shouldRetry;
       const shouldRetryHallucination = hallucinationResult.isHallucination && hallucinationResult.confidence > 0.7;
       const shouldRetryReward = rewardEnabled && !rewardResult.ok && !rewardResult.unavailable;
       const shouldRetryHhem = hhemEnabled && !hhemResult.ok && !hhemResult.unavailable;
       const shouldRetryRagas = ragasEnabled && !ragasResult.ok && !ragasResult.unavailable;
-      const shouldRetryAny = shouldRetryMini || shouldRetryGuardian || shouldRetryHallucination || shouldRetryReward || shouldRetryHhem || shouldRetryRagas;
+      const failClosedUnavailableReward = rewardEnabled && rewardResult.unavailable && validationPolicy === 'fail-closed';
+      const failClosedUnavailableHhem = hhemEnabled && hhemResult.unavailable && validationPolicy === 'fail-closed';
+      const failClosedUnavailableRagas = ragasEnabled && ragasResult.unavailable && validationPolicy === 'fail-closed';
+      const shouldRetryAny = shouldRetryMini || shouldRetryGuardian || shouldRetryHallucination || shouldRetryReward || shouldRetryHhem || shouldRetryRagas || failClosedUnavailableReward || failClosedUnavailableHhem || failClosedUnavailableRagas;
       const retryBlockedByTools = toolsEnabled && toolSession.hadMutations;
-      
-      if (shouldRetryAny
-        && retryCount < maxRetries
-        && !retryBlockedByTools
-      ) {
+
+      if (shouldRetryAny && retryCount < maxRetries && !retryBlockedByTools) {
         const retrySource = shouldRetryHallucination
           ? 'Hallucination'
           : (shouldRetryMini
@@ -3125,14 +2918,14 @@ PŘÍSTUP K PRÁCI:
               : (shouldRetryHhem ? 'HHEM' : (shouldRetryRagas ? 'RAGAS' : 'Guardian'))));
         const retryDetail = shouldRetryHallucination
           ? `Halucinace ${(hallucinationResult.confidence * 100).toFixed(0)}%`
-          : (shouldRetryMini 
-            ? `Skóre ${miniResult!.score}/10 - ${miniResult!.reason}` 
+          : (shouldRetryMini
+            ? `Skóre ${miniResult!.score}/10 - ${miniResult!.reason}`
             : (shouldRetryReward
               ? `Reward pod prahem ${rewardThreshold}`
               : (shouldRetryHhem
                 ? `HHEM pod prahem ${hhemThreshold}`
                 : (shouldRetryRagas ? `RAGAS pod prahem ${ragasThreshold}` : `Problém detekován`))));
-        
+
         const retryFeedbackMessage = [
           `Duvod: ${retrySource} - ${retryDetail}`,
           guardianEnabled && guardianResult.issues.length > 0 ? `Guardian: ${guardianResult.issues.join(', ')}` : '',
@@ -3140,23 +2933,19 @@ PŘÍSTUP K PRÁCI:
           hallucinationResult.isHallucination ? `Halucinace: ${hallucinationDetector.getSummary(hallucinationResult)}` : ''
         ].filter(Boolean).join('\n');
 
-        outputChannel?.appendLine(`[Retry] 🔄 Spouštím retry - důvod: ${retrySource}`);
+        outputChannel?.appendLine(`[Retry] Spoustim retry - duvod: ${retrySource}`);
         guardianStats.retriesTriggered++;
-        
-        // Check panel before retry message
-        postToAllWebviews({ 
-          type: 'guardianAlert', 
-          message: `🔄 ${retrySource}: ${retryDetail}. Zkouším znovu (${retryCount + 1}/${maxRetries})` 
+
+        postToAllWebviews({
+          type: 'guardianAlert',
+          message: `🔄 ${retrySource}: ${retryDetail}. Zkouším znovu (${retryCount + 1}/${maxRetries})`
         });
-        
-        // Remove failed assistant response attempt
+
         if (messages[messages.length - 1]?.role === 'assistant') {
           messages.pop();
         }
-        
-        // Wait before retry
+
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
         return handleChatInternal(panel, context, trimmedPrompt, messages, retryCount + 1, retryFeedbackMessage);
       }
       if (retryBlockedByTools && shouldRetryAny) {
@@ -3167,50 +2956,39 @@ PŘÍSTUP K PRÁCI:
         }
       }
 
-      // === LOG FINAL STATS ===
-      outputChannel?.appendLine('');
-      outputChannel?.appendLine('┌─────────────────────────────────────────────────────────────┐');
-      outputChannel?.appendLine('│ VÝSLEDEK VALIDACE                                           │');
-      outputChannel?.appendLine('└─────────────────────────────────────────────────────────────┘');
-      outputChannel?.appendLine(`[Stats] Celkem kontrol: ${guardianStats.totalChecks}`);
-      outputChannel?.appendLine(`[Stats] Detekované smyčky: ${guardianStats.loopsDetected}`);
-      outputChannel?.appendLine(`[Stats] Opravená opakování: ${guardianStats.repetitionsFixed}`);
-      outputChannel?.appendLine(`[Stats] Halucinace: ${guardianStats.hallucinationsDetected}`);
-      outputChannel?.appendLine(`[Stats] Podobné odpovědi: ${guardianStats.similarResponsesBlocked}`);
-      outputChannel?.appendLine(`[Stats] Mini-model validací: ${guardianStats.miniModelValidations}`);
-      outputChannel?.appendLine(`[Stats] Mini-model zamítnutí: ${guardianStats.miniModelRejections}`);
-      outputChannel?.appendLine('╔══════════════════════════════════════════════════════════════╗');
-      outputChannel?.appendLine('║          ✅ VALIDACE DOKONČENA                               ║');
-      outputChannel?.appendLine('╚══════════════════════════════════════════════════════════════╝');
-      outputChannel?.appendLine('');
+      // Fail-closed: block publish when external validators are unavailable
+      if (validationPolicy === 'fail-closed') {
+        const unavailableNames: string[] = [];
+        if (failClosedUnavailableReward) unavailableNames.push('Reward');
+        if (failClosedUnavailableHhem) unavailableNames.push('HHEM');
+        if (failClosedUnavailableRagas) unavailableNames.push('RAGAS');
+        if (unavailableNames.length > 0) {
+          const label = unavailableNames.join(', ');
+          outputChannel?.appendLine(`[FailClosed] Blocking publish: ${label} unavailable in fail-closed mode`);
+          postToAllWebviews({
+            type: 'responseError',
+            text: `Publish blocked: validátor ${label} nedostupný (fail-closed režim).`
+          });
+          return;
+        }
+      }
 
-      const summary = summarizerEnabled
-        ? await summarizeResponse(baseUrl, summarizerModel, trimmedPrompt, fullResponse, timeout)
-        : null;
-      const responseForHistory = fullResponse;
-      fullResponse = buildStructuredOutput(fullResponse, summary, qualityChecks);
+      fullResponse = vResult.structuredOutput;
 
-      // Signal pipeline approval and send response
       orchestrator.transition('publish', { stepMode: false, checkpoints: orchestrator.getCheckpoints().length });
-      postToAllWebviews({
-        type: 'pipelineApproved',
-        message: '✅ Odpověď schválena'
-      });
+      postToAllWebviews({ type: 'pipelineApproved', message: '✅ Odpověď schválena' });
 
-      // Add to response history for future similarity checks
       const finalScore = miniResult?.score || 7;
-      responseHistoryManager.addResponse(responseForHistory, trimmedPrompt, finalScore);
+      responseHistoryManager.addResponse(vResult.fullResponse, trimmedPrompt, finalScore);
     }
 
     if (!streamedToUi && fullResponse) {
       postToAllWebviews({ type: 'responseChunk', text: fullResponse });
     }
 
-    // Save assistant response
     messages.push({ role: 'assistant', content: fullResponse, timestamp: Date.now() });
     await saveChatMessages(context, messages);
 
-    // Check panel validity before final message
     postToAllWebviews({ type: 'responseDone' });
 
   } catch (err: unknown) {
@@ -3227,6 +3005,17 @@ PŘÍSTUP K PRÁCI:
         await saveChatMessages(context, messages);
       }
     } else {
+      // Auto-retry transient API errors (ECONNRESET, ETIMEDOUT, 5xx, etc.)
+      if (isTransientError(error) && retryCount < maxRetries) {
+        const backoffMs = 1000 * Math.pow(2, retryCount); // 1s, 2s, 4s...
+        outputChannel?.appendLine(`[Retry] Transient error detected: ${error.message}. Retrying in ${backoffMs}ms (${retryCount + 1}/${maxRetries})`);
+        postToAllWebviews({
+          type: 'guardianAlert',
+          message: `🔄 Přechodná chyba sítě — zkouším znovu (${retryCount + 1}/${maxRetries})...`
+        });
+        await new Promise(resolve => setTimeout(resolve, backoffMs));
+        return handleChatInternal(panel, context, trimmedPrompt, messages, retryCount + 1);
+      }
       // Remove the user message on error (only if it was our first attempt)
       if (retryCount === 0 && messages.length > 0 && messages[messages.length - 1]?.role === 'user') {
         messages.pop();
@@ -3237,15 +3026,19 @@ PŘÍSTUP K PRÁCI:
           outputChannel?.appendLine(`[Error] Failed to save after error cleanup: ${String(e)}`);
         }
       }
-      const errorMsg = error.message || String(err);
-      outputChannel?.appendLine(`[Error] ${errorMsg}`);
+      const rawMsg = error.message || String(err);
+      const errorMsg = humanizeApiError(rawMsg);
+      outputChannel?.appendLine(`[Error] ${rawMsg}`);
       // Only send error if panel is still valid
       postToAllWebviews({ type: 'responseError', text: errorMsg });
     }
   } finally {
     chatRequestGuard.release(retryCount);
     outputChannel?.appendLine(`[Orchestrator] State: ${orchestrator.getCurrent()} | checkpoints=${orchestrator.getCheckpoints().length}`);
-    abortController = undefined;
+    // Only clear global if it's still our controller (prevents race with concurrent requests)
+    if (abortController === localAbortController) {
+      abortController = undefined;
+    }
   }
 }
 
@@ -3286,25 +3079,25 @@ function buildToolInstructions(): string {
   const autoSaveDir = getToolsAutoSaveDir();
   return [
     'TOOLING:',
-    'Mas pristup k nastrojum pro praci se soubory. Kdyz potrebujes cist nebo upravovat soubory, pouzij nastroj.',
-    'Format tool callu (vrat pouze tool_call bloky, bez dalsiho textu):',
+    'You have access to tools for file operations and terminal execution. Use tools when you need to read, edit files or run commands.',
+    'Tool call format (return ONLY tool_call blocks, without conversational text):',
     '<tool_call>{"name":"read_file","arguments":{"path":"src/extension.ts","startLine":1,"endLine":200}}</tool_call>',
-    'Po kazdem tool callu dostanes vysledek:',
+    'After each tool call, you will receive a result:',
     '<tool_result>{"ok":true,"tool":"read_file","data":{...}}</tool_result>',
-    'read_file uklada hash souboru; pred replace_lines vzdy pouzij read_file.',
-    `Auto-save slozka: ${autoSaveDir}.`,
-    'Kdyz nevis cestu, pouzij pick_save_path (bez dialogu) a potom write_file s vracenou cestou.',
-    'U pick_save_path pouzij title/suggestedName/extension pro chytre pojmenovani.',
-    'Kdyz neuvedes path u write_file/replace_lines, pouzije se aktivni soubor; write_file bez aktivniho souboru ulozi do auto-save slozky.',
-    'Cilovy soubor vol sam: 1) explicitne z dotazu, 2) aktivni soubor pokud sedi tema, 3) relevantni soubory z kontextu, 4) list_files/search_in_files, 5) novy soubor do auto-save.',
-    'Nezadej si o cestu, pokud to neni nezbytne; rozhodni a zapis.',
-    'Pokud je workspace multi-root, pouzij cestu ve tvaru root/soubor.',
+    'read_file caches the file hash; ALWAYS use read_file before replace_lines.',
+    `Auto-save folder: ${autoSaveDir}.`,
+    'If you do not know the path, use pick_save_path and then write_file with the returned path.',
+    'Use title/suggestedName/extension in pick_save_path for smart naming.',
+    'If path is omitted in write_file/replace_lines, the active file is used. write_file without an active file saves to the auto-save folder.',
+    'Decide the target file yourself: 1) explicit in query, 2) active file if relevant, 3) relevant context files, 4) list_files/search_in_files, 5) new file in auto-save.',
+    'Do not ask for a path unless strictly necessary; make a decision and write.',
+    'If the workspace is multi-root, use the format root/file.',
     '',
-    'Dostupne nastroje:',
+    'AVAILABLE TOOLS:',
     '- list_files { glob?: string, maxResults?: number }',
     '- read_file { path: string, startLine?: number, endLine?: number }',
     '- get_active_file { }',
-    '- search_in_files { query: string, glob?: string, maxResults?: number }',
+    '- search_in_files { query: string, glob?: string, maxResults?: number, isRegex?: boolean }',
     '- get_symbols { path?: string, maxDepth?: number, maxResults?: number }',
     '- get_workspace_symbols { query?: string, maxResults?: number }',
     '- get_definition { path?: string, line?: number, character?: number, symbol?: string }',
@@ -3318,11 +3111,14 @@ function buildToolInstructions(): string {
     '- route_file { intent: string, preferredExtension?: string, fileNameHint?: string, maxResults?: number, glob?: string, allowCreate?: boolean }',
     '- rename_file { from: string, to: string }',
     '- delete_file { path: string }',
+    '- run_terminal_command { command: string, timeoutMs?: number }',
+    '- fetch_webpage { url: string }',
     '',
-    'Pravidla:',
-    '- Pri editaci nejdriv nacti soubor a pouzij replace_lines s presnymi radky.',
-    '- Nehlasej, ze jsi soubor cetl/upravil bez tool_result.',
-    '- Kdyz dostanes tool_result s approved:false, navrhni alternativu nebo se zeptej.'
+    'RULES:',
+    '- When editing, read the file first and use replace_lines with precise line content matches.',
+    '- Never report having read/modified a file without getting a tool_result back first.',
+    '- If you receive a tool_result with approved:false, suggest an alternative or ask the user.',
+    '- Wait for terminal command output before proceeding to next steps.'
   ].join('\n');
 }
 
@@ -3352,7 +3148,9 @@ function buildToolOnlyPrompt(requireMutation: boolean): string {
     'pick_save_path',
     'route_file',
     'rename_file',
-    'delete_file'
+    'delete_file',
+    'run_terminal_command',
+    'fetch_webpage'
   ];
   return [...rules, `Dostupne nastroje: ${tools.join(', ')}`].join('\n');
 }
@@ -5141,6 +4939,7 @@ async function runToolCall(
       case 'delete_file': return handleDeleteFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
       case 'run_terminal_command': return handleRunTerminalCommandTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps);
       case 'fetch_webpage': return handleFetchWebpageTool(name, args, mutationHandlerDeps);
+
       default:
         return { ok: false, tool: name, message: 'neznamy nastroj' };
     }
@@ -5159,17 +4958,25 @@ async function executeModelCallWithMessages(
   forceJson?: boolean
 ): Promise<string> {
   const url = `${baseUrl}/api/chat`;
+  const contextTokens = getContextTokens();
   const options = {
     repeat_penalty: 1.2,
     repeat_last_n: 256,
     num_predict: getMaxOutputTokens(forceJson ? 1024 : 2048),
     temperature: forceJson ? 0.1 : 0.3,
-    num_ctx: getContextTokens()
+    num_ctx: contextTokens
   };
+  const { apiMessages: compressedMsgs, compressed } = buildCompressedMessages(systemPrompt, messages, contextTokens);
+  if (compressed.wasCompressed) {
+    outputChannel?.appendLine(
+      `[ContextMemory/executeModel] Compressed: ${compressed.stats.originalCount} msgs -> ` +
+      `${compressed.stats.summarizedCount} summarized + ${compressed.stats.recentCount} recent`
+    );
+  }
   const body: Record<string, unknown> = {
     model,
     stream: true,
-    messages: [{ role: 'system', content: systemPrompt }, ...messages],
+    messages: compressedMsgs,
     options
   };
   if (forceJson) {
@@ -5189,9 +4996,17 @@ async function executeModelCallWithMessages(
   const decoder = new TextDecoder();
   let buffer = '';
   let fullResponse = '';
+  let lastChunkAt = Date.now();
+  const STREAM_STALL_MS = 15000;
 
   for await (const chunk of res.body as any) {
     if (!chunk) continue;
+    const now = Date.now();
+    if (now - lastChunkAt > STREAM_STALL_MS && fullResponse.length > 50) {
+      outputChannel?.appendLine('[executeModelCallWithMessages] Stream stall detected, aborting');
+      break;
+    }
+    lastChunkAt = now;
     buffer += decoder.decode(chunk, { stream: true });
     let newlineIndex;
     while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
@@ -5212,6 +5027,42 @@ async function executeModelCallWithMessages(
   return fullResponse;
 }
 
+interface DiagnosticEntry { path: string; line: number; message: string; severity: string }
+
+/**
+ * Collect error-level VS Code diagnostics from all open workspace files.
+ * Waits briefly for language servers to update after file writes.
+ */
+async function collectPostWriteDiagnostics(): Promise<DiagnosticEntry[]> {
+  // Give language servers a moment to process the written files
+  await new Promise(resolve => setTimeout(resolve, 800));
+
+  const allDiagnostics = vscode.languages.getDiagnostics();
+  const errors: DiagnosticEntry[] = [];
+  const folders = vscode.workspace.workspaceFolders;
+
+  for (const [uri, diagnostics] of allDiagnostics) {
+    // Only include files within the workspace
+    if (folders && !folders.some(f => uri.fsPath.startsWith(f.uri.fsPath))) continue;
+    // Skip node_modules, .git, etc.
+    const rel = vscode.workspace.asRelativePath(uri, false);
+    if (rel.includes('node_modules') || rel.startsWith('.git')) continue;
+
+    for (const diag of diagnostics) {
+      if (diag.severity === vscode.DiagnosticSeverity.Error) {
+        errors.push({
+          path: rel,
+          line: diag.range.start.line + 1,
+          message: diag.message,
+          severity: 'error'
+        });
+      }
+    }
+    if (errors.length >= 30) break;
+  }
+  return errors;
+}
+
 async function generateWithTools(
   panel: WebviewWrapper,
   baseUrl: string,
@@ -5227,6 +5078,7 @@ async function generateWithTools(
   session?: ToolSessionState,
   autoApprovePolicy?: AutoApprovePolicy
 ): Promise<string> {
+  const MAX_SELF_CORRECTIONS = 3;
   const iterations = clampNumber(maxIterations, 6, 1, 10);
   const workingMessages = messages.map(m => ({ ...m }));
   const requireToolCall = requirements?.requireToolCall ?? false;
@@ -5234,6 +5086,7 @@ async function generateWithTools(
   const startHadMutations = session?.hadMutations ?? false;
   let sawToolCall = false;
   let localMutation = false;
+  let selfCorrectionCount = 0;
   const systemPromptOverride = toolOptions?.systemPromptOverride ?? systemPrompt;
   const fallbackModel = (toolOptions?.fallbackModel || '').trim();
   let currentModel = (toolOptions?.primaryModel || model).trim();
@@ -5344,6 +5197,16 @@ async function generateWithTools(
 
     for (const call of calls) {
       const result = await runToolCall(panel, call, confirmEdits, session, autoApprovePolicy);
+      // Track tool call/result pair
+      if (session) {
+        if (!session.toolCallRecords) session.toolCallRecords = [];
+        session.toolCallRecords.push({
+          tool: call.name,
+          args: call.arguments ?? {},
+          ok: result.ok,
+          message: result.message
+        });
+      }
       if (!result.ok) {
         const message = result.message ?? 'unknown error';
         outputChannel?.appendLine(`[Tools] ${call.name} failed: ${message}`);
@@ -5381,10 +5244,59 @@ async function generateWithTools(
         content: 'Musis provest zmenu souboru (write_file/replace_lines). Pouhe cteni nebo listovani nestaci.'
       });
     } else if (mutated) {
+      // Self-correction: check diagnostics on written files before returning
+      if (selfCorrectionCount < MAX_SELF_CORRECTIONS && i < iterations - 1) {
+        const diagErrors = await collectPostWriteDiagnostics();
+        if (diagErrors.length > 0) {
+          selfCorrectionCount++;
+          outputChannel?.appendLine(`[SelfCorrect] Attempt ${selfCorrectionCount}/${MAX_SELF_CORRECTIONS}: ${diagErrors.length} error(s) detected`);
+          if (panel && panel.visible) {
+            panel.webview.postMessage({
+              type: 'pipelineStatus',
+              icon: '🔧',
+              text: `Auto-oprava ${selfCorrectionCount}/${MAX_SELF_CORRECTIONS}: ${diagErrors.length} chyb...`,
+              statusType: 'step',
+              loading: true
+            });
+          }
+          workingMessages.push({
+            role: 'system',
+            content: [
+              'SELF-CORRECTION: The code you just wrote has errors. Fix them NOW using write_file or replace_lines.',
+              'ERRORS:',
+              ...diagErrors.slice(0, 15).map(d => `- ${d.path}:${d.line}: ${d.message}`),
+              diagErrors.length > 15 ? `... and ${diagErrors.length - 15} more errors` : '',
+              '',
+              'Fix ALL errors. Do not explain, just use tool_call to fix the code.'
+            ].filter(Boolean).join('\n')
+          });
+          continue;
+        }
+      }
       const writePath = session?.lastWritePath;
+      const correctionNote = selfCorrectionCount > 0
+        ? ` (auto-corrected ${selfCorrectionCount}x)`
+        : '';
+      // Log tool call records summary
+      if (session?.toolCallRecords && session.toolCallRecords.length > 0) {
+        const writes = session.toolCallRecords.filter(r => ['write_file', 'replace_lines'].includes(r.tool));
+        const failedWrites = writes.filter(r => !r.ok);
+        const successfulWrites = writes.filter(r => r.ok);
+        outputChannel?.appendLine(`[ToolTrack] Total calls: ${session.toolCallRecords.length}, writes: ${writes.length}, failed writes: ${failedWrites.length}`);
+        if (failedWrites.length > 0) {
+          for (const fw of failedWrites) {
+            outputChannel?.appendLine(`[ToolTrack] Failed write: ${fw.tool} -> ${fw.message ?? 'unknown'}`);
+          }
+        }
+        // Fabrication detection: model claims mutation but all writes failed
+        if (writes.length > 0 && successfulWrites.length === 0) {
+          outputChannel?.appendLine('[ToolTrack] WARNING: All write operations failed — possible fabricated edit');
+          return 'Chyba: vsechny zapisy selhaly. Soubory nebyly zmeneny.';
+        }
+      }
       return writePath
-        ? `Hotovo: zmena souboru provedena (${writePath}).`
-        : 'Hotovo: zmena souboru provedena.';
+        ? `Hotovo: zmena souboru provedena (${writePath}).${correctionNote}`
+        : `Hotovo: zmena souboru provedena.${correctionNote}`;
     } else if (requireToolCall && sawToolCall) {
       return 'Hotovo: nastroje byly pouzity.';
     }
@@ -5442,18 +5354,28 @@ async function executeModelCall(
       signal: controller.signal
     });
 
-    clearTimeout(timeoutId);
+    // Don't clear timeout yet — keep it alive during streaming
 
     if (!res.ok || !res.body) {
+      clearTimeout(timeoutId);
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
 
     const decoder = new TextDecoder();
     let buffer = '';
     let fullResponse = '';
+    let lastChunkAt = Date.now();
+    const STREAM_STALL_MS = 15000;
 
     for await (const chunk of res.body as any) {
       if (!chunk) continue;
+      const now = Date.now();
+      if (now - lastChunkAt > STREAM_STALL_MS && fullResponse.length > 50) {
+        outputChannel?.appendLine('[executeModelCall] Stream stall detected, aborting');
+        controller.abort();
+        break;
+      }
+      lastChunkAt = now;
       buffer += decoder.decode(chunk, { stream: true });
 
       let newlineIndex;
@@ -5467,14 +5389,13 @@ async function executeModelCall(
           const parsed = JSON.parse(line);
           if (parsed.message?.content) {
             fullResponse += parsed.message.content;
-            // Only stream to UI if not in silent mode (during validation)
-            // Response will be sent after full pipeline approval
           }
         } catch {
           // Ignore JSON parse errors
         }
       }
     }
+    clearTimeout(timeoutId);
 
     // Apply guardian if enabled
     if (guardianEnabled && fullResponse) {
@@ -5541,16 +5462,6 @@ async function fetchWithTimeout(
       originalSignal.removeEventListener('abort', abortHandler);
     }
   }
-}
-
-function normalizeTaskWeight(w: number | undefined): number {
-  // Normalize existing 0.1-1.0 scale to 1-10, and clamp any value to [1,10]
-  if (typeof w !== 'number' || isNaN(w)) return 5;
-  if (w <= 1) {
-    // assume legacy 0.1-1.0 scale
-    return Math.max(1, Math.min(10, Math.round(w * 10)));
-  }
-  return Math.max(1, Math.min(10, Math.round(w)));
 }
 
 function getContextTokens(): number {
@@ -6508,47 +6419,6 @@ function getWebviewContent(webview: vscode.Webview, initialMessages: ChatMessage
   html += '</html>';
   
   return html;
-}
-
-function getNonce(): string {
-  return crypto.randomBytes(16)
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '');
-}
-
-function isSafeUrl(url: string): { safe: boolean; reason?: string } {
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-      return { safe: false, reason: 'only http/https are allowed' };
-    }
-
-    const host = parsed.hostname.toLowerCase();
-    if (host === 'localhost' || host === '::1') {
-      return { safe: false, reason: 'localhost is not allowed' };
-    }
-    if (/^127\./.test(host)) {
-      return { safe: false, reason: 'loopback address is not allowed' };
-    }
-    if (/^10\./.test(host)) {
-      return { safe: false, reason: 'private network is not allowed' };
-    }
-    if (/^192\.168\./.test(host)) {
-      return { safe: false, reason: 'private network is not allowed' };
-    }
-    if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(host)) {
-      return { safe: false, reason: 'private network is not allowed' };
-    }
-    if (host === '169.254.169.254') {
-      return { safe: false, reason: 'metadata endpoint is not allowed' };
-    }
-
-    return { safe: true };
-  } catch {
-    return { safe: false, reason: 'invalid URL' };
-  }
 }
 
 // Export helpers for unit testing
