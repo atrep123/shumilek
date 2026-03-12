@@ -62,6 +62,7 @@ export interface MutationHandlerDeps {
   isBinaryExtension: (filePath: string) => boolean;
   buildAutoFileName: (options: { title?: string; suggestedName?: string; extension?: string; content?: string }) => string;
   resolveAutoSaveTargetUri: (fileName: string) => Promise<{ uri?: vscode.Uri; error?: string }>;
+  isSafeUrl: (raw: string) => { safe: boolean; reason?: string };
 }
 
 export async function handleReplaceLinesTool(
@@ -397,4 +398,129 @@ export async function handleRunTerminalCommandTool(
       });
     });
   });
+}
+
+export async function handleRenameFileTool(
+  name: string,
+  args: Record<string, unknown>,
+  confirmEdits: boolean,
+  autoApprove: AutoApproveLike,
+  deps: MutationHandlerDeps,
+  session?: ToolSessionLike
+): Promise<ToolResultLike> {
+  const fromPath = deps.asString(args.from);
+  const toPath = deps.asString(args.to);
+  if (!fromPath || !toPath) return { ok: false, tool: name, message: 'from a to jsou povinne' };
+  const fromResolved = await deps.resolveWorkspaceUri(fromPath, true);
+  const toResolved = await deps.resolveWorkspaceUri(toPath, false);
+  if (!fromResolved.uri || !toResolved.uri) {
+    return {
+      ok: false,
+      tool: name,
+      message: fromResolved.error ?? toResolved.error ?? 'soubor mimo workspace nebo nenalezen',
+      data: fromResolved.conflicts || toResolved.conflicts
+        ? { conflicts: fromResolved.conflicts ?? toResolved.conflicts }
+        : undefined
+    };
+  }
+  const fromUri = fromResolved.uri;
+  const toUri = toResolved.uri;
+
+  let approved = true;
+  if (confirmEdits && !autoApprove.edit) {
+    const choice = await vscode.window.showInformationMessage(
+      `Prejmenovat ${vscode.workspace.asRelativePath(fromUri)} na ${vscode.workspace.asRelativePath(toUri)}?`,
+      { modal: true },
+      'Prejmenovat',
+      'Zamitnout'
+    );
+    approved = choice === 'Prejmenovat';
+  }
+  if (!approved) return { ok: true, tool: name, approved: false, message: 'zmena zamitnuta uzivatelem' };
+
+  await vscode.workspace.fs.rename(fromUri, toUri, { overwrite: false });
+  deps.markToolMutation(session, name);
+  return { ok: true, tool: name, approved: true, message: 'soubor prejmenovan' };
+}
+
+export async function handleDeleteFileTool(
+  name: string,
+  args: Record<string, unknown>,
+  confirmEdits: boolean,
+  autoApprove: AutoApproveLike,
+  deps: MutationHandlerDeps,
+  session?: ToolSessionLike
+): Promise<ToolResultLike> {
+  const filePath = deps.asString(args.path);
+  if (!filePath) return { ok: false, tool: name, message: 'path je povinny' };
+  const resolved = await deps.resolveWorkspaceUri(filePath, true);
+  if (!resolved.uri) {
+    return {
+      ok: false,
+      tool: name,
+      message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
+      data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
+    };
+  }
+  const uri = resolved.uri;
+
+  let approved = true;
+  if (confirmEdits && !autoApprove.edit) {
+    const choice = await vscode.window.showInformationMessage(
+      `Smazat soubor ${vscode.workspace.asRelativePath(uri)}?`,
+      { modal: true },
+      'Smazat',
+      'Zamitnout'
+    );
+    approved = choice === 'Smazat';
+  }
+  if (!approved) return { ok: true, tool: name, approved: false, message: 'zmena zamitnuta uzivatelem' };
+
+  await vscode.workspace.fs.delete(uri, { recursive: false });
+  deps.markToolMutation(session, name);
+  return { ok: true, tool: name, approved: true, message: 'soubor smazan' };
+}
+
+export async function handleFetchWebpageTool(
+  name: string,
+  args: Record<string, unknown>,
+  deps: MutationHandlerDeps
+): Promise<ToolResultLike> {
+  const url = deps.asString(args.url);
+  if (!url) return { ok: false, tool: name, message: 'url je povinne' };
+
+  const urlCheck = deps.isSafeUrl(url);
+  if (!urlCheck.safe) {
+    return { ok: false, tool: name, message: `URL blokována: ${urlCheck.reason}` };
+  }
+
+  try {
+    const fetch = require('node-fetch');
+    let response = await fetch(url, { redirect: 'manual' });
+
+    // Follow redirects safely — re-validate each Location header
+    const MAX_REDIRECTS = 5;
+    for (let i = 0; i < MAX_REDIRECTS && [301, 302, 303, 307, 308].includes(response.status); i++) {
+      const location = response.headers.get('location');
+      if (!location) break;
+      const resolved = new URL(location, url).toString();
+      const redirectCheck = deps.isSafeUrl(resolved);
+      if (!redirectCheck.safe) {
+        return { ok: false, tool: name, message: `Redirect blokován: ${redirectCheck.reason}` };
+      }
+      response = await fetch(resolved, { redirect: 'manual' });
+    }
+
+    const html = await response.text();
+
+    // simple string manipulation to strip script and style tags, to save tokens
+    let stripped = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    stripped = stripped.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+    stripped = stripped.replace(/<[^>]+>/g, ' '); // remove remaining html tags
+    stripped = stripped.replace(/\s+/g, ' ').trim(); // normalize whitespace
+
+    return { ok: true, tool: name, message: stripped.substring(0, 50000) };
+  } catch (e) {
+    return { ok: false, tool: name, message: 'Failed to fetch: ' + String(e) };
+  }
 }
