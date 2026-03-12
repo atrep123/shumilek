@@ -36,9 +36,17 @@ export interface ReadFileForToolResult {
   error?: string;
 }
 
+export interface ToolPositionInfo {
+  position?: vscode.Position;
+  line?: number;
+  character?: number;
+  error?: string;
+}
+
 export interface MutationHandlerDeps {
   DEFAULT_MAX_READ_BYTES: number;
   DEFAULT_MAX_WRITE_BYTES: number;
+  DEFAULT_MAX_LSP_RESULTS: number;
   lastReadHashes: Map<string, { hash: string; updatedAt: number }>;
   asString: (value: unknown) => string | undefined;
   clampNumber: (value: unknown, fallback: number, min: number, max: number) => number;
@@ -47,6 +55,12 @@ export interface MutationHandlerDeps {
   getActiveWorkspaceFileUri: () => vscode.Uri | undefined;
   readFileForTool: (uri: vscode.Uri, maxBytes: number) => Promise<ReadFileForToolResult>;
   getRelativePathForWorkspace: (uri: vscode.Uri) => string;
+  getPositionFromArgs: (args: Record<string, unknown>, doc?: vscode.TextDocument) => ToolPositionInfo;
+  resolveSymbolPosition: (uri: vscode.Uri, symbolName: string) => Promise<vscode.Position | undefined>;
+  serializeLocationInfo: (location: vscode.Location | vscode.LocationLink) => { path: string; range: unknown };
+  serializeRange: (range: vscode.Range) => unknown;
+  renderHoverContents: (contents: vscode.Hover['contents']) => string[];
+  serializeDiagnosticSeverity: (severity: vscode.DiagnosticSeverity) => string;
   detectEol: (text: string) => string;
   splitLines: (text: string) => string[];
   showDiffAndConfirm: (uri: vscode.Uri, newText: string, title: string) => Promise<boolean>;
@@ -523,4 +537,242 @@ export async function handleFetchWebpageTool(
   } catch (e) {
     return { ok: false, tool: name, message: 'Failed to fetch: ' + String(e) };
   }
+}
+
+export async function handleGetDefinitionTool(
+  name: string,
+  args: Record<string, unknown>,
+  deps: MutationHandlerDeps
+): Promise<ToolResultLike> {
+  const filePath = deps.getFirstStringArg(args, ['path', 'file', 'filePath', 'filename']);
+  let uri: vscode.Uri | undefined;
+  if (filePath) {
+    const resolved = await deps.resolveWorkspaceUri(filePath, true);
+    if (!resolved.uri) {
+      return {
+        ok: false,
+        tool: name,
+        message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
+        data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
+      };
+    }
+    uri = resolved.uri;
+  } else {
+    const activeUri = deps.getActiveWorkspaceFileUri();
+    if (!activeUri) {
+      return { ok: false, tool: name, message: 'path je povinny nebo otevri aktivni soubor' };
+    }
+    uri = activeUri;
+  }
+
+  const doc = await vscode.workspace.openTextDocument(uri);
+  const symbolName = deps.asString(args.symbol);
+  let posInfo = deps.getPositionFromArgs(args, doc);
+  let position = posInfo.position;
+  if (!position && symbolName) {
+    position = await deps.resolveSymbolPosition(uri, symbolName);
+    if (position) {
+      posInfo = { position, line: position.line + 1, character: position.character + 1 };
+    }
+  }
+  if (!position) {
+    return { ok: false, tool: name, message: posInfo.error ?? 'pozice nenalezena' };
+  }
+
+  const definitions = await vscode.commands.executeCommand<
+    Array<vscode.Location | vscode.LocationLink> | vscode.Location | undefined
+  >('vscode.executeDefinitionProvider', uri, position);
+  const list = Array.isArray(definitions) ? definitions : (definitions ? [definitions] : []);
+  const maxResults = deps.clampNumber(args.maxResults, deps.DEFAULT_MAX_LSP_RESULTS, 1, 1000);
+  const results = list.slice(0, maxResults).map(loc => deps.serializeLocationInfo(loc));
+
+  return {
+    ok: true,
+    tool: name,
+    data: {
+      path: deps.getRelativePathForWorkspace(uri),
+      position: { line: posInfo.line ?? position.line + 1, character: posInfo.character ?? position.character + 1 },
+      definitions: results,
+      total: list.length,
+      truncated: list.length > maxResults
+    }
+  };
+}
+
+export async function handleGetReferencesTool(
+  name: string,
+  args: Record<string, unknown>,
+  deps: MutationHandlerDeps
+): Promise<ToolResultLike> {
+  const filePath = deps.getFirstStringArg(args, ['path', 'file', 'filePath', 'filename']);
+  let uri: vscode.Uri | undefined;
+  if (filePath) {
+    const resolved = await deps.resolveWorkspaceUri(filePath, true);
+    if (!resolved.uri) {
+      return {
+        ok: false,
+        tool: name,
+        message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
+        data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
+      };
+    }
+    uri = resolved.uri;
+  } else {
+    const activeUri = deps.getActiveWorkspaceFileUri();
+    if (!activeUri) {
+      return { ok: false, tool: name, message: 'path je povinny nebo otevri aktivni soubor' };
+    }
+    uri = activeUri;
+  }
+
+  const doc = await vscode.workspace.openTextDocument(uri);
+  const posInfo = deps.getPositionFromArgs(args, doc);
+  if (!posInfo.position) {
+    return { ok: false, tool: name, message: posInfo.error ?? 'pozice nenalezena' };
+  }
+  const includeDeclaration = typeof args.includeDeclaration === 'boolean' ? args.includeDeclaration : false;
+  const references = await vscode.commands.executeCommand<vscode.Location[]>(
+    'vscode.executeReferenceProvider',
+    uri,
+    posInfo.position,
+    { includeDeclaration }
+  );
+  const list = references ?? [];
+  const maxResults = deps.clampNumber(args.maxResults, deps.DEFAULT_MAX_LSP_RESULTS, 1, 1000);
+  const results = list.slice(0, maxResults).map(loc => deps.serializeLocationInfo(loc));
+  return {
+    ok: true,
+    tool: name,
+    data: {
+      path: deps.getRelativePathForWorkspace(uri),
+      position: {
+        line: posInfo.line ?? posInfo.position.line + 1,
+        character: posInfo.character ?? posInfo.position.character + 1
+      },
+      includeDeclaration,
+      references: results,
+      total: list.length,
+      truncated: list.length > maxResults
+    }
+  };
+}
+
+export async function handleGetTypeInfoTool(
+  name: string,
+  args: Record<string, unknown>,
+  deps: MutationHandlerDeps
+): Promise<ToolResultLike> {
+  const filePath = deps.getFirstStringArg(args, ['path', 'file', 'filePath', 'filename']);
+  let uri: vscode.Uri | undefined;
+  if (filePath) {
+    const resolved = await deps.resolveWorkspaceUri(filePath, true);
+    if (!resolved.uri) {
+      return {
+        ok: false,
+        tool: name,
+        message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
+        data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
+      };
+    }
+    uri = resolved.uri;
+  } else {
+    const activeUri = deps.getActiveWorkspaceFileUri();
+    if (!activeUri) {
+      return { ok: false, tool: name, message: 'path je povinny nebo otevri aktivni soubor' };
+    }
+    uri = activeUri;
+  }
+
+  const doc = await vscode.workspace.openTextDocument(uri);
+  const posInfo = deps.getPositionFromArgs(args, doc);
+  if (!posInfo.position) {
+    return { ok: false, tool: name, message: posInfo.error ?? 'pozice nenalezena' };
+  }
+  const hovers = await vscode.commands.executeCommand<vscode.Hover[]>(
+    'vscode.executeHoverProvider',
+    uri,
+    posInfo.position
+  );
+  const list = hovers ?? [];
+  const maxResults = deps.clampNumber(args.maxResults, deps.DEFAULT_MAX_LSP_RESULTS, 1, 1000);
+  const results = list.slice(0, maxResults).map(hover => ({
+    range: hover.range ? deps.serializeRange(hover.range) : undefined,
+    contents: deps.renderHoverContents(hover.contents)
+  }));
+  return {
+    ok: true,
+    tool: name,
+    data: {
+      path: deps.getRelativePathForWorkspace(uri),
+      position: {
+        line: posInfo.line ?? posInfo.position.line + 1,
+        character: posInfo.character ?? posInfo.position.character + 1
+      },
+      hovers: results,
+      total: list.length,
+      truncated: list.length > maxResults
+    }
+  };
+}
+
+export async function handleGetDiagnosticsTool(
+  name: string,
+  args: Record<string, unknown>,
+  deps: MutationHandlerDeps
+): Promise<ToolResultLike> {
+  const filePath = deps.getFirstStringArg(args, ['path', 'file', 'filePath', 'filename']);
+  const maxResults = deps.clampNumber(args.maxResults, deps.DEFAULT_MAX_LSP_RESULTS, 1, 1000);
+  const results: Array<Record<string, unknown>> = [];
+  let total = 0;
+  if (filePath) {
+    const resolved = await deps.resolveWorkspaceUri(filePath, true);
+    if (!resolved.uri) {
+      return {
+        ok: false,
+        tool: name,
+        message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
+        data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
+      };
+    }
+    const uri = resolved.uri;
+    const diagnostics = vscode.languages.getDiagnostics(uri);
+    total = diagnostics.length;
+    for (const diag of diagnostics) {
+      if (results.length >= maxResults) break;
+      results.push({
+        path: deps.getRelativePathForWorkspace(uri),
+        severity: deps.serializeDiagnosticSeverity(diag.severity),
+        message: diag.message,
+        range: deps.serializeRange(diag.range),
+        source: diag.source,
+        code: typeof diag.code === 'object' ? (diag.code as { value?: unknown }).value : diag.code
+      });
+    }
+  } else {
+    const allDiagnostics = vscode.languages.getDiagnostics();
+    for (const [uri, diagnostics] of allDiagnostics) {
+      total += diagnostics.length;
+      for (const diag of diagnostics) {
+        if (results.length >= maxResults) break;
+        results.push({
+          path: deps.getRelativePathForWorkspace(uri),
+          severity: deps.serializeDiagnosticSeverity(diag.severity),
+          message: diag.message,
+          range: deps.serializeRange(diag.range),
+          source: diag.source,
+          code: typeof diag.code === 'object' ? (diag.code as { value?: unknown }).value : diag.code
+        });
+      }
+      if (results.length >= maxResults) break;
+    }
+  }
+  return {
+    ok: true,
+    tool: name,
+    data: {
+      diagnostics: results,
+      total,
+      truncated: total > maxResults
+    }
+  };
 }
