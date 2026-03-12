@@ -5114,51 +5114,21 @@ async function runToolCall(
       case 'read_file': return handleReadFileTool(name, args, mutationHandlerDeps);
       case 'get_active_file': return handleGetActiveFileTool(name, args, mutationHandlerDeps);
       case 'search_in_files': return handleSearchInFilesTool(name, args, mutationHandlerDeps);
-      case 'apply_patch': {
-        return handleApplyPatchTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      }
-      case 'get_symbols': {
-        return handleGetSymbolsTool(name, args, mutationHandlerDeps);
-      }
-      case 'get_workspace_symbols': {
-        return handleGetWorkspaceSymbolsTool(name, args, mutationHandlerDeps);
-      }
-      case 'get_definition': {
-        return handleGetDefinitionTool(name, args, mutationHandlerDeps);
-      }
-      case 'get_references': {
-        return handleGetReferencesTool(name, args, mutationHandlerDeps);
-      }
-      case 'get_type_info': {
-        return handleGetTypeInfoTool(name, args, mutationHandlerDeps);
-      }
-      case 'get_diagnostics': {
-        return handleGetDiagnosticsTool(name, args, mutationHandlerDeps);
-      }
-      case 'route_file': {
-        return handleRouteFileTool(name, args, mutationHandlerDeps);
-      }
-      case 'pick_save_path': {
-        return handlePickSavePathTool(name, args, mutationHandlerDeps);
-      }
-      case 'replace_lines': {
-        return handleReplaceLinesTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      }
-      case 'write_file': {
-        return handleWriteFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      }
-      case 'rename_file': {
-        return handleRenameFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      }
-      case 'delete_file': {
-        return handleDeleteFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      }
-      case 'run_terminal_command': {
-        return handleRunTerminalCommandTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps);
-      }
-      case 'fetch_webpage': {
-        return handleFetchWebpageTool(name, args, mutationHandlerDeps);
-      }
+      case 'apply_patch': return handleApplyPatchTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
+      case 'get_symbols': return handleGetSymbolsTool(name, args, mutationHandlerDeps);
+      case 'get_workspace_symbols': return handleGetWorkspaceSymbolsTool(name, args, mutationHandlerDeps);
+      case 'get_definition': return handleGetDefinitionTool(name, args, mutationHandlerDeps);
+      case 'get_references': return handleGetReferencesTool(name, args, mutationHandlerDeps);
+      case 'get_type_info': return handleGetTypeInfoTool(name, args, mutationHandlerDeps);
+      case 'get_diagnostics': return handleGetDiagnosticsTool(name, args, mutationHandlerDeps);
+      case 'route_file': return handleRouteFileTool(name, args, mutationHandlerDeps);
+      case 'pick_save_path': return handlePickSavePathTool(name, args, mutationHandlerDeps);
+      case 'replace_lines': return handleReplaceLinesTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
+      case 'write_file': return handleWriteFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
+      case 'rename_file': return handleRenameFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
+      case 'delete_file': return handleDeleteFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
+      case 'run_terminal_command': return handleRunTerminalCommandTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps);
+      case 'fetch_webpage': return handleFetchWebpageTool(name, args, mutationHandlerDeps);
       default:
         return { ok: false, tool: name, message: 'neznamy nastroj' };
     }
