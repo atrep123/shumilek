@@ -43,6 +43,20 @@ export interface ToolPositionInfo {
   error?: string;
 }
 
+export interface PatchHunkLike {
+  oldStart: number;
+  oldLines: number;
+  newStart: number;
+  newLines: number;
+  lines: string[];
+}
+
+export interface PatchFileLike {
+  oldPath?: string;
+  newPath?: string;
+  hunks: PatchHunkLike[];
+}
+
 export interface MutationHandlerDeps {
   DEFAULT_MAX_READ_BYTES: number;
   DEFAULT_MAX_WRITE_BYTES: number;
@@ -79,6 +93,11 @@ export interface MutationHandlerDeps {
   isInAutoSaveDir: (uri: vscode.Uri) => boolean;
   revealWrittenDocument: (uri: vscode.Uri) => Promise<void>;
   notifyToolWrite: (action: 'created' | 'updated', uri: vscode.Uri) => Promise<void>;
+  parseUnifiedDiff: (diffText: string) => PatchFileLike[];
+  applyUnifiedDiffToText: (
+    original: string,
+    hunks: PatchHunkLike[]
+  ) => { text?: string; error?: string; appliedHunks: number; totalHunks: number };
   isBinaryExtension: (filePath: string) => boolean;
   normalizeExtension: (ext: string | undefined) => string;
   normalizeRouteText: (input: string) => string;
@@ -869,6 +888,172 @@ export async function handleGetTypeInfoTool(
       total: list.length,
       truncated: list.length > maxResults
     }
+  };
+}
+
+export async function handleApplyPatchTool(
+  name: string,
+  args: Record<string, unknown>,
+  confirmEdits: boolean,
+  autoApprove: AutoApproveLike,
+  deps: MutationHandlerDeps,
+  session?: ToolSessionLike
+): Promise<ToolResultLike> {
+  const diffText = deps.getFirstStringArg(args, ['diff', 'patch', 'text', 'content']);
+  if (!diffText) return { ok: false, tool: name, message: 'diff je povinny' };
+
+  const patches = deps.parseUnifiedDiff(diffText);
+  if (patches.length === 0) {
+    return { ok: false, tool: name, message: 'neplatny diff' };
+  }
+  const autoOpenAutoSave = deps.getToolsAutoOpenAutoSaveSetting();
+  const autoOpenOnWrite = deps.getToolsAutoOpenOnWriteSetting();
+  const appliedFiles: Array<{ path: string; action: 'created' | 'updated' | 'deleted'; hunksApplied: number; hunksTotal: number }> = [];
+
+  for (const patch of patches) {
+    const targetPath = patch.newPath || patch.oldPath;
+    if (!targetPath) continue;
+    const isDelete = Boolean(patch.oldPath) && !patch.newPath;
+    if (deps.isBinaryExtension(targetPath)) {
+      return { ok: false, tool: name, message: 'cesta vypada jako binarni soubor (extenze)' };
+    }
+    const resolved = await deps.resolveWorkspaceUri(targetPath, !isDelete);
+    if (!resolved.uri) {
+      const data: Record<string, unknown> = {};
+      if (resolved.conflicts) data.conflicts = resolved.conflicts;
+      if (appliedFiles.length > 0) data.appliedFiles = appliedFiles;
+      return {
+        ok: false,
+        tool: name,
+        message: resolved.error ?? 'soubor mimo workspace',
+        data: Object.keys(data).length > 0 ? data : undefined
+      };
+    }
+    const uri = resolved.uri;
+    let exists = true;
+    try {
+      await vscode.workspace.fs.stat(uri);
+    } catch {
+      exists = false;
+    }
+
+    let originalText = '';
+    if (exists) {
+      const readResult = await deps.readFileForTool(uri, deps.DEFAULT_MAX_WRITE_BYTES);
+      if (readResult.text === undefined) {
+        const data: Record<string, unknown> = {
+          sizeBytes: readResult.size,
+          binary: readResult.binary ?? false
+        };
+        if (appliedFiles.length > 0) data.appliedFiles = appliedFiles;
+        return {
+          ok: false,
+          tool: name,
+          message: readResult.error ?? 'soubor nelze precist',
+          data
+        };
+      }
+      originalText = readResult.text;
+    }
+
+    const applied = deps.applyUnifiedDiffToText(originalText, patch.hunks);
+    if (applied.text === undefined) {
+      return {
+        ok: false,
+        tool: name,
+        message: applied.error ?? 'nelze aplikovat diff',
+        data: {
+          path: deps.getRelativePathForWorkspace(uri),
+          appliedHunks: applied.appliedHunks,
+          totalHunks: applied.totalHunks,
+          appliedFiles
+        }
+      };
+    }
+
+    let approved = true;
+    if (confirmEdits && !autoApprove.edit) {
+      if (exists) {
+        approved = await deps.showDiffAndConfirm(uri, applied.text, `Navrh zmen: ${vscode.workspace.asRelativePath(uri)}`);
+      } else {
+        const previewDoc = await vscode.workspace.openTextDocument({ content: applied.text });
+        await vscode.window.showTextDocument(previewDoc, { preview: true });
+        const choice = await vscode.window.showInformationMessage(
+          `Vytvorit novy soubor ${vscode.workspace.asRelativePath(uri)}?`,
+          { modal: true },
+          'Vytvorit',
+          'Zamitnout'
+        );
+        approved = choice === 'Vytvorit';
+      }
+    }
+
+    if (!approved) {
+      return { ok: true, tool: name, approved: false, message: 'zmena zamitnuta uzivatelem' };
+    }
+
+    if (isDelete) {
+      await vscode.workspace.fs.delete(uri, { recursive: false });
+      deps.markToolMutation(session, name);
+      appliedFiles.push({
+        path: deps.getRelativePathForWorkspace(uri),
+        action: 'deleted',
+        hunksApplied: applied.appliedHunks,
+        hunksTotal: applied.totalHunks
+      });
+      continue;
+    }
+
+    if (exists) {
+      const appliedOk = await deps.applyFileContent(uri, applied.text);
+      if (!appliedOk) {
+        const data = appliedFiles.length > 0 ? { appliedFiles } : undefined;
+        return { ok: false, tool: name, message: 'nepodarilo se aplikovat diff', data };
+      }
+      const relativePath = deps.getRelativePathForWorkspace(uri);
+      deps.markToolMutation(session, name);
+      deps.recordToolWrite(session, 'updated', relativePath);
+      deps.lastReadHashes.set(uri.fsPath, { hash: deps.computeContentHash(applied.text), updatedAt: Date.now() });
+      const shouldOpenUpdated = autoOpenOnWrite || (autoOpenAutoSave && deps.isInAutoSaveDir(uri));
+      if (shouldOpenUpdated) {
+        await deps.revealWrittenDocument(uri);
+      }
+      await deps.notifyToolWrite('updated', uri);
+      appliedFiles.push({
+        path: relativePath,
+        action: 'updated',
+        hunksApplied: applied.appliedHunks,
+        hunksTotal: applied.totalHunks
+      });
+    } else {
+      const parent = vscode.Uri.file(path.dirname(uri.fsPath));
+      await vscode.workspace.fs.createDirectory(parent);
+      await vscode.workspace.fs.writeFile(uri, Buffer.from(applied.text, 'utf8'));
+      const shouldOpenCreated = autoOpenOnWrite || (autoOpenAutoSave && deps.isInAutoSaveDir(uri));
+      if (shouldOpenCreated) {
+        const opened = await vscode.workspace.openTextDocument(uri);
+        await vscode.window.showTextDocument(opened, { preview: false });
+      }
+      await deps.notifyToolWrite('created', uri);
+      const createdPath = deps.getRelativePathForWorkspace(uri);
+      deps.markToolMutation(session, name);
+      deps.recordToolWrite(session, 'created', createdPath);
+      deps.lastReadHashes.set(uri.fsPath, { hash: deps.computeContentHash(applied.text), updatedAt: Date.now() });
+      appliedFiles.push({
+        path: createdPath,
+        action: 'created',
+        hunksApplied: applied.appliedHunks,
+        hunksTotal: applied.totalHunks
+      });
+    }
+  }
+
+  return {
+    ok: true,
+    tool: name,
+    approved: true,
+    message: 'diff aplikovan',
+    data: { files: appliedFiles }
   };
 }
 
