@@ -47,6 +47,10 @@ export interface MutationHandlerDeps {
   DEFAULT_MAX_READ_BYTES: number;
   DEFAULT_MAX_WRITE_BYTES: number;
   DEFAULT_MAX_LSP_RESULTS: number;
+  DEFAULT_MAX_LIST_RESULTS: number;
+  DEFAULT_MAX_READ_LINES: number;
+  DEFAULT_MAX_SEARCH_RESULTS: number;
+  DEFAULT_EXCLUDE_GLOB: string;
   lastReadHashes: Map<string, { hash: string; updatedAt: number }>;
   asString: (value: unknown) => string | undefined;
   clampNumber: (value: unknown, fallback: number, min: number, max: number) => number;
@@ -922,6 +926,191 @@ export async function handleGetDiagnosticsTool(
       diagnostics: results,
       total,
       truncated: total > maxResults
+    }
+  };
+}
+
+export async function handleListFilesTool(
+  name: string,
+  args: Record<string, unknown>,
+  deps: MutationHandlerDeps
+): Promise<ToolResultLike> {
+  const glob = deps.asString(args.glob) ?? '**/*';
+  const maxResults = deps.clampNumber(args.maxResults, deps.DEFAULT_MAX_LIST_RESULTS, 1, 1000);
+  const files = await vscode.workspace.findFiles(glob, deps.DEFAULT_EXCLUDE_GLOB, maxResults);
+  return {
+    ok: true,
+    tool: name,
+    data: { files: files.map(uri => deps.getRelativePathForWorkspace(uri)) }
+  };
+}
+
+export async function handleReadFileTool(
+  name: string,
+  args: Record<string, unknown>,
+  deps: MutationHandlerDeps
+): Promise<ToolResultLike> {
+  const filePath = deps.asString(args.path);
+  let uri: vscode.Uri | undefined;
+  if (filePath) {
+    const resolved = await deps.resolveWorkspaceUri(filePath, true);
+    if (!resolved.uri) {
+      return {
+        ok: false,
+        tool: name,
+        message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
+        data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
+      };
+    }
+    uri = resolved.uri;
+  } else {
+    const activeUri = deps.getActiveWorkspaceFileUri();
+    if (!activeUri) {
+      return { ok: false, tool: name, message: 'path je povinny nebo otevri aktivni soubor' };
+    }
+    uri = activeUri;
+  }
+  const readResult = await deps.readFileForTool(uri, deps.DEFAULT_MAX_READ_BYTES);
+  if (readResult.text === undefined) {
+    return {
+      ok: false,
+      tool: name,
+      message: readResult.error ?? 'soubor nelze precist',
+      data: {
+        sizeBytes: readResult.size,
+        binary: readResult.binary ?? false
+      }
+    };
+  }
+  const lines = deps.splitLines(readResult.text);
+  const totalLines = lines.length;
+  let startLine = deps.clampNumber(args.startLine, 1, 1, totalLines || 1);
+  let endLine = deps.clampNumber(args.endLine, totalLines || 1, startLine, totalLines || 1);
+  let truncated = false;
+  if (endLine - startLine + 1 > deps.DEFAULT_MAX_READ_LINES) {
+    endLine = startLine + deps.DEFAULT_MAX_READ_LINES - 1;
+    truncated = true;
+  }
+  const eol = deps.detectEol(readResult.text);
+  const content = lines.slice(startLine - 1, endLine).join(eol);
+  if (readResult.hash) {
+    deps.lastReadHashes.set(uri.fsPath, { hash: readResult.hash, updatedAt: Date.now() });
+  }
+  return {
+    ok: true,
+    tool: name,
+    message: truncated ? 'obsah zkracen' : undefined,
+    data: {
+      path: deps.getRelativePathForWorkspace(uri),
+      startLine,
+      endLine,
+      totalLines,
+      sizeBytes: readResult.size,
+      hash: readResult.hash,
+      content
+    }
+  };
+}
+
+export async function handleGetActiveFileTool(
+  name: string,
+  _args: Record<string, unknown>,
+  deps: MutationHandlerDeps
+): Promise<ToolResultLike> {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) return { ok: false, tool: name, message: 'zadny aktivni editor' };
+  const doc = editor.document;
+  if (deps.isBinaryExtension(doc.fileName)) {
+    return { ok: false, tool: name, message: 'soubor vypada jako binarni (extenze)', data: { binary: true } };
+  }
+  const text = doc.getText();
+  const size = Buffer.byteLength(text, 'utf8');
+  if (size > deps.DEFAULT_MAX_READ_BYTES) {
+    return { ok: false, tool: name, message: `soubor je moc velky (${size} bytes), limit ${deps.DEFAULT_MAX_READ_BYTES}`, data: { sizeBytes: size } };
+  }
+  const lines = deps.splitLines(text);
+  const totalLines = lines.length;
+  const eol = deps.detectEol(text);
+  const endLine = Math.min(totalLines || 1, deps.DEFAULT_MAX_READ_LINES);
+  const content = lines.slice(0, endLine).join(eol);
+  const hash = deps.computeContentHash(text);
+  deps.lastReadHashes.set(doc.uri.fsPath, { hash, updatedAt: Date.now() });
+  return {
+    ok: true,
+    tool: name,
+    data: {
+      path: deps.getRelativePathForWorkspace(doc.uri),
+      startLine: 1,
+      endLine,
+      totalLines,
+      sizeBytes: size,
+      hash,
+      content
+    }
+  };
+}
+
+export async function handleSearchInFilesTool(
+  name: string,
+  args: Record<string, unknown>,
+  deps: MutationHandlerDeps
+): Promise<ToolResultLike> {
+  const query = deps.asString(args.query);
+  if (!query) return { ok: false, tool: name, message: 'query je povinny' };
+
+  const isRegex = args.isRegex === true;
+  let queryRegex: RegExp | undefined;
+  if (isRegex) {
+    try {
+      queryRegex = new RegExp(query, 'g');
+    } catch (e) {
+      return { ok: false, tool: name, message: 'Neplatny regex: ' + String(e) };
+    }
+  }
+
+  const glob = deps.asString(args.glob);
+  const maxResults = deps.clampNumber(args.maxResults, deps.DEFAULT_MAX_SEARCH_RESULTS, 1, 200);
+  const matches: Array<{ path: string; line: number; text: string }> = [];
+  const include = glob ?? '**/*';
+  const maxFilesToScan = Math.min(500, Math.max(50, maxResults * 25));
+  const files = await vscode.workspace.findFiles(include, deps.DEFAULT_EXCLUDE_GLOB, maxFilesToScan);
+  let skippedBinary = 0;
+  let skippedLarge = 0;
+
+  for (const uri of files) {
+    if (matches.length >= maxResults) break;
+    const readResult = await deps.readFileForTool(uri, deps.DEFAULT_MAX_READ_BYTES);
+    if (readResult.text === undefined) {
+      if (readResult.binary) skippedBinary++;
+      if (readResult.size && readResult.size > deps.DEFAULT_MAX_READ_BYTES) skippedLarge++;
+      continue;
+    }
+
+    const lines = deps.splitLines(readResult.text);
+    for (let i = 0; i < lines.length; i++) {
+      if (matches.length >= maxResults) break;
+      const lineText = lines[i];
+
+      const isMatch = isRegex ? queryRegex!.test(lineText) : lineText.includes(query);
+      if (isRegex) queryRegex!.lastIndex = 0;
+
+      if (isMatch) {
+        matches.push({
+          path: deps.getRelativePathForWorkspace(uri),
+          line: i + 1,
+          text: lineText.trim()
+        });
+      }
+    }
+  }
+  return {
+    ok: true,
+    tool: name,
+    data: {
+      matches,
+      scannedFiles: files.length,
+      skippedBinary,
+      skippedLarge
     }
   };
 }
