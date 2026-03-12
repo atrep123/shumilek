@@ -30,6 +30,19 @@ model_lock = threading.Lock()
 
 app = Flask(__name__)
 
+@app.errorhandler(Exception)
+def handle_exception(e):
+    import traceback
+    traceback.print_exc()
+    return jsonify({"error": str(e), "message": "AirLLM Server Error"}), 500
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    import traceback
+    traceback.print_exc()
+    return jsonify({"error": str(e), "message": "AirLLM Internal Server Error"}), 500
+
+
 # Konfigurace
 config = {
     "model_id": "Qwen/Qwen2.5-72B-Instruct",

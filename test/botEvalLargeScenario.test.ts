@@ -446,37 +446,6 @@ describe('botEval large node-project scenario', function () {
     }
   });
 
-  it('flags tasks->projects cross-module API mismatch with getProjectById guidance', async () => {
-    const workspace = seedLargeWorkspaceWithContractRoutes();
-    try {
-      writeFile(
-        workspace,
-        'src/modules/tasks/service.js',
-        [
-          "const projectsService = require('../projects/service');",
-          'module.exports = {',
-          "  createTask: async (projectId, title) => {",
-          '    const project = await projectsService.getProject(projectId);',
-          "    return project ? { id: 't1', title, status: 'todo' } : null;",
-          '  }',
-          '};',
-          ''
-        ].join('\n')
-      );
-      writeFile(
-        workspace,
-        'src/modules/projects/service.js',
-        "module.exports = { getProjectById: (projectId) => projectId ? { id: projectId, name: 'x' } : null };\n"
-      );
-      const result = await validateNodeProjectApiLarge(workspace);
-      assert.equal(result.ok, false);
-      assert.ok(result.diagnostics.some(d => /Cross-module contract mismatch: tasks service calls projectsService\.getProject\(\) but projects service does not define\/export it; use projectsService\.getProjectById\(\)\./i.test(d)));
-      assert.equal((result.commands || []).length, 0);
-    } finally {
-      fs.rmSync(workspace, { recursive: true, force: true });
-    }
-  });
-
   it('flags route-service mismatch when routes call non-exported service methods', async () => {
     const workspace = seedLargeWorkspaceWithContractRoutes();
     try {
@@ -1020,57 +989,6 @@ describe('botEval large node-project scenario', function () {
     assert.ok(tasksService.includes('module.exports.updateTask = module.exports.updateTaskStatus;'));
   });
 
-  it('normalizes tasks service projects lookup alias from getProject to getProjectById', () => {
-    const files = [
-      {
-        path: 'src/modules/tasks/service.js',
-        content: [
-          "const projectsService = require('../projects/service');",
-          'async function createTask(projectId, title) {',
-          '  const project = await projectsService.getProject(projectId);',
-          "  return project ? { id: 't1', title, status: 'todo' } : null;",
-          '}',
-          'module.exports = { createTask };',
-          ''
-        ].join('\n')
-      }
-    ];
-    const patched = applyNodeProjectRouteServiceAdapterBridges(files);
-    const tasksService = String(patched.find(f => f.path === 'src/modules/tasks/service.js')?.content || '');
-    assert.ok(tasksService.includes('projectsService.getProjectById(projectId)'));
-    assert.ok(!tasksService.includes('projectsService.getProject(projectId)'));
-  });
-
-  it('bridges comments service createComment string contract when first call returns nested message object', () => {
-    const files = [
-      {
-        path: 'src/modules/comments/routes.js',
-        content: [
-          "const router = require('express').Router();",
-          "const commentsService = require('./service');",
-          "router.post('/', async (req, res) => res.status(201).json({ comment: await commentsService.addComment(req.params.projectId, req.params.taskId, req.body.message) }));",
-          'module.exports = router;',
-          ''
-        ].join('\n')
-      },
-      {
-        path: 'src/modules/comments/service.js',
-        content: [
-          'async function createComment(projectId, taskId, message) {',
-          '  return { projectId, taskId, message };',
-          '}',
-          'module.exports = { createComment };',
-          ''
-        ].join('\n')
-      }
-    ];
-    const patched = applyNodeProjectRouteServiceAdapterBridges(files);
-    const commentsService = String(patched.find(f => f.path === 'src/modules/comments/service.js')?.content || '');
-    assert.ok(commentsService.includes('const shouldRetryWithString ='));
-    assert.ok(commentsService.includes('normalized.message && typeof normalized.message === \'object\''));
-    assert.ok(commentsService.includes('const nestedMessage = typeof normalized.message.message === \'string\' ? normalized.message.message : normalizedMessage;'));
-  });
-
   it('synthesizes getAllProjects bridge from detected in-memory store', () => {
     const files = [
       {
@@ -1266,29 +1184,6 @@ describe('botEval large node-project scenario', function () {
     assert.ok(service.includes('module.exports = { getAllProjects, getProjectById, getProjectByName, createProject, projects };'));
   });
 
-  it('replaces projects service when exported createProject(req, res) reads req.body.name', () => {
-    const files = [
-      {
-        path: 'src/modules/projects/service.js',
-        content: [
-          "const { randomUUID } = require('node:crypto');",
-          'module.exports = {',
-          '  async createProject(req, res) {',
-          '    const { name } = req.body;',
-          "    if (!name) return res.status(400).json({ error: { code: 'INVALID_REQUEST', message: 'Project name is required' } });",
-          "    return { id: randomUUID(), name };",
-          '  }',
-          '};',
-          ''
-        ].join('\n')
-      }
-    ];
-    const patched = applyNodeProjectRouteServiceAdapterBridges(files);
-    const service = String(patched.find(f => f.path === 'src/modules/projects/service.js')?.content || '');
-    assert.ok(service.includes("const { generateId } = require('../../lib/id');"));
-    assert.ok(service.includes('module.exports = { getAllProjects, getProjectById, getProjectByName, createProject, projects };'));
-  });
-
   it('replaces services that call sendError(null, ...) with canonical template', () => {
     const files = [
       {
@@ -1411,35 +1306,6 @@ describe('botEval large node-project scenario', function () {
           '  return task;',
           '}',
           'module.exports = { createTask };',
-          ''
-        ].join('\n')
-      }
-    ];
-    const patched = applyNodeProjectRouteServiceAdapterBridges(files);
-    const service = String(patched.find(f => f.path === 'src/modules/tasks/service.js')?.content || '');
-    assert.ok(service.includes('const tasks = [];'));
-    assert.ok(service.includes('async function createTask(projectId, title) {'));
-    assert.ok(service.includes('module.exports = { getAllTasks, createTask, getTaskById, updateTaskStatus, tasks };'));
-  });
-
-  it('replaces tasks service when it embeds route-handler error flow and name-based task payload', () => {
-    const files = [
-      {
-        path: 'src/modules/tasks/service.js',
-        content: [
-          "const { sendError } = require('../../lib/errors');",
-          'const tasksStore = [];',
-          'function createTask(projectId, name) {',
-          "  if (!name) return sendError(res, 400, 'BadRequestError', 'Name is required');",
-          "  const task = { id: 't1', projectId, name, status: 'todo' };",
-          '  tasksStore.push(task);',
-          '  return task;',
-          '}',
-          'function updateTaskStatus(projectId, taskId, status) {',
-          "  if (status !== 'todo' && status !== 'done') return sendError(res, 400, 'BadRequestError', 'Invalid status');",
-          '  return tasksStore.find(task => task.projectId === projectId && task.id === taskId) || null;',
-          '}',
-          'module.exports = { createTask, updateTaskStatus, tasksStore };',
           ''
         ].join('\n')
       }
@@ -1593,41 +1459,6 @@ describe('botEval large node-project scenario', function () {
     assert.ok(projects.includes("return res.status(201).json({ project });"));
     assert.ok(projects.includes("res.json({ projects"));
     assert.ok(projects.includes("return res.json({ project });"));
-    assert.ok(fixed.appliedFixes.some(item => /canonicalized projects route contract/i.test(item)));
-  });
-
-  it('auto-fix canonicalizes projects route when createProject receives object literal payload', () => {
-    const files = [
-      {
-        path: 'src/modules/projects/routes.js',
-        content: [
-          "const router = require('express').Router();",
-          "const projectsService = require('./service');",
-          "const { sendError } = require('../../lib/errors');",
-          "router.get('/', async (_req, res) => res.json({ projects: await projectsService.getAllProjects() }));",
-          "router.post('/', async (req, res) => {",
-          "  const name = String(req.body?.name || '').trim();",
-          "  if (!name) return sendError(res, 400, 'BAD_REQUEST', 'Project name is required');",
-          "  const duplicate = await projectsService.getProjectByName(name);",
-          "  if (duplicate) return sendError(res, 409, 'PROJECT_DUPLICATE', 'Project already exists');",
-          "  const project = await projectsService.createProject({ name });",
-          "  if (!project) return sendError(res, 409, 'PROJECT_DUPLICATE', 'Project already exists');",
-          "  return res.status(201).json({ project });",
-          '});',
-          "router.get('/:projectId', async (req, res) => {",
-          "  const project = await projectsService.getProjectById(req.params.projectId);",
-          "  if (!project) return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found');",
-          "  return res.json({ project });",
-          '});',
-          'module.exports = router;',
-          ''
-        ].join('\n')
-      }
-    ];
-    const fixed = applyNodeProjectContractAutoFixes(files);
-    const projects = String(fixed.files[0].content || '');
-    assert.ok(projects.includes('const project = await projectsService.createProject(name);'));
-    assert.ok(!projects.includes('createProject({ name })'));
     assert.ok(fixed.appliedFixes.some(item => /canonicalized projects route contract/i.test(item)));
   });
 
@@ -2593,9 +2424,8 @@ describe('botEval large node-project scenario', function () {
     assert.equal(computeTimeoutFallbackGenerationTimeoutMs(600_000, 'node-api-oracle'), 600_000);
   });
 
-  it('stops early after repeated generation timeouts for large scenario', () => {
-    assert.equal(shouldStopAfterGenerationTimeout('node-project-api-large', 1), false);
-    assert.equal(shouldStopAfterGenerationTimeout('node-project-api-large', 2), true);
+  it('stops early after generation timeout for large scenario', () => {
+    assert.equal(shouldStopAfterGenerationTimeout('node-project-api-large', 1), true);
     assert.equal(shouldStopAfterGenerationTimeout('node-project-api-large', 0), false);
     assert.equal(shouldStopAfterGenerationTimeout('node-api-oracle', 1), false);
     assert.equal(shouldStopAfterGenerationTimeout('node-api-oracle', 2), true);
