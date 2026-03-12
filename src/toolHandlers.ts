@@ -59,6 +59,7 @@ export interface MutationHandlerDeps {
   resolveSymbolPosition: (uri: vscode.Uri, symbolName: string) => Promise<vscode.Position | undefined>;
   serializeLocationInfo: (location: vscode.Location | vscode.LocationLink) => { path: string; range: unknown };
   serializeRange: (range: vscode.Range) => unknown;
+  serializeSymbolKind: (kind: vscode.SymbolKind) => string;
   renderHoverContents: (contents: vscode.Hover['contents']) => string[];
   serializeDiagnosticSeverity: (severity: vscode.DiagnosticSeverity) => string;
   detectEol: (text: string) => string;
@@ -595,6 +596,154 @@ export async function handleGetDefinitionTool(
       definitions: results,
       total: list.length,
       truncated: list.length > maxResults
+    }
+  };
+}
+
+function collectDocumentSymbolsForTool(
+  symbols: vscode.DocumentSymbol[],
+  maxDepth: number,
+  maxResults: number,
+  deps: MutationHandlerDeps
+): { symbols: Array<Record<string, unknown>>; total: number; truncated: boolean } {
+  let count = 0;
+  let truncated = false;
+  const walk = (symbol: vscode.DocumentSymbol, depth: number): Record<string, unknown> | null => {
+    if (count >= maxResults) {
+      truncated = true;
+      return null;
+    }
+    count++;
+    const node: Record<string, unknown> = {
+      name: symbol.name,
+      kind: deps.serializeSymbolKind(symbol.kind),
+      detail: symbol.detail,
+      range: deps.serializeRange(symbol.range),
+      selectionRange: deps.serializeRange(symbol.selectionRange)
+    };
+    if (symbol.children && symbol.children.length > 0 && depth < maxDepth) {
+      const children: Array<Record<string, unknown>> = [];
+      for (const child of symbol.children) {
+        const childNode = walk(child, depth + 1);
+        if (childNode) children.push(childNode);
+      }
+      node.children = children;
+    }
+    return node;
+  };
+  const result: Array<Record<string, unknown>> = [];
+  for (const symbol of symbols) {
+    const node = walk(symbol, 0);
+    if (node) result.push(node);
+  }
+  return { symbols: result, total: count, truncated };
+}
+
+function collectSymbolInformationForTool(
+  symbols: vscode.SymbolInformation[],
+  maxResults: number,
+  deps: MutationHandlerDeps
+): { symbols: Array<Record<string, unknown>>; total: number; truncated: boolean } {
+  const result: Array<Record<string, unknown>> = [];
+  let count = 0;
+  for (const symbol of symbols) {
+    if (count >= maxResults) break;
+    count++;
+    result.push({
+      name: symbol.name,
+      kind: deps.serializeSymbolKind(symbol.kind),
+      containerName: symbol.containerName,
+      range: deps.serializeRange(symbol.location.range)
+    });
+  }
+  return { symbols: result, total: count, truncated: count >= maxResults };
+}
+
+export async function handleGetSymbolsTool(
+  name: string,
+  args: Record<string, unknown>,
+  deps: MutationHandlerDeps
+): Promise<ToolResultLike> {
+  const filePath = deps.getFirstStringArg(args, ['path', 'file', 'filePath', 'filename']);
+  let uri: vscode.Uri | undefined;
+  if (filePath) {
+    const resolved = await deps.resolveWorkspaceUri(filePath, true);
+    if (!resolved.uri) {
+      return {
+        ok: false,
+        tool: name,
+        message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
+        data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
+      };
+    }
+    uri = resolved.uri;
+  } else {
+    const activeUri = deps.getActiveWorkspaceFileUri();
+    if (!activeUri) {
+      return { ok: false, tool: name, message: 'path je povinny nebo otevri aktivni soubor' };
+    }
+    uri = activeUri;
+  }
+
+  const maxResults = deps.clampNumber(args.maxResults, deps.DEFAULT_MAX_LSP_RESULTS, 1, 1000);
+  const maxDepth = deps.clampNumber(args.maxDepth, 3, 0, 10);
+  const symbols = await vscode.commands.executeCommand<
+    Array<vscode.DocumentSymbol> | Array<vscode.SymbolInformation> | undefined
+  >('vscode.executeDocumentSymbolProvider', uri);
+  const relativePath = deps.getRelativePathForWorkspace(uri);
+
+  if (!symbols || symbols.length === 0) {
+    return { ok: true, tool: name, data: { path: relativePath, symbols: [], total: 0 } };
+  }
+
+  const first = symbols[0] as unknown;
+  const payload = (first as { location?: unknown }).location !== undefined
+    ? collectSymbolInformationForTool(symbols as vscode.SymbolInformation[], maxResults, deps)
+    : collectDocumentSymbolsForTool(symbols as vscode.DocumentSymbol[], maxDepth, maxResults, deps);
+
+  return {
+    ok: true,
+    tool: name,
+    data: {
+      path: relativePath,
+      maxDepth,
+      ...payload
+    }
+  };
+}
+
+export async function handleGetWorkspaceSymbolsTool(
+  name: string,
+  args: Record<string, unknown>,
+  deps: MutationHandlerDeps
+): Promise<ToolResultLike> {
+  const query = deps.asString(args.query) ?? '';
+  const maxResults = deps.clampNumber(args.maxResults, deps.DEFAULT_MAX_LSP_RESULTS, 1, 1000);
+  const symbols = await vscode.commands.executeCommand<
+    Array<vscode.SymbolInformation> | undefined
+  >('vscode.executeWorkspaceSymbolProvider', query);
+  if (!symbols || symbols.length === 0) {
+    return { ok: true, tool: name, data: { query, symbols: [], total: 0 } };
+  }
+  const results: Array<Record<string, unknown>> = [];
+  for (const symbol of symbols) {
+    if (results.length >= maxResults) break;
+    const location = (symbol as { location?: vscode.Location | vscode.LocationLink }).location;
+    results.push({
+      name: symbol.name,
+      kind: deps.serializeSymbolKind(symbol.kind),
+      containerName: symbol.containerName,
+      location: location ? deps.serializeLocationInfo(location) : undefined
+    });
+  }
+  return {
+    ok: true,
+    tool: name,
+    data: {
+      query,
+      symbols: results,
+      total: symbols.length,
+      truncated: symbols.length > maxResults
     }
   };
 }
