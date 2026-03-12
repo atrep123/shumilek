@@ -16,6 +16,17 @@ describe('toolingProtocol', () => {
       assert.equal(resolveToolPermissionScope('run_terminal_command'), 'commands');
     });
 
+    it('keeps run_terminal_command variants out of edit scope', () => {
+      const commandLikeTools = [
+        'run_terminal_command',
+        'run_terminal_command_v2',
+        'run_terminal_command_with_timeout'
+      ];
+      for (const tool of commandLikeTools) {
+        assert.equal(resolveToolPermissionScope(tool), 'commands');
+      }
+    });
+
     it('classifies edit tools as edit scope', () => {
       const editTools = ['write_file', 'replace_lines', 'apply_patch', 'rename_file', 'delete_file'];
       for (const tool of editTools) {
