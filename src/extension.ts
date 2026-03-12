@@ -58,6 +58,10 @@ import { humanizeApiError, isTransientError, isSafeUrl, normalizeTaskWeight, isC
 import { ChatRequestConcurrencyGuard } from './chatConcurrency';
 import {
   handleDeleteFileTool,
+  handleGetDefinitionTool,
+  handleGetDiagnosticsTool,
+  handleGetReferencesTool,
+  handleGetTypeInfoTool,
   handleFetchWebpageTool,
   handleRenameFileTool,
   handleReplaceLinesTool,
@@ -4859,6 +4863,7 @@ async function runToolCall(
   }
 
   const mutationHandlerDeps: MutationHandlerDeps = {
+    DEFAULT_MAX_LSP_RESULTS,
     DEFAULT_MAX_READ_BYTES,
     DEFAULT_MAX_WRITE_BYTES,
     lastReadHashes,
@@ -4869,6 +4874,12 @@ async function runToolCall(
     getActiveWorkspaceFileUri,
     readFileForTool,
     getRelativePathForWorkspace,
+    getPositionFromArgs,
+    resolveSymbolPosition,
+    serializeLocationInfo,
+    serializeRange,
+    renderHoverContents,
+    serializeDiagnosticSeverity,
     detectEol,
     splitLines,
     showDiffAndConfirm,
@@ -5291,216 +5302,16 @@ async function runToolCall(
         };
       }
       case 'get_definition': {
-        const filePath = getFirstStringArg(args, ['path', 'file', 'filePath', 'filename']);
-        let uri: vscode.Uri | undefined;
-        if (filePath) {
-          const resolved = await resolveWorkspaceUri(filePath, true);
-          if (!resolved.uri) {
-            return {
-              ok: false,
-              tool: name,
-              message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
-              data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
-            };
-          }
-          uri = resolved.uri;
-        } else {
-          const activeUri = getActiveWorkspaceFileUri();
-          if (!activeUri) {
-            return { ok: false, tool: name, message: 'path je povinny nebo otevri aktivni soubor' };
-          }
-          uri = activeUri;
-        }
-
-        const doc = await vscode.workspace.openTextDocument(uri);
-        const symbolName = asString(args.symbol);
-        let posInfo = getPositionFromArgs(args, doc);
-        let position = posInfo.position;
-        if (!position && symbolName) {
-          position = await resolveSymbolPosition(uri, symbolName);
-          if (position) {
-            posInfo = { position, line: position.line + 1, character: position.character + 1 };
-          }
-        }
-        if (!position) {
-          return { ok: false, tool: name, message: posInfo.error ?? 'pozice nenalezena' };
-        }
-
-        const definitions = await vscode.commands.executeCommand<
-          Array<vscode.Location | vscode.LocationLink> | vscode.Location | undefined
-        >('vscode.executeDefinitionProvider', uri, position);
-        const list = Array.isArray(definitions) ? definitions : (definitions ? [definitions] : []);
-        const maxResults = clampNumber(args.maxResults, DEFAULT_MAX_LSP_RESULTS, 1, 1000);
-        const results = list.slice(0, maxResults).map(loc => serializeLocationInfo(loc));
-
-        return {
-          ok: true,
-          tool: name,
-          data: {
-            path: getRelativePathForWorkspace(uri),
-            position: { line: posInfo.line ?? position.line + 1, character: posInfo.character ?? position.character + 1 },
-            definitions: results,
-            total: list.length,
-            truncated: list.length > maxResults
-          }
-        };
+        return handleGetDefinitionTool(name, args, mutationHandlerDeps);
       }
       case 'get_references': {
-        const filePath = getFirstStringArg(args, ['path', 'file', 'filePath', 'filename']);
-        let uri: vscode.Uri | undefined;
-        if (filePath) {
-          const resolved = await resolveWorkspaceUri(filePath, true);
-          if (!resolved.uri) {
-            return {
-              ok: false,
-              tool: name,
-              message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
-              data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
-            };
-          }
-          uri = resolved.uri;
-        } else {
-          const activeUri = getActiveWorkspaceFileUri();
-          if (!activeUri) {
-            return { ok: false, tool: name, message: 'path je povinny nebo otevri aktivni soubor' };
-          }
-          uri = activeUri;
-        }
-
-        const doc = await vscode.workspace.openTextDocument(uri);
-        const posInfo = getPositionFromArgs(args, doc);
-        if (!posInfo.position) {
-          return { ok: false, tool: name, message: posInfo.error ?? 'pozice nenalezena' };
-        }
-        const includeDeclaration = typeof args.includeDeclaration === 'boolean' ? args.includeDeclaration : false;
-        const references = await vscode.commands.executeCommand<vscode.Location[]>(
-          'vscode.executeReferenceProvider',
-          uri,
-          posInfo.position,
-          { includeDeclaration }
-        );
-        const list = references ?? [];
-        const maxResults = clampNumber(args.maxResults, DEFAULT_MAX_LSP_RESULTS, 1, 1000);
-        const results = list.slice(0, maxResults).map(loc => serializeLocationInfo(loc));
-        return {
-          ok: true,
-          tool: name,
-          data: {
-            path: getRelativePathForWorkspace(uri),
-            position: { line: posInfo.line ?? posInfo.position.line + 1, character: posInfo.character ?? posInfo.position.character + 1 },
-            includeDeclaration,
-            references: results,
-            total: list.length,
-            truncated: list.length > maxResults
-          }
-        };
+        return handleGetReferencesTool(name, args, mutationHandlerDeps);
       }
       case 'get_type_info': {
-        const filePath = getFirstStringArg(args, ['path', 'file', 'filePath', 'filename']);
-        let uri: vscode.Uri | undefined;
-        if (filePath) {
-          const resolved = await resolveWorkspaceUri(filePath, true);
-          if (!resolved.uri) {
-            return {
-              ok: false,
-              tool: name,
-              message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
-              data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
-            };
-          }
-          uri = resolved.uri;
-        } else {
-          const activeUri = getActiveWorkspaceFileUri();
-          if (!activeUri) {
-            return { ok: false, tool: name, message: 'path je povinny nebo otevri aktivni soubor' };
-          }
-          uri = activeUri;
-        }
-
-        const doc = await vscode.workspace.openTextDocument(uri);
-        const posInfo = getPositionFromArgs(args, doc);
-        if (!posInfo.position) {
-          return { ok: false, tool: name, message: posInfo.error ?? 'pozice nenalezena' };
-        }
-        const hovers = await vscode.commands.executeCommand<vscode.Hover[]>(
-          'vscode.executeHoverProvider',
-          uri,
-          posInfo.position
-        );
-        const list = hovers ?? [];
-        const maxResults = clampNumber(args.maxResults, DEFAULT_MAX_LSP_RESULTS, 1, 1000);
-        const results = list.slice(0, maxResults).map(hover => ({
-          range: hover.range ? serializeRange(hover.range) : undefined,
-          contents: renderHoverContents(hover.contents)
-        }));
-        return {
-          ok: true,
-          tool: name,
-          data: {
-            path: getRelativePathForWorkspace(uri),
-            position: { line: posInfo.line ?? posInfo.position.line + 1, character: posInfo.character ?? posInfo.position.character + 1 },
-            hovers: results,
-            total: list.length,
-            truncated: list.length > maxResults
-          }
-        };
+        return handleGetTypeInfoTool(name, args, mutationHandlerDeps);
       }
       case 'get_diagnostics': {
-        const filePath = getFirstStringArg(args, ['path', 'file', 'filePath', 'filename']);
-        const maxResults = clampNumber(args.maxResults, DEFAULT_MAX_LSP_RESULTS, 1, 1000);
-        const results: Array<Record<string, unknown>> = [];
-        let total = 0;
-        if (filePath) {
-          const resolved = await resolveWorkspaceUri(filePath, true);
-          if (!resolved.uri) {
-            return {
-              ok: false,
-              tool: name,
-              message: resolved.error ?? 'soubor nenalezen nebo mimo workspace',
-              data: resolved.conflicts ? { conflicts: resolved.conflicts } : undefined
-            };
-          }
-          const uri = resolved.uri;
-          const diagnostics = vscode.languages.getDiagnostics(uri);
-          total = diagnostics.length;
-          for (const diag of diagnostics) {
-            if (results.length >= maxResults) break;
-            results.push({
-              path: getRelativePathForWorkspace(uri),
-              severity: serializeDiagnosticSeverity(diag.severity),
-              message: diag.message,
-              range: serializeRange(diag.range),
-              source: diag.source,
-              code: typeof diag.code === 'object' ? (diag.code as any).value : diag.code
-            });
-          }
-        } else {
-          const allDiagnostics = vscode.languages.getDiagnostics();
-          for (const [uri, diagnostics] of allDiagnostics) {
-            total += diagnostics.length;
-            for (const diag of diagnostics) {
-              if (results.length >= maxResults) break;
-              results.push({
-                path: getRelativePathForWorkspace(uri),
-                severity: serializeDiagnosticSeverity(diag.severity),
-                message: diag.message,
-                range: serializeRange(diag.range),
-                source: diag.source,
-                code: typeof diag.code === 'object' ? (diag.code as any).value : diag.code
-              });
-            }
-            if (results.length >= maxResults) break;
-          }
-        }
-        return {
-          ok: true,
-          tool: name,
-          data: {
-            diagnostics: results,
-            total,
-            truncated: total > maxResults
-          }
-        };
+        return handleGetDiagnosticsTool(name, args, mutationHandlerDeps);
       }
       case 'route_file': {
         const intent = asString(args.intent);
