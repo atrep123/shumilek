@@ -329,6 +329,21 @@ export class ResponseGuardian {
       logFn?.(`[ResponseGuardian] 🚨 Dlouhá slova: ${longWords.slice(0, 3).join(', ')}`);
     }
 
+    // Detect suspicious dump-like overuse of null/NaN while allowing normal explanations.
+    const nullCount = (safeText.match(/\bnull\b/gi) || []).length;
+    const nanCount = (safeText.match(/\bNaN\b/g) || []).length;
+    const tokenCount = Math.max(words.filter(w => w.length > 0).length, 1);
+    const nullDensity = nullCount / tokenCount;
+    const nanDensity = nanCount / tokenCount;
+    if (nullCount >= 3 && nullDensity > 0.05) {
+      issues.push(`Nadměrný výskyt null hodnot (${nullCount}x) - možný dump/chyba`);
+      logFn?.(`[ResponseGuardian] ⚠️ Nadměrný výskyt null: ${nullCount}x (${(nullDensity * 100).toFixed(1)}%)`);
+    }
+    if (nanCount >= 3 && nanDensity > 0.05) {
+      issues.push(`Nadměrný výskyt NaN hodnot (${nanCount}x) - možný výpočetní problém`);
+      logFn?.(`[ResponseGuardian] ⚠️ Nadměrný výskyt NaN: ${nanCount}x (${(nanDensity * 100).toFixed(1)}%)`);
+    }
+
     const stuckPatterns: Array<{ pattern: RegExp; msg: string }> = [
       { pattern: /\[END\].*\[END\]/gi, msg: 'Opakující se [END] značky' },
       { pattern: /<\|.*\|>.*<\|.*\|>/gi, msg: 'Opakující se speciální tokeny' },
@@ -341,8 +356,6 @@ export class ResponseGuardian {
       { pattern: /#####.*#####/g, msg: 'Opakující se nadpisy' },
       { pattern: /\(undefined\)/gi, msg: 'Undefined hodnoty v textu' },
       { pattern: /\[object Object\]/gi, msg: 'Nevypsaný objekt v textu' },
-      { pattern: /NaN/g, msg: 'NaN hodnoty v textu' },
-      { pattern: /null/gi, msg: 'Null hodnoty v textu (možná chyba)' },
       { pattern: /TODO:|FIXME:|XXX:/gi, msg: 'Neodstraněné TODO/FIXME značky' },
       { pattern: /lorem ipsum/gi, msg: 'Placeholder text (Lorem Ipsum)' },
       { pattern: /example\.com|foo\.bar/gi, msg: 'Placeholder URL/domény' },
