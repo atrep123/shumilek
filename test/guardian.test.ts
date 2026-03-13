@@ -116,8 +116,8 @@ describe('ResponseGuardian', () => {
   it('should trigger similar-response block for different prompt intent', () => {
     const g = new ResponseGuardian();
     const repeated = 'Toto je stabilni odpoved na technicky dotaz s dostatkem detailu.';
-    g.analyze(repeated, 'Jak nastavit lint?');
-    const res = g.analyze(repeated, 'Jak nasadit docker image?');
+    g.analyze(repeated, 'Jak presne nastavit lint pravidla v TypeScript projektu s ESLint konfiguraci?');
+    const res = g.analyze(repeated, 'Jak nasadit docker image do registry a nastavit release pipeline v CI?');
     expect(res.issues).to.include('Odpověď je velmi podobná předchozí - model může být zaseklý');
     expect(res.shouldRetry).to.be.true;
   });
@@ -128,6 +128,15 @@ describe('ResponseGuardian', () => {
     g.analyze(repeated, 'Jak nastavit lint v projektu?');
     const res = g.analyze(repeated, 'Jak nastavit lint v projektu?');
     expect(res.issues).to.not.include('Odpověď je velmi podobná předchozí - model může být zaseklý');
+  });
+
+  it('should not trigger similar-response block for short repeated replies', () => {
+    const g = new ResponseGuardian();
+    const repeated = 'Ano, jdu na to.';
+    g.analyze(repeated, 'Potvrdis?');
+    const res = g.analyze(repeated, 'Jdeme dal?');
+    expect(res.issues).to.not.include('Odpověď je velmi podobná předchozí - model může být zaseklý');
+    expect(res.shouldRetry).to.be.false;
   });
 
   // ── Truncation detection & auto-repair ──────────────────────────
