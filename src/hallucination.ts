@@ -40,6 +40,34 @@ export class HallucinationDetector {
     /\b(?:function|class|const|let|var|import|export)\b/gi,
   ];
 
+  private isSuspiciousUrl(url: string, userPrompt: string): boolean {
+    const promptLower = userPrompt.toLowerCase();
+    const normalizedUrl = url.toLowerCase();
+    if (promptLower.includes(normalizedUrl)) {
+      return false;
+    }
+
+    let parsed: URL;
+    try {
+      parsed = new URL(url);
+    } catch {
+      return true;
+    }
+
+    const host = parsed.host.toLowerCase();
+    if (host && promptLower.includes(host)) {
+      return false;
+    }
+
+    const path = parsed.pathname || '';
+    const segments = path.split('/').filter(Boolean);
+    const hasVeryLongPath = path.length > 70;
+    const hasManySegments = segments.length >= 5;
+    const hasRandomLikeSegment = segments.some(segment => /[a-z0-9]{22,}/i.test(segment));
+
+    return hasVeryLongPath || hasManySegments || hasRandomLikeSegment;
+  }
+
   analyze(response: string, userPrompt: string, conversationHistory: ChatMessage[]): HallucinationResult {
     const result: HallucinationResult = {
       isHallucination: false,
@@ -83,8 +111,9 @@ export class HallucinationDetector {
     const urls = textToAnalyze.match(urlPattern);
     if (urls && urls.length > 0) {
       for (const url of urls) {
-        if (url.length > 50 && !userPrompt.includes(url.slice(0, 20))) {
+        if (this.isSuspiciousUrl(url, userPrompt)) {
           totalWeight += 0.3;
+          categoryWeights['factual'] = (categoryWeights['factual'] || 0) + 0.3;
           result.reasons.push(`Potenciálně vymyšlená URL: ${url.slice(0, 40)}...`);
         }
       }

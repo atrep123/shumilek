@@ -241,6 +241,26 @@ describe('HallucinationDetector', () => {
     expect(res.reasons.some((r: string) => r.includes('URL'))).to.be.true;
   });
 
+  it('should not flag known host URL when host is requested by user', () => {
+    const detector = new HallucinationDetector();
+    const res = detector.analyze(
+      'Dokumentace je na https://docs.example.com/getting-started.',
+      'Mas link na docs.example.com?',
+      []
+    );
+    expect(res.reasons.some((r: string) => r.includes('URL'))).to.be.false;
+  });
+
+  it('should flag random-like long URL path even without explicit prompt URL', () => {
+    const detector = new HallucinationDetector();
+    const res = detector.analyze(
+      'Zkus https://example.com/api/v1/resources/abc123def456ghi789jkl012mno345/payload/details/report.',
+      'Kde najdu report?',
+      []
+    );
+    expect(res.reasons.some((r: string) => r.includes('URL'))).to.be.true;
+  });
+
   it('should provide correct summary for no hallucination', () => {
     const detector = new HallucinationDetector();
     const result = {
