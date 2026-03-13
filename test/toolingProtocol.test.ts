@@ -81,5 +81,38 @@ describe('toolingProtocol', () => {
       assert.equal(parsed.calls[0].name, 'list_files');
       assert.equal(parsed.remainingText, '');
     });
+
+    it('parses array JSON fallback responses', () => {
+      const input = '[{"name":"read_file","arguments":{"path":"README.md"}},{"name":"list_files"}]';
+      const parsed = parseToolCalls(input);
+      assert.equal(parsed.calls.length, 2);
+      assert.equal(parsed.calls[0].name, 'read_file');
+      assert.equal(parsed.calls[1].name, 'list_files');
+      assert.equal(parsed.remainingText, '');
+    });
+
+    it('ignores non-json code fences in fallback mode', () => {
+      const input = '```ts\nconst x = 1;\n```';
+      const parsed = parseToolCalls(input);
+      assert.equal(parsed.calls.length, 0);
+      assert.equal(parsed.remainingText, input);
+      assert.deepEqual(parsed.errors, []);
+    });
+
+    it('reports invalid json in fallback mode', () => {
+      const input = '```json\n{"name":"read_file",}\n```';
+      const parsed = parseToolCalls(input);
+      assert.equal(parsed.calls.length, 0);
+      assert.ok(parsed.errors.length > 0);
+      assert.match(parsed.errors[0], /Invalid JSON/i);
+    });
+
+    it('skips fallback items missing required name', () => {
+      const input = '[{"arguments":{"path":"README.md"}},{"name":"read_file"}]';
+      const parsed = parseToolCalls(input);
+      assert.equal(parsed.calls.length, 1);
+      assert.equal(parsed.calls[0].name, 'read_file');
+      assert.equal(parsed.remainingText, '');
+    });
   });
 });
