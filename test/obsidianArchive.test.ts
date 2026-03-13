@@ -76,6 +76,8 @@ describe('obsidianArchive', () => {
     assert.match(updated, /## Summary/);
     assert.match(updated, /- Total archives: 3/);
     assert.match(updated, /- Total messages: 20/);
+    assert.match(updated, /- Average messages per archive: 7/);
+    assert.match(updated, /- Archives this week: 3/);
     assert.match(updated, /- First archive: 2026-03-11T08:00:00\.000Z/);
     assert.match(updated, /- Last archive: 2026-03-13T11:00:00\.000Z/);
     assert.match(updated, /- Active projects: 2/);
@@ -98,6 +100,8 @@ describe('obsidianArchive', () => {
     assert.match(index, /## Summary/);
     assert.match(index, /- Total archives: 1/);
     assert.match(index, /- Total messages: 12/);
+    assert.match(index, /- Average messages per archive: 12/);
+    assert.match(index, /- Archives this week: 1/);
     assert.match(index, /- First archive: 2026-03-13T10:30:45\.000Z/);
     assert.match(index, /- Last archive: 2026-03-13T10:30:45\.000Z/);
     assert.match(index, /- Active projects: 1/);
