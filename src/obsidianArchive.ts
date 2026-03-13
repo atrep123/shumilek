@@ -12,6 +12,10 @@ export interface ObsidianArchiveStats {
 
 export interface ObsidianArchiveResult {
   fileName: string;
+  title: string;
+  slug: string;
+  createdAt: string;
+  projectName?: string;
   markdown: string;
   stats: ObsidianArchiveStats;
 }
@@ -19,6 +23,14 @@ export interface ObsidianArchiveResult {
 export interface ObsidianArchiveOptions {
   projectName?: string;
   tags?: string[];
+}
+
+export interface ObsidianArchiveIndexEntry {
+  archivePath: string;
+  title: string;
+  createdAt: string;
+  messageCount: number;
+  projectName?: string;
 }
 
 function formatIsoTimestamp(ts?: number): string {
@@ -33,6 +45,10 @@ function formatDayKey(ts?: number): string {
 
 function toYamlScalar(value: string): string {
   return JSON.stringify(value);
+}
+
+function normalizePosixPath(value: string): string {
+  return value.replace(/\\/g, '/');
 }
 
 function toSlug(input: string, fallback: string): string {
@@ -161,7 +177,43 @@ export function buildObsidianChatArchive(
 
   return {
     fileName,
+    title,
+    slug,
+    createdAt: generatedAtIso,
+    projectName,
     markdown: lines.join('\n').trimEnd() + '\n',
     stats
   };
+}
+
+export function updateObsidianArchiveIndex(
+  existingMarkdown: string | undefined,
+  entry: ObsidianArchiveIndexEntry,
+  now: Date = new Date()
+): string {
+  const updatedAt = now.toISOString();
+  const targetPath = normalizePosixPath(entry.archivePath);
+  const prevLines = (existingMarkdown ?? '').replace(/\r\n/g, '\n').split('\n');
+
+  const previousEntries = prevLines
+    .map(line => line.trim())
+    .filter(line => /^- .*\]\(.+\)/.test(line))
+    .filter(line => !line.includes(`](${targetPath})`));
+
+  const titleText = entry.title.trim() || 'Untitled archive';
+  const projectSuffix = entry.projectName?.trim() ? ` | project: ${entry.projectName.trim()}` : '';
+  const line = `- ${entry.createdAt} | [${titleText}](${targetPath}) | messages: ${entry.messageCount}${projectSuffix}`;
+
+  const lines: string[] = [];
+  lines.push('# Sumilek Archive Index');
+  lines.push(`Updated: ${updatedAt}`);
+  lines.push('');
+  lines.push('## Archives');
+  lines.push(line);
+  for (const prev of previousEntries) {
+    lines.push(prev);
+  }
+  lines.push('');
+
+  return lines.join('\n');
 }

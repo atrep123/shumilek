@@ -54,7 +54,7 @@ import {
   ValidationPolicy
 } from './types';
 import { buildCompressedMessages } from './contextMemory';
-import { buildObsidianChatArchive } from './obsidianArchive';
+import { buildObsidianChatArchive, updateObsidianArchiveIndex } from './obsidianArchive';
 import { humanizeApiError, isTransientError, isSafeUrl, normalizeTaskWeight, isChatMessage, normalizeScore, pickBrainModel, getNonce } from './utils';
 import { ChatRequestConcurrencyGuard } from './chatConcurrency';
 import {
@@ -1385,6 +1385,33 @@ export function activate(context: vscode.ExtensionContext) {
     if (!uri) return;
 
     await vscode.workspace.fs.writeFile(uri, Buffer.from(archive.markdown, 'utf8'));
+
+    if (folder) {
+      const indexPath = getObsidianArchiveIndexPath();
+      const indexUri = vscode.Uri.joinPath(folder.uri, ...indexPath.split(/[\\/]+/).filter(Boolean));
+      const indexParentUri = vscode.Uri.file(path.dirname(indexUri.fsPath));
+      await vscode.workspace.fs.createDirectory(indexParentUri);
+
+      let existingIndex = '';
+      try {
+        const bytes = await vscode.workspace.fs.readFile(indexUri);
+        existingIndex = Buffer.from(bytes).toString('utf8');
+      } catch {
+        // Index does not exist yet.
+      }
+
+      const archiveRelativePath = path.relative(folder.uri.fsPath, uri.fsPath).replace(/\\/g, '/');
+      const updatedIndex = updateObsidianArchiveIndex(existingIndex, {
+        archivePath: archiveRelativePath,
+        title: archive.title,
+        createdAt: archive.createdAt,
+        messageCount: archive.stats.totalMessages,
+        projectName: archive.projectName
+      });
+      await vscode.workspace.fs.writeFile(indexUri, Buffer.from(updatedIndex, 'utf8'));
+      outputChannel?.appendLine(`[Archive] Updated Obsidian archive index: ${indexUri.fsPath}`);
+    }
+
     outputChannel?.appendLine(`[Archive] Saved Obsidian history archive: ${uri.fsPath}`);
     vscode.window.showInformationMessage(`Sumilek: Archiv historie ulozen (${archive.stats.totalMessages} zprav).`);
   });
@@ -3770,6 +3797,14 @@ function getObsidianArchiveDir(): string {
   const raw = config.get<string>('obsidianArchiveDir', 'notes/shumilek/archive');
   const folder = getWorkspaceFolderForAutoSave();
   return normalizeAutoSaveDir(raw, folder);
+}
+
+function getObsidianArchiveIndexPath(): string {
+  const archiveDir = getObsidianArchiveDir();
+  const fallback = path.join(archiveDir, 'ARCHIVE_INDEX.md');
+  const config = vscode.workspace.getConfiguration('shumilek');
+  const raw = config.get<string>('obsidianArchiveIndexPath', fallback);
+  return sanitizeRelativePath(raw, fallback);
 }
 
 function getProjectMapPath(): string {
