@@ -54,6 +54,36 @@ describe('obsidianArchive', () => {
     assert.match(result.markdown, /_No chat messages to archive\._/);
   });
 
+  it('summary section reflects overall stats', () => {
+    const existing = [
+      '# Sumilek Archive Index',
+      'Updated: 2026-03-12T00:00:00.000Z',
+      '',
+      '## Archives',
+      '- 2026-03-11T08:00:00.000Z | [Archive X](notes/shumilek/archive/x.md) | messages: 5 | project: proj-a',
+      '- 2026-03-12T09:00:00.000Z | [Archive Y](notes/shumilek/archive/y.md) | messages: 9 | project: proj-b',
+      ''
+    ].join('\n');
+
+    const updated = updateObsidianArchiveIndex(existing, {
+      archivePath: 'notes/shumilek/archive/z.md',
+      title: 'Archive Z',
+      createdAt: '2026-03-13T11:00:00.000Z',
+      messageCount: 6,
+      projectName: 'proj-a'
+    }, new Date('2026-03-13T11:00:00.000Z'));
+
+    assert.match(updated, /## Summary/);
+    assert.match(updated, /- Total archives: 3/);
+    assert.match(updated, /- Total messages: 20/);
+    assert.match(updated, /- First archive: 2026-03-11T08:00:00\.000Z/);
+    assert.match(updated, /- Last archive: 2026-03-13T11:00:00\.000Z/);
+    assert.match(updated, /- Active projects: 2/);
+    const summaryIdx = updated.indexOf('## Summary');
+    const byDayIdx = updated.indexOf('## By Day');
+    assert.ok(summaryIdx < byDayIdx, '## Summary should appear before ## By Day');
+  });
+
   it('builds archive index with newest entry first', () => {
     const now = new Date('2026-03-13T10:30:45.000Z');
     const index = updateObsidianArchiveIndex('', {
@@ -65,6 +95,12 @@ describe('obsidianArchive', () => {
     }, now);
 
     assert.match(index, /^# Sumilek Archive Index/m);
+    assert.match(index, /## Summary/);
+    assert.match(index, /- Total archives: 1/);
+    assert.match(index, /- Total messages: 12/);
+    assert.match(index, /- First archive: 2026-03-13T10:30:45\.000Z/);
+    assert.match(index, /- Last archive: 2026-03-13T10:30:45\.000Z/);
+    assert.match(index, /- Active projects: 1/);
     assert.match(index, /## By Day/);
     assert.match(index, /- 2026-03-13: archives 1, messages 12/);
     assert.match(index, /## Projects/);

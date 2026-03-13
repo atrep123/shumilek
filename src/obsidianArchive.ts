@@ -278,9 +278,21 @@ export function updateObsidianArchiveIndex(
     .slice(0, 5)
     .map((entryItem, index) => `${index + 1}. [${entryItem.title}](${entryItem.archivePath}) - ${entryItem.messageCount} messages (${entryItem.createdAt})`);
 
+  const totalMessages = parsedEntries.reduce((sum, e) => sum + e.messageCount, 0);
+  const sortedByDate = parsedEntries.slice().sort((a, b) => a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0);
+  const firstArchive = sortedByDate[0]?.createdAt ?? 'n/a';
+  const lastArchive = sortedByDate[sortedByDate.length - 1]?.createdAt ?? 'n/a';
+
   const lines: string[] = [];
   lines.push('# Sumilek Archive Index');
   lines.push(`Updated: ${updatedAt}`);
+  lines.push('');
+  lines.push('## Summary');
+  lines.push(`- Total archives: ${parsedEntries.length}`);
+  lines.push(`- Total messages: ${totalMessages}`);
+  lines.push(`- First archive: ${firstArchive}`);
+  lines.push(`- Last archive: ${lastArchive}`);
+  lines.push(`- Active projects: ${projectMap.size}`);
   lines.push('');
   lines.push('## By Day');
   if (dayLines.length === 0) {
