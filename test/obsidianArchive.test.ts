@@ -67,6 +67,8 @@ describe('obsidianArchive', () => {
     assert.match(index, /^# Sumilek Archive Index/m);
     assert.match(index, /## By Day/);
     assert.match(index, /- 2026-03-13: archives 1, messages 12/);
+    assert.match(index, /## Projects/);
+    assert.match(index, /- shumilek: archives 1, messages 12/);
     assert.match(index, /## Top Archives/);
     assert.match(index, /1\. \[Archive A\]\(notes\/shumilek\/archive\/a\.md\) - 12 messages/);
     assert.match(index, /## Archives/);
@@ -122,6 +124,35 @@ describe('obsidianArchive', () => {
     assert.match(updated, /1\. \[Archive A\]\(notes\/shumilek\/archive\/a\.md\) - 14 messages/);
     assert.match(updated, /2\. \[Archive B\]\(notes\/shumilek\/archive\/b\.md\) - 8 messages/);
     assert.match(updated, /3\. \[Archive C\]\(notes\/shumilek\/archive\/c\.md\) - 7 messages/);
+  });
+
+  it('groups archives by project', () => {
+    const existing = [
+      '# Sumilek Archive Index',
+      'Updated: 2026-03-13T00:00:00.000Z',
+      '',
+      '## Archives',
+      '- 2026-03-12T09:00:00.000Z | [Archive B](notes/shumilek/archive/b.md) | messages: 8 | project: alpha',
+      '- 2026-03-12T10:00:00.000Z | [Archive C](notes/shumilek/archive/c.md) | messages: 7 | project: alpha',
+      '- 2026-03-12T11:00:00.000Z | [Archive D](notes/shumilek/archive/d.md) | messages: 5 | project: beta',
+      ''
+    ].join('\n');
+
+    const updated = updateObsidianArchiveIndex(existing, {
+      archivePath: 'notes/shumilek/archive/a.md',
+      title: 'Archive A',
+      createdAt: '2026-03-13T11:00:00.000Z',
+      messageCount: 14,
+      projectName: 'alpha'
+    }, new Date('2026-03-13T11:00:00.000Z'));
+
+    assert.match(updated, /## Projects/);
+    assert.match(updated, /- alpha: archives 3, messages 29/);
+    assert.match(updated, /- beta: archives 1, messages 5/);
+    const projectsSection = updated.split('## Projects')[1].split('##')[0];
+    const alphaIndex = projectsSection.indexOf('alpha');
+    const betaIndex = projectsSection.indexOf('beta');
+    assert.ok(alphaIndex < betaIndex, 'alpha (29 messages) should come before beta (5 messages)');
   });
 
   it('limits top archives section to five items', () => {
