@@ -279,9 +279,12 @@ export function updateObsidianArchiveIndex(
     .map((entryItem, index) => `${index + 1}. [${entryItem.title}](${entryItem.archivePath}) - ${entryItem.messageCount} messages (${entryItem.createdAt})`);
 
   const totalMessages = parsedEntries.reduce((sum, e) => sum + e.messageCount, 0);
+  const avgMessages = parsedEntries.length > 0 ? Math.round(totalMessages / parsedEntries.length) : 0;
   const sortedByDate = parsedEntries.slice().sort((a, b) => a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0);
   const firstArchive = sortedByDate[0]?.createdAt ?? 'n/a';
   const lastArchive = sortedByDate[sortedByDate.length - 1]?.createdAt ?? 'n/a';
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const thisWeekCount = parsedEntries.filter(e => e.createdAt >= weekAgo).length;
 
   const lines: string[] = [];
   lines.push('# Sumilek Archive Index');
@@ -290,6 +293,8 @@ export function updateObsidianArchiveIndex(
   lines.push('## Summary');
   lines.push(`- Total archives: ${parsedEntries.length}`);
   lines.push(`- Total messages: ${totalMessages}`);
+  lines.push(`- Average messages per archive: ${avgMessages}`);
+  lines.push(`- Archives this week: ${thisWeekCount}`);
   lines.push(`- First archive: ${firstArchive}`);
   lines.push(`- Last archive: ${lastArchive}`);
   lines.push(`- Active projects: ${projectMap.size}`);
