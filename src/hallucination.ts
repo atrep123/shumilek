@@ -73,6 +73,10 @@ export class HallucinationDetector {
     return /(?:pokracuj|pokračuj|navaz|navaž|doplň|dopln|rozved|rozveď|zopakuj|shrň|sumarizuj|co\s+jsi\s+(?:psal|uvedl|zminil|zmínil)|jak\s+jsi\s+(?:psal|uvedl|zminil|zmínil))/i.test(prompt);
   }
 
+  private hasUncertaintyHedge(text: string): boolean {
+    return /(?:možná|mozna|pravděpodobně|pravdepodobne|nejspíš|nejspis|zřejmě|zrejme|může\s+být|muze\s+byt|nemusí\s+být|nemusi\s+byt|odhadem|tipuji|tipuju)/i.test(text);
+  }
+
   analyze(response: string, userPrompt: string, conversationHistory: ChatMessage[]): HallucinationResult {
     const result: HallucinationResult = {
       isHallucination: false,
@@ -126,6 +130,14 @@ export class HallucinationDetector {
           result.reasons.push(`Potenciálně vymyšlená URL: ${url.slice(0, 40)}...`);
         }
       }
+    }
+
+    if (categoryWeights['factual'] && this.hasUncertaintyHedge(textToAnalyze)) {
+      const originalFactual = categoryWeights['factual'];
+      const reduction = Math.min(originalFactual * 0.35, 0.35);
+      categoryWeights['factual'] = Math.max(0, originalFactual - reduction);
+      totalWeight = Math.max(0, totalWeight - reduction);
+      result.reasons.push('Faktická jistota snížena kvůli nejistému/hedged jazyku');
     }
 
     // Calculate confidence and determine if hallucination
