@@ -237,4 +237,73 @@ describe('obsidianArchive', () => {
     assert.match(updated, /- Active projects: 0/);
     assert.match(updated, /- Most active project: n\/a/);
   });
+
+  it('ignores malformed index lines in aggregate stats', () => {
+    const existing = [
+      '# Sumilek Archive Index',
+      'Updated: 2026-03-13T00:00:00.000Z',
+      '',
+      '## Archives',
+      '- 2026-03-12T09:00:00.000Z | [Broken](notes/shumilek/archive/broken.md) | message_count: 8 | project: alpha',
+      '- 2026-03-12T10:00:00.000Z | [Valid](notes/shumilek/archive/valid.md) | messages: 7 | project: beta',
+      ''
+    ].join('\n');
+
+    const updated = updateObsidianArchiveIndex(existing, {
+      archivePath: 'notes/shumilek/archive/new.md',
+      title: 'New',
+      createdAt: '2026-03-13T11:00:00.000Z',
+      messageCount: 3,
+      projectName: 'beta'
+    }, new Date('2026-03-13T11:00:00.000Z'));
+
+    assert.match(updated, /- Total archives: 2/);
+    assert.match(updated, /- Total messages: 10/);
+    assert.match(updated, /- Active projects: 1/);
+    assert.match(updated, /- Most active project: beta \(10 messages\)/);
+    assert.match(updated, /\[Broken\]\(notes\/shumilek\/archive\/broken\.md\)/);
+  });
+
+  it('uses unknown-day bucket for non-ISO createdAt values', () => {
+    const existing = [
+      '# Sumilek Archive Index',
+      'Updated: 2026-03-13T00:00:00.000Z',
+      '',
+      '## Archives',
+      '- yesterday | [Legacy](notes/shumilek/archive/legacy.md) | messages: 4',
+      ''
+    ].join('\n');
+
+    const updated = updateObsidianArchiveIndex(existing, {
+      archivePath: 'notes/shumilek/archive/new.md',
+      title: 'New',
+      createdAt: '2026-03-13T11:00:00.000Z',
+      messageCount: 6
+    }, new Date('2026-03-13T11:00:00.000Z'));
+
+    assert.match(updated, /- unknown-day: archives 1, messages 4/);
+    assert.match(updated, /- 2026-03-13: archives 1, messages 6/);
+    assert.match(updated, /- Most active day: 2026-03-13 \(6 messages\)/);
+  });
+
+  it('counts archives exactly on 7-day boundary as this week', () => {
+    const existing = [
+      '# Sumilek Archive Index',
+      'Updated: 2026-03-13T00:00:00.000Z',
+      '',
+      '## Archives',
+      '- 2026-03-06T11:00:00.000Z | [Edge](notes/shumilek/archive/edge.md) | messages: 2',
+      '- 2026-03-06T10:59:59.999Z | [Old](notes/shumilek/archive/old.md) | messages: 9',
+      ''
+    ].join('\n');
+
+    const updated = updateObsidianArchiveIndex(existing, {
+      archivePath: 'notes/shumilek/archive/new.md',
+      title: 'New',
+      createdAt: '2026-03-13T11:00:00.000Z',
+      messageCount: 1
+    }, new Date('2026-03-13T11:00:00.000Z'));
+
+    assert.match(updated, /- Archives this week: 2/);
+  });
 });
