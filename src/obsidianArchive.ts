@@ -26,6 +26,11 @@ function formatIsoTimestamp(ts?: number): string {
   return new Date(ts).toISOString();
 }
 
+function formatDayKey(ts?: number): string {
+  if (typeof ts !== 'number' || !Number.isFinite(ts)) return 'unknown-day';
+  return new Date(ts).toISOString().slice(0, 10);
+}
+
 function toYamlScalar(value: string): string {
   return JSON.stringify(value);
 }
@@ -139,8 +144,15 @@ export function buildObsidianChatArchive(
   if (messages.length === 0) {
     lines.push('_No chat messages to archive._');
   } else {
+    let currentDay: string | undefined;
     for (const message of messages) {
-      lines.push(`### ${roleLabel(message.role)} @ ${formatIsoTimestamp(message.timestamp)}`);
+      const dayKey = formatDayKey(message.timestamp);
+      if (dayKey !== currentDay) {
+        currentDay = dayKey;
+        lines.push(`### ${dayKey}`);
+        lines.push('');
+      }
+      lines.push(`#### ${roleLabel(message.role)} @ ${formatIsoTimestamp(message.timestamp)}`);
       lines.push('');
       lines.push(message.content.trim().length > 0 ? message.content : '_Empty message_');
       lines.push('');
