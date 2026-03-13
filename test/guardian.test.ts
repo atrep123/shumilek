@@ -79,6 +79,22 @@ describe('ResponseGuardian', () => {
     expect(res.issues.some((i: string) => i.includes('TODO/FIXME'))).to.be.true;
   });
 
+  it('should not flag single null/NaN mention in explanation', () => {
+    const g = new ResponseGuardian();
+    const text = 'V JavaScriptu null reprezentuje prazdnou hodnotu a NaN znamena neplatne cislo.';
+    const res = g.analyze(text, 'Vysvetli null a NaN');
+    expect(res.issues.some((i: string) => i.includes('null hodnot'))).to.be.false;
+    expect(res.issues.some((i: string) => i.includes('NaN hodnot'))).to.be.false;
+  });
+
+  it('should flag excessive null/NaN token dumps', () => {
+    const g = new ResponseGuardian();
+    const text = 'null null null null null NaN NaN NaN NaN values from broken parser';
+    const res = g.analyze(text, 'co se pokazilo?');
+    expect(res.issues.some((i: string) => i.includes('Nadměrný výskyt null'))).to.be.true;
+    expect(res.issues.some((i: string) => i.includes('Nadměrný výskyt NaN'))).to.be.true;
+  });
+
   it('should truncate very long responses', () => {
     const g = new ResponseGuardian();
     const longText = 'a '.repeat(30000);
