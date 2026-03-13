@@ -37,6 +37,8 @@ interface ParsedIndexEntry {
   createdAt: string;
   messageCount: number;
   line: string;
+  title: string;
+  archivePath: string;
 }
 
 function formatIsoTimestamp(ts?: number): string {
@@ -58,15 +60,19 @@ function normalizePosixPath(value: string): string {
 }
 
 function parseArchiveIndexLine(line: string): ParsedIndexEntry | undefined {
-  const match = line.match(/^-\s+([^|]+)\|\s+\[[^\]]*\]\([^\)]*\)\s+\|\s+messages:\s*(\d+)/);
+  const match = line.match(/^\-\s+([^|]+)\|\s+\[([^\]]*)\]\(([^\)]*)\)\s+\|\s+messages:\s*(\d+)/);
   if (!match) return undefined;
   const createdAt = String(match[1] ?? '').trim();
-  const messageCount = Number.parseInt(String(match[2] ?? '0'), 10);
-  if (!createdAt) return undefined;
+  const title = String(match[2] ?? '').trim();
+  const archivePath = normalizePosixPath(String(match[3] ?? '').trim());
+  const messageCount = Number.parseInt(String(match[4] ?? '0'), 10);
+  if (!createdAt || !archivePath) return undefined;
   return {
     createdAt,
     messageCount: Number.isFinite(messageCount) ? messageCount : 0,
-    line: line.trim()
+    line: line.trim(),
+    title: title || 'Untitled archive',
+    archivePath
   };
 }
 
@@ -247,6 +253,15 @@ export function updateObsidianArchiveIndex(
     .sort((a, b) => a[0] < b[0] ? 1 : (a[0] > b[0] ? -1 : 0))
     .map(([day, agg]) => `- ${day}: archives ${agg.archives}, messages ${agg.messages}`);
 
+  const topArchives = parsedEntries
+    .slice()
+    .sort((a, b) => {
+      if (b.messageCount !== a.messageCount) return b.messageCount - a.messageCount;
+      return a.createdAt < b.createdAt ? 1 : (a.createdAt > b.createdAt ? -1 : 0);
+    })
+    .slice(0, 5)
+    .map((entryItem, index) => `${index + 1}. [${entryItem.title}](${entryItem.archivePath}) - ${entryItem.messageCount} messages (${entryItem.createdAt})`);
+
   const lines: string[] = [];
   lines.push('# Sumilek Archive Index');
   lines.push(`Updated: ${updatedAt}`);
@@ -257,6 +272,15 @@ export function updateObsidianArchiveIndex(
   } else {
     for (const dayLine of dayLines) {
       lines.push(dayLine);
+    }
+  }
+  lines.push('');
+  lines.push('## Top Archives');
+  if (topArchives.length === 0) {
+    lines.push('_No archives yet._');
+  } else {
+    for (const topLine of topArchives) {
+      lines.push(topLine);
     }
   }
   lines.push('');
