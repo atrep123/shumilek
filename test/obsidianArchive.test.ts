@@ -65,6 +65,8 @@ describe('obsidianArchive', () => {
     }, now);
 
     assert.match(index, /^# Sumilek Archive Index/m);
+    assert.match(index, /## By Day/);
+    assert.match(index, /- 2026-03-13: archives 1, messages 12/);
     assert.match(index, /## Archives/);
     assert.match(index, /\[Archive A\]\(notes\/shumilek\/archive\/a\.md\)/);
     assert.match(index, /messages: 12/);
@@ -92,5 +94,27 @@ describe('obsidianArchive', () => {
     const aCount = (updated.match(/\(notes\/shumilek\/archive\/a\.md\)/g) || []).length;
     assert.equal(aCount, 1);
     assert.match(updated, /\[Archive A New\]\(notes\/shumilek\/archive\/a\.md\)/);
+  });
+
+  it('aggregates by day across multiple archive entries', () => {
+    const existing = [
+      '# Sumilek Archive Index',
+      'Updated: 2026-03-13T00:00:00.000Z',
+      '',
+      '## Archives',
+      '- 2026-03-12T09:00:00.000Z | [Archive B](notes/shumilek/archive/b.md) | messages: 8',
+      '- 2026-03-12T10:00:00.000Z | [Archive C](notes/shumilek/archive/c.md) | messages: 7',
+      ''
+    ].join('\n');
+
+    const updated = updateObsidianArchiveIndex(existing, {
+      archivePath: 'notes/shumilek/archive/a.md',
+      title: 'Archive A',
+      createdAt: '2026-03-13T11:00:00.000Z',
+      messageCount: 14
+    }, new Date('2026-03-13T11:00:00.000Z'));
+
+    assert.match(updated, /- 2026-03-13: archives 1, messages 14/);
+    assert.match(updated, /- 2026-03-12: archives 2, messages 15/);
   });
 });

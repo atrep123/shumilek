@@ -33,6 +33,12 @@ export interface ObsidianArchiveIndexEntry {
   projectName?: string;
 }
 
+interface ParsedIndexEntry {
+  createdAt: string;
+  messageCount: number;
+  line: string;
+}
+
 function formatIsoTimestamp(ts?: number): string {
   if (typeof ts !== 'number' || !Number.isFinite(ts)) return 'n/a';
   return new Date(ts).toISOString();
@@ -49,6 +55,25 @@ function toYamlScalar(value: string): string {
 
 function normalizePosixPath(value: string): string {
   return value.replace(/\\/g, '/');
+}
+
+function parseArchiveIndexLine(line: string): ParsedIndexEntry | undefined {
+  const match = line.match(/^-\s+([^|]+)\|\s+\[[^\]]*\]\([^\)]*\)\s+\|\s+messages:\s*(\d+)/);
+  if (!match) return undefined;
+  const createdAt = String(match[1] ?? '').trim();
+  const messageCount = Number.parseInt(String(match[2] ?? '0'), 10);
+  if (!createdAt) return undefined;
+  return {
+    createdAt,
+    messageCount: Number.isFinite(messageCount) ? messageCount : 0,
+    line: line.trim()
+  };
+}
+
+function toDayFromCreatedAt(createdAt: string): string {
+  const datePrefix = createdAt.slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(datePrefix)) return datePrefix;
+  return 'unknown-day';
 }
 
 function toSlug(input: string, fallback: string): string {
@@ -204,14 +229,40 @@ export function updateObsidianArchiveIndex(
   const projectSuffix = entry.projectName?.trim() ? ` | project: ${entry.projectName.trim()}` : '';
   const line = `- ${entry.createdAt} | [${titleText}](${targetPath}) | messages: ${entry.messageCount}${projectSuffix}`;
 
+  const archiveLines = [line, ...previousEntries];
+  const parsedEntries = archiveLines
+    .map(parseArchiveIndexLine)
+    .filter((item): item is ParsedIndexEntry => Boolean(item));
+
+  const dayMap = new Map<string, { archives: number; messages: number }>();
+  for (const parsed of parsedEntries) {
+    const day = toDayFromCreatedAt(parsed.createdAt);
+    const current = dayMap.get(day) ?? { archives: 0, messages: 0 };
+    current.archives += 1;
+    current.messages += parsed.messageCount;
+    dayMap.set(day, current);
+  }
+
+  const dayLines = Array.from(dayMap.entries())
+    .sort((a, b) => a[0] < b[0] ? 1 : (a[0] > b[0] ? -1 : 0))
+    .map(([day, agg]) => `- ${day}: archives ${agg.archives}, messages ${agg.messages}`);
+
   const lines: string[] = [];
   lines.push('# Sumilek Archive Index');
   lines.push(`Updated: ${updatedAt}`);
   lines.push('');
+  lines.push('## By Day');
+  if (dayLines.length === 0) {
+    lines.push('_No archives yet._');
+  } else {
+    for (const dayLine of dayLines) {
+      lines.push(dayLine);
+    }
+  }
+  lines.push('');
   lines.push('## Archives');
-  lines.push(line);
-  for (const prev of previousEntries) {
-    lines.push(prev);
+  for (const archiveLine of archiveLines) {
+    lines.push(archiveLine);
   }
   lines.push('');
 
