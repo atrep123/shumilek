@@ -357,6 +357,12 @@ export class ResponseGuardian {
       logFn?.(`[ResponseGuardian] ⚠️ Nadměrný výskyt NaN: ${nanCount}x (${(nanDensity * 100).toFixed(1)}%)`);
     }
 
+    const placeholderUrlMatches = safeText.match(/\b(?:https?:\/\/)?(?:www\.)?(?:example\.com|foo\.bar)(?:\/\S*)?/gi) || [];
+    if (placeholderUrlMatches.length >= 2) {
+      issues.push(`Placeholder URL/domény (${placeholderUrlMatches.length}x)`);
+      logFn?.(`[ResponseGuardian] ⚠️ Placeholder URL/domény: ${placeholderUrlMatches.length}x`);
+    }
+
     const stuckPatterns: Array<{ pattern: RegExp; msg: string }> = [
       { pattern: /\[END\].*\[END\]/gi, msg: 'Opakující se [END] značky' },
       { pattern: /<\|.*\|>.*<\|.*\|>/gi, msg: 'Opakující se speciální tokeny' },
@@ -371,7 +377,6 @@ export class ResponseGuardian {
       { pattern: /\[object Object\]/gi, msg: 'Nevypsaný objekt v textu' },
       { pattern: /TODO:|FIXME:|XXX:/gi, msg: 'Neodstraněné TODO/FIXME značky' },
       { pattern: /lorem ipsum/gi, msg: 'Placeholder text (Lorem Ipsum)' },
-      { pattern: /example\.com|foo\.bar/gi, msg: 'Placeholder URL/domény' },
       { pattern: /(\w)\1{8,}/g, msg: 'Opakující se znaky (halucinace)' },
     ];
 

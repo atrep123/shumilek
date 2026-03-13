@@ -79,6 +79,20 @@ describe('ResponseGuardian', () => {
     expect(res.issues.some((i: string) => i.includes('TODO/FIXME'))).to.be.true;
   });
 
+  it('should not flag single example.com mention in normal explanation', () => {
+    const g = new ResponseGuardian();
+    const text = 'Pro ukazku endpointu muze byt pouzita domena example.com v dokumentaci.';
+    const res = g.analyze(text, 'Dej priklad domény do dokumentace');
+    expect(res.issues.some((i: string) => i.includes('Placeholder URL/domény'))).to.be.false;
+  });
+
+  it('should flag repeated placeholder URL/domain usage', () => {
+    const g = new ResponseGuardian();
+    const text = 'Pouzij example.com, pak https://example.com/api a nakonec foo.bar/test pro demo.';
+    const res = g.analyze(text, 'Vytvor mi fake data pro demo');
+    expect(res.issues.some((i: string) => i.includes('Placeholder URL/domény'))).to.be.true;
+  });
+
   it('should not flag single null/NaN mention in explanation', () => {
     const g = new ResponseGuardian();
     const text = 'V JavaScriptu null reprezentuje prazdnou hodnotu a NaN znamena neplatne cislo.';
