@@ -67,6 +67,8 @@ describe('obsidianArchive', () => {
     assert.match(index, /^# Sumilek Archive Index/m);
     assert.match(index, /## By Day/);
     assert.match(index, /- 2026-03-13: archives 1, messages 12/);
+    assert.match(index, /## Top Archives/);
+    assert.match(index, /1\. \[Archive A\]\(notes\/shumilek\/archive\/a\.md\) - 12 messages/);
     assert.match(index, /## Archives/);
     assert.match(index, /\[Archive A\]\(notes\/shumilek\/archive\/a\.md\)/);
     assert.match(index, /messages: 12/);
@@ -91,8 +93,9 @@ describe('obsidianArchive', () => {
       messageCount: 14
     }, new Date('2026-03-13T11:00:00.000Z'));
 
-    const aCount = (updated.match(/\(notes\/shumilek\/archive\/a\.md\)/g) || []).length;
-    assert.equal(aCount, 1);
+    const archivesSection = (updated.match(/## Archives[\s\S]*$/) || [''])[0];
+    const aCountInArchives = (archivesSection.match(/\(notes\/shumilek\/archive\/a\.md\)/g) || []).length;
+    assert.equal(aCountInArchives, 1);
     assert.match(updated, /\[Archive A New\]\(notes\/shumilek\/archive\/a\.md\)/);
   });
 
@@ -116,5 +119,35 @@ describe('obsidianArchive', () => {
 
     assert.match(updated, /- 2026-03-13: archives 1, messages 14/);
     assert.match(updated, /- 2026-03-12: archives 2, messages 15/);
+    assert.match(updated, /1\. \[Archive A\]\(notes\/shumilek\/archive\/a\.md\) - 14 messages/);
+    assert.match(updated, /2\. \[Archive B\]\(notes\/shumilek\/archive\/b\.md\) - 8 messages/);
+    assert.match(updated, /3\. \[Archive C\]\(notes\/shumilek\/archive\/c\.md\) - 7 messages/);
+  });
+
+  it('limits top archives section to five items', () => {
+    const existing = [
+      '# Sumilek Archive Index',
+      'Updated: 2026-03-13T00:00:00.000Z',
+      '',
+      '## Archives',
+      '- 2026-03-12T09:00:00.000Z | [A1](notes/shumilek/archive/a1.md) | messages: 1',
+      '- 2026-03-12T09:10:00.000Z | [A2](notes/shumilek/archive/a2.md) | messages: 2',
+      '- 2026-03-12T09:20:00.000Z | [A3](notes/shumilek/archive/a3.md) | messages: 3',
+      '- 2026-03-12T09:30:00.000Z | [A4](notes/shumilek/archive/a4.md) | messages: 4',
+      '- 2026-03-12T09:40:00.000Z | [A5](notes/shumilek/archive/a5.md) | messages: 5',
+      ''
+    ].join('\n');
+
+    const updated = updateObsidianArchiveIndex(existing, {
+      archivePath: 'notes/shumilek/archive/a6.md',
+      title: 'A6',
+      createdAt: '2026-03-13T11:00:00.000Z',
+      messageCount: 6
+    }, new Date('2026-03-13T11:00:00.000Z'));
+
+    assert.match(updated, /1\. \[A6\]\(notes\/shumilek\/archive\/a6\.md\) - 6 messages/);
+    assert.match(updated, /5\. \[A2\]\(notes\/shumilek\/archive\/a2\.md\) - 2 messages/);
+    const topCount = (updated.match(/^\d+\. \[/gm) || []).length;
+    assert.equal(topCount, 5);
   });
 });
