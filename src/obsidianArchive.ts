@@ -39,6 +39,7 @@ interface ParsedIndexEntry {
   line: string;
   title: string;
   archivePath: string;
+  projectName?: string;
 }
 
 function formatIsoTimestamp(ts?: number): string {
@@ -60,19 +61,21 @@ function normalizePosixPath(value: string): string {
 }
 
 function parseArchiveIndexLine(line: string): ParsedIndexEntry | undefined {
-  const match = line.match(/^\-\s+([^|]+)\|\s+\[([^\]]*)\]\(([^\)]*)\)\s+\|\s+messages:\s*(\d+)/);
+  const match = line.match(/^\-\s+([^|]+)\|\s+\[([^\]]*)\]\(([^\)]*)\)\s+\|\s+messages:\s*(\d+)(?:\s*\|\s*project:\s*(.+))?/);
   if (!match) return undefined;
   const createdAt = String(match[1] ?? '').trim();
   const title = String(match[2] ?? '').trim();
   const archivePath = normalizePosixPath(String(match[3] ?? '').trim());
   const messageCount = Number.parseInt(String(match[4] ?? '0'), 10);
+  const projectName = match[5] ? String(match[5]).trim() || undefined : undefined;
   if (!createdAt || !archivePath) return undefined;
   return {
     createdAt,
     messageCount: Number.isFinite(messageCount) ? messageCount : 0,
     line: line.trim(),
     title: title || 'Untitled archive',
-    archivePath
+    archivePath,
+    projectName
   };
 }
 
@@ -253,6 +256,19 @@ export function updateObsidianArchiveIndex(
     .sort((a, b) => a[0] < b[0] ? 1 : (a[0] > b[0] ? -1 : 0))
     .map(([day, agg]) => `- ${day}: archives ${agg.archives}, messages ${agg.messages}`);
 
+  const projectMap = new Map<string, { archives: number; messages: number }>();
+  for (const parsed of parsedEntries) {
+    if (!parsed.projectName) continue;
+    const current = projectMap.get(parsed.projectName) ?? { archives: 0, messages: 0 };
+    current.archives += 1;
+    current.messages += parsed.messageCount;
+    projectMap.set(parsed.projectName, current);
+  }
+
+  const projectLines = Array.from(projectMap.entries())
+    .sort((a, b) => b[1].messages - a[1].messages || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+    .map(([project, agg]) => `- ${project}: archives ${agg.archives}, messages ${agg.messages}`);
+
   const topArchives = parsedEntries
     .slice()
     .sort((a, b) => {
@@ -272,6 +288,15 @@ export function updateObsidianArchiveIndex(
   } else {
     for (const dayLine of dayLines) {
       lines.push(dayLine);
+    }
+  }
+  lines.push('');
+  lines.push('## Projects');
+  if (projectLines.length === 0) {
+    lines.push('_No project tags found._');
+  } else {
+    for (const projectLine of projectLines) {
+      lines.push(projectLine);
     }
   }
   lines.push('');
