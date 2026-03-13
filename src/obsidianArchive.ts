@@ -269,6 +269,12 @@ export function updateObsidianArchiveIndex(
     .sort((a, b) => b[1].messages - a[1].messages || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
     .map(([project, agg]) => `- ${project}: archives ${agg.archives}, messages ${agg.messages}`);
 
+  const mostActiveProjectEntry = Array.from(projectMap.entries())
+    .sort((a, b) => b[1].messages - a[1].messages || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))[0];
+  const mostActiveProject = mostActiveProjectEntry
+    ? `${mostActiveProjectEntry[0]} (${mostActiveProjectEntry[1].messages} messages)`
+    : 'n/a';
+
   const topArchives = parsedEntries
     .slice()
     .sort((a, b) => {
@@ -298,6 +304,7 @@ export function updateObsidianArchiveIndex(
   lines.push(`- First archive: ${firstArchive}`);
   lines.push(`- Last archive: ${lastArchive}`);
   lines.push(`- Active projects: ${projectMap.size}`);
+  lines.push(`- Most active project: ${mostActiveProject}`);
   lines.push('');
   lines.push('## By Day');
   if (dayLines.length === 0) {

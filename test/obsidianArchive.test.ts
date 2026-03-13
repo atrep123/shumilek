@@ -81,6 +81,7 @@ describe('obsidianArchive', () => {
     assert.match(updated, /- First archive: 2026-03-11T08:00:00\.000Z/);
     assert.match(updated, /- Last archive: 2026-03-13T11:00:00\.000Z/);
     assert.match(updated, /- Active projects: 2/);
+    assert.match(updated, /- Most active project: proj-a \(11 messages\)/);
     const summaryIdx = updated.indexOf('## Summary');
     const byDayIdx = updated.indexOf('## By Day');
     assert.ok(summaryIdx < byDayIdx, '## Summary should appear before ## By Day');
@@ -105,6 +106,7 @@ describe('obsidianArchive', () => {
     assert.match(index, /- First archive: 2026-03-13T10:30:45\.000Z/);
     assert.match(index, /- Last archive: 2026-03-13T10:30:45\.000Z/);
     assert.match(index, /- Active projects: 1/);
+    assert.match(index, /- Most active project: shumilek \(12 messages\)/);
     assert.match(index, /## By Day/);
     assert.match(index, /- 2026-03-13: archives 1, messages 12/);
     assert.match(index, /## Projects/);
@@ -220,5 +222,17 @@ describe('obsidianArchive', () => {
     assert.match(updated, /5\. \[A2\]\(notes\/shumilek\/archive\/a2\.md\) - 2 messages/);
     const topCount = (updated.match(/^\d+\. \[/gm) || []).length;
     assert.equal(topCount, 5);
+  });
+
+  it('uses n/a for most active project when no project tags exist', () => {
+    const updated = updateObsidianArchiveIndex('', {
+      archivePath: 'notes/shumilek/archive/a.md',
+      title: 'Archive A',
+      createdAt: '2026-03-13T10:30:45.000Z',
+      messageCount: 12
+    }, new Date('2026-03-13T10:30:45.000Z'));
+
+    assert.match(updated, /- Active projects: 0/);
+    assert.match(updated, /- Most active project: n\/a/);
   });
 });
