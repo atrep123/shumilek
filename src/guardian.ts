@@ -35,6 +35,7 @@ export class ResponseGuardian {
   private readonly LOOP_THRESHOLD = 3;
   private readonly REPETITION_THRESHOLD = 0.4;
   private readonly MIN_PATTERN_LENGTH = 10;
+  private readonly MIN_SIMILARITY_ANALYSIS_LENGTH = 40;
   private previousResponses: string[] = [];
   private previousPrompts: string[] = [];
 
@@ -267,10 +268,22 @@ export class ResponseGuardian {
   private isSimilarToPrevious(response: string, userPrompt: string): boolean {
     const candidate = this.truncateForAnalysis(response).toLowerCase();
     const promptCandidate = this.truncateForAnalysis(userPrompt).toLowerCase();
+    if (candidate.trim().length < this.MIN_SIMILARITY_ANALYSIS_LENGTH) {
+      return false;
+    }
+    if (promptCandidate.trim().length < this.MIN_SIMILARITY_ANALYSIS_LENGTH) {
+      return false;
+    }
     for (let i = 0; i < this.previousResponses.length; i++) {
       const prev = this.previousResponses[i];
+      if (prev.trim().length < this.MIN_SIMILARITY_ANALYSIS_LENGTH) {
+        continue;
+      }
       if (this.similarity(prev, candidate) > 0.9) {
         const prevPrompt = this.previousPrompts[i] ?? '';
+        if (prevPrompt.trim().length < this.MIN_SIMILARITY_ANALYSIS_LENGTH) {
+          continue;
+        }
         const isSamePromptIntent = this.similarity(prevPrompt, promptCandidate) > 0.85;
         if (isSamePromptIntent) {
           continue;
