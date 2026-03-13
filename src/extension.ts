@@ -54,6 +54,7 @@ import {
   ValidationPolicy
 } from './types';
 import { buildCompressedMessages } from './contextMemory';
+import { buildObsidianChatArchive } from './obsidianArchive';
 import { humanizeApiError, isTransientError, isSafeUrl, normalizeTaskWeight, isChatMessage, normalizeScore, pickBrainModel, getNonce } from './utils';
 import { ChatRequestConcurrencyGuard } from './chatConcurrency';
 import {
@@ -1352,6 +1353,40 @@ export function activate(context: vscode.ExtensionContext) {
     await vscode.window.showTextDocument(doc, { preview: false });
   });
 
+  // Command: Export full chat history into Obsidian-friendly markdown archive
+  const exportHistoryToObsidianCmd = vscode.commands.registerCommand('shumilek.exportHistoryToObsidian', async () => {
+    if (chatMessages.length === 0) {
+      vscode.window.showWarningMessage('Sumilek: Neni co archivovat (historie je prazdna).');
+      return;
+    }
+
+    const archive = buildObsidianChatArchive(chatMessages);
+    const folder = getWorkspaceFolderForAutoSave();
+    const archiveDir = getObsidianArchiveDir();
+    const defaultUri = folder
+      ? vscode.Uri.joinPath(folder.uri, ...archiveDir.split(/[\\/]+/).filter(Boolean), archive.fileName)
+      : undefined;
+
+    if (folder) {
+      const archiveFolderUri = vscode.Uri.joinPath(folder.uri, ...archiveDir.split(/[\\/]+/).filter(Boolean));
+      await vscode.workspace.fs.createDirectory(archiveFolderUri);
+    }
+
+    const uri = await vscode.window.showSaveDialog({
+      saveLabel: 'Ulozit archiv pro Obsidian',
+      defaultUri,
+      filters: {
+        'Markdown': ['md'],
+        'All files': ['*']
+      }
+    });
+    if (!uri) return;
+
+    await vscode.workspace.fs.writeFile(uri, Buffer.from(archive.markdown, 'utf8'));
+    outputChannel?.appendLine(`[Archive] Saved Obsidian history archive: ${uri.fsPath}`);
+    vscode.window.showInformationMessage(`Sumilek: Archiv historie ulozen (${archive.stats.totalMessages} zprav).`);
+  });
+
   // Command: Apply last assistant response into the active editor
   const applyLastResponseCmd = vscode.commands.registerCommand('shumilek.applyLastResponseToEditor', async () => {
     const editor = vscode.window.activeTextEditor;
@@ -1670,7 +1705,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     openChatCmd, startAirLLMCmd, switchBackendCmd, clearHistoryCmd, guardianStatsCmd, addTaskCmd, viewTasksCmd,
-    scanWorkspaceCmd, showWorkspaceInfoCmd, exportLastResponseCmd, applyLastResponseCmd,
+    scanWorkspaceCmd, showWorkspaceInfoCmd, exportLastResponseCmd, exportHistoryToObsidianCmd, applyLastResponseCmd,
     toggleToolsEnabledCmd, toggleToolsConfirmEditsCmd,
     ...projectMapWatchers
   );
@@ -3724,6 +3759,13 @@ function normalizeAutoSaveDir(raw: string, folder?: vscode.WorkspaceFolder): str
 function getToolsAutoSaveDir(): string {
   const config = vscode.workspace.getConfiguration('shumilek');
   const raw = config.get<string>('toolsAutoSaveDir', 'out');
+  const folder = getWorkspaceFolderForAutoSave();
+  return normalizeAutoSaveDir(raw, folder);
+}
+
+function getObsidianArchiveDir(): string {
+  const config = vscode.workspace.getConfiguration('shumilek');
+  const raw = config.get<string>('obsidianArchiveDir', 'notes/shumilek/archive');
   const folder = getWorkspaceFolderForAutoSave();
   return normalizeAutoSaveDir(raw, folder);
 }
