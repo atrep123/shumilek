@@ -97,6 +97,23 @@ describe('ResponseGuardian', () => {
     expect(res.issues).to.not.include('Odpověď je velmi podobná předchozí - model může být zaseklý');
   });
 
+  it('should trigger similar-response block for different prompt intent', () => {
+    const g = new ResponseGuardian();
+    const repeated = 'Toto je stabilni odpoved na technicky dotaz s dostatkem detailu.';
+    g.analyze(repeated, 'Jak nastavit lint?');
+    const res = g.analyze(repeated, 'Jak nasadit docker image?');
+    expect(res.issues).to.include('Odpověď je velmi podobná předchozí - model může být zaseklý');
+    expect(res.shouldRetry).to.be.true;
+  });
+
+  it('should not trigger similar-response block for repeated same prompt intent', () => {
+    const g = new ResponseGuardian();
+    const repeated = 'Toto je stabilni odpoved na technicky dotaz s dostatkem detailu.';
+    g.analyze(repeated, 'Jak nastavit lint v projektu?');
+    const res = g.analyze(repeated, 'Jak nastavit lint v projektu?');
+    expect(res.issues).to.not.include('Odpověď je velmi podobná předchozí - model může být zaseklý');
+  });
+
   // ── Truncation detection & auto-repair ──────────────────────────
 
   it('should auto-close unclosed code fence', () => {

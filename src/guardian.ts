@@ -36,6 +36,7 @@ export class ResponseGuardian {
   private readonly REPETITION_THRESHOLD = 0.4;
   private readonly MIN_PATTERN_LENGTH = 10;
   private previousResponses: string[] = [];
+  private previousPrompts: string[] = [];
 
   analyze(response: string, userPrompt: string): GuardianResult {
     guardianStats.totalChecks++;
@@ -83,7 +84,7 @@ export class ResponseGuardian {
     }
 
     // 5. Compare with previous responses
-    if (this.isSimilarToPrevious(analysisText)) {
+    if (this.isSimilarToPrevious(analysisText, userPrompt)) {
       issues.push('Odpověď je velmi podobná předchozí - model může být zaseklý');
       shouldRetry = true;
     }
@@ -103,7 +104,7 @@ export class ResponseGuardian {
       }
     }
 
-    this.addToPreviousResponses(cleanedResponse);
+    this.addToPreviousResponses(cleanedResponse, userPrompt);
 
     // 7. Detect and repair truncated responses (unclosed fences, mid-sentence)
     const truncationResult = this.detectAndRepairTruncation(cleanedResponse);
@@ -263,21 +264,31 @@ export class ResponseGuardian {
     return intersection.size / union.size;
   }
 
-  private isSimilarToPrevious(response: string): boolean {
+  private isSimilarToPrevious(response: string, userPrompt: string): boolean {
     const candidate = this.truncateForAnalysis(response).toLowerCase();
-    for (const prev of this.previousResponses) {
+    const promptCandidate = this.truncateForAnalysis(userPrompt).toLowerCase();
+    for (let i = 0; i < this.previousResponses.length; i++) {
+      const prev = this.previousResponses[i];
       if (this.similarity(prev, candidate) > 0.9) {
+        const prevPrompt = this.previousPrompts[i] ?? '';
+        const isSamePromptIntent = this.similarity(prevPrompt, promptCandidate) > 0.85;
+        if (isSamePromptIntent) {
+          continue;
+        }
         return true;
       }
     }
     return false;
   }
 
-  private addToPreviousResponses(response: string): void {
+  private addToPreviousResponses(response: string, userPrompt: string): void {
     const snapshot = this.truncateForAnalysis(response).toLowerCase();
+    const promptSnapshot = this.truncateForAnalysis(userPrompt).toLowerCase();
     this.previousResponses.push(snapshot);
+    this.previousPrompts.push(promptSnapshot);
     if (this.previousResponses.length > 5) {
       this.previousResponses.shift();
+      this.previousPrompts.shift();
     }
   }
 
@@ -388,6 +399,7 @@ export class ResponseGuardian {
 
   resetHistory(): void {
     this.previousResponses = [];
+    this.previousPrompts = [];
   }
 
   /**
