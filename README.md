@@ -64,6 +64,7 @@ Malý AI model (qwen2.5:0.5b) validuje každou odpověď:
 ## 📋 Příkazy
 - **Šumílek: Otevřít Chat** – Otevře chat panel
 - **Šumílek: Exportovat poslední odpověď do souboru** – Uloží poslední odpověď (preferuje code-block) do souboru, např. `.ino`
+- **Šumílek: Exportovat historii pro Obsidian** – Ulozi celou historii chatu jako markdown archiv vhodny pro Obsidian (frontmatter + timeline + souhrn)
 - **Šumílek: Vložit poslední odpověď do editoru** – Vloží poslední odpověď (preferuje code-block) na kurzor nebo nahradí označený výběr
 - **Šumílek: Vymazat historii** – Smaže celou konverzační historii
 - **Šumílek: Guardian statistiky** – Zobrazí statistiky Guardian & mini-modelu
