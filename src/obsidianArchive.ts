@@ -16,9 +16,18 @@ export interface ObsidianArchiveResult {
   stats: ObsidianArchiveStats;
 }
 
+export interface ObsidianArchiveOptions {
+  projectName?: string;
+  tags?: string[];
+}
+
 function formatIsoTimestamp(ts?: number): string {
   if (typeof ts !== 'number' || !Number.isFinite(ts)) return 'n/a';
   return new Date(ts).toISOString();
+}
+
+function toYamlScalar(value: string): string {
+  return JSON.stringify(value);
 }
 
 function toSlug(input: string, fallback: string): string {
@@ -74,25 +83,48 @@ function collectStats(messages: ChatMessage[]): ObsidianArchiveStats {
   return stats;
 }
 
-export function buildObsidianChatArchive(messages: ChatMessage[], now: Date = new Date()): ObsidianArchiveResult {
+export function buildObsidianChatArchive(
+  messages: ChatMessage[],
+  optionsOrNow: ObsidianArchiveOptions | Date = {},
+  maybeNow?: Date
+): ObsidianArchiveResult {
+  const options = optionsOrNow instanceof Date ? {} : optionsOrNow;
+  const now = optionsOrNow instanceof Date ? optionsOrNow : (maybeNow ?? new Date());
   const generatedAtIso = now.toISOString();
   const dateStamp = generatedAtIso.slice(0, 10);
   const timeStamp = generatedAtIso.slice(11, 19).replace(/:/g, '-');
-  const titleSeed = inferTitle(messages);
-  const fileName = `shumilek-history-${dateStamp}-${timeStamp}-${titleSeed}.md`;
+  const slug = inferTitle(messages);
+  const title = `Sumilek Chat Archive ${dateStamp}`;
+  const fileName = `shumilek-history-${dateStamp}-${timeStamp}-${slug}.md`;
   const stats = collectStats(messages);
+  const projectName = options.projectName?.trim();
+  const tags = Array.from(new Set(['shumilek', 'chat', 'archive', 'obsidian', ...(options.tags ?? [])]));
 
   const lines: string[] = [];
   lines.push('---');
   lines.push('type: shumilek-chat-archive');
   lines.push(`created: ${generatedAtIso}`);
-  lines.push('tags: [shumilek, chat, archive, obsidian]');
+  lines.push(`title: ${toYamlScalar(title)}`);
+  lines.push(`slug: ${slug}`);
+  if (projectName) {
+    lines.push(`project: ${toYamlScalar(projectName)}`);
+  }
+  lines.push(`tags: [${tags.join(', ')}]`);
   lines.push(`messages: ${stats.totalMessages}`);
+  lines.push(`user_messages: ${stats.userMessages}`);
+  lines.push(`assistant_messages: ${stats.assistantMessages}`);
+  lines.push(`system_messages: ${stats.systemMessages}`);
+  lines.push(`characters: ${stats.totalCharacters}`);
+  lines.push(`first_message_at: ${toYamlScalar(formatIsoTimestamp(stats.firstTimestamp))}`);
+  lines.push(`last_message_at: ${toYamlScalar(formatIsoTimestamp(stats.lastTimestamp))}`);
   lines.push('---');
   lines.push('');
-  lines.push(`# Sumilek Chat Archive (${dateStamp})`);
+  lines.push(`# ${title}`);
   lines.push('');
   lines.push('## Summary');
+  if (projectName) {
+    lines.push(`- Project: ${projectName}`);
+  }
   lines.push(`- Total messages: ${stats.totalMessages}`);
   lines.push(`- User: ${stats.userMessages}`);
   lines.push(`- Assistant: ${stats.assistantMessages}`);
