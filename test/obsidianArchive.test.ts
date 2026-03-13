@@ -1,6 +1,6 @@
 const { strict: assert } = require('assert');
 
-const { buildObsidianChatArchive } = require('../src/obsidianArchive');
+const { buildObsidianChatArchive, updateObsidianArchiveIndex } = require('../src/obsidianArchive');
 
 describe('obsidianArchive', () => {
   it('builds archive markdown with frontmatter, summary and timeline', () => {
@@ -52,5 +52,45 @@ describe('obsidianArchive', () => {
 
     assert.equal(result.stats.totalMessages, 0);
     assert.match(result.markdown, /_No chat messages to archive\._/);
+  });
+
+  it('builds archive index with newest entry first', () => {
+    const now = new Date('2026-03-13T10:30:45.000Z');
+    const index = updateObsidianArchiveIndex('', {
+      archivePath: 'notes/shumilek/archive/a.md',
+      title: 'Archive A',
+      createdAt: '2026-03-13T10:30:45.000Z',
+      messageCount: 12,
+      projectName: 'shumilek'
+    }, now);
+
+    assert.match(index, /^# Sumilek Archive Index/m);
+    assert.match(index, /## Archives/);
+    assert.match(index, /\[Archive A\]\(notes\/shumilek\/archive\/a\.md\)/);
+    assert.match(index, /messages: 12/);
+    assert.match(index, /project: shumilek/);
+  });
+
+  it('deduplicates existing index entry for same archive path', () => {
+    const existing = [
+      '# Sumilek Archive Index',
+      'Updated: 2026-03-13T00:00:00.000Z',
+      '',
+      '## Archives',
+      '- 2026-03-13T10:00:00.000Z | [Archive A](notes/shumilek/archive/a.md) | messages: 10',
+      '- 2026-03-13T09:00:00.000Z | [Archive B](notes/shumilek/archive/b.md) | messages: 8',
+      ''
+    ].join('\n');
+
+    const updated = updateObsidianArchiveIndex(existing, {
+      archivePath: 'notes/shumilek/archive/a.md',
+      title: 'Archive A New',
+      createdAt: '2026-03-13T11:00:00.000Z',
+      messageCount: 14
+    }, new Date('2026-03-13T11:00:00.000Z'));
+
+    const aCount = (updated.match(/\(notes\/shumilek\/archive\/a\.md\)/g) || []).length;
+    assert.equal(aCount, 1);
+    assert.match(updated, /\[Archive A New\]\(notes\/shumilek\/archive\/a\.md\)/);
   });
 });

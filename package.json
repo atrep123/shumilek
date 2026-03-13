@@ -291,6 +291,11 @@
                                                                                                       "default":  "notes/shumilek/archive",
                                                                                                       "description":  "Slozka pro export historie do Obsidian markdown souboru (relative to workspace)"
                                                                                                   },
+                                                                 "shumilek.obsidianArchiveIndexPath":  {
+                                                                                                            "type":  "string",
+                                                                                                            "default":  "notes/shumilek/archive/ARCHIVE_INDEX.md",
+                                                                                                            "description":  "Cesta k index souboru archivů pro Obsidian (relative to workspace)"
+                                                                                                        },
                                                                  "shumilek.projectMapPath":  {
                                                                                                  "type":  "string",
                                                                                                  "default":  "PROJECT_MAP.md",
