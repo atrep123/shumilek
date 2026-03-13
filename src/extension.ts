@@ -1360,8 +1360,10 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
 
-    const archive = buildObsidianChatArchive(chatMessages);
     const folder = getWorkspaceFolderForAutoSave();
+    const archive = buildObsidianChatArchive(chatMessages, {
+      projectName: folder?.name
+    });
     const archiveDir = getObsidianArchiveDir();
     const defaultUri = folder
       ? vscode.Uri.joinPath(folder.uri, ...archiveDir.split(/[\\/]+/).filter(Boolean), archive.fileName)
