@@ -44,6 +44,15 @@ describe('ResponseGuardian', () => {
     expect(res.issues.some((i: string) => i.includes('smyčka'))).to.be.true;
   });
 
+  it('should trigger retry for medium loop with high repetition', () => {
+    const g = new ResponseGuardian();
+    const text = 'opakuj toto stale dokola bez konce '.repeat(6);
+    const res = g.analyze(text, 'Vysvetli detailne krok po kroku tento postup v delsim textu');
+    expect(res.loopDetected).to.be.true;
+    expect(res.shouldRetry).to.be.true;
+    expect(res.issues.some((i: string) => i.includes('Středně závažná smyčka'))).to.be.true;
+  });
+
   it('should detect character repetition', () => {
     const g = new ResponseGuardian();
     const repeatedChars = 'a'.repeat(30);
@@ -286,6 +295,23 @@ describe('HallucinationDetector', () => {
       []
     );
     expect(res.confidence).to.be.greaterThan(0.3);
+  });
+
+  it('should reduce factual confidence when uncertainty hedge is present', () => {
+    const detector = new HallucinationDetector();
+    const strict = detector.analyze(
+      'Podle mých informací z roku 2024, není pochyb o tom, že fakta jsou taková.',
+      'Co je pravda?',
+      []
+    );
+    const hedged = detector.analyze(
+      'Podle mých informací z roku 2024 to možná platí, ale odhadem se to může lišit.',
+      'Co je pravda?',
+      []
+    );
+
+    expect(hedged.confidence).to.be.lessThan(strict.confidence);
+    expect(hedged.reasons.some((r: string) => r.includes('nejistému/hedged'))).to.be.true;
   });
 
   it('should not flag code blocks as hallucination', () => {

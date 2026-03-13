@@ -36,6 +36,7 @@ export class ResponseGuardian {
   private readonly REPETITION_THRESHOLD = 0.4;
   private readonly MIN_PATTERN_LENGTH = 10;
   private readonly MIN_SIMILARITY_ANALYSIS_LENGTH = 40;
+  private readonly MEDIUM_LOOP_RETRY_REPETITION_THRESHOLD = 0.25;
   private previousResponses: string[] = [];
   private previousPrompts: string[] = [];
 
@@ -48,6 +49,7 @@ export class ResponseGuardian {
     let cleanedResponse = response;
     let shouldRetry = false;
     let loopDetected = false;
+    let loopSeverity: 'low' | 'medium' | 'high' = 'low';
 
     const analysisText = this.truncateForAnalysis(response);
 
@@ -67,6 +69,7 @@ export class ResponseGuardian {
     const loopResult = this.detectLoop(analysisText);
     if (loopResult.detected) {
       loopDetected = true;
+      loopSeverity = loopResult.severity;
       guardianStats.loopsDetected++;
       const patternPreview = loopResult.pattern ? loopResult.pattern.slice(0, 50) : 'neznámý vzor';
       issues.push(`Detekována smyčka: "${patternPreview}..."`);
@@ -82,6 +85,10 @@ export class ResponseGuardian {
       issues.push(`Vysoké opakování slov (${Math.round(repetitionScore * 100)}%)`);
       cleanedResponse = this.reduceRepetition(cleanedResponse);
       guardianStats.repetitionsFixed++;
+    }
+    if (loopDetected && loopSeverity === 'medium' && repetitionScore >= this.MEDIUM_LOOP_RETRY_REPETITION_THRESHOLD) {
+      shouldRetry = true;
+      issues.push('Středně závažná smyčka s vysokým opakováním - doporučen retry');
     }
 
     // 5. Compare with previous responses
