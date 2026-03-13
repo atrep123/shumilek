@@ -24,11 +24,26 @@ describe('obsidianArchive', () => {
     assert.match(result.markdown, /## Summary/);
     assert.match(result.markdown, /- Project: shumilek-test/);
     assert.match(result.markdown, /## Timeline/);
-    assert.match(result.markdown, /### user @ 2024-03-09T16:00:00.000Z/);
-    assert.match(result.markdown, /### assistant @ 2024-03-09T16:00:01.000Z/);
+    assert.match(result.markdown, /### 2024-03-09/);
+    assert.match(result.markdown, /#### user @ 2024-03-09T16:00:00.000Z/);
+    assert.match(result.markdown, /#### assistant @ 2024-03-09T16:00:01.000Z/);
     assert.equal(result.stats.totalMessages, 2);
     assert.equal(result.stats.userMessages, 1);
     assert.equal(result.stats.assistantMessages, 1);
+  });
+
+  it('groups timeline entries by day', () => {
+    const now = new Date('2026-03-13T10:30:45.000Z');
+    const messages = [
+      { role: 'user', content: 'Day one', timestamp: Date.parse('2024-03-09T16:00:00.000Z') },
+      { role: 'assistant', content: 'Day one reply', timestamp: Date.parse('2024-03-09T16:05:00.000Z') },
+      { role: 'user', content: 'Day two', timestamp: Date.parse('2024-03-10T08:00:00.000Z') }
+    ];
+
+    const result = buildObsidianChatArchive(messages, now);
+
+    assert.match(result.markdown, /### 2024-03-09[\s\S]*#### user @ 2024-03-09T16:00:00.000Z[\s\S]*#### assistant @ 2024-03-09T16:05:00.000Z/);
+    assert.match(result.markdown, /### 2024-03-10[\s\S]*#### user @ 2024-03-10T08:00:00.000Z/);
   });
 
   it('handles empty history safely', () => {
