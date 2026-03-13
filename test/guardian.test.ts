@@ -266,6 +266,18 @@ describe('HallucinationDetector', () => {
     expect(res.confidence).to.be.lessThan(0.6);
   });
 
+  it('should reduce contextual penalty when follow-up is explicitly requested by prompt', () => {
+    const detector = new HallucinationDetector();
+    const res = detector.analyze(
+      'Jak jsem již zmínil, toto je důležité.',
+      'Pokračuj a navaž na to, co jsi už zmínil.',
+      []
+    );
+    expect(res.confidence).to.be.at.most(0.5);
+    expect(res.isHallucination).to.be.false;
+    expect(res.reasons.some((r: string) => r.includes('vyžádána promptem'))).to.be.true;
+  });
+
   it('should detect factual hallucination patterns', () => {
     const detector = new HallucinationDetector();
     const res = detector.analyze(

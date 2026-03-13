@@ -68,6 +68,11 @@ export class HallucinationDetector {
     return hasVeryLongPath || hasManySegments || hasRandomLikeSegment;
   }
 
+  private hasFollowupIntent(userPrompt: string): boolean {
+    const prompt = userPrompt.toLowerCase();
+    return /(?:pokracuj|pokračuj|navaz|navaž|doplň|dopln|rozved|rozveď|zopakuj|shrň|sumarizuj|co\s+jsi\s+(?:psal|uvedl|zminil|zmínil)|jak\s+jsi\s+(?:psal|uvedl|zminil|zmínil))/i.test(prompt);
+  }
+
   analyze(response: string, userPrompt: string, conversationHistory: ChatMessage[]): HallucinationResult {
     const result: HallucinationResult = {
       isHallucination: false,
@@ -100,9 +105,13 @@ export class HallucinationDetector {
     if (conversationHistory.length < 2) {
       const contextualRefs = textToAnalyze.match(/jak\s+jsem\s+(?:již\s+)?(?:zmínil|řekl)/gi);
       if (contextualRefs) {
-        totalWeight += 0.6;
-        categoryWeights['contextual'] = (categoryWeights['contextual'] || 0) + 0.6;
-        result.reasons.push('Reference na neexistující předchozí konverzaci');
+        if (this.hasFollowupIntent(userPrompt)) {
+          result.reasons.push('Kontextová reference byla vyžádána promptem uživatele');
+        } else {
+          totalWeight += 0.6;
+          categoryWeights['contextual'] = (categoryWeights['contextual'] || 0) + 0.6;
+          result.reasons.push('Reference na neexistující předchozí konverzaci');
+        }
       }
     }
 
