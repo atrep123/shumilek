@@ -6,6 +6,7 @@ type CalibrateOptions = {
   window: number;
   outJson: string;
   outMd: string;
+  includeLocalRuns?: boolean;
 };
 
 type CompareScenario = {
@@ -46,7 +47,7 @@ type NightlyRun = {
   dirPath: string;
   summary: any[];
   compare: CompareReport;
-  stabilityAggregate: StabilityAggregateReport;
+  stabilityAggregate: StabilityAggregateReport | null;
 };
 
 type CalibrationScenario = {
@@ -126,6 +127,10 @@ function parseArgs(argv: string[]): CalibrateOptions {
       i++;
       continue;
     }
+    if (a === '--includeLocalRuns') {
+      opts.includeLocalRuns = true;
+      continue;
+    }
     if (a === '--help' || a === '-h') {
       printUsageAndExit(0);
     }
@@ -149,6 +154,7 @@ function printUsageAndExit(code: number): never {
     '  --root <dir>   Root directory with nightly runs (default: projects/bot_eval_run)',
     '  --out <path>   Output JSON report path',
     '  --outMd <path> Output markdown report path',
+    '  --includeLocalRuns  Include local release_gate_* dirs (not just CI nightly)',
     '  -h, --help     Show this help',
   ].join('\n'));
   process.exit(code);
@@ -168,8 +174,11 @@ function toNumber(value: any): number {
 }
 
 function getNightlyRunId(dirName: string): string {
-  const match = /^release_gate_ci_nightly_(\d+)(?:_\d+)?$/i.exec(dirName);
-  return match?.[1] || dirName;
+  const ciMatch = /^release_gate_ci_nightly_(\d+)(?:_\d+)?$/i.exec(dirName);
+  if (ciMatch) return ciMatch[1];
+  const localMatch = /^release_gate_(\d+)$/i.exec(dirName);
+  if (localMatch) return localMatch[1];
+  return dirName;
 }
 
 export function computePercentile(values: number[], percentile: number): number {
@@ -194,12 +203,13 @@ export function computeRecommendedLatencyMultiplier(p95LatencyRatio: number): nu
   return roundUp(p95LatencyRatio * 1.15, 0.01);
 }
 
-function listNightlyRunDirs(rootDir: string): RunDirInfo[] {
+function listNightlyRunDirs(rootDir: string, includeLocalRuns?: boolean): RunDirInfo[] {
   if (!fs.existsSync(rootDir)) {
     throw new Error(`Nightly run root directory does not exist: ${rootDir}`);
   }
+  const pattern = includeLocalRuns ? /^release_gate_/i : /^release_gate_ci_nightly_/i;
   return fs.readdirSync(rootDir, { withFileTypes: true })
-    .filter(d => d.isDirectory() && /^release_gate_ci_nightly_/i.test(d.name))
+    .filter(d => d.isDirectory() && pattern.test(d.name))
     .map(d => {
       const dirPath = path.join(rootDir, d.name);
       return {
@@ -211,17 +221,27 @@ function listNightlyRunDirs(rootDir: string): RunDirInfo[] {
     .sort((a, b) => (b.mtimeMs - a.mtimeMs) || b.dirName.localeCompare(a.dirName));
 }
 
-function isEligibleForCalibrationWindow(dir: RunDirInfo, index: number): boolean {
+function hasMinimalRunArtifacts(dirPath: string): boolean {
+  return (
+    fs.existsSync(path.join(dirPath, 'summary.json')) &&
+    fs.existsSync(path.join(dirPath, 'compare.json'))
+  );
+}
+
+function isEligibleForCalibrationWindow(dir: RunDirInfo, index: number, includeLocalRuns?: boolean): boolean {
+  if (includeLocalRuns) {
+    return hasMinimalRunArtifacts(dir.dirPath);
+  }
   if (index === 0) {
     return hasPreCalibrationArtifacts(dir.dirPath);
   }
   return hasHistoricalCompletionArtifacts(dir.dirPath);
 }
 
-function listLatestNightlyRunDirs(rootDir: string, window: number): { allNightlyDirs: RunDirInfo[]; eligibleDirs: RunDirInfo[] } {
-  const allNightlyDirs = listNightlyRunDirs(rootDir);
+function listLatestNightlyRunDirs(rootDir: string, window: number, includeLocalRuns?: boolean): { allNightlyDirs: RunDirInfo[]; eligibleDirs: RunDirInfo[] } {
+  const allNightlyDirs = listNightlyRunDirs(rootDir, includeLocalRuns);
   const eligibleDirs = allNightlyDirs
-    .filter((dir, index) => isEligibleForCalibrationWindow(dir, index))
+    .filter((dir, index) => isEligibleForCalibrationWindow(dir, index, includeLocalRuns))
     .slice(0, window);
 
   if (eligibleDirs.length === 0) {
@@ -239,15 +259,18 @@ function loadNightlyRun(dir: RunDirInfo): NightlyRun {
   const stabilityPath = path.join(dir.dirPath, 'stability_aggregate.json');
   if (!fs.existsSync(summaryPath)) throw new Error(`Missing summary.json: ${summaryPath}`);
   if (!fs.existsSync(comparePath)) throw new Error(`Missing compare.json: ${comparePath}`);
-  if (!fs.existsSync(stabilityPath)) throw new Error(`Missing stability_aggregate.json: ${stabilityPath}`);
 
   const summary = readJsonFile<any[]>(summaryPath);
   const compare = readJsonFile<CompareReport>(comparePath);
-  const stabilityAggregate = readJsonFile<StabilityAggregateReport>(stabilityPath);
   if (!Array.isArray(summary)) throw new Error(`Invalid summary.json: expected array in ${summaryPath}`);
   if (!Array.isArray(compare?.scenarios)) throw new Error(`Invalid compare.json: expected scenarios[] in ${comparePath}`);
-  if (!Array.isArray(stabilityAggregate?.scenarios)) {
-    throw new Error(`Invalid stability_aggregate.json: expected scenarios[] in ${stabilityPath}`);
+
+  let stabilityAggregate: StabilityAggregateReport | null = null;
+  if (fs.existsSync(stabilityPath)) {
+    stabilityAggregate = readJsonFile<StabilityAggregateReport>(stabilityPath);
+    if (!Array.isArray(stabilityAggregate?.scenarios)) {
+      throw new Error(`Invalid stability_aggregate.json: expected scenarios[] in ${stabilityPath}`);
+    }
   }
 
   return {
@@ -259,7 +282,7 @@ function loadNightlyRun(dir: RunDirInfo): NightlyRun {
   };
 }
 
-function evaluateReadiness(allNightlyDirsNewestFirst: RunDirInfo[], runsNewestFirst: NightlyRun[]): CalibrationReadiness {
+function evaluateReadiness(allNightlyDirsNewestFirst: RunDirInfo[], runsNewestFirst: NightlyRun[], includeLocalRuns?: boolean): CalibrationReadiness {
   const last3Dirs = allNightlyDirsNewestFirst.slice(0, 3);
   const runsByDirName = new Map(runsNewestFirst.map(run => [run.dirName, run]));
   const violations: string[] = [];
@@ -268,9 +291,11 @@ function evaluateReadiness(allNightlyDirsNewestFirst: RunDirInfo[], runsNewestFi
   }
 
   for (const [index, dir] of last3Dirs.entries()) {
-    const hasRequiredArtifacts = index === 0
-      ? hasPreCalibrationArtifacts(dir.dirPath)
-      : hasHistoricalCompletionArtifacts(dir.dirPath);
+    const hasRequiredArtifacts = includeLocalRuns
+      ? hasMinimalRunArtifacts(dir.dirPath)
+      : (index === 0
+        ? hasPreCalibrationArtifacts(dir.dirPath)
+        : hasHistoricalCompletionArtifacts(dir.dirPath));
     if (!hasRequiredArtifacts) {
       violations.push(`${dir.dirName}: nightly run is missing required completion artifacts`);
       continue;
@@ -283,28 +308,30 @@ function evaluateReadiness(allNightlyDirsNewestFirst: RunDirInfo[], runsNewestFi
     if (!run.compare?.gate?.passed) {
       violations.push(`${run.dirName}: gate.passed is false`);
     }
-    if (!run.stabilityAggregate?.allGatePassed) {
-      violations.push(`${run.dirName}: allGatePassed is false`);
-    }
-    for (const scenario of run.stabilityAggregate?.scenarios || []) {
-      const rawMin = toNumber(scenario?.rawRunPassRate?.min);
-      if (rawMin < 1) {
-        violations.push(`${run.dirName}/${scenario.scenario}: rawRunPassRate.min=${rawMin}, expected 1`);
+    if (run.stabilityAggregate) {
+      if (!run.stabilityAggregate.allGatePassed) {
+        violations.push(`${run.dirName}: allGatePassed is false`);
       }
-      const fallbackMax = toNumber(scenario?.fallbackDependencyRunRate?.max);
-      if (fallbackMax > 0) {
-        violations.push(`${run.dirName}/${scenario.scenario}: fallbackDependencyRunRate.max=${fallbackMax}, expected 0`);
-      }
-      const parse = scenario?.parseErrorRunsTotal || ({} as any);
-      const parseTotal =
-        toNumber(parse.planner) +
-        toNumber(parse.jsonRepair) +
-        toNumber(parse.schema) +
-        toNumber(parse.jsonParse) +
-        toNumber(parse.placeholder) +
-        toNumber(parse.other);
-      if (parseTotal > 0) {
-        violations.push(`${run.dirName}/${scenario.scenario}: parseErrorRunsTotal=${parseTotal}, expected 0`);
+      for (const scenario of run.stabilityAggregate.scenarios || []) {
+        const rawMin = toNumber(scenario?.rawRunPassRate?.min);
+        if (rawMin < 1) {
+          violations.push(`${run.dirName}/${scenario.scenario}: rawRunPassRate.min=${rawMin}, expected 1`);
+        }
+        const fallbackMax = toNumber(scenario?.fallbackDependencyRunRate?.max);
+        if (fallbackMax > 0) {
+          violations.push(`${run.dirName}/${scenario.scenario}: fallbackDependencyRunRate.max=${fallbackMax}, expected 0`);
+        }
+        const parse = scenario?.parseErrorRunsTotal || ({} as any);
+        const parseTotal =
+          toNumber(parse.planner) +
+          toNumber(parse.jsonRepair) +
+          toNumber(parse.schema) +
+          toNumber(parse.jsonParse) +
+          toNumber(parse.placeholder) +
+          toNumber(parse.other);
+        if (parseTotal > 0) {
+          violations.push(`${run.dirName}/${scenario.scenario}: parseErrorRunsTotal=${parseTotal}, expected 0`);
+        }
       }
     }
   }
@@ -351,8 +378,9 @@ function buildMarkdown(report: CalibrationRecommendation): string {
 export function buildCalibrationRecommendation(params: {
   rootDir: string;
   window: number;
+  includeLocalRuns?: boolean;
 }): CalibrationRecommendation {
-  const { allNightlyDirs, eligibleDirs } = listLatestNightlyRunDirs(params.rootDir, params.window);
+  const { allNightlyDirs, eligibleDirs } = listLatestNightlyRunDirs(params.rootDir, params.window, params.includeLocalRuns);
   const runs = eligibleDirs.map(loadNightlyRun);
   const ratiosByScenario = new Map<string, number[]>();
 
@@ -387,14 +415,15 @@ export function buildCalibrationRecommendation(params: {
     inputs: runs.map(run => run.dirPath),
     baselineDir: runs[0]?.compare?.baselineDir || '',
     scenarios,
-    readiness: evaluateReadiness(allNightlyDirs, runs)
+    readiness: evaluateReadiness(allNightlyDirs, runs, params.includeLocalRuns)
   };
 }
 
 export async function runNightlyCalibration(opts: CalibrateOptions): Promise<CalibrationRecommendation> {
   const report = buildCalibrationRecommendation({
     rootDir: opts.rootDir,
-    window: opts.window
+    window: opts.window,
+    includeLocalRuns: opts.includeLocalRuns
   });
 
   await fs.promises.mkdir(path.dirname(opts.outJson), { recursive: true });

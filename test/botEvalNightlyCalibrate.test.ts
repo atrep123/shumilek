@@ -316,4 +316,66 @@ describe('botEvalNightlyCalibrate', () => {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
   });
+
+  it('discovers local release_gate_<timestamp> dirs when includeLocalRuns is true', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-nightly-calibrate-'));
+    try {
+      for (let i = 0; i < 3; i++) {
+        const ts = 1773000000000 + i * 100000;
+        const runDir = path.join(tmp, `release_gate_${ts}`);
+        fs.mkdirSync(runDir, { recursive: true });
+        writeJson(path.join(runDir, 'summary.json'), [
+          { scenario: 'ts-todo-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 1050 }
+        ]);
+        writeJson(path.join(runDir, 'compare.json'), {
+          baselineDir: 'baseline',
+          gate: { passed: true },
+          scenarios: [
+            { scenario: 'ts-todo-oracle', baseline: { avgMs: 1000 }, candidate: { avgMs: 1050 } }
+          ]
+        });
+      }
+
+      // Default mode should not find them
+      assert.throws(
+        () => buildCalibrationRecommendation({ rootDir: tmp, window: 10 }),
+        /No completed nightly run directories found/i
+      );
+
+      // With includeLocalRuns they should be found and calibration should work
+      const report = buildCalibrationRecommendation({ rootDir: tmp, window: 10, includeLocalRuns: true });
+      assert.equal(report.inputs.length, 3);
+      assert.equal(report.readiness.ready_to_tighten_pr, true);
+      const ts = report.scenarios.find((s: any) => s.scenario === 'ts-todo-oracle');
+      assert.ok(ts);
+      assert.equal(ts!.samples, 3);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('extracts run ID from local release_gate_<timestamp> dir name', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-nightly-calibrate-'));
+    try {
+      for (const ts of [1773000000001, 1773000000002, 1773000000003]) {
+        const runDir = path.join(tmp, `release_gate_${ts}`);
+        fs.mkdirSync(runDir, { recursive: true });
+        writeJson(path.join(runDir, 'summary.json'), [
+          { scenario: 'node-api-oracle', passRate: 1, avgMs: 900 }
+        ]);
+        writeJson(path.join(runDir, 'compare.json'), {
+          baselineDir: 'baseline',
+          gate: { passed: true },
+          scenarios: [{ scenario: 'node-api-oracle', baseline: { avgMs: 1000 }, candidate: { avgMs: 900 } }]
+        });
+      }
+      const report = buildCalibrationRecommendation({ rootDir: tmp, window: 10, includeLocalRuns: true });
+      // Run IDs should be numeric timestamps, not full dir names
+      for (const id of report.readiness.last3NightlyRunIds) {
+        assert.match(id, /^\d+$/);
+      }
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
 });
