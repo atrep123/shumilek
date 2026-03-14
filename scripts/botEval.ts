@@ -4451,6 +4451,20 @@ function ensureNodeProjectRandomUuidBinding(serviceContent: string): { content: 
   if (!/\brandomUUID\s*\(/.test(next) || /\bcrypto\.randomUUID\s*\(/.test(next)) {
     return { content: next, changed: false, reason: 'randomUUID binding not required' };
   }
+  const normalizedWrongRequire = next.replace(
+    /^\s*(?:const|let|var)\s*\{\s*randomUUID(?:\s*:\s*[A-Za-z_$][\w$]*)?\s*\}\s*=\s*require\(\s*['"](?!node:crypto['"]|crypto['"])[^'"]+['"]\s*\)\s*;?\s*$/m,
+    "const { randomUUID } = require('node:crypto');"
+  );
+  if (normalizedWrongRequire !== next) {
+    return { content: `${normalizedWrongRequire.trimEnd()}\n`, changed: true };
+  }
+  const normalizedWrongImport = next.replace(
+    /^\s*import\s*\{\s*randomUUID(?:\s+as\s+[A-Za-z_$][\w$]*)?\s*\}\s*from\s*['"](?!node:crypto['"]|crypto['"])[^'"]+['"]\s*;?\s*$/m,
+    "import { randomUUID } from 'node:crypto';"
+  );
+  if (normalizedWrongImport !== next) {
+    return { content: `${normalizedWrongImport.trimEnd()}\n`, changed: true };
+  }
   const hasDirectBinding =
     /\b(?:const|let|var)\s*\{\s*randomUUID(?:\s*:\s*[A-Za-z_$][\w$]*)?\s*\}\s*=\s*require\(\s*['"](?:node:)?crypto['"]\s*\)/.test(next)
     || /\bimport\s*\{\s*randomUUID(?:\s+as\s+[A-Za-z_$][\w$]*)?\s*\}\s*from\s*['"](?:node:)?crypto['"]/.test(next)
@@ -4513,7 +4527,7 @@ function hasNodeProjectProjectsCreatePayloadDrift(serviceContent: string): boole
 
 function hasNodeProjectInvalidNullSendErrorInService(serviceContent: string): boolean {
   const text = String(serviceContent || '');
-  return /\bsendError\s*\(\s*null\s*,/i.test(text) || /\.sendError\s*\(\s*null\s*,/i.test(text);
+  return /\bsendError\s*\(\s*(?:null|_?res)\s*,/i.test(text) || /\.sendError\s*\(\s*(?:null|_?res)\s*,/i.test(text);
 }
 
 function hasNodeProjectMembersIsolatedProjectGate(serviceContent: string): boolean {
@@ -4675,8 +4689,10 @@ function hasNodeProjectGenerateIdDefinition(idContent: string): boolean {
   const text = String(idContent || '');
   if (!text) return false;
   return /\bfunction\s+generateId\s*\(/.test(text)
-    || /\b(?:const|let|var)\s+generateId\s*=\s*(?:async\s*)?\(/.test(text)
-    || /\bgenerateId\s*:\s*(?:async\s*)?\(/.test(text)
+    || /\b(?:const|let|var)\s+generateId\s*=\s*(?:async\s*)?\([^)]*\)\s*=>/.test(text)
+    || /\b(?:const|let|var)\s+generateId\s*=\s*(?:async\s*)?function\b/.test(text)
+    || /\bgenerateId\s*:\s*(?:async\s*)?\([^)]*\)\s*=>/.test(text)
+    || /\bgenerateId\s*:\s*(?:async\s*)?function\b/.test(text)
     || /\bexport\s+function\s+generateId\s*\(/.test(text);
 }
 
@@ -5202,6 +5218,63 @@ export function applyNodeProjectContractAutoFixes(files: FileSpec[], workspaceDi
   const appliedFixes: string[] = [];
   const skippedFixes: string[] = [];
   const modules = ['projects', 'tasks', 'members', 'comments'];
+  const hydrateNestedWorkspaceServiceFiles = (): void => {
+    if (!workspaceDir) return;
+    const knownPaths = new Set(nextFiles.map(file => file.path.toLowerCase()));
+    for (const file of [...nextFiles]) {
+      const match = file.path.match(/^(src\/modules\/.+)\/(?:routes|controller)\.(js|ts|mjs|cjs)$/i);
+      if (!match) continue;
+      const basePath = match[1];
+      const preferredExt = match[2].toLowerCase();
+      const extOrder = [preferredExt, 'js', 'ts', 'mjs', 'cjs'].filter((ext, index, values) => values.indexOf(ext) === index);
+      const serviceCandidates = extOrder.map(ext => `${basePath}/service.${ext}`);
+      if (serviceCandidates.some(candidate => knownPaths.has(candidate.toLowerCase()))) continue;
+      const workspaceService = readFirstExistingFileByCandidates(workspaceDir, serviceCandidates);
+      if (!workspaceService) continue;
+      nextFiles.push(workspaceService);
+      knownPaths.add(workspaceService.path.toLowerCase());
+      pushUniqueTrace(appliedFixes, `${workspaceService.path}: hydrated nested workspace service for contract auto-fix`);
+    }
+  };
+  const ensureNestedRouteLocalServiceImports = (): void => {
+    for (let index = 0; index < nextFiles.length; index += 1) {
+      const file = nextFiles[index];
+      if (!/^src\/modules\/.+\/routes\.(?:js|ts|mjs|cjs)$/i.test(file.path)) continue;
+      const normalized = normalizeNodeProjectRouteServiceImport(file.content);
+      if (normalized === file.content) continue;
+      nextFiles[index] = {
+        ...file,
+        content: `${String(normalized).trimEnd()}\n`
+      };
+      pushUniqueTrace(appliedFixes, `${file.path}: normalized nested local service import to ./service`);
+    }
+  };
+  const ensureControllerRandomUuidBindings = (): void => {
+    for (let index = 0; index < nextFiles.length; index += 1) {
+      const file = nextFiles[index];
+      if (!/^src\/modules\/.+\/controller\.(?:js|ts|mjs|cjs)$/i.test(file.path)) continue;
+      const bindingFix = ensureNodeProjectRandomUuidBinding(file.content);
+      if (!bindingFix.changed) continue;
+      nextFiles[index] = {
+        ...file,
+        content: `${String(bindingFix.content).trimEnd()}\n`
+      };
+      pushUniqueTrace(appliedFixes, `${file.path}: normalized randomUUID binding to node:crypto`);
+    }
+  };
+  const ensureServiceRandomUuidBindings = (): void => {
+    for (let index = 0; index < nextFiles.length; index += 1) {
+      const file = nextFiles[index];
+      if (!/^src\/modules\/.+\/service\.(?:js|ts|mjs|cjs)$/i.test(file.path)) continue;
+      const bindingFix = ensureNodeProjectRandomUuidBinding(file.content);
+      if (!bindingFix.changed) continue;
+      nextFiles[index] = {
+        ...file,
+        content: `${String(bindingFix.content).trimEnd()}\n`
+      };
+      pushUniqueTrace(appliedFixes, `${file.path}: normalized randomUUID binding to node:crypto`);
+    }
+  };
   const ensureErrorsHelperForSendErrorUsage = (): void => {
     const routeFilesUsingSendError = nextFiles.filter(file =>
       /^src\/modules\/.+\/routes\.(?:js|ts|mjs|cjs)$/i.test(file.path) && /\bsendError\s*\(/.test(String(file.content || ''))
@@ -5262,8 +5335,12 @@ export function applyNodeProjectContractAutoFixes(files: FileSpec[], workspaceDi
     }
   };
 
+  hydrateNestedWorkspaceServiceFiles();
   ensureErrorsHelperForSendErrorUsage();
   ensureIdHelperForGenerateIdUsage();
+  ensureNestedRouteLocalServiceImports();
+  ensureControllerRandomUuidBindings();
+  ensureServiceRandomUuidBindings();
 
   for (const moduleName of modules) {
     const routeCandidates = [
@@ -5568,6 +5645,27 @@ export function applyNodeProjectContractAutoFixes(files: FileSpec[], workspaceDi
       content: canonicalService
     };
     pushUniqueTrace(appliedFixes, `${servicePath}: replaced syntactically invalid service content with canonical template`);
+  }
+
+  const membersServiceCandidates = [
+    'src/modules/members/service.js',
+    'src/modules/members/service.ts',
+    'src/modules/members/service.mjs',
+    'src/modules/members/service.cjs'
+  ];
+  const membersServiceIndex = findFileIndexByCandidates(nextFiles, membersServiceCandidates);
+  if (membersServiceIndex >= 0) {
+    const membersServicePath = nextFiles[membersServiceIndex].path;
+    const membersServiceContent = String(nextFiles[membersServiceIndex].content || '');
+    if (/\b(?:let|const|var)\s+(?:members|membersByProject)\s*=\s*(?:\{\}|\[\])/i.test(membersServiceContent)) {
+      nextFiles[membersServiceIndex] = {
+        ...nextFiles[membersServiceIndex],
+        content: buildNodeProjectMembersCompatServiceTemplate()
+      };
+      pushUniqueTrace(appliedFixes, `${membersServicePath}: replaced isolated members store with shared-project-compatible template`);
+    } else {
+      pushUniqueTrace(skippedFixes, `${membersServicePath}: members state-sharing template not required`);
+    }
   }
 
   ensureErrorsHelperForSendErrorUsage();

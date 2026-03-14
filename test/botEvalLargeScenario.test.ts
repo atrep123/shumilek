@@ -346,6 +346,31 @@ describe('botEval large node-project scenario', function () {
     }
   });
 
+  it('accepts generateId arrow-function export in id helper', async () => {
+    const workspace = seedLargeWorkspaceWithContractRoutes();
+    try {
+      writeFile(
+        workspace,
+        'src/modules/projects/service.js',
+        [
+          "const { generateId } = require('../../lib/id');",
+          'const projects = [];',
+          "module.exports = { createProject: (name) => { const project = { id: generateId(), name }; projects.push(project); return project; }, getAllProjects: () => projects, getProjectById: (id) => projects.find(p => p.id === id) || null, getProjectByName: (name) => projects.find(p => p.name === name) || null };",
+          ''
+        ].join('\n')
+      );
+      writeFile(
+        workspace,
+        'src/lib/id.js',
+        "const { randomUUID } = require('node:crypto');\nmodule.exports = { generateId: () => randomUUID() };\n"
+      );
+      const result = await validateNodeProjectApiLarge(workspace);
+      assert.equal(result.diagnostics.some(d => /generateId helper export mismatch/i.test(d)), false);
+    } finally {
+      fs.rmSync(workspace, { recursive: true, force: true });
+    }
+  });
+
   it('flags isolated local projects map in tasks service', async () => {
     const workspace = seedLargeWorkspaceWithContractRoutes();
     try {
@@ -1999,6 +2024,55 @@ describe('botEval large node-project scenario', function () {
     assert.doesNotThrow(() => new Function(service));
   });
 
+  it('auto-fix replaces isolated members array store with shared-project-compatible template', () => {
+    const files = [
+      {
+        path: 'src/modules/members/service.js',
+        content: [
+          'const members = [];',
+          'async function createMember(memberData) {',
+          '  members.push(memberData);',
+          '  return memberData;',
+          '}',
+          'module.exports = { createMember };',
+          ''
+        ].join('\n')
+      }
+    ];
+    const fixed = applyNodeProjectContractAutoFixes(files);
+    const service = String(fixed.files[0].content || '');
+    assert.ok(service.includes('const projectsRepository = {};'));
+    assert.ok(service.includes('async function getMembers(projectId) {'));
+    assert.ok(service.includes('async function addMember(projectId, userId, role) {'));
+    assert.ok(fixed.appliedFixes.some(item => /replaced isolated members store with shared-project-compatible template/i.test(item)));
+  });
+
+  it('adapter pass replaces service modules that call sendError(res, ...) with canonical template', () => {
+    const files = [
+      {
+        path: 'src/modules/tasks/service.js',
+        content: [
+          "const { generateId } = require('../../lib/id');",
+          "const { sendError } = require('../../lib/errors');",
+          'const tasks = [];',
+          'async function createTask(projectId, taskData) {',
+          "  if (!taskData.title) sendError(res, 400, 'BAD_REQUEST', 'Title is required');",
+          '  const task = { id: generateId(), projectId, ...taskData };',
+          '  tasks.push(task);',
+          '  return task;',
+          '}',
+          'module.exports = { createTask };',
+          ''
+        ].join('\n')
+      }
+    ];
+    const patched = applyNodeProjectRouteServiceAdapterBridges(files);
+    const service = String(patched.find(file => file.path === 'src/modules/tasks/service.js')?.content || '');
+    assert.ok(service.includes('async function createTask(projectId, title) {'));
+    assert.ok(service.includes("status: 'todo'"));
+    assert.ok(!service.includes('sendError(res, 400'));
+  });
+
   it('auto-fix replaces undefined BadRequestError/NotFoundError branches with sendError', () => {
     const files = [
       {
@@ -2022,6 +2096,85 @@ describe('botEval large node-project scenario', function () {
     );
     assert.ok(/sendError\s*\(/.test(members));
     assert.ok(!/new\s+BadRequestError|new\s+NotFoundError/.test(members));
+  });
+
+  it('auto-fix normalizes nested route service imports to local ./service path', () => {
+    const files = [
+      {
+        path: 'src/modules/projects/members/routes.js',
+        content: [
+          "const router = require('express').Router();",
+          "const membersService = require('../service');",
+          'module.exports = router;',
+          ''
+        ].join('\n')
+      }
+    ];
+    const fixed = applyNodeProjectContractAutoFixes(files);
+    const route = String(fixed.files[0].content || '');
+    assert.ok(route.includes("const membersService = require('./service');"));
+    assert.ok(fixed.appliedFixes.some(item => /normalized nested local service import/i.test(item)));
+  });
+
+  it('auto-fix rewrites nested controller randomUUID imports to node:crypto', () => {
+    const files = [
+      {
+        path: 'src/modules/projects/tasks/controller.js',
+        content: [
+          "const { randomUUID } = require('../../lib/id');",
+          'function createTask() {',
+          '  return { id: randomUUID() };',
+          '}',
+          'module.exports = { createTask };',
+          ''
+        ].join('\n')
+      }
+    ];
+    const fixed = applyNodeProjectContractAutoFixes(files);
+    const controller = String(fixed.files[0].content || '');
+    assert.ok(controller.includes("const { randomUUID } = require('node:crypto');"));
+    assert.ok(!controller.includes("require('../../lib/id')"));
+    assert.doesNotThrow(() => new Function(controller));
+    assert.ok(fixed.appliedFixes.some(item => /normalized randomUUID binding to node:crypto/i.test(item)));
+  });
+
+  it('auto-fix hydrates nested workspace service files and rewrites randomUUID imports there too', () => {
+    const workspaceDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shumilek-boteval-large-'));
+    try {
+      writeFile(
+        workspaceDir,
+        'src/modules/projects/tasks/service.js',
+        [
+          "const { randomUUID } = require('../../lib/id');",
+          'function createTask() {',
+          '  return { id: randomUUID() };',
+          '}',
+          'module.exports = { createTask };',
+          ''
+        ].join('\n')
+      );
+      const files = [
+        {
+          path: 'src/modules/projects/tasks/controller.js',
+          content: [
+            "const { randomUUID } = require('../../lib/id');",
+            'function createTask() {',
+            '  return { id: randomUUID() };',
+            '}',
+            'module.exports = { createTask };',
+            ''
+          ].join('\n')
+        }
+      ];
+      const fixed = applyNodeProjectContractAutoFixes(files, workspaceDir);
+      const service = String(fixed.files.find(file => file.path === 'src/modules/projects/tasks/service.js')?.content || '');
+      assert.ok(service.includes("const { randomUUID } = require('node:crypto');"));
+      assert.ok(!service.includes("require('../../lib/id')"));
+      assert.ok(fixed.appliedFixes.some(item => /hydrated nested workspace service/i.test(item)));
+      assert.ok(fixed.appliedFixes.some(item => /src\/modules\/projects\/tasks\/service\.js: normalized randomUUID binding to node:crypto/i.test(item)));
+    } finally {
+      fs.rmSync(workspaceDir, { recursive: true, force: true });
+    }
   });
 
   it('auto-fix restores sendError binding when route calls sendError but imports only custom error classes', () => {
