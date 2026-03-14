@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "requireCheckpointQualification": true,
+  "requireCalibrationReadiness": true,
+  "rollbackOnCheckpointFailure": true,
+  "holdWhenPromotionPending": false,
+  "notes": "Nightly tuner accepts only rolling-window-qualified checkpoints with calibration readiness. On failure it keeps the previous active checkpoint and emits rollback guidance."
+}

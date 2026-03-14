@@ -2,3 +2,16 @@ node_modules
 out
 .github-runner/
 _r/
+projects/bot_eval_run/run_*/
+projects/bot_eval_run/release_gate_ci_*/
+projects/bot_eval_run/large_nightly_canary_*/
+projects/bot_eval_run/checkpoint_report_latest.json
+projects/bot_eval_run/checkpoint_report_latest.md
+projects/bot_eval_run/checkpoint_registry.json
+projects/bot_eval_run/tuning_decision_latest.json
+projects/bot_eval_run/tuning_decision_latest.md
+projects/bot_eval_run/tuner_state.json
+projects/bot_eval_run/calibration_recommendation_latest.json
+projects/bot_eval_run/calibration_recommendation_latest.md
+projects/bot_eval_run/baseline_promotion.json
+projects/bot_eval_run/last_run.txt

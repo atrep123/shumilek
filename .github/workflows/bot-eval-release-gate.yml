@@ -331,10 +331,25 @@ jobs:
           npm run bot:eval:nightly:calibrate -- --window 10 --root $env:BOT_EVAL_RUN_ROOT --out "${{ steps.gate.outputs.out_dir }}/calibration_recommendation.json" --outMd "${{ steps.gate.outputs.out_dir }}/calibration_recommendation.md"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Build checkpoint report
+        if: steps.caps.outputs.ready == 'true' && steps.gate.conclusion == 'success' && steps.trend_guard.conclusion == 'success'
+        run: |
+          $registryPath = Join-Path $env:BOT_EVAL_RUN_ROOT 'checkpoint_registry.json'
+          npm run bot:eval:checkpoint -- --window 10 --root $env:BOT_EVAL_RUN_ROOT --out "${{ steps.gate.outputs.out_dir }}/checkpoint_report.json" --outMd "${{ steps.gate.outputs.out_dir }}/checkpoint_report.md" --registry "$registryPath"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Guarded baseline promotion
         if: steps.caps.outputs.ready == 'true' && steps.gate.conclusion == 'success' && steps.latency_guard.conclusion == 'success' && steps.trend_guard.conclusion == 'success'
         run: |
           npm run bot:eval:baseline:promote -- --candidate "${{ steps.gate.outputs.out_dir }}" --stable "${{ steps.baseline.outputs.baseline_dir }}" --state "C:\actions-runner\release_gate_promotion_state_node_api.json" --requiredConsecutive 2 --scenario "node-api-oracle" --minRawRunPassRate 1 --maxFallbackDependencyRunRate 0 --out "${{ steps.gate.outputs.out_dir }}/baseline_promotion.json"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build tuning decision
+        if: steps.caps.outputs.ready == 'true' && steps.gate.conclusion == 'success' && steps.trend_guard.conclusion == 'success'
+        run: |
+          $registryPath = Join-Path $env:BOT_EVAL_RUN_ROOT 'checkpoint_registry.json'
+          $statePath = Join-Path $env:BOT_EVAL_RUN_ROOT 'tuner_state.json'
+          npm run bot:eval:tuner:nightly -- --checkpointReport "${{ steps.gate.outputs.out_dir }}/checkpoint_report.json" --calibration "${{ steps.gate.outputs.out_dir }}/calibration_recommendation.json" --baselinePromotion "${{ steps.gate.outputs.out_dir }}/baseline_promotion.json" --registry "$registryPath" --state "$statePath" --out "${{ steps.gate.outputs.out_dir }}/tuning_decision.json" --outMd "${{ steps.gate.outputs.out_dir }}/tuning_decision.md"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Upload gate artifacts
@@ -353,7 +368,11 @@ jobs:
             ${{ steps.gate.outputs.out_dir }}/trend_guard.json
             ${{ steps.gate.outputs.out_dir }}/calibration_recommendation.json
             ${{ steps.gate.outputs.out_dir }}/calibration_recommendation.md
+            ${{ steps.gate.outputs.out_dir }}/checkpoint_report.json
+            ${{ steps.gate.outputs.out_dir }}/checkpoint_report.md
             ${{ steps.gate.outputs.out_dir }}/baseline_promotion.json
+            ${{ steps.gate.outputs.out_dir }}/tuning_decision.json
+            ${{ steps.gate.outputs.out_dir }}/tuning_decision.md
 
       - name: Cleanup old bot-eval directories (nightly)
         if: steps.caps.outputs.ready == 'true' && always()

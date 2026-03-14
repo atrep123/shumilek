@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "scenarios": {
+    "ts-todo-oracle": {
+      "splits": ["train", "regression"],
+      "domains": ["typescript", "cli"],
+      "capabilities": ["editing", "compile", "tests"],
+      "blocking": true,
+      "notes": "Fast iteration benchmark for code-editing loops and regression drift checks."
+    },
+    "node-api-oracle": {
+      "splits": ["validation", "test"],
+      "domains": ["node", "http", "integration"],
+      "capabilities": ["api-design", "contracts", "integration-tests"],
+      "blocking": true,
+      "notes": "Primary validation benchmark for Node API contract quality."
+    },
+    "python-ai-stdlib-oracle": {
+      "splits": ["validation", "regression"],
+      "domains": ["python", "stdlib"],
+      "capabilities": ["reasoning", "cli", "tests"],
+      "blocking": true,
+      "notes": "Cross-language regression benchmark without external dependencies."
+    },
+    "node-project-api-large": {
+      "splits": ["holdout"],
+      "domains": ["node", "project-structure", "integration"],
+      "capabilities": ["architecture", "refactoring", "multi-file-consistency"],
+      "blocking": false,
+      "notes": "Non-blocking holdout benchmark used as a large canary and manual confirmation run."
+    }
+  },
+  "checkpointPolicy": {
+    "minRunsInWindow": 3,
+    "gateRequired": true,
+    "requiredSplits": ["validation", "regression", "test"],
+    "minPassRate": 1,
+    "minRawRunPassRate": 1,
+    "maxFallbackDependencyRunRate": 0.2
+  }
+}
