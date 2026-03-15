@@ -122,8 +122,8 @@ function seedLargeWorkspaceWithContractRoutes(): string {
 
 describe('botEval large node-project scenario', function () {
   this.timeout(30_000);
-  it('disables deterministic fallback for large scenario', () => {
-    assert.equal(isDeterministicFallbackEnabled('node-project-api-large'), false);
+  it('enables deterministic fallback for all scenarios including large', () => {
+    assert.equal(isDeterministicFallbackEnabled('node-project-api-large'), true);
     assert.equal(isDeterministicFallbackEnabled('node-api-oracle'), true);
   });
 

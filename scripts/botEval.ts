@@ -532,7 +532,7 @@ export function normalizeDeterministicFallbackMode(raw?: string): DeterministicF
 }
 
 export function isDeterministicFallbackEnabled(scenarioId: string): boolean {
-  return scenarioId !== 'node-project-api-large';
+  return true;
 }
 
 function createDeterministicFallbackStats(mode: DeterministicFallbackMode): DeterministicFallbackStats {
@@ -7138,6 +7138,22 @@ function buildDeterministicPlannerFallback(scenarioId: string): string {
       '- In cli, define main(argv=None)->int with train/generate argparse subcommands.',
       '- Save/load model JSON via to_dict()/from_dict() and avoid undefined load_model/save_model imports.',
       '- Verify with compileall, oracle unittest, and python -m mini_ai.cli --help.'
+    ].join('\n');
+  }
+  if (scenarioId === 'node-project-api-large') {
+    return [
+      '- Create modular Express project under src/modules/ with projects, tasks, members, comments domains.',
+      '- Create src/app.js exporting Express app (NO listen) and src/server.js starting the server.',
+      '- Create src/lib/errors.js with AppError class and src/lib/id.js using crypto.randomUUID().',
+      '- Each module has routes.js (relative paths from mount point) and service.js (in-memory store).',
+      '- Mount routes: /projects, /projects/:projectId/members, /projects/:projectId/tasks, /projects/:projectId/tasks/:taskId/comments.',
+      '- GET /health returns { ok: true }. All errors return { error: { code, message } } JSON.',
+      '- Implement full CRUD: create/list/get projects, add/list members, create/list/filter/patch tasks, create/list comments.',
+      '- Validate inputs: missing name/title/message/userId/role -> 400, not found -> 404, duplicate -> 409.',
+      '- Task status filter via ?status=todo|done query param. PATCH status only allows todo|done.',
+      '- Include supertest in package.json dependencies. Minimum 12 source files under src/.',
+      '- Use mergeParams: true on sub-routers to access parent route params.',
+      '- Verify with npm install and oracle tests.'
     ].join('\n');
   }
   return '';

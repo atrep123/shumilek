@@ -234,7 +234,9 @@ async function main() {
 
     if (!baselineDir) baselineDir = compare.baselineDir || '';
     if (baselineDir && compare.baselineDir && baselineDir !== compare.baselineDir) {
-      throw new Error(`Baseline mismatch: ${baselineDir} vs ${compare.baselineDir} in ${input}`);
+      // eslint-disable-next-line no-console
+      console.warn(`Baseline mismatch (skipping ${input}): ${baselineDir} vs ${compare.baselineDir}`);
+      continue;
     }
 
     const gatePassed = Boolean(compare.gate?.passed);

@@ -165,7 +165,27 @@ async function main() {
     } catch { /* ignore */ }
   }
 
-  // Step 5: Cleanup old run/batch dirs (keep last 10 per prefix)
+  // Step 5: Stability aggregate (local trending)
+  const releaseGateDirs = fs.readdirSync(opts.root, { withFileTypes: true })
+    .filter(d => d.isDirectory() && /^release_gate_\d+$/.test(d.name))
+    .map(d => path.join(opts.root, d.name))
+    .sort()
+    .slice(-3);
+
+  let stabilityCode = 0;
+  if (releaseGateDirs.length >= 2) {
+    const stabilityArgs = [
+      tsNode,
+      path.join(repoRoot, 'scripts', 'botEvalStabilityAggregate.ts'),
+      '--inputs', releaseGateDirs.join(',')
+    ];
+    stabilityCode = await runStep('Stability Aggregate', stabilityArgs, repoRoot);
+  } else {
+    // eslint-disable-next-line no-console
+    console.log(`\nSkipping stability aggregate (need ≥2 release_gate dirs, found ${releaseGateDirs.length})`);
+  }
+
+  // Step 6: Cleanup old run/batch dirs (keep last 10 per prefix)
   const cleanupArgs = [
     tsNode,
     path.join(repoRoot, 'scripts', 'botEvalCleanup.ts'),
@@ -178,6 +198,8 @@ async function main() {
   const cleanupCode = await runStep('Cleanup', cleanupArgs, repoRoot);
   // eslint-disable-next-line no-console
   console.log(`  Cleanup:      ${cleanupCode === 0 ? 'PASS' : 'FAIL'}`);
+  // eslint-disable-next-line no-console
+  console.log(`  Stability:    ${releaseGateDirs.length >= 2 ? (stabilityCode === 0 ? 'PASS' : 'FAIL') : 'SKIP'}`);
   // eslint-disable-next-line no-console
   console.log('');
 }

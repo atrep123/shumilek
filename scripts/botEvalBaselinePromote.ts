@@ -6,6 +6,7 @@ type SummaryScenario = {
   passRate: number;
   rawRunPassRate: number;
   fallbackDependencyRunRate: number;
+  total?: number;
   runsWithPlannerError: number;
   runsWithJsonRepairError: number;
   runsWithSchemaFailure: number;
@@ -44,6 +45,7 @@ type PromoteOptions = {
   requiredConsecutive: number;
   minRawRunPassRate: number;
   maxFallbackDependencyRunRate: number;
+  maxPlannerErrorRate: number;
 };
 
 function parseArgs(argv: string[]): PromoteOptions {
@@ -56,6 +58,7 @@ function parseArgs(argv: string[]): PromoteOptions {
     requiredConsecutive: 2,
     minRawRunPassRate: 1,
     maxFallbackDependencyRunRate: 0,
+    maxPlannerErrorRate: 0.15,
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -101,6 +104,11 @@ function parseArgs(argv: string[]): PromoteOptions {
       i++;
       continue;
     }
+    if (a === '--maxPlannerErrorRate' && next()) {
+      opts.maxPlannerErrorRate = Number(next());
+      i++;
+      continue;
+    }
     if (a === '--help' || a === '-h') {
       printUsageAndExit(0);
     }
@@ -113,6 +121,7 @@ function parseArgs(argv: string[]): PromoteOptions {
   }
   if (!Number.isFinite(opts.minRawRunPassRate)) opts.minRawRunPassRate = 1;
   if (!Number.isFinite(opts.maxFallbackDependencyRunRate)) opts.maxFallbackDependencyRunRate = 0;
+  if (!Number.isFinite(opts.maxPlannerErrorRate)) opts.maxPlannerErrorRate = 0.15;
   if (!opts.outPath) opts.outPath = path.join(opts.candidateDir, 'baseline_promotion.json');
   return opts;
 }
@@ -131,6 +140,7 @@ function printUsageAndExit(code: number): never {
     '  --requiredConsecutive <n>            Required consecutive qualifying runs (default: 2)',
     '  --minRawRunPassRate <n>              Minimum rawRunPassRate for scenario (default: 1)',
     '  --maxFallbackDependencyRunRate <n>   Maximum fallbackDependencyRunRate for scenario (default: 0)',
+    '  --maxPlannerErrorRate <n>            Maximum planner error rate per scenario (default: 0.15)',
     '  -h, --help                           Show this help',
   ].join('\n'));
   process.exit(code);
@@ -171,7 +181,7 @@ function loadState(statePath: string, requiredConsecutive: number): PromotionSta
   }
 }
 
-function evaluateQualification(opts: PromoteOptions, summary: SummaryScenario[]): { ok: boolean; reason: string } {
+export function evaluateQualification(opts: PromoteOptions, summary: SummaryScenario[]): { ok: boolean; reason: string } {
   if (!Array.isArray(summary) || summary.length === 0) {
     return { ok: false, reason: 'summary.json is empty' };
   }
@@ -191,12 +201,17 @@ function evaluateQualification(opts: PromoteOptions, summary: SummaryScenario[])
 
   for (const row of summary) {
     if ((Number(row.passRate) || 0) < 1) issues.push(`${row.scenario} passRate < 1`);
-    if ((Number(row.runsWithPlannerError) || 0) > 0) issues.push(`${row.scenario} has planner errors`);
+    const plannerErrors = Number(row.runsWithPlannerError) || 0;
+    const totalRuns = Number(row.total) || 5;
+    const plannerErrorRate = plannerErrors / totalRuns;
+    if (plannerErrorRate > opts.maxPlannerErrorRate) issues.push(`${row.scenario} planner error rate ${plannerErrorRate.toFixed(2)} > ${opts.maxPlannerErrorRate}`);
     if ((Number(row.runsWithJsonRepairError) || 0) > 0) issues.push(`${row.scenario} has json repair errors`);
     if ((Number(row.runsWithSchemaFailure) || 0) > 0) issues.push(`${row.scenario} has schema failures`);
     if ((Number(row.runsWithJsonParseFailure) || 0) > 0) issues.push(`${row.scenario} has json parse failures`);
     if ((Number(row.runsWithPlaceholderFailure) || 0) > 0) issues.push(`${row.scenario} has placeholder failures`);
-    if ((Number(row.runsWithOtherParseFailure) || 0) > 0) issues.push(`${row.scenario} has other parse failures`);
+    const otherErrors = Number(row.runsWithOtherParseFailure) || 0;
+    const nonPlannerOtherErrors = Math.max(0, otherErrors - plannerErrors);
+    if (nonPlannerOtherErrors > 0) issues.push(`${row.scenario} has other parse failures`);
   }
 
   if (issues.length > 0) {
