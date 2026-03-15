@@ -26,8 +26,8 @@
       "splits": ["validation", "holdout"],
       "domains": ["node", "project-structure", "integration"],
       "capabilities": ["architecture", "refactoring", "multi-file-consistency"],
-      "blocking": false,
-      "notes": "Large multi-file Node API scenario; promoted from holdout to validation after 5/5 batch pass (2026-03-15)."
+      "blocking": true,
+      "notes": "Large multi-file Node API scenario; promoted to blocking after 3 consecutive 100% gate passes (20/20 runs, 2026-03-15)."
     }
   },
   "checkpointPolicy": {

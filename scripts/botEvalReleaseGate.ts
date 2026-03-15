@@ -42,7 +42,7 @@ function parseArgs(argv: string[]): ReleaseGateOptions {
     outDir: undefined,
     compareOut: undefined,
     runs: 10,
-    scenarios: ['ts-todo-oracle', 'node-api-oracle', 'python-ai-stdlib-oracle'],
+    scenarios: ['ts-todo-oracle', 'node-api-oracle', 'python-ai-stdlib-oracle', 'node-project-api-large'],
     model: process.env.BOT_EVAL_MODEL || 'qwen2.5-coder:14b',
     plannerModel: process.env.BOT_EVAL_PLANNER_MODEL || 'deepseek-r1:8b',
     reviewerModel: process.env.BOT_EVAL_REVIEWER_MODEL || 'qwen2.5:3b',
@@ -189,7 +189,7 @@ function parseArgs(argv: string[]): ReleaseGateOptions {
   if (!Number.isFinite(opts.hardTimeoutSec) || opts.hardTimeoutSec! <= 0) opts.hardTimeoutSec = 1200;
   if (!Number.isFinite(opts.topClusters) || opts.topClusters <= 0) opts.topClusters = 12;
   if (opts.scenarios.length === 0) {
-    opts.scenarios = ['ts-todo-oracle', 'node-api-oracle', 'python-ai-stdlib-oracle'];
+    opts.scenarios = ['ts-todo-oracle', 'node-api-oracle', 'python-ai-stdlib-oracle', 'node-project-api-large'];
   }
   return opts;
 }

@@ -28,6 +28,10 @@
     "python-ai-stdlib-oracle": {
       "maxFallbackDependencyRunRate": 0.2,
       "maxFallbackDependencyRunRateDelta": 0.2
+    },
+    "node-project-api-large": {
+      "maxFallbackDependencyRunRate": 0.2,
+      "maxFallbackDependencyRunRateDelta": 0.2
     }
   }
 }
