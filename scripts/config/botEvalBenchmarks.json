@@ -23,11 +23,11 @@
       "notes": "Cross-language regression benchmark without external dependencies."
     },
     "node-project-api-large": {
-      "splits": ["holdout"],
+      "splits": ["validation", "holdout"],
       "domains": ["node", "project-structure", "integration"],
       "capabilities": ["architecture", "refactoring", "multi-file-consistency"],
       "blocking": false,
-      "notes": "Non-blocking holdout benchmark used as a large canary and manual confirmation run."
+      "notes": "Large multi-file Node API scenario; promoted from holdout to validation after 5/5 batch pass (2026-03-15)."
     }
   },
   "checkpointPolicy": {
