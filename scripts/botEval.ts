@@ -4560,6 +4560,35 @@ function hasNodeProjectMembersIsolatedProjectGate(serviceContent: string): boole
   return false;
 }
 
+/**
+ * Detect spurious nested-module files like src/modules/projects/members/controller.js
+ * when the proper module already exists at src/modules/members/.
+ * Only flags files as spurious when the canonical module also has files at its proper path.
+ * Returns list of paths that should be removed from the files array.
+ */
+export function findNodeProjectNestedModuleDriftPaths(files: Array<{ path: string }>): string[] {
+  const canonicalModules = ['projects', 'tasks', 'members', 'comments'];
+  const presentCanonical = new Set<string>();
+  for (const file of files) {
+    const m = file.path.match(/^src\/modules\/([^/]+)\/[^/]+$/i);
+    if (m && canonicalModules.includes(m[1].toLowerCase())) {
+      presentCanonical.add(m[1].toLowerCase());
+    }
+  }
+  const spurious: string[] = [];
+  for (const file of files) {
+    const m = file.path.match(/^src\/modules\/([^/]+)\/([^/]+)\//i);
+    if (!m) continue;
+    const parentModule = m[1].toLowerCase();
+    const nestedName = m[2].toLowerCase();
+    if (canonicalModules.includes(parentModule) && canonicalModules.includes(nestedName)
+        && parentModule !== nestedName && presentCanonical.has(nestedName)) {
+      spurious.push(file.path);
+    }
+  }
+  return spurious;
+}
+
 function hasNodeProjectTasksProjectObjectCoupling(serviceContent: string): boolean {
   const text = String(serviceContent || '');
   if (!text) return false;
@@ -5718,6 +5747,16 @@ export function applyNodeProjectContractAutoFixes(files: FileSpec[], workspaceDi
   }
 
   ensureErrorsHelperForSendErrorUsage();
+
+  const spuriousPaths = findNodeProjectNestedModuleDriftPaths(nextFiles);
+  if (spuriousPaths.length > 0) {
+    for (let i = nextFiles.length - 1; i >= 0; i--) {
+      if (spuriousPaths.includes(nextFiles[i].path)) {
+        pushUniqueTrace(appliedFixes, `${nextFiles[i].path}: removed spurious nested-module file (proper module exists at canonical path)`);
+        nextFiles.splice(i, 1);
+      }
+    }
+  }
 
   return { files: nextFiles, appliedFixes, skippedFixes };
 }
@@ -9085,6 +9124,15 @@ async function main() {
       }, null, 2),
       'utf8'
     );
+
+    if (isNodeProjectLargeScenario) {
+      const allWsFiles = await listFilesRecursively(workspaceDir);
+      const spuriousOnDisk = findNodeProjectNestedModuleDriftPaths(allWsFiles.map(p => ({ path: p })));
+      for (const rel of spuriousOnDisk) {
+        const abs = path.join(workspaceDir, rel);
+        try { await fs.promises.rm(abs, { force: true }); } catch (_e) { /* ignore */ }
+      }
+    }
 
     final = await scenario.validate(workspaceDir, evalContext);
     await fs.promises.writeFile(path.join(iterDir, 'validation.json'), JSON.stringify(final, null, 2), 'utf8');

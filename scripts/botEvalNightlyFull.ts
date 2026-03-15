@@ -164,6 +164,20 @@ async function main() {
       console.log(`  Tuner action: ${decision.action} (checkpoint: ${decision.latestCheckpointId || 'n/a'})`);
     } catch { /* ignore */ }
   }
+
+  // Step 5: Cleanup old run/batch dirs (keep last 10 per prefix)
+  const cleanupArgs = [
+    tsNode,
+    path.join(repoRoot, 'scripts', 'botEvalCleanup.ts'),
+    '--root', opts.root,
+    '--policy', 'run_:5',
+    '--policy', 'batch_:5',
+    '--policy', 'release_gate_ci_pr_:10',
+    '--policy', 'release_gate_ci_nightly_:10'
+  ];
+  const cleanupCode = await runStep('Cleanup', cleanupArgs, repoRoot);
+  // eslint-disable-next-line no-console
+  console.log(`  Cleanup:      ${cleanupCode === 0 ? 'PASS' : 'FAIL'}`);
   // eslint-disable-next-line no-console
   console.log('');
 }

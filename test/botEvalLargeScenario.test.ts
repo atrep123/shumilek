@@ -15,6 +15,7 @@ import {
   computeReviewerTimeoutMs,
   computeTimeoutFallbackGenerationTimeoutMs,
   dedupeFileSpecsByPath,
+  findNodeProjectNestedModuleDriftPaths,
   getTimeoutFallbackModelsForScenario,
   getTimeoutFallbackModelForScenario,
   hasNodeProjectCommentsArityDrift,
@@ -2828,5 +2829,68 @@ describe('botEval large node-project scenario', function () {
     assert.ok(service, 'service file missing');
     const content = String(service?.content || '');
     assert.equal(hasNodeProjectCommentsArityDrift(content), false);
+  });
+
+  it('detects spurious nested-module files when canonical module exists', () => {
+    const files = [
+      { path: 'src/modules/projects/routes.js' },
+      { path: 'src/modules/projects/service.js' },
+      { path: 'src/modules/members/routes.js' },
+      { path: 'src/modules/members/service.js' },
+      { path: 'src/modules/tasks/routes.js' },
+      { path: 'src/modules/tasks/service.js' },
+      { path: 'src/modules/comments/routes.js' },
+      { path: 'src/modules/comments/service.js' },
+      { path: 'src/modules/projects/members/controller.js' },
+      { path: 'src/modules/projects/members/service.js' },
+      { path: 'src/modules/tasks/comments/handler.js' }
+    ];
+    const spurious = findNodeProjectNestedModuleDriftPaths(files);
+    assert.deepEqual(spurious.sort(), [
+      'src/modules/projects/members/controller.js',
+      'src/modules/projects/members/service.js',
+      'src/modules/tasks/comments/handler.js'
+    ].sort());
+  });
+
+  it('ignores nested modules when canonical module is absent', () => {
+    // If src/modules/members/ doesn't exist at top level, nested projects/members/ is not spurious
+    const files = [
+      { path: 'src/modules/projects/routes.js' },
+      { path: 'src/modules/projects/service.js' },
+      { path: 'src/modules/projects/members/controller.js' },
+      { path: 'src/modules/projects/members/service.js' }
+    ];
+    assert.deepEqual(findNodeProjectNestedModuleDriftPaths(files), []);
+  });
+
+  it('returns empty for correct module structure', () => {
+    const files = [
+      { path: 'src/modules/projects/routes.js' },
+      { path: 'src/modules/projects/service.js' },
+      { path: 'src/modules/members/routes.js' },
+      { path: 'src/modules/members/service.js' },
+      { path: 'src/modules/tasks/routes.js' },
+      { path: 'src/modules/tasks/service.js' },
+      { path: 'src/modules/comments/routes.js' },
+      { path: 'src/modules/comments/service.js' }
+    ];
+    assert.deepEqual(findNodeProjectNestedModuleDriftPaths(files), []);
+  });
+
+  it('autofix removes spurious nested-module files from array', () => {
+    const files = [
+      { path: 'src/modules/projects/routes.js', content: "const r=require('express').Router();r.get('/',(q,s)=>s.json({}));module.exports=r;\n" },
+      { path: 'src/modules/projects/service.js', content: 'module.exports = {};\n' },
+      { path: 'src/modules/members/routes.js', content: "const r=require('express').Router();r.get('/',(q,s)=>s.json({}));module.exports=r;\n" },
+      { path: 'src/modules/members/service.js', content: 'module.exports = {};\n' },
+      { path: 'src/modules/projects/members/controller.js', content: 'broken content\n' },
+      { path: 'src/modules/projects/members/service.js', content: 'broken content\n' }
+    ];
+    const result = applyNodeProjectContractAutoFixes(files);
+    const paths = result.files.map(f => f.path);
+    assert.ok(!paths.includes('src/modules/projects/members/controller.js'), 'nested controller should be removed');
+    assert.ok(!paths.includes('src/modules/projects/members/service.js'), 'nested service should be removed');
+    assert.ok(result.appliedFixes.some(f => /spurious nested-module/i.test(f)), 'should log spurious removal fix');
   });
 });
