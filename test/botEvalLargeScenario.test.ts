@@ -19,6 +19,7 @@ import {
   getTimeoutFallbackModelsForScenario,
   getTimeoutFallbackModelForScenario,
   hasNodeProjectCommentsArityDrift,
+  hasNodeProjectProjectsCreatePayloadDrift,
   hasNodeProjectTasksFieldNameDrift,
   isDeterministicFallbackEnabled,
   parseRouteServiceMismatchDiagnostics,
@@ -3024,5 +3025,83 @@ describe('botEval large node-project scenario', function () {
     const app = String(fixed.files.find(f => f.path === 'src/app.js')?.content || '');
     assert.ok(app.includes('app.listen(3000)'), 'guarded listen should remain');
     assert.ok(!fixed.appliedFixes.some(f => /remove.*unguarded listen/i.test(f)));
+  });
+
+  it('replaces projects service with canonical when it uses Express handler pattern (req, res)', () => {
+    const files = [
+      {
+        path: 'src/modules/projects/service.js',
+        content: [
+          "const { randomUUID } = require('node:crypto');",
+          'const projects = [];',
+          '',
+          'const createProject = (req, res) => {',
+          '  const { name } = req.body;',
+          "  if (!name) return res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'Name is required' } });",
+          '  const project = { id: randomUUID(), name };',
+          '  projects.push(project);',
+          '  res.status(201).json({ project });',
+          '};',
+          '',
+          'const getProjects = (req, res) => {',
+          '  res.json({ projects });',
+          '};',
+          '',
+          'module.exports = { createProject, getProjects };',
+          ''
+        ].join('\n')
+      }
+    ];
+    const fixed = applyNodeProjectContractAutoFixes(files);
+    const svc = String(fixed.files.find(f => f.path === 'src/modules/projects/service.js')?.content || '');
+    assert.ok(!svc.includes('req.body'), 'canonical service should not reference req.body');
+    assert.ok(!svc.includes('res.status'), 'canonical service should not reference res.status');
+    assert.ok(svc.includes('function createProject(name)') || svc.includes('createProject(name)'),
+      'canonical service should accept name param, not (req, res)');
+    assert.ok(svc.includes('getAllProjects'), 'canonical service should export getAllProjects');
+  });
+
+  it('replaces comments service with canonical when it uses Express handler pattern (req, res)', () => {
+    const files = [
+      {
+        path: 'src/modules/comments/service.js',
+        content: [
+          "const { randomUUID } = require('node:crypto');",
+          'const comments = [];',
+          '',
+          'const createComment = (req, res) => {',
+          '  const { message } = req.body;',
+          "  if (!message) return res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'Message is required' } });",
+          '  const comment = { id: randomUUID(), message };',
+          '  comments.push(comment);',
+          '  res.status(201).json({ comment });',
+          '};',
+          '',
+          'module.exports = { createComment };',
+          ''
+        ].join('\n')
+      }
+    ];
+    const fixed = applyNodeProjectContractAutoFixes(files);
+    const svc = String(fixed.files.find(f => f.path === 'src/modules/comments/service.js')?.content || '');
+    assert.ok(!svc.includes('req.body'), 'canonical service should not reference req.body');
+    assert.ok(!svc.includes('res.status'), 'canonical service should not reference res.status');
+    assert.ok(svc.includes('addComment') || svc.includes('createComment'),
+      'canonical service should have comment creation function');
+  });
+
+  it('detects projects payload drift when createProject takes (req, res) handler params', () => {
+    const service = [
+      'const projects = [];',
+      'const createProject = (req, res) => {',
+      '  const { name } = req.body;',
+      '  projects.push({ name });',
+      '  res.status(201).json({ project: { name } });',
+      '};',
+      'module.exports = { createProject };',
+      ''
+    ].join('\n');
+    const result = hasNodeProjectProjectsCreatePayloadDrift(service);
+    assert.strictEqual(result, true, 'should detect Express handler as payload drift');
   });
 });

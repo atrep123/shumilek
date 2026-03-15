@@ -4512,7 +4512,19 @@ function hasNodeProjectUnsupportedServiceImport(serviceContent: string): boolean
     || /from\s+['"]\.\.\/(?:repository|repo|db|database|storage|store|persistence)['"]/i.test(text);
 }
 
-function hasNodeProjectProjectsCreatePayloadDrift(serviceContent: string): boolean {
+function hasNodeProjectServiceExpressHandlerPattern(serviceContent: string): boolean {
+  const text = String(serviceContent || '');
+  if (!text) return false;
+  // Detect service functions that accept (req, res) — Express handler signature
+  const handlerSig = /(?:function\s+\w+|(?:const|let|var)\s+\w+\s*=\s*(?:async\s+)?(?:function\s*)?|(?:const|let|var)\s+\w+\s*=\s*(?:async\s+)?\()\s*\(\s*(?:_?req)\s*,\s*(?:_?res)\s*\)/i;
+  if (!handlerSig.test(text)) return false;
+  // Confirm Express usage: req.body, req.params, res.status, res.json
+  if (/\breq\.body\b/.test(text) || /\breq\.params\b/.test(text)
+      || /\bres\.status\s*\(/.test(text) || /\bres\.json\s*\(/.test(text)) return true;
+  return false;
+}
+
+export function hasNodeProjectProjectsCreatePayloadDrift(serviceContent: string): boolean {
   const text = String(serviceContent || '');
   if (!text) return false;
   const exportsCreate =
@@ -4527,9 +4539,12 @@ function hasNodeProjectProjectsCreatePayloadDrift(serviceContent: string): boole
   const payloadSignature =
     /\bcreate\s*\(\s*(?:projectData|payload|data)\s*\)/i.test(text)
     || /\bcreateProject\s*\(\s*(?:projectData|payload|data)\s*\)/i.test(text);
-  if (!payloadSignature) return false;
-  if (!/\b(?:projectData|payload|data)\.name\b/i.test(text)) return false;
-  return true;
+  if (payloadSignature && /\b(?:projectData|payload|data)\.name\b/i.test(text)) return true;
+  // Also detect Express handler pattern: createProject(req, res) with req.body access
+  const handlerSig = /\bcreateProject\s*=\s*(?:async\s+)?(?:function\s*)?\(\s*(?:_?req)\s*,\s*(?:_?res)\s*\)/i.test(text)
+    || /function\s+createProject\s*\(\s*(?:_?req)\s*,\s*(?:_?res)\s*\)/i.test(text);
+  if (handlerSig && /\breq\.body\b/.test(text)) return true;
+  return false;
 }
 
 function hasNodeProjectInvalidNullSendErrorInService(serviceContent: string): boolean {
@@ -5775,6 +5790,26 @@ export function applyNodeProjectContractAutoFixes(files: FileSpec[], workspaceDi
     pushUniqueTrace(appliedFixes, `${servicePath}: replaced syntactically invalid service content with canonical template`);
   }
 
+  // Replace services that use Express handler pattern (req, res) instead of data parameters
+  for (const moduleName of modules) {
+    const serviceCandidates = [
+      `src/modules/${moduleName}/service.js`,
+      `src/modules/${moduleName}/service.cjs`
+    ];
+    const serviceIndex = findFileIndexByCandidates(nextFiles, serviceCandidates);
+    if (serviceIndex < 0) continue;
+    const servicePath = nextFiles[serviceIndex].path;
+    const serviceContent = String(nextFiles[serviceIndex].content || '');
+    if (!hasNodeProjectServiceExpressHandlerPattern(serviceContent)) continue;
+    const canonicalService = buildNodeProjectLargeCoreFileTemplate(`src/modules/${moduleName}/service.js`);
+    if (!canonicalService) continue;
+    nextFiles[serviceIndex] = {
+      ...nextFiles[serviceIndex],
+      content: canonicalService
+    };
+    pushUniqueTrace(appliedFixes, `${servicePath}: replaced Express handler service with canonical data-parameter template`);
+  }
+
   const membersServiceCandidates = [
     'src/modules/members/service.js',
     'src/modules/members/service.ts',
@@ -5920,6 +5955,14 @@ export function applyNodeProjectRouteServiceAdapterBridges(files: FileSpec[], wo
     }
 
     if (hasNodeProjectUnsupportedServiceImport(nextServiceContent)) {
+      const canonicalService = buildNodeProjectLargeCoreFileTemplate(`src/modules/${moduleName}/service.js`);
+      if (canonicalService) {
+        nextServiceContent = canonicalService;
+        changed = true;
+      }
+    }
+
+    if (!changed && hasNodeProjectServiceExpressHandlerPattern(nextServiceContent)) {
       const canonicalService = buildNodeProjectLargeCoreFileTemplate(`src/modules/${moduleName}/service.js`);
       if (canonicalService) {
         nextServiceContent = canonicalService;
