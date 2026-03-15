@@ -17,6 +17,8 @@ import {
   dedupeFileSpecsByPath,
   getTimeoutFallbackModelsForScenario,
   getTimeoutFallbackModelForScenario,
+  hasNodeProjectCommentsArityDrift,
+  hasNodeProjectTasksFieldNameDrift,
   isDeterministicFallbackEnabled,
   parseRouteServiceMismatchDiagnostics,
   promoteLargePatchToFullFromWorkspace,
@@ -2695,5 +2697,136 @@ describe('botEval large node-project scenario', function () {
     const content = fs.readFileSync(oraclePath, 'utf8');
     const assertCount = (content.match(/\bassert\./g) || []).length;
     assert.ok(assertCount >= 20, `Expected >= 20 assert statements, found ${assertCount}`);
+  });
+
+  it('detects tasks field name drift (name instead of title)', () => {
+    const drifted = [
+      'const tasks = [];',
+      'function createTask(name) {',
+      "  const task = { id: require('node:crypto').randomUUID(), name, status: 'todo' };",
+      '  tasks.push(task);',
+      '  return task;',
+      '}',
+      'module.exports = { createTask };'
+    ].join('\n');
+    assert.equal(hasNodeProjectTasksFieldNameDrift(drifted), true);
+  });
+
+  it('detects tasks single-param arity drift', () => {
+    const singleParam = [
+      'const tasks = [];',
+      'const createTask = (title) => {',
+      "  const task = { id: require('node:crypto').randomUUID(), title, status: 'todo' };",
+      '  tasks.push(task);',
+      '  return task;',
+      '};',
+      'module.exports = { createTask };'
+    ].join('\n');
+    assert.equal(hasNodeProjectTasksFieldNameDrift(singleParam), true);
+  });
+
+  it('returns false for correct tasks service with projectId and title', () => {
+    const correct = [
+      'const tasks = [];',
+      'function createTask(projectId, title) {',
+      "  const task = { id: require('node:crypto').randomUUID(), projectId, title, status: 'todo' };",
+      '  tasks.push(task);',
+      '  return task;',
+      '}',
+      'module.exports = { createTask };'
+    ].join('\n');
+    assert.equal(hasNodeProjectTasksFieldNameDrift(correct), false);
+  });
+
+  it('detects comments single-param arity drift', () => {
+    const singleParam = [
+      'const comments = [];',
+      'function createComment(message) {',
+      "  const c = { id: require('node:crypto').randomUUID(), message };",
+      '  comments.push(c);',
+      '  return c;',
+      '}',
+      'module.exports = { createComment };'
+    ].join('\n');
+    assert.equal(hasNodeProjectCommentsArityDrift(singleParam), true);
+  });
+
+  it('returns false for correct comments service with 3 params', () => {
+    const correct = [
+      'const comments = [];',
+      'function createComment(projectId, taskId, text) {',
+      "  const c = { id: require('node:crypto').randomUUID(), projectId, taskId, text };",
+      '  comments.push(c);',
+      '  return c;',
+      '}',
+      'module.exports = { createComment };'
+    ].join('\n');
+    assert.equal(hasNodeProjectCommentsArityDrift(correct), false);
+  });
+
+  it('bridge adapter replaces tasks service when field-name drift detected', () => {
+    const files = [
+      {
+        path: 'src/modules/tasks/routes.js',
+        content: [
+          "const router = require('express').Router();",
+          "const tasksService = require('./service');",
+          "router.get('/', async (req, res) => res.json({ tasks: await tasksService.getTasksByProject(req.params.projectId) }));",
+          "router.post('/', async (req, res) => res.status(201).json({ task: await tasksService.createTask(req.params.projectId, req.body.title) }));",
+          "router.patch('/:taskId', async (req, res) => res.json({ task: await tasksService.updateTaskStatus(req.params.taskId, req.body.status) }));",
+          'module.exports = router;'
+        ].join('\n')
+      },
+      {
+        path: 'src/modules/tasks/service.js',
+        content: [
+          'const tasks = [];',
+          'function createTask(name) {',
+          "  const task = { id: require('node:crypto').randomUUID(), name, status: 'todo' };",
+          '  tasks.push(task);',
+          '  return task;',
+          '}',
+          'module.exports = { createTask };'
+        ].join('\n')
+      }
+    ];
+    const patched = applyNodeProjectRouteServiceAdapterBridges(files);
+    const service = patched.find(f => f.path === 'src/modules/tasks/service.js');
+    assert.ok(service, 'service file missing');
+    const content = String(service?.content || '');
+    assert.ok(/\btitle\b/.test(content), 'Canonical service should use title field');
+    assert.equal(hasNodeProjectTasksFieldNameDrift(content), false);
+  });
+
+  it('bridge adapter replaces comments service when arity drift detected', () => {
+    const files = [
+      {
+        path: 'src/modules/comments/routes.js',
+        content: [
+          "const router = require('express').Router();",
+          "const commentsService = require('./service');",
+          "router.get('/', async (req, res) => res.json({ comments: await commentsService.getCommentsByTask(req.params.projectId, req.params.taskId) }));",
+          "router.post('/', async (req, res) => res.status(201).json({ comment: await commentsService.createComment(req.params.projectId, req.params.taskId, req.body.text) }));",
+          'module.exports = router;'
+        ].join('\n')
+      },
+      {
+        path: 'src/modules/comments/service.js',
+        content: [
+          'const comments = [];',
+          'function createComment(message) {',
+          "  const c = { id: require('node:crypto').randomUUID(), message };",
+          '  comments.push(c);',
+          '  return c;',
+          '}',
+          'module.exports = { createComment };'
+        ].join('\n')
+      }
+    ];
+    const patched = applyNodeProjectRouteServiceAdapterBridges(files);
+    const service = patched.find(f => f.path === 'src/modules/comments/service.js');
+    assert.ok(service, 'service file missing');
+    const content = String(service?.content || '');
+    assert.equal(hasNodeProjectCommentsArityDrift(content), false);
   });
 });

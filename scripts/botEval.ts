@@ -3477,6 +3477,13 @@ export function collectNodeProjectApiLargeOracleDiagnostics(logs: string): strin
   if (/comments \+ not-found and payload contract/i.test(text) && /Cannot read properties of null \(reading ['"]id['"]\)/i.test(text)) {
     push('Contract mismatch: Task/comment creation flow returned null entity; ensure createTask/createComment returns object with id and validates project/task existence.');
   }
+  if (
+    /comments \+ not-found and payload contract/i.test(text) &&
+    /actual:\s*['"][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}['"]/i.test(text) &&
+    /expected:\s*['"]Looks good['"]/i.test(text)
+  ) {
+    push('Contract mismatch: Comment service arity drift — createComment(message) takes 1 param but bridge passes (projectId, taskId, message), causing projectId UUID to fill the message slot.');
+  }
 
   if (/Expected error object|Expected JSON object body|Expected error payload/i.test(text)) {
     push('Contract mismatch: Every 4xx/409/404 response must use { error: { code, message } }.');
@@ -4559,6 +4566,48 @@ function hasNodeProjectTasksProjectObjectCoupling(serviceContent: string): boole
   if (!/projectsService|projectService|projects\b/i.test(text)) return false;
   return /project\s*\.\s*tasks\s*\.\s*(?:push|find|filter|map)\s*\(/i.test(text)
     || /const\s+project\s*=\s*.*getProjectById\s*\(/i.test(text);
+}
+
+/**
+ * Detect when tasks service createTask stores field as `name` instead of `title`,
+ * or has wrong arity (1 param instead of 2+).
+ */
+export function hasNodeProjectTasksFieldNameDrift(serviceContent: string): boolean {
+  const text = String(serviceContent || '');
+  if (!text) return false;
+  // Must have createTask
+  if (!/\bcreateTask\b/.test(text)) return false;
+  // Pattern 1: createTask stores { ... name ... } without title field
+  if (/\bcreateTask\b[\s\S]{0,200}\{[^}]*\bname\b[^}]*\}/.test(text) && !/\btitle\b/.test(text.match(/\bcreateTask\b[\s\S]{0,300}/)?.[0] || '')) {
+    return true;
+  }
+  // Pattern 2: createTask takes 1 param like createTask(name) or createTask(title)
+  if (/(?:function\s+createTask|createTask\s*=\s*(?:async\s+)?(?:function\s*)?|const\s+createTask\s*=\s*(?:async\s+)?\()\s*\(\s*\w+\s*\)/i.test(text)) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Detect when comments service createComment/addComment takes 1 param,
+ * causing projectId to fill the message slot when bridge passes 3 args.
+ */
+export function hasNodeProjectCommentsArityDrift(serviceContent: string): boolean {
+  const text = String(serviceContent || '');
+  if (!text) return false;
+  // Check for createComment or addComment with single parameter (1 arg, not 2+)
+  const createMatch = text.match(/(?:function\s+createComment|createComment\s*=\s*(?:async\s+)?(?:function\s*)?|const\s+createComment\s*=\s*(?:async\s+)?\()\s*\(([^)]*)\)/i);
+  if (createMatch) {
+    const params = createMatch[1].split(',').map(p => p.trim()).filter(Boolean);
+    if (params.length === 1) return true;
+  }
+  // Also check addComment with fewer than 3 params (original, not bridge)
+  const addMatch = text.match(/(?:function\s+addComment|const\s+addComment\s*=\s*(?:async\s+)?\()\s*\(([^)]*)\)/i);
+  if (addMatch && !/addCommentBridge/i.test(text.slice(0, (text.indexOf(addMatch[0]) || 0) + addMatch[0].length + 5))) {
+    const params = addMatch[1].split(',').map(p => p.trim()).filter(Boolean);
+    if (params.length === 1) return true;
+  }
+  return false;
 }
 
 function hasNodeProjectCommentsContentFieldContractDrift(serviceContent: string): boolean {
@@ -5737,8 +5786,22 @@ export function applyNodeProjectRouteServiceAdapterBridges(files: FileSpec[], wo
         changed = true;
       }
     }
+    if (moduleName === 'tasks' && !changed && hasNodeProjectTasksFieldNameDrift(nextServiceContent)) {
+      const canonicalTasksService = buildNodeProjectLargeCoreFileTemplate('src/modules/tasks/service.js');
+      if (canonicalTasksService) {
+        nextServiceContent = canonicalTasksService;
+        changed = true;
+      }
+    }
 
     if (moduleName === 'comments' && hasNodeProjectCommentsContentFieldContractDrift(nextServiceContent)) {
+      const canonicalCommentsService = buildNodeProjectLargeCoreFileTemplate('src/modules/comments/service.js');
+      if (canonicalCommentsService) {
+        nextServiceContent = canonicalCommentsService;
+        changed = true;
+      }
+    }
+    if (moduleName === 'comments' && !changed && hasNodeProjectCommentsArityDrift(nextServiceContent)) {
       const canonicalCommentsService = buildNodeProjectLargeCoreFileTemplate('src/modules/comments/service.js');
       if (canonicalCommentsService) {
         nextServiceContent = canonicalCommentsService;
