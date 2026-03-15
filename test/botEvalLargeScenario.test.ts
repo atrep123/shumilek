@@ -2893,4 +2893,136 @@ describe('botEval large node-project scenario', function () {
     assert.ok(!paths.includes('src/modules/projects/members/service.js'), 'nested service should be removed');
     assert.ok(result.appliedFixes.some(f => /spurious nested-module/i.test(f)), 'should log spurious removal fix');
   });
+
+  it('canonicalizes members route when createMember call is missing req.params.projectId', () => {
+    const files = [
+      {
+        path: 'src/modules/members/routes.js',
+        content: [
+          "const express = require('express');",
+          "const membersService = require('./service');",
+          "const { sendError } = require('../../lib/errors');",
+          'const router = express.Router({ mergeParams: true });',
+          "router.post('/', (req, res) => {",
+          '  const { userId, role } = req.body;',
+          '  if (!userId || !role) return sendError(res, 400, "BAD_REQUEST", "userId and role are required");',
+          '  const member = membersService.createMember(userId, role);',
+          '  res.status(201).json({ member });',
+          '});',
+          "router.get('/', (req, res) => { res.json({ members: membersService.getMembers() }); });",
+          'module.exports = router;',
+          ''
+        ].join('\n')
+      }
+    ];
+    const fixed = applyNodeProjectContractAutoFixes(files);
+    const route = String(fixed.files.find(f => f.path === 'src/modules/members/routes.js')?.content || '');
+    assert.ok(route.includes('req.params.projectId'), 'canonicalized route should pass req.params.projectId');
+    assert.ok(route.includes('addMember(req.params.projectId'), 'should call addMember with projectId first arg');
+    assert.ok(fixed.appliedFixes.some(f => /canonicalized members route/i.test(f)));
+  });
+
+  it('canonicalizes comments route when createComment call is missing req.params args', () => {
+    const files = [
+      {
+        path: 'src/modules/comments/routes.js',
+        content: [
+          "const express = require('express');",
+          "const commentsService = require('./service');",
+          "const { sendError } = require('../../lib/errors');",
+          'const router = express.Router({ mergeParams: true });',
+          "router.post('/', (req, res) => {",
+          '  const { message } = req.body;',
+          '  if (!message) return sendError(res, 400, "BAD_REQUEST", "Message is required");',
+          '  const comment = commentsService.createComment(message);',
+          '  res.status(201).json({ comment });',
+          '});',
+          "router.get('/', (req, res) => { res.json({ comments: commentsService.getComments() }); });",
+          'module.exports = router;',
+          ''
+        ].join('\n')
+      }
+    ];
+    const fixed = applyNodeProjectContractAutoFixes(files);
+    const route = String(fixed.files.find(f => f.path === 'src/modules/comments/routes.js')?.content || '');
+    assert.ok(route.includes('req.params.projectId'), 'canonicalized route should pass req.params.projectId');
+    assert.ok(route.includes('req.params.taskId'), 'canonicalized route should pass req.params.taskId');
+    assert.ok(fixed.appliedFixes.some(f => /canonicalized comments route/i.test(f)));
+  });
+
+  it('strips node-builtin dependencies from package.json', () => {
+    const files = [
+      {
+        path: 'package.json',
+        content: JSON.stringify({
+          name: 'test',
+          dependencies: { express: '^4.19.2', 'node:crypto': '^1.0.0', crypto: '^1.0.0' },
+          devDependencies: { supertest: '^7.1.0', fs: '^0.0.2' }
+        }, null, 2) + '\n'
+      }
+    ];
+    const fixed = applyNodeProjectContractAutoFixes(files);
+    const pkg = JSON.parse(fixed.files.find(f => f.path === 'package.json')?.content || '{}');
+    assert.equal(pkg.dependencies?.express, '^4.19.2', 'express should remain');
+    assert.equal(pkg.dependencies?.['node:crypto'], undefined, 'node:crypto should be stripped');
+    assert.equal(pkg.dependencies?.crypto, undefined, 'crypto should be stripped');
+    assert.equal(pkg.devDependencies?.supertest, '^7.1.0', 'supertest should remain');
+    assert.equal(pkg.devDependencies?.fs, undefined, 'fs should be stripped');
+    assert.ok(fixed.appliedFixes.some(f => /stripped node-builtin dependency/i.test(f)));
+  });
+
+  it('replaces app.js with canonical template when listen() is called without require.main guard', () => {
+    const files = [
+      {
+        path: 'src/app.js',
+        content: [
+          "const express = require('express');",
+          "const projectsRoutes = require('./modules/projects/routes');",
+          "const membersRoutes = require('./modules/members/routes');",
+          "const tasksRoutes = require('./modules/tasks/routes');",
+          "const commentsRoutes = require('./modules/comments/routes');",
+          'const app = express();',
+          'app.use(express.json());',
+          "app.get('/health', (_req, res) => res.json({ ok: true }));",
+          "app.use('/projects', projectsRoutes);",
+          "app.use('/projects/:projectId/members', membersRoutes);",
+          "app.use('/projects/:projectId/tasks', tasksRoutes);",
+          "app.use('/projects/:projectId/tasks/:taskId/comments', commentsRoutes);",
+          'app.listen(3000);',
+          'module.exports = app;',
+          ''
+        ].join('\n')
+      }
+    ];
+    const fixed = applyNodeProjectContractAutoFixes(files);
+    const app = String(fixed.files.find(f => f.path === 'src/app.js')?.content || '');
+    assert.ok(!app.includes('app.listen(3000)'), 'listen() call should be removed');
+    assert.ok(app.includes('module.exports = app;'), 'should still export app');
+    assert.ok(fixed.appliedFixes.some(f => /remove.*unguarded listen/i.test(f)));
+  });
+
+  it('preserves app.js when listen() is guarded by require.main', () => {
+    const guarded = [
+      "const express = require('express');",
+      "const projectsRoutes = require('./modules/projects/routes');",
+      "const membersRoutes = require('./modules/members/routes');",
+      "const tasksRoutes = require('./modules/tasks/routes');",
+      "const commentsRoutes = require('./modules/comments/routes');",
+      'const app = express();',
+      'app.use(express.json());',
+      "app.get('/health', (_req, res) => res.json({ ok: true }));",
+      "app.use('/projects', projectsRoutes);",
+      "app.use('/projects/:projectId/members', membersRoutes);",
+      "app.use('/projects/:projectId/tasks', tasksRoutes);",
+      "app.use('/projects/:projectId/tasks/:taskId/comments', commentsRoutes);",
+      'if (require.main === module) { app.listen(3000); }',
+      'module.exports = app;',
+      ''
+    ].join('\n');
+    const files = [{ path: 'src/app.js', content: guarded }];
+    const fixed = applyNodeProjectContractAutoFixes(files);
+    const app = String(fixed.files.find(f => f.path === 'src/app.js')?.content || '');
+    assert.ok(app.includes('app.listen(3000)'), 'guarded listen should remain');
+    assert.ok(!fixed.appliedFixes.some(f => /remove.*unguarded listen/i.test(f)));
+  });
 });

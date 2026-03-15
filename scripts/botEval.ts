@@ -4984,9 +4984,16 @@ function shouldCanonicalizeMembersRouteContract(routeContent: string): boolean {
     || /if\s*\(\s*!userId\s*\|\|\s*!role\s*\)/.test(text)
     || /userId and role are required/i.test(text);
   if (!hasPayloadGuard) return true;
-  const addMemberCallIndex = text.search(/\baddMember\s*\(/);
+  const memberCallRe = /\b(?:addMember|createMember)\s*\(/;
+  const addMemberCallIndex = text.search(memberCallRe);
   const payloadGuardIndex = text.search(/if\s*\(\s*(?:!\s*(?:req\.body\.)?userId\s*\|\|\s*!\s*(?:req\.body\.)?role|!userId\s*\|\|\s*!role)\s*\)/);
   if (addMemberCallIndex >= 0 && payloadGuardIndex >= 0 && payloadGuardIndex > addMemberCallIndex) return true;
+  // Canonicalize when addMember/createMember call is missing req.params.projectId
+  const memberCallArgs = text.match(/\b(?:addMember|createMember)\s*\(([^)]*)\)/);
+  if (memberCallArgs && !/req\.params\.projectId/.test(memberCallArgs[1])) return true;
+  // Canonicalize when getMembers call is missing req.params.projectId
+  const getMembersArgs = text.match(/\bget(?:All)?Members\s*\(([^)]*)\)/);
+  if (getMembersArgs && !/req\.params\.projectId/.test(getMembersArgs[1])) return true;
   if (!/status\s*\(\s*201\s*\)\s*\.json\s*\(\s*\{\s*member\b/.test(text)) return true;
   return false;
 }
@@ -5001,13 +5008,16 @@ function shouldCanonicalizeCommentsRouteContract(routeContent: string): boolean 
     || /if\s*\(\s*!message\s*\)/.test(text)
     || /message is required/i.test(text);
   if (!hasPayloadGuard) return true;
-  const addCommentCallIndex = text.search(/\baddComment(?:ToTask)?\s*\(/);
+  const commentCallRe = /\b(?:addComment(?:ToTask)?|createComment)\s*\(/;
+  const addCommentCallIndex = text.search(commentCallRe);
   const payloadGuardIndex = text.search(/if\s*\(\s*(?:!\s*(?:req\.body\.)?message|!message)\s*\)/);
   if (addCommentCallIndex >= 0 && payloadGuardIndex >= 0 && payloadGuardIndex > addCommentCallIndex) return true;
-  const addCommentArgs = text.match(/\baddComment(?:ToTask)?\s*\(([^)]*)\)/);
-  if (addCommentArgs?.[1] && !/req\.params\.projectId/.test(addCommentArgs[1])) return true;
+  // Canonicalize when addComment/createComment call is missing req.params.projectId
+  const addCommentArgs = text.match(/\b(?:addComment(?:ToTask)?|createComment)\s*\(([^)]*)\)/);
+  if (addCommentArgs && !/req\.params\.projectId/.test(addCommentArgs[1])) return true;
+  // Canonicalize when getComments call is missing req.params.projectId (including no-arg calls)
   const getCommentsArgs = text.match(/\bget(?:All)?Comments\s*\(([^)]*)\)/);
-  if (getCommentsArgs?.[1] && !/req\.params\.projectId/.test(getCommentsArgs[1])) return true;
+  if (getCommentsArgs && !/req\.params\.projectId/.test(getCommentsArgs[1])) return true;
   if (!/status\s*\(\s*201\s*\)\s*\.json\s*\(\s*\{\s*comment\b/.test(text)) return true;
   return false;
 }
@@ -5419,6 +5429,46 @@ export function applyNodeProjectContractAutoFixes(files: FileSpec[], workspaceDi
   ensureNestedRouteLocalServiceImports();
   ensureControllerRandomUuidBindings();
   ensureServiceRandomUuidBindings();
+
+  // Strip node-builtin packages (node:crypto, crypto, etc.) from package.json dependencies
+  const pkgIndex = findFileIndexByCandidates(nextFiles, ['package.json']);
+  if (pkgIndex >= 0) {
+    try {
+      const pkg = JSON.parse(nextFiles[pkgIndex].content);
+      let pkgChanged = false;
+      const nodeBuiltinRe = /^(?:node:)?(?:crypto|fs|path|os|http|https|url|util|stream|events|assert|child_process|cluster|dgram|dns|net|readline|tls|tty|v8|vm|zlib|buffer|console|constants|domain|module|process|punycode|querystring|string_decoder|sys|timers|worker_threads|perf_hooks|diagnostics_channel)$/;
+      for (const section of ['dependencies', 'devDependencies'] as const) {
+        if (pkg[section] && typeof pkg[section] === 'object') {
+          for (const dep of Object.keys(pkg[section])) {
+            if (nodeBuiltinRe.test(dep)) {
+              delete pkg[section][dep];
+              pkgChanged = true;
+              pushUniqueTrace(appliedFixes, `package.json: stripped node-builtin dependency "${dep}" from ${section}`);
+            }
+          }
+        }
+      }
+      if (pkgChanged) {
+        nextFiles[pkgIndex] = { ...nextFiles[pkgIndex], content: JSON.stringify(pkg, null, 2) + '\n' };
+      }
+    } catch { /* ignore malformed JSON — validation will catch it */ }
+  }
+
+  // Strip listen() from app.js / server.js — oracle imports app via supertest
+  for (const entryName of ['src/app.js', 'src/server.js'] as const) {
+    const entryIdx = findFileIndexByCandidates(nextFiles, [entryName]);
+    if (entryIdx < 0) continue;
+    const entryContent = nextFiles[entryIdx].content;
+    const hasListenCall = /\b[a-zA-Z_$][\w$]*\s*\.\s*listen\s*\(/.test(entryContent);
+    const hasRequireMainGuard = /require\.main\s*===\s*module/.test(entryContent);
+    if (hasListenCall && !hasRequireMainGuard) {
+      const canonical = buildNodeProjectLargeCoreFileTemplate(entryName);
+      if (canonical) {
+        nextFiles[entryIdx] = { ...nextFiles[entryIdx], content: canonical };
+        pushUniqueTrace(appliedFixes, `${entryName}: replaced with canonical template to remove unguarded listen()`);
+      }
+    }
+  }
 
   for (const moduleName of modules) {
     const routeCandidates = [
@@ -6300,6 +6350,11 @@ export async function validateNodeProjectApiLarge(workspaceDir: string): Promise
       }
       if (combined.has('uuid')) {
         diagnostics.push('package.json should not include "uuid"; use node:crypto randomUUID instead');
+      }
+      const nodeBuiltinRe = /^(?:node:)?(?:crypto|fs|path|os|http|https|url|util|stream|events|assert|child_process|cluster|dgram|dns|net|readline|tls|tty|v8|vm|zlib|buffer|console|constants|domain|module|process|punycode|querystring|string_decoder|sys|timers|worker_threads|perf_hooks|diagnostics_channel)$/;
+      const builtinDeps = [...combined].filter(dep => nodeBuiltinRe.test(dep));
+      for (const dep of builtinDeps) {
+        diagnostics.push(`package.json should not include Node builtin "${dep}" as a dependency; it is available via require('${dep.startsWith('node:') ? dep : 'node:' + dep}')`);
       }
     }
   } catch (e: any) {
