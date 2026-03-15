@@ -378,4 +378,36 @@ describe('botEvalNightlyCalibrate', () => {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
   });
+
+  it('skips scenarios with zero baseline avgMs instead of throwing', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-nightly-calibrate-'));
+    try {
+      for (let i = 0; i < 3; i++) {
+        const ts = 1773000000000 + i * 100000;
+        const runDir = path.join(tmp, `release_gate_${ts}`);
+        fs.mkdirSync(runDir, { recursive: true });
+        writeJson(path.join(runDir, 'summary.json'), [
+          { scenario: 'ts-todo-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 1050 },
+          { scenario: 'node-project-api-large', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 140000 }
+        ]);
+        writeJson(path.join(runDir, 'compare.json'), {
+          baselineDir: 'baseline',
+          gate: { passed: true },
+          scenarios: [
+            { scenario: 'ts-todo-oracle', baseline: { avgMs: 1000 }, candidate: { avgMs: 1050 } },
+            { scenario: 'node-project-api-large', baseline: { avgMs: 0 }, candidate: { avgMs: 140000 } }
+          ]
+        });
+      }
+      const report = buildCalibrationRecommendation({ rootDir: tmp, window: 10, includeLocalRuns: true });
+      // Should have ts-todo but NOT node-project-api-large (no baseline)
+      const tsScenario = report.scenarios.find((s: any) => s.scenario === 'ts-todo-oracle');
+      const largeScenario = report.scenarios.find((s: any) => s.scenario === 'node-project-api-large');
+      assert.ok(tsScenario, 'ts-todo-oracle should be present');
+      assert.equal(largeScenario, undefined, 'node-project-api-large should be skipped (no baseline)');
+      assert.equal(report.readiness.ready_to_tighten_pr, true);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
 });

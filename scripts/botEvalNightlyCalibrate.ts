@@ -389,7 +389,8 @@ export function buildCalibrationRecommendation(params: {
       const baselineAvgMs = toNumber(scenario?.baseline?.avgMs);
       const candidateAvgMs = toNumber(scenario?.candidate?.avgMs);
       if (baselineAvgMs <= 0) {
-        throw new Error(`Invalid baseline.avgMs for scenario ${scenario.scenario} in ${run.dirName}`);
+        // Skip scenarios without baseline data (e.g. newly promoted scenarios)
+        continue;
       }
       const ratio = candidateAvgMs / baselineAvgMs;
       if (!ratiosByScenario.has(scenario.scenario)) ratiosByScenario.set(scenario.scenario, []);
