@@ -4272,13 +4272,13 @@ function appendNodeProjectServiceWrappers(
         "  const payload = { message: normalizedMessage };",
         `  let result = await module.exports.${wrapper.targetMethod}(projectId, taskId, payload);`,
         "  let normalized = result && typeof result === 'object' && 'comment' in result ? result.comment : result;",
-        `  if ((!normalized || typeof normalized !== 'object' || typeof normalized.message === 'undefined') && typeof module.exports.${wrapper.targetMethod} === 'function') {`,
+        `  if ((!normalized || typeof normalized !== 'object' || typeof normalized.message === 'undefined' || typeof normalized.message !== 'string') && typeof module.exports.${wrapper.targetMethod} === 'function') {`,
         `    const retry = await module.exports.${wrapper.targetMethod}(projectId, taskId, normalizedMessage);`,
         "    const retryNormalized = retry && typeof retry === 'object' && 'comment' in retry ? retry.comment : retry;",
         "    if (retryNormalized && typeof retryNormalized === 'object') normalized = retryNormalized;",
         '  }',
         "  if (!normalized || typeof normalized !== 'object') return { projectId: String(projectId || ''), taskId: String(taskId || ''), message: normalizedMessage };",
-        "  return typeof normalized.message === 'undefined' ? { ...normalized, message: normalizedMessage } : normalized;",
+        "  return typeof normalized.message !== 'string' ? { ...normalized, message: normalizedMessage } : normalized;",
         '};'
       ].join('\n');
     }
