@@ -1,7 +1,6 @@
 ﻿import * as vscode from 'vscode';
 import { Logger } from './logger';
 import * as path from 'path';
-import * as crypto from 'crypto';
 import { exec } from 'child_process';
 import fetch, { Headers, Response } from 'node-fetch';
 import { 
@@ -115,6 +114,34 @@ import {
   handleWriteFileTool,
   MutationHandlerDeps
 } from './toolHandlers';
+import {
+  BINARY_EXTENSIONS,
+  asString,
+  getFirstStringArg,
+  normalizeExtension,
+  buildAutoFileName,
+  normalizeRouteText,
+  tokenizeRouteText,
+  computeContentHash,
+  isBinaryExtension,
+  isProbablyBinary,
+  readFileForTool
+} from './fileUtils';
+import {
+  serializeRange,
+  serializeSymbolKind,
+  getPositionFromArgs,
+  serializeLocationInfo,
+  renderHoverContents,
+  serializeDiagnosticSeverity,
+  resolveSymbolPosition
+} from './lspSerializer';
+import {
+  detectEol,
+  splitLines,
+  parseUnifiedDiff,
+  applyUnifiedDiffToText
+} from './diffUtils';
 // (Types imported from ./types)
 
 // Webview message types
@@ -166,13 +193,6 @@ interface ToolSessionState {
   lastWritePath?: string;
   lastWriteAction?: 'created' | 'updated';
   toolCallRecords?: ToolCallRecord[];
-}
-
-interface RangeInfo {
-  startLine: number;
-  startCharacter: number;
-  endLine: number;
-  endCharacter: number;
 }
 
 interface ToolCallOptions {
@@ -3158,12 +3178,6 @@ const DEFAULT_MAX_LSP_DIAGNOSTICS = 20;
 const DEFAULT_MAX_LSP_REFERENCES = 20;
 const DEFAULT_MAX_DIFF_BYTES = 128 * 1024;
 const DEFAULT_MAX_DIFF_LINES = 200;
-const BINARY_EXTENSIONS = new Set([
-  '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.ico', '.webp', '.tiff',
-  '.pdf', '.zip', '.gz', '.tar', '.7z', '.rar',
-  '.exe', '.dll', '.so', '.dylib', '.bin', '.dat', '.class', '.jar', '.wasm',
-  '.mp3', '.mp4', '.mov', '.avi', '.mkv', '.wav', '.flac'
-]);
 
 function buildToolInstructions(): string {
   const autoSaveDir = getToolsAutoSaveDir();
@@ -3542,214 +3556,6 @@ async function generateEditorFirstResponse(
 }
 
 
-
-function asString(value: unknown): string | undefined {
-  return typeof value === 'string' ? value : undefined;
-}
-
-function getFirstStringArg(args: Record<string, unknown>, keys: string[]): string | undefined {
-  for (const key of keys) {
-    const value = args[key];
-    if (typeof value === 'string') return value;
-  }
-  return undefined;
-}
-
-function formatTimestampForName(date: Date = new Date()): string {
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}`;
-}
-
-function sanitizeFileName(input: string): string {
-  const ascii = input.normalize('NFKD').replace(/[^\x00-\x7F]/g, '');
-  const cleaned = ascii.replace(/[/\\?%*:|"<>]/g, '-').trim();
-  const collapsed = cleaned.replace(/\s+/g, '-').replace(/-+/g, '-');
-  const trimmed = collapsed.replace(/^\.+/, '').replace(/\.+$/, '');
-  return trimmed.slice(0, 120);
-}
-
-function normalizeExtension(ext: string | undefined): string {
-  if (!ext) return '';
-  const cleaned = ext.trim().toLowerCase();
-  if (!cleaned) return '';
-  const withDot = cleaned.startsWith('.') ? cleaned : `.${cleaned}`;
-  return withDot.replace(/[^a-z0-9.]/g, '');
-}
-
-function extractExtensionFromName(name: string | undefined): string {
-  if (!name) return '';
-  return normalizeExtension(path.extname(name));
-}
-
-function inferExtensionFromTitle(title: string | undefined): string {
-  if (!title) return '';
-  const t = title.toLowerCase();
-  if (t.includes('arduino') || t.includes('neopixel') || t.includes('.ino')) return '.ino';
-  if (t.includes('markdown') || t.includes('.md')) return '.md';
-  if (t.includes('typescript') || t.includes('.ts')) return '.ts';
-  if (t.includes('javascript') || t.includes('.js')) return '.js';
-  if (t.includes('json')) return '.json';
-  if (t.includes('yaml') || t.includes('.yml') || t.includes('.yaml')) return '.yaml';
-  if (t.includes('html')) return '.html';
-  if (t.includes('css')) return '.css';
-  if (t.includes('cpp') || t.includes('c++')) return '.cpp';
-  if (t.includes('c ')) return '.c';
-  if (t.includes('python') || t.includes('.py')) return '.py';
-  return '';
-}
-
-function inferExtensionFromContent(content: string | undefined): string {
-  if (!content) return '';
-  const sample = content.slice(0, 2000).trim();
-  if (!sample) return '';
-  const lower = sample.toLowerCase();
-  if (lower.startsWith('{') || lower.startsWith('[')) return '.json';
-  const firstLine = sample.split(/\r\n|\n/, 1)[0]?.trim() ?? '';
-  if (firstLine.startsWith('#')) return '.md';
-  if (lower.includes('<!doctype html') || lower.includes('<html')) return '.html';
-  if (lower.includes('<?xml')) return '.xml';
-  if (lower.includes('void setup(') || lower.includes('void loop(')) return '.ino';
-  if (lower.includes('adafruit_neopixel') || lower.includes('neopixel')) return '.ino';
-  return '';
-}
-
-function inferNameFromContent(content: string | undefined): string {
-  if (!content) return '';
-  const lines = content.split(/\r\n|\n/).slice(0, 30);
-  let inFrontMatter = false;
-  for (let i = 0; i < lines.length; i++) {
-    const rawLine = lines[i];
-    const line = rawLine.trim();
-    if (!line) continue;
-    if (i === 0 && line === '---') {
-      inFrontMatter = true;
-      continue;
-    }
-    if (inFrontMatter) {
-      if (line === '---') {
-        inFrontMatter = false;
-        continue;
-      }
-      const match = line.match(/^title:\s*(.+)$/i);
-      if (match) {
-        const cleaned = match[1].replace(/^["']|["']$/g, '');
-        return sanitizeFileName(cleaned);
-      }
-      continue;
-    }
-    if (line.startsWith('#')) {
-      return sanitizeFileName(line.replace(/^#+\s*/, ''));
-    }
-    if (line.startsWith('//')) {
-      return sanitizeFileName(line.replace(/^\/\/+\s*/, ''));
-    }
-    if (line.startsWith('/*')) {
-      return sanitizeFileName(line.replace(/^\/\*\s*/, '').replace(/\*\/.*/, ''));
-    }
-    const match = line.match(/^(?:export\s+)?(?:class|function|interface|type)\s+([A-Za-z0-9_]+)/);
-    if (match) {
-      return sanitizeFileName(match[1]);
-    }
-  }
-  return '';
-}
-
-function buildAutoFileName(options: {
-  title?: string;
-  suggestedName?: string;
-  extension?: string;
-  content?: string;
-}): string {
-  const title = options.title;
-  const suggestedNameRaw = options.suggestedName;
-  const extensionRaw = options.extension;
-  const content = options.content;
-  const extFromSuggested = extractExtensionFromName(suggestedNameRaw);
-  const extFromTitle = inferExtensionFromTitle(title);
-  const extFromContent = inferExtensionFromContent(content);
-  let extension = normalizeExtension(extensionRaw || extFromSuggested || extFromTitle || extFromContent);
-  if (!extension) extension = '.txt';
-
-  let baseName = '';
-  if (suggestedNameRaw) {
-    baseName = sanitizeFileName(path.parse(suggestedNameRaw).name);
-  } else if (title) {
-    baseName = sanitizeFileName(title);
-  } else if (content) {
-    baseName = inferNameFromContent(content);
-  }
-  if (!baseName) baseName = 'shumilek-output';
-
-  let fileName = baseName;
-  if (baseName === 'shumilek-output') {
-    fileName = `${baseName}-${formatTimestampForName()}`;
-  }
-  return `${fileName}${extension}`;
-}
-
-function normalizeRouteText(input: string): string {
-  return input.normalize('NFKD').replace(/[^\x00-\x7F]/g, '').toLowerCase();
-}
-
-function tokenizeRouteText(input: string): string[] {
-  const cleaned = normalizeRouteText(input).replace(/[^a-z0-9_.-]+/g, ' ');
-  const parts = cleaned.split(/\s+/).filter(Boolean);
-  return parts.filter(part => part.length >= 2);
-}
-
-function computeContentHash(text: string): string {
-  return crypto.createHash('sha256').update(text, 'utf8').digest('hex');
-}
-
-function isBinaryExtension(filePath: string): boolean {
-  const ext = path.extname(filePath).toLowerCase();
-  return BINARY_EXTENSIONS.has(ext);
-}
-
-function isProbablyBinary(buffer: Uint8Array): boolean {
-  let suspicious = 0;
-  const total = buffer.length;
-  if (total === 0) return false;
-  for (let i = 0; i < total; i++) {
-    const byte = buffer[i];
-    if (byte === 0) return true;
-    if (byte < 7 || (byte > 13 && byte < 32)) {
-      suspicious++;
-    }
-  }
-  return (suspicious / total) > 0.3;
-}
-
-async function readFileForTool(
-  uri: vscode.Uri,
-  maxBytes: number
-): Promise<{ text?: string; size?: number; hash?: string; error?: string; binary?: boolean }> {
-  if (isBinaryExtension(uri.fsPath)) {
-    return { error: 'soubor vypada jako binarni (extenze)', binary: true };
-  }
-
-  const openDoc = vscode.workspace.textDocuments.find(doc => doc.uri.fsPath === uri.fsPath);
-  if (openDoc) {
-    const text = openDoc.getText();
-    const size = Buffer.byteLength(text, 'utf8');
-    if (size > maxBytes) {
-      return { error: `soubor je moc velky (${size} bytes), limit ${maxBytes}`, size };
-    }
-    return { text, size, hash: computeContentHash(text) };
-  }
-
-  const stat = await vscode.workspace.fs.stat(uri);
-  if (stat.size > maxBytes) {
-    return { error: `soubor je moc velky (${stat.size} bytes), limit ${maxBytes}`, size: stat.size };
-  }
-
-  const buffer = await vscode.workspace.fs.readFile(uri);
-  if (isProbablyBinary(buffer)) {
-    return { error: 'soubor vypada jako binarni (obsah)', binary: true, size: buffer.length };
-  }
-  const text = new TextDecoder().decode(buffer);
-  return { text, size: buffer.length, hash: computeContentHash(text) };
-}
 
 function isWithinWorkspace(uri: vscode.Uri): boolean {
   const folders = vscode.workspace.workspaceFolders;
@@ -4163,15 +3969,6 @@ async function resolveWorkspaceUri(
   return await tryUri(vscode.Uri.joinPath(folders[0].uri, cleaned));
 }
 
-function detectEol(text: string): string {
-  return text.includes('\r\n') ? '\r\n' : '\n';
-}
-
-function splitLines(text: string): string[] {
-  if (!text) return [''];
-  return text.split(/\r\n|\n/);
-}
-
 function truncateTextByBytes(text: string, maxBytes: number): { text: string; truncated: boolean } {
   if (Buffer.byteLength(text, 'utf8') <= maxBytes) {
     return { text, truncated: false };
@@ -4431,7 +4228,7 @@ async function buildLspContext(doc: vscode.TextDocument): Promise<string[]> {
   if (defList.length > 0) {
     lines.push('LSP_DEFINITION:');
     for (const def of defList.slice(0, 3)) {
-      const info = serializeLocationInfo(def);
+      const info = serializeLocationInfo(def, getRelativePathForWorkspace);
       lines.push(`- ${info.path}:${info.range.startLine}:${info.range.startCharacter}`);
     }
   }
@@ -4446,7 +4243,7 @@ async function buildLspContext(doc: vscode.TextDocument): Promise<string[]> {
   if (refList.length > 0) {
     lines.push(`LSP_REFERENCES: ${refList.length}`);
     for (const ref of refList.slice(0, 5)) {
-      const info = serializeLocationInfo(ref);
+      const info = serializeLocationInfo(ref, getRelativePathForWorkspace);
       lines.push(`- ${info.path}:${info.range.startLine}:${info.range.startCharacter}`);
     }
   }
@@ -4568,199 +4365,6 @@ function buildEditorFirstInstructions(): string {
   ].join('\n');
 }
 
-function serializeRange(range: vscode.Range): RangeInfo {
-  return {
-    startLine: range.start.line + 1,
-    startCharacter: range.start.character + 1,
-    endLine: range.end.line + 1,
-    endCharacter: range.end.character + 1
-  };
-}
-
-function serializeSymbolKind(kind: vscode.SymbolKind): string {
-  const label = (vscode.SymbolKind as Record<number, string>)[kind];
-  return label ?? String(kind);
-}
-
-function getPositionFromArgs(
-  args: Record<string, unknown>,
-  doc?: vscode.TextDocument
-): { position?: vscode.Position; line?: number; character?: number; error?: string } {
-  const rawLine = typeof args.line === 'number'
-    ? args.line
-    : (typeof args.lineNumber === 'number'
-      ? args.lineNumber
-      : (args.position && typeof args.position === 'object' && typeof (args.position as any).line === 'number'
-        ? (args.position as any).line
-        : undefined));
-  const rawChar = typeof args.character === 'number'
-    ? args.character
-    : (typeof args.column === 'number'
-      ? args.column
-      : (args.position && typeof args.position === 'object' && typeof (args.position as any).character === 'number'
-        ? (args.position as any).character
-        : undefined));
-  if (typeof rawLine !== 'number' || typeof rawChar !== 'number') {
-    return { error: 'line a character jsou povinne' };
-  }
-  const line = Math.max(1, Math.floor(rawLine));
-  const character = Math.max(1, Math.floor(rawChar));
-  if (doc) {
-    const clampedLine = clampNumber(line, 1, 1, doc.lineCount || 1);
-    const lineText = doc.lineAt(clampedLine - 1).text;
-    const clampedChar = clampNumber(character, 1, 1, Math.max(1, lineText.length + 1));
-    return {
-      position: new vscode.Position(clampedLine - 1, clampedChar - 1),
-      line: clampedLine,
-      character: clampedChar
-    };
-  }
-  return {
-    position: new vscode.Position(line - 1, character - 1),
-    line,
-    character
-  };
-}
-
-function serializeLocationInfo(location: vscode.Location | vscode.LocationLink): { path: string; range: RangeInfo } {
-  const uri = 'targetUri' in location ? location.targetUri : location.uri;
-  const range = 'targetRange' in location ? location.targetRange : location.range;
-  return {
-    path: getRelativePathForWorkspace(uri),
-    range: serializeRange(range)
-  };
-}
-
-function renderHoverContents(
-  contents:
-  | vscode.MarkedString
-  | vscode.MarkedString[]
-  | vscode.MarkdownString
-  | vscode.MarkdownString[]
-  | Array<vscode.MarkedString | vscode.MarkdownString>
-): string[] {
-  const list = Array.isArray(contents) ? contents : [contents];
-  const out: string[] = [];
-  for (const item of list) {
-    if (typeof item === 'string') {
-      out.push(item);
-    } else if (item && typeof item === 'object') {
-      const anyItem = item as { value?: string; language?: string };
-      if (typeof anyItem.value === 'string') {
-        out.push(anyItem.value);
-      } else if ('value' in item) {
-        out.push(String((item as any).value));
-      } else {
-        out.push(String(item));
-      }
-    }
-  }
-  return out;
-}
-
-function serializeDiagnosticSeverity(severity: vscode.DiagnosticSeverity): string {
-  switch (severity) {
-    case vscode.DiagnosticSeverity.Error:
-      return 'Error';
-    case vscode.DiagnosticSeverity.Warning:
-      return 'Warning';
-    case vscode.DiagnosticSeverity.Information:
-      return 'Information';
-    case vscode.DiagnosticSeverity.Hint:
-      return 'Hint';
-    default:
-      return String(severity);
-  }
-}
-
-function collectDocumentSymbols(
-  symbols: vscode.DocumentSymbol[],
-  maxDepth: number,
-  maxResults: number
-): { symbols: Array<Record<string, unknown>>; total: number; truncated: boolean } {
-  let count = 0;
-  let truncated = false;
-  const walk = (symbol: vscode.DocumentSymbol, depth: number): Record<string, unknown> | null => {
-    if (count >= maxResults) {
-      truncated = true;
-      return null;
-    }
-    count++;
-    const node: Record<string, unknown> = {
-      name: symbol.name,
-      kind: serializeSymbolKind(symbol.kind),
-      detail: symbol.detail,
-      range: serializeRange(symbol.range),
-      selectionRange: serializeRange(symbol.selectionRange)
-    };
-    if (symbol.children && symbol.children.length > 0 && depth < maxDepth) {
-      const children: Array<Record<string, unknown>> = [];
-      for (const child of symbol.children) {
-        const childNode = walk(child, depth + 1);
-        if (childNode) children.push(childNode);
-      }
-      node.children = children;
-    }
-    return node;
-  };
-  const result: Array<Record<string, unknown>> = [];
-  for (const symbol of symbols) {
-    const node = walk(symbol, 0);
-    if (node) result.push(node);
-  }
-  return { symbols: result, total: count, truncated };
-}
-
-function collectSymbolInformation(
-  symbols: vscode.SymbolInformation[],
-  maxResults: number
-): { symbols: Array<Record<string, unknown>>; total: number; truncated: boolean } {
-  const result: Array<Record<string, unknown>> = [];
-  let count = 0;
-  for (const symbol of symbols) {
-    if (count >= maxResults) break;
-    count++;
-    result.push({
-      name: symbol.name,
-      kind: serializeSymbolKind(symbol.kind),
-      containerName: symbol.containerName,
-      range: serializeRange(symbol.location.range)
-    });
-  }
-  return { symbols: result, total: count, truncated: count >= maxResults };
-}
-
-async function resolveSymbolPosition(
-  uri: vscode.Uri,
-  symbolName: string
-): Promise<vscode.Position | undefined> {
-  const docSymbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[] | vscode.SymbolInformation[]>(
-    'vscode.executeDocumentSymbolProvider',
-    uri
-  );
-  if (!docSymbols || docSymbols.length === 0) return undefined;
-  const lower = symbolName.toLowerCase();
-  if ('location' in (docSymbols[0] as any)) {
-    const infoSymbols = docSymbols as vscode.SymbolInformation[];
-    const match = infoSymbols.find(sym => sym.name.toLowerCase() === lower) ?? infoSymbols[0];
-    return match.location.range.start;
-  }
-  const walk = (symbols: vscode.DocumentSymbol[]): vscode.DocumentSymbol | undefined => {
-    let first: vscode.DocumentSymbol | undefined;
-    for (const symbol of symbols) {
-      if (!first) first = symbol;
-      if (symbol.name.toLowerCase() === lower) return symbol;
-      if (symbol.children && symbol.children.length > 0) {
-        const found = walk(symbol.children);
-        if (found) return found;
-      }
-    }
-    return first;
-  };
-  const match = walk(docSymbols as vscode.DocumentSymbol[]);
-  return match?.selectionRange.start;
-}
-
 function getFullDocumentRange(doc: vscode.TextDocument): vscode.Range {
   if (doc.lineCount === 0) {
     return new vscode.Range(0, 0, 0, 0);
@@ -4818,116 +4422,6 @@ async function applyFileContent(uri: vscode.Uri, newText: string): Promise<boole
   const applied = await vscode.workspace.applyEdit(edit);
   if (!applied) return false;
   return await doc.save();
-}
-
-interface PatchHunk {
-  oldStart: number;
-  oldLines: number;
-  newStart: number;
-  newLines: number;
-  lines: string[];
-}
-
-interface PatchFile {
-  oldPath?: string;
-  newPath?: string;
-  hunks: PatchHunk[];
-}
-
-function normalizePatchPath(input: string): string {
-  const trimmed = input.trim();
-  if (trimmed === '/dev/null') return '';
-  return trimmed.replace(/^a\//, '').replace(/^b\//, '');
-}
-
-function parseUnifiedDiff(diffText: string): PatchFile[] {
-  const lines = diffText.split(/\r\n|\n/);
-  const files: PatchFile[] = [];
-  let currentFile: PatchFile | null = null;
-  let currentHunk: PatchHunk | null = null;
-
-  for (const line of lines) {
-    if (line.startsWith('diff --git')) {
-      continue;
-    }
-    if (line.startsWith('--- ')) {
-      if (currentFile) files.push(currentFile);
-      currentFile = { oldPath: normalizePatchPath(line.slice(4)), newPath: undefined, hunks: [] };
-      currentHunk = null;
-      continue;
-    }
-    if (line.startsWith('+++ ')) {
-      if (!currentFile) {
-        currentFile = { oldPath: undefined, newPath: normalizePatchPath(line.slice(4)), hunks: [] };
-      } else {
-        currentFile.newPath = normalizePatchPath(line.slice(4));
-      }
-      continue;
-    }
-    if (line.startsWith('@@')) {
-      const match = /@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/.exec(line);
-      if (!match || !currentFile) continue;
-      const oldStart = parseInt(match[1], 10);
-      const oldLines = match[2] ? parseInt(match[2], 10) : 1;
-      const newStart = parseInt(match[3], 10);
-      const newLines = match[4] ? parseInt(match[4], 10) : 1;
-      currentHunk = { oldStart, oldLines, newStart, newLines, lines: [] };
-      currentFile.hunks.push(currentHunk);
-      continue;
-    }
-    if (currentHunk && (line.startsWith(' ') || line.startsWith('+') || line.startsWith('-') || line.startsWith('\\'))) {
-      currentHunk.lines.push(line);
-    }
-  }
-  if (currentFile) files.push(currentFile);
-  return files;
-}
-
-function applyUnifiedDiffToText(
-  original: string,
-  hunks: PatchHunk[]
-): { text?: string; error?: string; appliedHunks: number; totalHunks: number } {
-  const eol = detectEol(original);
-  const originalLines = original.length === 0 ? [] : splitLines(original);
-  const result: string[] = [];
-  let cursor = 0;
-  let appliedHunks = 0;
-  const totalHunks = hunks.length;
-
-  for (const hunk of hunks) {
-    const oldStartIndex = Math.max(0, hunk.oldStart - 1);
-    if (oldStartIndex < cursor || oldStartIndex > originalLines.length) {
-      return { error: 'hunk start out of range', appliedHunks, totalHunks };
-    }
-    result.push(...originalLines.slice(cursor, oldStartIndex));
-    let index = oldStartIndex;
-
-    for (const line of hunk.lines) {
-      if (!line) continue;
-      const prefix = line[0];
-      if (prefix === '\\') continue;
-      const content = line.slice(1);
-      if (prefix === ' ') {
-        if (originalLines[index] !== content) {
-          return { error: 'context mismatch', appliedHunks, totalHunks };
-        }
-        result.push(content);
-        index++;
-      } else if (prefix === '-') {
-        if (originalLines[index] !== content) {
-          return { error: 'delete mismatch', appliedHunks, totalHunks };
-        }
-        index++;
-      } else if (prefix === '+') {
-        result.push(content);
-      }
-    }
-    cursor = index;
-    appliedHunks++;
-  }
-
-  result.push(...originalLines.slice(cursor));
-  return { text: result.join(eol), appliedHunks, totalHunks };
 }
 
 async function runToolCall(
@@ -4990,7 +4484,7 @@ async function runToolCall(
     getRelativePathForWorkspace,
     getPositionFromArgs,
     resolveSymbolPosition,
-    serializeLocationInfo,
+    serializeLocationInfo: (loc: vscode.Location | vscode.LocationLink) => serializeLocationInfo(loc, getRelativePathForWorkspace),
     serializeRange,
     serializeSymbolKind,
     renderHoverContents,
