@@ -80,6 +80,7 @@ type DeterministicFallbackStats = {
   mode: DeterministicFallbackMode;
   tsTodo: ScenarioFallbackStats;
   nodeApi: ScenarioFallbackStats;
+  tsCsv: ScenarioFallbackStats;
   totalActivations: number;
   totalRecoveries: number;
   totalTargetedActivations: number;
@@ -625,6 +626,7 @@ function createDeterministicFallbackStats(mode: DeterministicFallbackMode): Dete
     mode,
     tsTodo: emptyScenario(),
     nodeApi: emptyScenario(),
+    tsCsv: emptyScenario(),
     totalActivations: 0,
     totalRecoveries: 0,
     totalTargetedActivations: 0,
@@ -643,7 +645,7 @@ function recomputeFallbackDependencyRate(stats: DeterministicFallbackStats): voi
   stats.fallbackDependencyRate = denominator > 0 ? stats.totalRecoveredByFallback / denominator : 0;
 }
 
-function recordDeterministicRawOutcome(context: EvalRunContext, target: 'tsTodo' | 'nodeApi', rawOk: boolean): void {
+function recordDeterministicRawOutcome(context: EvalRunContext, target: 'tsTodo' | 'nodeApi' | 'tsCsv', rawOk: boolean): void {
   const stats = context.deterministicFallbackStats;
   if (rawOk) {
     stats[target].rawPasses += 1;
@@ -655,7 +657,7 @@ function recordDeterministicRawOutcome(context: EvalRunContext, target: 'tsTodo'
   recomputeFallbackDependencyRate(stats);
 }
 
-function recordDeterministicRecoveredByFallback(context: EvalRunContext, target: 'tsTodo' | 'nodeApi'): void {
+function recordDeterministicRecoveredByFallback(context: EvalRunContext, target: 'tsTodo' | 'nodeApi' | 'tsCsv'): void {
   const stats = context.deterministicFallbackStats;
   stats[target].recoveredByFallback += 1;
   stats.totalRecoveredByFallback += 1;
@@ -664,7 +666,7 @@ function recordDeterministicRecoveredByFallback(context: EvalRunContext, target:
 
 function recordDeterministicFallbackActivation(
   context: EvalRunContext,
-  target: 'tsTodo' | 'nodeApi',
+  target: 'tsTodo' | 'nodeApi' | 'tsCsv',
   tier: DeterministicFallbackTier,
   recovered: boolean
 ): void {
@@ -6578,7 +6580,349 @@ export async function validateNodeProjectApiLarge(workspaceDir: string): Promise
   return { ok: diagnostics.length === 0, diagnostics, commands };
 }
 
-async function validateTsCsvOracle(workspaceDir: string, _context: EvalRunContext): Promise<ValidationResult> {
+// ── ts-csv-oracle deterministic fallback ──
+
+function buildTsCsvFallbackCsvTemplate(): string {
+  return [
+    'declare const require: any;',
+    '',
+    'export class CsvParser {',
+    '  private delimiter: string;',
+    '',
+    '  constructor(options?: { delimiter?: string }) {',
+    "    this.delimiter = (options && options.delimiter) || ',';",
+    '  }',
+    '',
+    '  parse(text: string): Record<string, string>[] {',
+    "    if (!text || !text.trim()) return [];",
+    "    const lines = text.replace(/\\r\\n/g, '\\n').split('\\n');",
+    '    const headerLine = lines[0];',
+    '    if (!headerLine) return [];',
+    '    const headers = this.splitRow(headerLine);',
+    '    const result: Record<string, string>[] = [];',
+    '    for (let i = 1; i < lines.length; i++) {',
+    '      const line = lines[i];',
+    "      if (!line.trim()) continue;",
+    '      const values = this.splitRow(line);',
+    '      const row: Record<string, string> = {};',
+    '      for (let j = 0; j < headers.length; j++) {',
+    "        row[headers[j]] = values[j] || '';",
+    '      }',
+    '      result.push(row);',
+    '    }',
+    '    return result;',
+    '  }',
+    '',
+    '  stringify(rows: Record<string, string>[]): string {',
+    '    if (rows.length === 0) return "";',
+    '    const headers = Object.keys(rows[0]);',
+    '    const lines: string[] = [headers.map(h => this.quoteField(h)).join(this.delimiter)];',
+    '    for (const row of rows) {',
+    '      lines.push(headers.map(h => this.quoteField(String(row[h] ?? ""))).join(this.delimiter));',
+    '    }',
+    "    return lines.join('\\n') + '\\n';",
+    '  }',
+    '',
+    '  private quoteField(field: string): string {',
+    '    if (field.indexOf(this.delimiter) >= 0 || field.indexOf(\'"\') >= 0 || field.indexOf("\\n") >= 0) {',
+    '      return \'"\' + field.replace(/"/g, \'""\') + \'"\';',
+    '    }',
+    '    return field;',
+    '  }',
+    '',
+    '  private splitRow(line: string): string[] {',
+    '    const fields: string[] = [];',
+    "    let current = '';",
+    '    let inQuotes = false;',
+    '    let i = 0;',
+    '    while (i < line.length) {',
+    '      const ch = line[i];',
+    '      if (inQuotes) {',
+    '        if (ch === \'"\') {',
+    '          if (i + 1 < line.length && line[i + 1] === \'"\') {',
+    '            current += \'"\';',
+    '            i += 2;',
+    '          } else {',
+    '            inQuotes = false;',
+    '            i++;',
+    '          }',
+    '        } else {',
+    '          current += ch;',
+    '          i++;',
+    '        }',
+    '      } else {',
+    '        if (ch === \'"\') {',
+    '          inQuotes = true;',
+    '          i++;',
+    '        } else if (ch === this.delimiter) {',
+    '          fields.push(current);',
+    "          current = '';",
+    '          i++;',
+    '        } else {',
+    '          current += ch;',
+    '          i++;',
+    '        }',
+    '      }',
+    '    }',
+    '    fields.push(current);',
+    '    return fields;',
+    '  }',
+    '}',
+    '',
+    'export class CsvFilter {',
+    '  private rows: Record<string, string>[];',
+    '',
+    '  constructor(rows: Record<string, string>[]) {',
+    '    this.rows = rows;',
+    '  }',
+    '',
+    '  where(predicate: (row: Record<string, string>) => boolean): Record<string, string>[] {',
+    '    return this.rows.filter(predicate);',
+    '  }',
+    '',
+    '  select(columns: string[]): Record<string, string>[] {',
+    '    return this.rows.map(row => {',
+    '      const out: Record<string, string> = {};',
+    '      for (const col of columns) {',
+    "        out[col] = row[col] ?? '';",
+    '      }',
+    '      return out;',
+    '    });',
+    '  }',
+    '',
+    '  sortBy(column: string): Record<string, string>[] {',
+    '    return [...this.rows].sort((a, b) => {',
+    "      const va = a[column] ?? '';",
+    "      const vb = b[column] ?? '';",
+    '      return va < vb ? -1 : va > vb ? 1 : 0;',
+    '    });',
+    '  }',
+    '',
+    '  count(): number {',
+    '    return this.rows.length;',
+    '  }',
+    '}',
+    ''
+  ].join('\n');
+}
+
+function buildTsCsvFallbackCliTemplate(): string {
+  return [
+    'declare const require: any;',
+    'declare const process: any;',
+    '',
+    "const fs = require('node:fs');",
+    "const path = require('node:path');",
+    "const { CsvParser } = require('./csv');",
+    '',
+    'function main(): number {',
+    '  const args: string[] = process.argv.slice(2);',
+    "  const command = args[0] || '';",
+    '',
+    "  if (command === '--help' || command === '-h' || command === '') {",
+    "    console.log('Usage:');",
+    "    console.log('  parse --input <file>   Parse CSV and output JSON');",
+    "    console.log('  stats --input <file>   Show CSV statistics');",
+    "    console.log('  --help                 Show this help');",
+    '    return 0;',
+    '  }',
+    '',
+    "  const inputIdx = args.indexOf('--input');",
+    '  if (inputIdx < 0 || inputIdx + 1 >= args.length) {',
+    "    console.error('Missing --input <file>');",
+    '    return 1;',
+    '  }',
+    '  const inputFile = args[inputIdx + 1];',
+    '',
+    '  let content: string;',
+    '  try {',
+    "    content = fs.readFileSync(inputFile, 'utf8');",
+    '  } catch (err: any) {',
+    "    console.error('Error reading file: ' + String(err && err.message ? err.message : err));",
+    '    return 1;',
+    '  }',
+    '',
+    '  const parser = new CsvParser();',
+    '  const rows = parser.parse(content);',
+    '',
+    "  if (command === 'parse') {",
+    '    console.log(JSON.stringify(rows, null, 2));',
+    '    return 0;',
+    '  }',
+    '',
+    "  if (command === 'stats') {",
+    '    const columns = rows.length > 0 ? Object.keys(rows[0]) : [];',
+    "    console.log('Rows: ' + rows.length);",
+    "    console.log('Columns: ' + columns.join(', '));",
+    '    return 0;',
+    '  }',
+    '',
+    "  console.error('Unknown command: ' + command);",
+    '  return 1;',
+    '}',
+    '',
+    'const exitCode = main();',
+    'if (typeof process !== "undefined" && typeof process.exit === "function") process.exit(exitCode);',
+    ''
+  ].join('\n');
+}
+
+async function stabilizeTsCsvWorkspace(workspaceDir: string): Promise<void> {
+  const canonicalTsconfig = {
+    compilerOptions: {
+      target: 'ES2020',
+      module: 'commonjs',
+      moduleResolution: 'node',
+      types: [] as string[],
+      rootDir: 'src',
+      outDir: 'dist',
+      strict: false,
+      noImplicitAny: false,
+      useUnknownInCatchVariables: false,
+      esModuleInterop: true,
+      skipLibCheck: true
+    },
+    include: ['src']
+  };
+
+  const canonicalPackage = {
+    name: 'ts-csv-oracle-solution',
+    version: '1.0.0',
+    private: true
+  };
+
+  const canonicalReadme = [
+    '# TypeScript CSV Processor',
+    '',
+    'A CSV parser, filter and CLI tool written in TypeScript with no external dependencies.',
+    '',
+    '## Usage',
+    '',
+    '- `node dist/cli.js --help`',
+    '- `node dist/cli.js parse --input data.csv`',
+    '- `node dist/cli.js stats --input data.csv`',
+    ''
+  ].join('\n');
+
+  try {
+    await fs.promises.mkdir(path.join(workspaceDir, 'src'), { recursive: true });
+    const csvContent = normalizeTsTodoCliRuntimeGlobals(buildTsCsvFallbackCsvTemplate());
+    await fs.promises.writeFile(path.join(workspaceDir, 'src', 'csv.ts'), csvContent, 'utf8');
+    const cliContent = normalizeTsTodoCliRuntimeGlobals(buildTsCsvFallbackCliTemplate());
+    await fs.promises.writeFile(path.join(workspaceDir, 'src', 'cli.ts'), cliContent, 'utf8');
+  } catch {
+    // best-effort
+  }
+
+  try {
+    await fs.promises.writeFile(path.join(workspaceDir, 'tsconfig.json'), JSON.stringify(canonicalTsconfig, null, 2) + '\n', 'utf8');
+  } catch {
+    // best-effort
+  }
+
+  try {
+    const packagePath = path.join(workspaceDir, 'package.json');
+    let pkg: any = {};
+    if (fs.existsSync(packagePath)) {
+      try { pkg = JSON.parse(await fs.promises.readFile(packagePath, 'utf8')); } catch { pkg = {}; }
+    }
+    pkg = { ...canonicalPackage, ...pkg };
+    if (pkg.type === 'module') delete pkg.type;
+    delete pkg.dependencies;
+    delete pkg.devDependencies;
+    await fs.promises.writeFile(packagePath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
+  } catch {
+    // best-effort
+  }
+
+  try {
+    const readmePath = path.join(workspaceDir, 'README.md');
+    if (!fs.existsSync(readmePath) || (await fs.promises.readFile(readmePath, 'utf8')).trim().length < 50) {
+      await fs.promises.writeFile(readmePath, canonicalReadme, 'utf8');
+    }
+  } catch {
+    // best-effort
+  }
+}
+
+async function applyTargetedTsCsvFallback(workspaceDir: string, previous: ValidationResult): Promise<boolean> {
+  let changed = false;
+  const fullText = collectValidationDebugText(previous);
+  const lower = fullText.toLowerCase();
+
+  const shouldFixCsv = matchesAnyPattern(lower, [
+    /src\/csv\.ts/,
+    /csvparser/,
+    /csvfilter/,
+    /unterminated string literal/,
+    /class csvparser/,
+    /class csvfilter/
+  ]);
+  const shouldFixCli = matchesAnyPattern(lower, [
+    /src\/cli\.ts/,
+    /dist\/cli\.js/,
+    /cannot redeclare block-scoped variable/,
+    /commander|yargs|minimist/
+  ]);
+  const shouldFixTsconfig = matchesAnyPattern(lower, [
+    /tsconfig\.json/,
+    /compileroptions/,
+    /typescript compiler not found/
+  ]);
+
+  const csvPath = path.join(workspaceDir, 'src', 'csv.ts');
+  const cliPath = path.join(workspaceDir, 'src', 'cli.ts');
+  const tsconfigPath = path.join(workspaceDir, 'tsconfig.json');
+  const packagePath = path.join(workspaceDir, 'package.json');
+
+  if (shouldFixCsv) {
+    await fs.promises.mkdir(path.dirname(csvPath), { recursive: true });
+    await fs.promises.writeFile(csvPath, normalizeTsTodoCliRuntimeGlobals(buildTsCsvFallbackCsvTemplate()), 'utf8');
+    changed = true;
+  }
+
+  if (shouldFixCli) {
+    await fs.promises.mkdir(path.dirname(cliPath), { recursive: true });
+    await fs.promises.writeFile(cliPath, normalizeTsTodoCliRuntimeGlobals(buildTsCsvFallbackCliTemplate()), 'utf8');
+    changed = true;
+  }
+
+  if (shouldFixTsconfig) {
+    const tsconfig = {
+      compilerOptions: {
+        target: 'ES2020', module: 'commonjs', moduleResolution: 'node', types: [] as string[],
+        rootDir: 'src', outDir: 'dist', strict: false, noImplicitAny: false,
+        useUnknownInCatchVariables: false, esModuleInterop: true, skipLibCheck: true
+      },
+      include: ['src']
+    };
+    await fs.promises.writeFile(tsconfigPath, JSON.stringify(tsconfig, null, 2) + '\n', 'utf8');
+    changed = true;
+  }
+
+  try {
+    if (fs.existsSync(packagePath)) {
+      const pkg = JSON.parse(await fs.promises.readFile(packagePath, 'utf8'));
+      let touched = false;
+      if (pkg.type === 'module') { delete pkg.type; touched = true; }
+      if (pkg.dependencies && Object.keys(pkg.dependencies).length > 0) { delete pkg.dependencies; touched = true; }
+      if (pkg.devDependencies && Object.keys(pkg.devDependencies).length > 0) { delete pkg.devDependencies; touched = true; }
+      if (touched) {
+        await fs.promises.writeFile(packagePath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
+        changed = true;
+      }
+    }
+  } catch {
+    // best-effort
+  }
+
+  return changed;
+}
+
+async function validateTsCsvOracleOnce(
+  workspaceDir: string,
+  applyDeterministicFallback: boolean
+): Promise<ValidationResult> {
   const diagnostics: string[] = [];
   const required = ['README.md', 'package.json', 'tsconfig.json', 'src/csv.ts', 'src/cli.ts'];
 
@@ -6590,6 +6934,10 @@ async function validateTsCsvOracle(workspaceDir: string, _context: EvalRunContex
     await installOracleFiles({ oracleDir: ORACLE_TS_CSV_DIR, workspaceDir });
   } catch (e: any) {
     diagnostics.push(`Failed to install oracle tests: ${String(e?.message || e)}`);
+  }
+
+  if (applyDeterministicFallback) {
+    await stabilizeTsCsvWorkspace(workspaceDir);
   }
 
   for (const rel of required) {
@@ -6747,6 +7095,43 @@ async function validateTsCsvOracle(workspaceDir: string, _context: EvalRunContex
   }
 
   return { ok: diagnostics.length === 0, diagnostics, commands };
+}
+
+async function validateTsCsvOracle(workspaceDir: string, context: EvalRunContext): Promise<ValidationResult> {
+  const mode = isDeterministicFallbackEnabled('ts-csv-oracle') ? context.deterministicFallbackMode : 'off';
+  const raw = await validateTsCsvOracleOnce(workspaceDir, false);
+  recordDeterministicRawOutcome(context, 'tsCsv', raw.ok);
+
+  if (mode === 'off') return raw;
+  if (mode === 'on-fail' && raw.ok) return raw;
+
+  const markers: string[] = [];
+  const targetedApplied = await applyTargetedTsCsvFallback(workspaceDir, raw);
+  if (targetedApplied) {
+    const targeted = await validateTsCsvOracleOnce(workspaceDir, false);
+    recordDeterministicFallbackActivation(context, 'tsCsv', 'targeted', targeted.ok);
+    if (targeted.ok && !raw.ok) recordDeterministicRecoveredByFallback(context, 'tsCsv');
+    markers.push(
+      targeted.ok
+        ? `Deterministic fallback activated (ts-csv-oracle, mode=${mode}, tier=targeted) and recovered validation.`
+        : `Deterministic fallback activated (ts-csv-oracle, mode=${mode}, tier=targeted) but validation still failed.`
+    );
+    if (targeted.ok) {
+      return { ...targeted, diagnostics: [...markers, ...targeted.diagnostics] };
+    }
+  } else if (mode === 'always') {
+    markers.push('Deterministic fallback (tier=targeted) skipped: no targeted patch candidates found.');
+  }
+
+  const canonical = await validateTsCsvOracleOnce(workspaceDir, true);
+  recordDeterministicFallbackActivation(context, 'tsCsv', 'canonical', canonical.ok);
+  if (canonical.ok && !raw.ok) recordDeterministicRecoveredByFallback(context, 'tsCsv');
+  markers.push(
+    canonical.ok
+      ? `Deterministic fallback activated (ts-csv-oracle, mode=${mode}, tier=canonical) and recovered validation.`
+      : `Deterministic fallback activated (ts-csv-oracle, mode=${mode}, tier=canonical) but validation still failed.`
+  );
+  return { ...canonical, diagnostics: [...markers, ...canonical.diagnostics] };
 }
 
 function sleep(ms: number): Promise<void> {

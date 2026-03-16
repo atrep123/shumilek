@@ -339,7 +339,7 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
           onStatus?.(`đź”„ Opakuji krok ${step.id} (pokus ${stepRetries + 1})`);
           
           // Rebuild instruction from original + retry suffix (prevent accumulation)
-          const lastResult = results.length > 0 ? results[results.length - 1] : '';
+          const _lastResult = results.length > 0 ? results[results.length - 1] : '';
           step.instruction = `${originalInstruction}\n\n[RETRY ATTEMPT ${stepRetries + 1}: The previous attempt was rejected. Review the feedback carefully and address the specific issues. Do NOT repeat the same mistake.]`;
         }
 

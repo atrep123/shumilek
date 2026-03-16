@@ -7,7 +7,7 @@ import { resolveTimeoutMs, getToolsEnabledSetting } from './configResolver';
 // MINIMAL WEBVIEW FOR DEBUGGING
 // ============================================================
 
-export function getMinimalWebviewContent(webview: vscode.Webview): string {
+export function getMinimalWebviewContent(_webview: vscode.Webview): string {
   const nonce = getNonce();
 
   return '<!DOCTYPE html>' +
@@ -106,7 +106,7 @@ export function getMinimalWebviewContent(webview: vscode.Webview): string {
 // WEBVIEW CONTENT
 // ============================================================
 
-export function getWebviewContent(webview: vscode.Webview, initialMessages: ChatMessage[]): string {
+export function getWebviewContent(_webview: vscode.Webview, _initialMessages: ChatMessage[]): string {
   const nonce = getNonce();
   const safeModeEnabled = vscode.workspace.getConfiguration('shumilek').get<boolean>('toolsConfirmEdits', false);
   const sendWatchdogMs = Math.max(15000, resolveTimeoutMs(vscode.workspace.getConfiguration('shumilek')));

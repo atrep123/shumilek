@@ -208,7 +208,7 @@ function loadPolicy(configPath?: string): TunerPolicy {
 
 function getCheckpointId(report: CheckpointReport): string {
   const latestRunDir = String(report?.checkpoint?.latestRunDir || '').trim();
-  const runName = latestRunDir ? path.basename(latestRunDir) : 'unknown-run';
+  const runName = latestRunDir ? path.win32.basename(latestRunDir) : 'unknown-run';
   return `${runName}@manifest-v${Math.max(1, Number(report?.manifestVersion) || 1)}`;
 }
 

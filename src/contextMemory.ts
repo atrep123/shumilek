@@ -54,7 +54,6 @@ const FILE_PATTERN = /(?:(?:src|test|scripts|projects|docs)\/[\w./-]+|[\w-]+\.(?
 const ERROR_PATTERN = /(?:error|chyba|fail|selhalo|bug|broken|nefunguje)[:\s]+(.{10,80})/gi;
 const DECISION_PATTERN = /(?:rozhodl|decided|implemented|zvolil|pouzijeme|will use|switched to|changed to|vyber(?:al|eme))[:\s]+(.{10,100})/gi;
 const TECH_PATTERN = /(?:npm|node|typescript|python|ollama|model|version|dependency|config|setting)[:\s]+(.{10,80})/gi;
-const TOOL_ACTION_PATTERN = /(?:write_file|replace_lines|run_terminal_command|search_in_files|read_file)\b/g;
 
 /**
  * Extract session facts from a set of messages.

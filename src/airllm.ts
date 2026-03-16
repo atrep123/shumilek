@@ -16,7 +16,8 @@ export function escapeForBashDoubleQuotes(value: string): string {
 }
 
 export function toWslPath(winPath: string): string {
-  const resolved = path.resolve(winPath);
+  // Normalize Windows-style input deterministically even when tests run on Linux.
+  const resolved = path.win32.resolve(winPath);
   const match = /^([A-Za-z]):[\\/](.*)$/.exec(resolved);
   if (!match) {
     return resolved.replace(/\\/g, '/');

@@ -553,7 +553,7 @@ export function updateCheckpointRegistry(
 ): CheckpointRegistry {
   const latestRunDir = String(report.checkpoint.latestRunDir || '').trim();
   const checkpointId = latestRunDir
-    ? `${path.basename(latestRunDir)}@manifest-v${report.manifestVersion}`
+    ? `${path.win32.basename(latestRunDir)}@manifest-v${report.manifestVersion}`
     : `checkpoint-${Date.now()}`;
   const existing: CheckpointRegistry = fs.existsSync(registryPath)
     ? readJsonFile<CheckpointRegistry>(registryPath)

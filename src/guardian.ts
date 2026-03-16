@@ -473,7 +473,7 @@ export class ResponseGuardian {
       }
 
       if (lastLine.length > 0) {
-        const lastChar = lastLine[lastLine.length - 1];
+        const _lastChar = lastLine[lastLine.length - 1];
         // Acceptable endings: sentence punctuation, code fence, closing brackets, list/heading markers
         const validEndings = /[.!?;:)\]}>`"'\-—…*#|\\]$/;
         const isCodeFence = lastLine.startsWith('```');

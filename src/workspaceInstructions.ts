@@ -7,7 +7,6 @@
  */
 
 import * as vscode from 'vscode';
-import * as path from 'path';
 
 /** Files to look for, in priority order. First found wins. */
 const INSTRUCTION_FILES = [
