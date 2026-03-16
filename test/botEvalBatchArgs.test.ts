@@ -5,7 +5,7 @@ import { parseBatchArgs } from '../scripts/botEvalBatch';
 describe('botEvalBatch argument parsing', () => {
   it('uses default scenarios when no scenario flags are provided', () => {
     const opts = parseBatchArgs([]);
-    assert.deepEqual(opts.scenarios, ['ts-todo-oracle', 'node-api-oracle', 'python-ai-stdlib-oracle']);
+    assert.deepEqual(opts.scenarios, ['ts-todo-oracle', 'node-api-oracle', 'ts-csv-oracle', 'python-ai-stdlib-oracle', 'node-project-api-large']);
   });
 
   it('treats --scenario as explicit scenario selection (replaces defaults)', () => {
@@ -32,6 +32,6 @@ describe('botEvalBatch argument parsing', () => {
 
   it('falls back to defaults when explicit scenario list is empty', () => {
     const opts = parseBatchArgs(['--scenarios', ',']);
-    assert.deepEqual(opts.scenarios, ['ts-todo-oracle', 'node-api-oracle', 'python-ai-stdlib-oracle']);
+    assert.deepEqual(opts.scenarios, ['ts-todo-oracle', 'node-api-oracle', 'ts-csv-oracle', 'python-ai-stdlib-oracle', 'node-project-api-large']);
   });
 });
