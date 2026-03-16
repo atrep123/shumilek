@@ -3,6 +3,10 @@ import { Logger } from './logger';
 import * as path from 'path';
 import { exec } from 'child_process';
 import fetch, { Headers, Response } from 'node-fetch';
+import {
+  buildAirLLMStartCommand as buildAirLLMStartCommandPure,
+  readAirLLMConfig
+} from './airllm';
 import { 
   workspaceIndexer, 
   setWorkspaceLogger,
@@ -14,6 +18,16 @@ import { TurnOrchestrator } from './orchestration';
 import { PIPELINE_STATUS_ICONS, PIPELINE_STATUS_TEXT } from './statusMessages';
 import { parseToolCalls, resolveToolPermissionScope } from './toolingProtocol';
 import { getMiniUnavailableMessage, isMiniAccepted } from './validationPolicy';
+import {
+  runValidationPipeline as runValidationPipelinePure,
+  ValidationPipelineConfig,
+  ValidationPipelineResult,
+  ValidationPipelineDeps,
+  ToolSessionState,
+  ToolCallRecord,
+  VerificationSummary,
+  VerificationCommandResult
+} from './validationPipeline';
 import { 
   Rozum, 
   setRozumLogger, 
@@ -183,40 +197,11 @@ interface ToolResult {
   approved?: boolean;
 }
 
-interface ToolCallRecord {
-  tool: string;
-  args: Record<string, unknown>;
-  ok: boolean;
-  message?: string;
-}
-
-interface ToolSessionState {
-  hadMutations: boolean;
-  mutationTools: string[];
-  lastWritePath?: string;
-  lastWriteAction?: 'created' | 'updated';
-  toolCallRecords?: ToolCallRecord[];
-}
-
 interface ToolCallOptions {
   forceJson?: boolean;
   systemPromptOverride?: string;
   primaryModel?: string;
   fallbackModel?: string;
-}
-
-interface VerificationCommandResult {
-  command: string;
-  ok: boolean;
-  exitCode: number | null;
-  stdout: string;
-  stderr: string;
-}
-
-interface VerificationSummary {
-  ok: boolean;
-  ran: VerificationCommandResult[];
-  failed: VerificationCommandResult[];
 }
 
 // === Global State ===
@@ -288,91 +273,12 @@ async function runPostEditVerification(timeoutMs: number): Promise<VerificationS
   return { ok: failed.length === 0, ran, failed };
 }
 
-function quoteForPowerShell(value: string): string {
-  return `'${value.replace(/'/g, "''")}'`;
-}
-
-function escapeForBashDoubleQuotes(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\$/g, '\\$');
-}
-
-function toWslPath(winPath: string): string {
-  const resolved = path.resolve(winPath);
-  const match = /^([A-Za-z]):[\\/](.*)$/.exec(resolved);
-  if (!match) {
-    return resolved.replace(/\\/g, '/');
-  }
-  const drive = match[1].toLowerCase();
-  const rest = match[2].replace(/\\/g, '/');
-  return `/mnt/${drive}/${rest}`;
-}
-
-function expandAirllmCommandTemplate(template: string, values: Record<string, string>): string {
-  let output = template;
-  for (const [key, value] of Object.entries(values)) {
-    output = output.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
-  }
-  return output;
-}
-
 function buildAirLLMStartCommand(
   context: vscode.ExtensionContext,
   config: vscode.WorkspaceConfiguration
 ): { command: string; baseUrl: string } {
-  const serverUrl = config.get<string>('airllm.serverUrl', 'http://localhost:11435');
-  const { baseUrl, host, port } = parseServerUrl(serverUrl, 'http://localhost:11435');
-  const model = (config.get<string>('airllm.model', 'Qwen/Qwen2.5-72B-Instruct') || '').trim() || 'Qwen/Qwen2.5-72B-Instruct';
-  const compression = (config.get<string>('airllm.compression', 'none') || '').trim() || 'none';
-  const dtype = (config.get<string>('airllm.dtype', 'auto') || '').trim() || 'auto';
-  const cacheDir = (config.get<string>('airllm.cacheDir', '') || '').trim();
-  const useKvCache = config.get<boolean>('airllm.useKvCache', false);
-  const runInWsl = config.get<boolean>('airllm.runInWsl', false);
-  const wslDistro = (config.get<string>('airllm.wslDistro', 'Ubuntu') || '').trim();
-  const wslUser = (config.get<string>('airllm.wslUser', '') || '').trim();
-  const customCmd = (config.get<string>('airllm.startCommand', '') || '').trim();
-  const kvCacheArg = useKvCache ? '--kv-cache' : '';
-  const kvCacheFlag = kvCacheArg ? ` ${kvCacheArg}` : '';
-
   const scriptPath = path.join(context.extensionUri.fsPath, 'scripts', 'airllm_server.py');
-  const scriptArg = runInWsl ? toWslPath(scriptPath) : scriptPath;
-  const templateValues = {
-    model,
-    compression,
-    dtype,
-    host,
-    port: String(port),
-    script: scriptArg,
-    cacheDir,
-    kvCacheArg,
-    kvCacheFlag,
-    useKvCache: useKvCache ? 'true' : 'false'
-  };
-
-  if (customCmd) {
-    return { command: expandAirllmCommandTemplate(customCmd, templateValues), baseUrl };
-  }
-
-  if (runInWsl) {
-    const cacheWsl = cacheDir
-      ? (cacheDir.includes(':') || cacheDir.startsWith('\\\\') ? toWslPath(cacheDir) : cacheDir)
-      : '';
-    const envPrefix = cacheWsl
-      ? `export HF_HOME="${escapeForBashDoubleQuotes(cacheWsl)}"; export TRANSFORMERS_CACHE="${escapeForBashDoubleQuotes(cacheWsl)}"; export HUGGINGFACE_HUB_CACHE="${escapeForBashDoubleQuotes(cacheWsl)}"; `
-      : '';
-    const bashCmd = `${envPrefix}python3 "${escapeForBashDoubleQuotes(scriptArg)}" --model "${escapeForBashDoubleQuotes(model)}" --compression "${escapeForBashDoubleQuotes(compression)}" --dtype "${escapeForBashDoubleQuotes(dtype)}" --host "${escapeForBashDoubleQuotes(host)}" --port ${port} --preload${kvCacheFlag}`;
-    const bashArg = bashCmd.replace(/'/g, "''");
-    const wslParts: string[] = ['wsl'];
-    if (wslDistro) wslParts.push('-d', wslDistro);
-    if (wslUser) wslParts.push('-u', wslUser);
-    wslParts.push('--', 'bash', '-lc', `'${bashArg}'`);
-    return { command: wslParts.join(' '), baseUrl };
-  }
-
-  const envPrefix = cacheDir
-    ? `$env:HF_HOME=${quoteForPowerShell(cacheDir)}; $env:TRANSFORMERS_CACHE=${quoteForPowerShell(cacheDir)}; $env:HUGGINGFACE_HUB_CACHE=${quoteForPowerShell(cacheDir)}; `
-    : '';
-  const command = `${envPrefix}python ${quoteForPowerShell(scriptArg)} --model ${quoteForPowerShell(model)} --compression ${quoteForPowerShell(compression)} --dtype ${quoteForPowerShell(dtype)} --host ${quoteForPowerShell(host)} --port ${port} --preload${kvCacheFlag}`;
-  return { command, baseUrl };
+  return buildAirLLMStartCommandPure(scriptPath, readAirLLMConfig(config));
 }
 
 async function startAirLLMServer(context: vscode.ExtensionContext): Promise<void> {
@@ -1857,325 +1763,33 @@ async function handleChat(
   return handleChatInternal(wrapPanel(panel), context, prompt, messages, retryCount);
 }
 
-// === VALIDATION PIPELINE (shared between step-mode and single-call) ===
+// === VALIDATION PIPELINE (delegates to validationPipeline.ts) ===
 
-interface ValidationPipelineConfig {
-  trimmedPrompt: string;
-  chatMessages: ChatMessage[];
-  stepMode: boolean;
-  panel: WebviewWrapper;
-  // Self-correction
-  toolCallsEnabled: boolean;
-  baseUrl: string;
-  writerModel: string;
-  toolPromptForMain: string;
-  toolPrimaryModel: string;
-  toolsFallbackModel: string;
-  toolsConfirmEdits: boolean;
-  stepTimeout: number;
-  autoApprovePolicy: AutoApprovePolicy;
-  abortSignal?: AbortSignal;
-  // Validators
-  guardianEnabled: boolean;
-  miniModelEnabled: boolean;
-  validationPolicy: ValidationPolicy;
-  validatorLogsEnabled: boolean;
-  summarizerEnabled: boolean;
-  summarizerModel: string;
-  timeout: number;
-  // External validators
-  rewardEnabled: boolean;
-  rewardEndpoint: string;
-  rewardThreshold: number;
-  hhemEnabled: boolean;
-  hhemEndpoint: string;
-  hhemThreshold: number;
-  ragasEnabled: boolean;
-  ragasEndpoint: string;
-  ragasThreshold: number;
-}
-
-interface ValidationPipelineResult {
-  fullResponse: string;
-  postEditVerification: VerificationSummary | null;
-  hallucinationResult: HallucinationResult;
-  guardianResult: GuardianResult;
-  miniResult: MiniModelResult | null;
-  qualityChecks: QualityCheckResult[];
-  external: {
-    rewardResult: QualityCheckResult;
-    hhemResult: QualityCheckResult;
-    ragasResult: QualityCheckResult;
-    results: QualityCheckResult[];
+function getValidationPipelineDeps(): ValidationPipelineDeps {
+  return {
+    postToAllWebviews,
+    log: (msg: string) => outputChannel?.appendLine(msg),
+    guardianStats,
+    hallucinationDetector,
+    guardian,
+    responseHistoryManager,
+    svedomi,
+    generateWithTools,
+    runPostEditVerification,
+    runExternalValidators,
+    summarizeResponse,
+    buildStructuredOutput,
+    getMiniUnavailableMessage,
+    isMiniAccepted
   };
-  summary: string | null;
-  structuredOutput: string;
 }
 
-/**
- * Runs the full validation pipeline: post-edit verification, hallucination detection,
- * Guardian analysis, response history check, Svedomi validation, quality checks,
- * external validators, summarizer, and structured output assembly.
- *
- * Returns null if publishing is blocked by fail-closed verification failure.
- */
 async function runValidationPipeline(
   fullResponse: string,
   toolSession: ToolSessionState,
   cfg: ValidationPipelineConfig
 ): Promise<ValidationPipelineResult | null> {
-
-  // === POST-EDIT VERIFICATION ===
-  let postEditVerification: VerificationSummary | null = null;
-  if (fullResponse && toolSession.hadMutations) {
-    postToAllWebviews({ type: 'pipelineStatus', icon: '✅', text: 'Overuji lint/test/build po editaci...', statusType: 'validation', loading: true });
-    postEditVerification = await runPostEditVerification(cfg.stepTimeout);
-    if (postEditVerification.ran.length > 0) {
-      for (const cmd of postEditVerification.ran) {
-        outputChannel?.appendLine(`[Verify] ${cmd.command} => ${cmd.ok ? 'OK' : `FAIL(${cmd.exitCode})`}`);
-      }
-    }
-    if (!postEditVerification.ok) {
-      const firstFail = postEditVerification.failed[0];
-      const detail = firstFail ? `${firstFail.command} failed` : 'verification failed';
-
-      const errorOutput = firstFail
-        ? (firstFail.stderr || firstFail.stdout || '').slice(0, 3000)
-        : '';
-      if (errorOutput && cfg.toolCallsEnabled) {
-        outputChannel?.appendLine(`[SelfCorrect] Post-edit verification failed, attempting auto-fix for: ${detail}`);
-        postToAllWebviews({ type: 'pipelineStatus', icon: '🔧', text: `Auto-oprava: ${detail}`, statusType: 'step', loading: true });
-        const fixPrompt = [
-          'SELF-CORRECTION: The code changes you made caused build/test/lint errors.',
-          `FAILED COMMAND: ${firstFail?.command ?? 'unknown'}`,
-          'ERROR OUTPUT:',
-          errorOutput,
-          '',
-          'Fix ALL errors using write_file or replace_lines. Do not explain, just fix.'
-        ].join('\n');
-        const fixMessages: ChatMessage[] = [
-          ...cfg.chatMessages.slice(-3),
-          { role: 'system', content: fixPrompt }
-        ];
-        const fixResult = await generateWithTools(
-          cfg.panel, cfg.baseUrl, cfg.writerModel, cfg.toolPromptForMain, fixMessages, cfg.stepTimeout,
-          3, cfg.toolsConfirmEdits, { requireToolCall: true, requireMutation: true },
-          { systemPromptOverride: cfg.toolPromptForMain, primaryModel: cfg.toolPrimaryModel, fallbackModel: cfg.toolsFallbackModel },
-          cfg.abortSignal, toolSession, cfg.autoApprovePolicy
-        );
-        outputChannel?.appendLine(`[SelfCorrect] Fix result: ${fixResult.slice(0, 200)}`);
-
-        const reVerify = await runPostEditVerification(cfg.stepTimeout);
-        if (reVerify.ok) {
-          outputChannel?.appendLine('[SelfCorrect] Post-edit re-verification PASSED');
-          postToAllWebviews({ type: 'pipelineStatus', icon: '✅', text: 'Auto-oprava uspesna!', statusType: 'step', loading: false });
-          fullResponse += `\n\n[Auto-corrected: ${detail}]`;
-          postEditVerification = reVerify;
-        } else {
-          outputChannel?.appendLine('[SelfCorrect] Post-edit re-verification still FAILED');
-          if (cfg.validationPolicy === 'fail-closed') {
-            postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
-            return null;
-          }
-          postToAllWebviews({ type: 'guardianAlert', message: `Verify warning (auto-fix failed): ${detail}` });
-          fullResponse += `\n\n[Verify warning] ${detail} (auto-fix attempted but failed)`;
-        }
-      } else {
-        if (cfg.validationPolicy === 'fail-closed') {
-          postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
-          return null;
-        }
-        postToAllWebviews({ type: 'guardianAlert', message: `Verify warning: ${detail}` });
-        fullResponse += `\n\n[Verify warning] ${detail}`;
-      }
-    }
-  }
-
-  // === HALLUCINATION DETECTION ===
-  postToAllWebviews({ type: 'pipelineStatus', icon: '🔮', text: 'Kontrola halucinací...', statusType: 'validation', loading: true });
-
-  const hallucinationResult = hallucinationDetector.analyze(fullResponse, cfg.trimmedPrompt, cfg.chatMessages);
-  if (hallucinationResult.isHallucination) {
-    guardianStats.hallucinationsDetected++;
-    outputChannel?.appendLine(`[HallucinationDetector] HALUCINACE detekovana (${(hallucinationResult.confidence * 100).toFixed(1)}%)`);
-    outputChannel?.appendLine(`[HallucinationDetector] Kategorie: ${hallucinationResult.category}`);
-    postToAllWebviews({
-      type: 'guardianAlert',
-      message: `🔮 Halucinace: ${hallucinationDetector.getSummary(hallucinationResult)}`
-    });
-  } else {
-    outputChannel?.appendLine(`[HallucinationDetector] OK: ${hallucinationDetector.getSummary(hallucinationResult)}`);
-  }
-
-  // === GUARDIAN ANALYSIS ===
-  let guardianResult: GuardianResult = {
-    isOk: true,
-    cleanedResponse: fullResponse,
-    issues: [],
-    shouldRetry: false,
-    loopDetected: false,
-    repetitionScore: 0
-  };
-
-  if (cfg.guardianEnabled) {
-    postToAllWebviews({ type: 'pipelineStatus', icon: '🛡️', text: 'Guardian kontroluje vzory...', statusType: 'validation', loading: true });
-
-    guardianResult = guardian.analyze(fullResponse, cfg.trimmedPrompt);
-
-    outputChannel?.appendLine(`[ResponseGuardian] isOk: ${guardianResult.isOk}, loopDetected: ${guardianResult.loopDetected}, repetitionScore: ${(guardianResult.repetitionScore * 100).toFixed(1)}%`);
-    if (guardianResult.issues.length > 0) {
-      guardianResult.issues.forEach(issue => {
-        outputChannel?.appendLine(`[ResponseGuardian]   - ${issue}`);
-      });
-    }
-
-    postToAllWebviews({
-      type: 'guardianStatus',
-      result: {
-        isOk: guardianResult.isOk,
-        issues: guardianResult.issues,
-        repetitionScore: guardianResult.repetitionScore,
-        loopDetected: guardianResult.loopDetected
-      }
-    });
-
-    if (!guardianResult.isOk) {
-      fullResponse = guardianResult.cleanedResponse;
-      if (guardianResult.issues.length > 0) {
-        postToAllWebviews({
-          type: 'guardianAlert',
-          message: `Guardian: ${guardianResult.issues.join(', ')}`
-        });
-      }
-    }
-  }
-
-  // === RESPONSE HISTORY CHECK ===
-  postToAllWebviews({
-    type: 'pipelineStatus',
-    icon: PIPELINE_STATUS_ICONS.history,
-    text: PIPELINE_STATUS_TEXT.checkingHistory,
-    statusType: 'validation',
-    loading: true
-  });
-
-  const similarityCheck = responseHistoryManager.checkSimilarity(fullResponse, cfg.trimmedPrompt);
-  if (similarityCheck.isSimilar) {
-    outputChannel?.appendLine(`[ResponseHistory] Podobna odpoved nalezena (${(similarityCheck.similarity * 100).toFixed(1)}%)`);
-    postToAllWebviews({
-      type: 'guardianAlert',
-      message: `📋 Podobná odpověď v historii (${(similarityCheck.similarity * 100).toFixed(0)}%)`
-    });
-  } else {
-    outputChannel?.appendLine('[ResponseHistory] Odpověď je unikátní');
-  }
-
-  // === SVEDOMI (MINI-MODEL VALIDATION) ===
-  let miniResult: MiniModelResult | null = null;
-  if (cfg.miniModelEnabled) {
-    postToAllWebviews({
-      type: 'pipelineStatus',
-      icon: PIPELINE_STATUS_ICONS.svedomi,
-      text: PIPELINE_STATUS_TEXT.svedomiValidation,
-      statusType: 'validation',
-      loading: true
-    });
-    postToAllWebviews({ type: 'svedomiValidating' });
-    miniResult = await svedomi.validate(
-      cfg.trimmedPrompt,
-      fullResponse,
-      (status: string) => {
-        postToAllWebviews({ type: 'pipelineStatus', icon: '🧠', text: status, statusType: 'validation', loading: true });
-      }
-    );
-    postToAllWebviews({ type: 'svedomiValidationDone' });
-    postToAllWebviews({ type: 'miniModelResult', result: miniResult });
-  } else {
-    outputChannel?.appendLine('[Svedomi] Mini-model je vypnut');
-  }
-  if (miniResult?.unavailable) {
-    postToAllWebviews({
-      type: 'guardianAlert',
-      message: getMiniUnavailableMessage(cfg.validationPolicy, true)
-    });
-  }
-
-  // === QUALITY CHECKS ARRAY ===
-  const qualityChecks: QualityCheckResult[] = [];
-  qualityChecks.push({
-    name: 'Guardian',
-    ok: cfg.guardianEnabled ? guardianResult.isOk : true,
-    unavailable: !cfg.guardianEnabled,
-    details: cfg.guardianEnabled
-      ? (guardianResult.issues.length > 0 ? guardianResult.issues.join(', ') : undefined)
-      : 'Vypnuto'
-  });
-  qualityChecks.push({
-    name: 'HallucinationDetector',
-    ok: !hallucinationResult.isHallucination,
-    score: hallucinationResult.confidence,
-    threshold: 0.7,
-    details: hallucinationDetector.getSummary(hallucinationResult)
-  });
-  if (miniResult) {
-    const svedomiOk = isMiniAccepted(miniResult, cfg.validationPolicy);
-    qualityChecks.push({
-      name: 'svedomi',
-      ok: svedomiOk,
-      score: miniResult.score,
-      threshold: 5,
-      details: miniResult.reason,
-      unavailable: miniResult.unavailable
-    });
-  }
-  if (postEditVerification) {
-    qualityChecks.push({
-      name: 'post-edit verify',
-      ok: postEditVerification.ok,
-      unavailable: postEditVerification.ran.length === 0,
-      details: postEditVerification.ok
-        ? (postEditVerification.ran.length > 0 ? 'lint/test/build OK' : 'No verification scripts')
-        : (postEditVerification.failed[0]?.command || 'Verification failed')
-    });
-  }
-
-  // === EXTERNAL VALIDATORS ===
-  const external = await runExternalValidators(cfg.panel, cfg.trimmedPrompt, fullResponse, {
-    rewardEnabled: cfg.rewardEnabled,
-    rewardEndpoint: cfg.rewardEndpoint,
-    rewardThreshold: cfg.rewardThreshold,
-    hhemEnabled: cfg.hhemEnabled,
-    hhemEndpoint: cfg.hhemEndpoint,
-    hhemThreshold: cfg.hhemThreshold,
-    ragasEnabled: cfg.ragasEnabled,
-    ragasEndpoint: cfg.ragasEndpoint,
-    ragasThreshold: cfg.ragasThreshold,
-    timeoutMs: cfg.timeout
-  }, cfg.validatorLogsEnabled);
-  qualityChecks.push(...external.results);
-
-  // === SUMMARIZER + STRUCTURED OUTPUT ===
-  const summary = cfg.summarizerEnabled
-    ? await summarizeResponse(cfg.baseUrl, cfg.summarizerModel, cfg.trimmedPrompt, fullResponse, cfg.timeout)
-    : null;
-  const structuredOutput = buildStructuredOutput(fullResponse, summary, qualityChecks, !cfg.stepMode);
-
-  return {
-    fullResponse,
-    postEditVerification,
-    hallucinationResult,
-    guardianResult,
-    miniResult,
-    qualityChecks,
-    external: {
-      rewardResult: external.rewardResult,
-      hhemResult: external.hhemResult,
-      ragasResult: external.ragasResult,
-      results: external.results
-    },
-    summary,
-    structuredOutput
-  };
+  return runValidationPipelinePure(fullResponse, toolSession, cfg, getValidationPipelineDeps());
 }
 
 // ============================================================
