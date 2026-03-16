@@ -2345,6 +2345,17 @@ async function handleChatInternal(
     outputChannel?.appendLine(`[Models] Preset applied: ${modelPreset}`);
   }
 
+  // ModelRouter: update models and apply failover if primary is backed off
+  if (modelRouter) {
+    const allModels = [writerModel, ...brainModels.filter(m => m !== writerModel)];
+    modelRouter.updateModels(allModels);
+    const picked = modelRouter.pick();
+    if (picked !== writerModel) {
+      outputChannel?.appendLine(`[ModelRouter] Failover: ${writerModel} → ${picked}`);
+      writerModel = picked;
+    }
+  }
+
   // Configure mini-model validator
   svedomi.configure(baseUrl, miniModel, miniModelEnabled);
 
@@ -2857,6 +2868,7 @@ PŘÍSTUP K PRÁCI:
   let streamedToUi = false;
   let lastChunkTime = Date.now();
   const STALL_TIMEOUT = 10000; // 10s without new content = stall
+  const generationStartMs = Date.now();
 
   try {
     if (orchestrator.getCurrent() !== 'act') {
@@ -3048,6 +3060,11 @@ PŘÍSTUP K PRÁCI:
 
     orchestrator.transition('verify', { stepMode: false, hadMutations: toolSession.hadMutations });
 
+    // Record successful generation in ModelRouter for failover tracking
+    if (modelRouter && fullResponse) {
+      modelRouter.recordSuccess(writerModel, Date.now() - generationStartMs);
+    }
+
     if (fullResponse) {
       const vResult = await runValidationPipeline(fullResponse, toolSession, {
         trimmedPrompt, chatMessages, stepMode: false, panel,
@@ -3175,6 +3192,10 @@ PŘÍSTUP K PRÁCI:
         await saveChatMessages(context, messages);
       }
     } else {
+      // Record failure in ModelRouter for failover tracking
+      if (modelRouter) {
+        modelRouter.recordFailure(writerModel, error.message || String(err));
+      }
       // Auto-retry transient API errors (ECONNRESET, ETIMEDOUT, 5xx, etc.)
       if (isTransientError(error) && retryCount < maxRetries) {
         const backoffMs = 1000 * Math.pow(2, retryCount); // 1s, 2s, 4s...
