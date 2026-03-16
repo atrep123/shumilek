@@ -3,7 +3,7 @@
 export class Logger {
     private static channel: vscode.OutputChannel;
 
-    public static initialize(context: vscode.ExtensionContext, existingChannel?: vscode.OutputChannel) {
+    public static initialize(_context: vscode.ExtensionContext, _existingChannel?: vscode.OutputChannel) {
         if (!Logger.channel) {
             Logger.channel = arguments.length > 1 ? arguments[1] : vscode.window.createOutputChannel('Shumilek');
         }

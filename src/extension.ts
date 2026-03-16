@@ -10,7 +10,6 @@ import {
 import { 
   workspaceIndexer, 
   setWorkspaceLogger,
-  WorkspaceIndex,
   ProjectMap
 } from './workspace';
 import { sanitizeMapSegment, formatProjectMapMarkdown } from './projectMap';
@@ -25,14 +24,12 @@ import {
   ValidationPipelineResult,
   ValidationPipelineDeps,
   ToolSessionState,
-  ToolCallRecord,
   VerificationSummary,
   VerificationCommandResult
 } from './validationPipeline';
 import { 
   Rozum, 
   setRozumLogger, 
-  StepType, 
   ActionStep, 
   RozumPlan 
 } from './rozum';
@@ -55,20 +52,14 @@ import {
   ChatMessage,
   ChatState,
   Task,
-  GuardianResult,
   GuardianStats,
-  HallucinationResult,
-  MiniModelResult,
   QualityCheckResult,
   ResponseHistoryEntry,
-  Conscience,
-  AutoApprovePolicy,
-  ContextProviderName,
-  ValidationPolicy
+  AutoApprovePolicy
 } from './types';
 import { buildCompressedMessages } from './contextMemory';
 import { buildObsidianChatArchive, updateObsidianArchiveIndex } from './obsidianArchive';
-import { humanizeApiError, isTransientError, isSafeUrl, normalizeTaskWeight, isChatMessage, normalizeScore, pickBrainModel, getNonce } from './utils';
+import { humanizeApiError, isTransientError, isSafeUrl, normalizeTaskWeight, normalizeScore, pickBrainModel } from './utils';
 import {
   getLastAssistantMessage,
   extractPreferredFencedCodeBlock,
@@ -80,30 +71,16 @@ import {
 import { isSlashCommand, executeSlashCommand, SlashCommandContext } from './slashCommands';
 import { runDoctorChecks, formatDoctorReport } from './doctor';
 import { ModelRouter } from './modelRouter';
-import { compactMessages, shouldCompact } from './sessionCompactor';
+import { compactMessages } from './sessionCompactor';
 import { loadWorkspaceInstructions, setWorkspaceInstructionsLogger } from './workspaceInstructions';
 import { ChatRequestConcurrencyGuard } from './chatConcurrency';
-import { getMinimalWebviewContent, getWebviewContent } from './webviewContent';
+import { getWebviewContent } from './webviewContent';
 import { computeRetryDecision, buildRetryFeedbackMessage } from './retryDecision';
 import {
   parseServerUrl,
-  resolveTimeoutMs,
-  resolveStepTimeoutMs,
-  getValidationPolicy,
-  getConfiguredExecutionMode,
   resolveExecutionMode,
-  getAutoApprovePolicy,
-  getContextProviders,
-  getContextProviderTokenBudget,
-  ModelPresetConfig,
-  MODEL_PRESETS,
   resolveModelPreset,
   clampNumber,
-  DEFAULT_CONTEXT_TOKENS,
-  MIN_CONTEXT_TOKENS,
-  MAX_CONTEXT_TOKENS,
-  DEFAULT_AIRLLM_MAX_OUTPUT_TOKENS,
-  MIN_AIRLLM_MAX_OUTPUT_TOKENS,
   getContextTokens,
   getMaxOutputTokens,
   getToolsEnabledSetting,
@@ -114,9 +91,7 @@ import {
   toggleToolsEnabledSetting,
   toggleSafeModeSetting,
   ToolRequirements,
-  ResolvedExecutionMode,
-  resolveChatConfig,
-  ChatConfig
+  resolveChatConfig
 } from './configResolver';
 import {
   handleApplyPatchTool,
@@ -184,8 +159,6 @@ import {
   buildEditorFirstInstructions,
   sanitizeEditorAnswer,
   buildEditorStateMessage,
-  extractJsonPayload,
-  coerceEditorAction,
   parseEditorPlanResponse,
   getToolRequirements
 } from './toolUtils';
@@ -1665,7 +1638,7 @@ async function handleWebviewMessage(
 }
 
 // Handle chat for WebviewView (sidebar)
-async function handleChatForView(
+async function _handleChatForView(
   view: vscode.WebviewView,
   context: vscode.ExtensionContext,
   prompt: string,
@@ -1675,7 +1648,7 @@ async function handleChatForView(
   return handleChatInternal(wrapView(view), context, prompt, messages, retryCount);
 }
 
-async function handleChat(
+async function _handleChat(
   panel: vscode.WebviewPanel,
   context: vscode.ExtensionContext,
   prompt: string,
@@ -1866,9 +1839,9 @@ async function handleChatInternal(
   const {
     systemPrompt, timeout, pipelineAlwaysOn, useAirLLM,
     airllmAutoStart, airllmWaitForHealthy, guardianEnabled, miniModelEnabled,
-    configuredExecutionMode, validationPolicy, autoApprovePolicy, maxAutoSteps,
+    configuredExecutionMode, validationPolicy, autoApprovePolicy, maxAutoSteps: _maxAutoSteps,
     contextProviderNames, contextProviderTokenBudget, stepTimeout, toolsEnabled,
-    toolsConfirmEdits, toolsMaxIterations, effectiveAutoSteps, workspaceIndexEnabled,
+    toolsConfirmEdits, toolsMaxIterations: _toolsMaxIterations, effectiveAutoSteps, workspaceIndexEnabled,
     validatorLogsEnabled, summarizerEnabled, rewardEnabled, rewardEndpoint,
     rewardThreshold, hhemEnabled, hhemEndpoint, hhemThreshold, ragasEnabled,
     ragasEndpoint, ragasThreshold, modelPreset
@@ -2171,7 +2144,7 @@ PŘÍSTUP K PRÁCI:
         rozumPlan,
         trimmedPrompt,
         // Execute step function
-        async (stepPrompt: string, stepInfo: ActionStep): Promise<string> => {
+        async (stepPrompt: string, _stepInfo: ActionStep): Promise<string> => {
           if (toolCallsEnabled) {
             const stepRequirements = getToolRequirements(stepPrompt);
             const stepToolOnlyPrompt = stepRequirements.requireToolCall
@@ -2900,7 +2873,7 @@ function isWorkspaceRootSegment(segment: string, folders: ReadonlyArray<vscode.W
   return false;
 }
 
-function normalizeAutoSaveDir(raw: string, folder?: vscode.WorkspaceFolder): string {
+function normalizeAutoSaveDir(raw: string, _folder?: vscode.WorkspaceFolder): string {
   const cleaned = sanitizeRelativePath(raw, 'out');
   const segments = cleaned.split(/[\\/]+/).filter(Boolean);
   const folders = vscode.workspace.workspaceFolders ?? [];
@@ -3759,7 +3732,7 @@ async function executeModelCall(
   userPrompt: string,
   timeout: number,
   guardianEnabled: boolean,
-  silentMode: boolean = true,  // Don't stream to UI during validation
+  _silentMode: boolean = true,  // Don't stream to UI during validation
   stepTimeoutMs?: number
 ): Promise<string> {
   const url = `${baseUrl}/api/chat`;
