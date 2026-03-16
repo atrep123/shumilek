@@ -1,0 +1,201 @@
+{
+  "generatedAt": "2026-03-16T14:10:45.846Z",
+  "baselineDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773655684522",
+  "candidateDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061",
+  "scenarios": [
+    {
+      "scenario": "node-api-oracle",
+      "baseline": {
+        "passRate": 1,
+        "rawRunPassRate": 1,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 95390,
+        "topFailureClusters": []
+      },
+      "candidate": {
+        "passRate": 0,
+        "rawRunPassRate": 0,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 0,
+        "topFailureClusters": []
+      },
+      "delta": {
+        "passRate": -1,
+        "rawRunPassRate": -1,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": -95390
+      }
+    },
+    {
+      "scenario": "node-project-api-large",
+      "baseline": {
+        "passRate": 1,
+        "rawRunPassRate": 1,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 142502,
+        "topFailureClusters": []
+      },
+      "candidate": {
+        "passRate": 0,
+        "rawRunPassRate": 0,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 0,
+        "topFailureClusters": []
+      },
+      "delta": {
+        "passRate": -1,
+        "rawRunPassRate": -1,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": -142502
+      }
+    },
+    {
+      "scenario": "python-ai-stdlib-oracle",
+      "baseline": {
+        "passRate": 1,
+        "rawRunPassRate": 1,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 43815,
+        "topFailureClusters": []
+      },
+      "candidate": {
+        "passRate": 0,
+        "rawRunPassRate": 0,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 0,
+        "topFailureClusters": []
+      },
+      "delta": {
+        "passRate": -1,
+        "rawRunPassRate": -1,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": -43815
+      }
+    },
+    {
+      "scenario": "ts-csv-oracle",
+      "baseline": {
+        "passRate": 0,
+        "rawRunPassRate": 0,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 0,
+        "topFailureClusters": []
+      },
+      "candidate": {
+        "passRate": 0,
+        "rawRunPassRate": 0,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 433606,
+        "topFailureClusters": [
+          {
+            "id": "other",
+            "count": 10
+          },
+          {
+            "id": "command_runtime",
+            "count": 9
+          },
+          {
+            "id": "ts_contract",
+            "count": 5
+          }
+        ]
+      },
+      "delta": {
+        "passRate": 0,
+        "rawRunPassRate": 0,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 433606
+      }
+    },
+    {
+      "scenario": "ts-todo-oracle",
+      "baseline": {
+        "passRate": 1,
+        "rawRunPassRate": 1,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 46898,
+        "topFailureClusters": []
+      },
+      "candidate": {
+        "passRate": 0,
+        "rawRunPassRate": 0,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": 0,
+        "topFailureClusters": []
+      },
+      "delta": {
+        "passRate": -1,
+        "rawRunPassRate": -1,
+        "fallbackDependencyRunRate": 0,
+        "avgMs": -46898
+      }
+    }
+  ],
+  "clusterDelta": [
+    {
+      "id": "other",
+      "baseline": 0,
+      "candidate": 10,
+      "delta": 10
+    },
+    {
+      "id": "command_runtime",
+      "baseline": 0,
+      "candidate": 9,
+      "delta": 9
+    },
+    {
+      "id": "ts_contract",
+      "baseline": 0,
+      "candidate": 5,
+      "delta": 5
+    }
+  ],
+  "gate": {
+    "enabled": true,
+    "passed": false,
+    "thresholds": {
+      "minPassRateDelta": 0,
+      "maxFallbackDependencyRunRate": 0.9,
+      "maxFallbackDependencyRunRateDelta": 0.2,
+      "maxLatencyMultiplier": 0,
+      "maxClusterIncreaseRules": [],
+      "scenarioOverrides": {}
+    },
+    "violations": [
+      {
+        "scope": "scenario",
+        "scenario": "node-api-oracle",
+        "metric": "passRateDelta",
+        "actual": -1,
+        "expected": 0,
+        "message": "Scenario node-api-oracle: passRateDelta -1.0000 is below minimum 0.0000"
+      },
+      {
+        "scope": "scenario",
+        "scenario": "node-project-api-large",
+        "metric": "passRateDelta",
+        "actual": -1,
+        "expected": 0,
+        "message": "Scenario node-project-api-large: passRateDelta -1.0000 is below minimum 0.0000"
+      },
+      {
+        "scope": "scenario",
+        "scenario": "python-ai-stdlib-oracle",
+        "metric": "passRateDelta",
+        "actual": -1,
+        "expected": 0,
+        "message": "Scenario python-ai-stdlib-oracle: passRateDelta -1.0000 is below minimum 0.0000"
+      },
+      {
+        "scope": "scenario",
+        "scenario": "ts-todo-oracle",
+        "metric": "passRateDelta",
+        "actual": -1,
+        "expected": 0,
+        "message": "Scenario ts-todo-oracle: passRateDelta -1.0000 is below minimum 0.0000"
+      }
+    ]
+  }
+}

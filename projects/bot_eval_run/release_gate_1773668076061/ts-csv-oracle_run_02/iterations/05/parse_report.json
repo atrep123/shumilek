@@ -1,0 +1,16 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "qwen2.5-coder:14b",
+      "ok": true,
+      "transport": "generate",
+      "formatKind": "json",
+      "schemaUsed": false,
+      "fallbackUsed": true
+    }
+  ],
+  "finalOk": true,
+  "appliedFixes": [],
+  "skippedFixes": []
+}

@@ -1,0 +1,8 @@
+{
+  "review": "text",
+  "priorityFiles": [
+    "README.md",
+    "src/csv.ts",
+    "src/cli.ts"
+  ]
+}

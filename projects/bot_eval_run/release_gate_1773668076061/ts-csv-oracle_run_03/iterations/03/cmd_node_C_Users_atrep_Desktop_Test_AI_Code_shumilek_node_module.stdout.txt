@@ -1,0 +1,5 @@
+../../../../../node_modules/@types/node/globals.d.ts(3,13): error TS2451: Cannot redeclare block-scoped variable 'process'.
+../../../../../node_modules/@types/node/module.d.ts(525,13): error TS2451: Cannot redeclare block-scoped variable 'require'.
+../../../../../node_modules/@types/node/process.d.ts(122,13): error TS2451: Cannot redeclare block-scoped variable 'process'.
+src/cli.ts(1,15): error TS2451: Cannot redeclare block-scoped variable 'require'.
+src/cli.ts(2,15): error TS2451: Cannot redeclare block-scoped variable 'process'.

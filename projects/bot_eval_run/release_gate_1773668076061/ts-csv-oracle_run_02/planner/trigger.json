@@ -1,0 +1,9 @@
+{
+  "strategy": "on-fail",
+  "scenarioId": "ts-csv-oracle",
+  "triggerIteration": 1,
+  "diagnostics": [
+    "Command failed: node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json (exit=2, timedOut=false)",
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)"
+  ]
+}

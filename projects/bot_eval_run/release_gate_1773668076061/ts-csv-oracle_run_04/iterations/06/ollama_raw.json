@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-03-16T14:04:45.9752705Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/cli.ts\",\n      \"content\": \"// src/cli.ts\\n\\ndeclare const require: any;\\ndeclare const process: any;\\nconst fs = require('node:fs');\\nimport { CsvParser, CsvFilter } from './csv';\\n\\nfunction parseCommand(inputFile: string) {\\n  const text = fs.readFileSync(inputFile, 'utf-8');\\n  const parser = new CsvParser();\\n  const records = parser.parse(text);\\n  console.log(JSON.stringify(records, null, 2));\\n}\\n\\nfunction statsCommand(inputFile: string) {\\n  const text = fs.readFileSync(inputFile, 'utf-8');\\n  const parser = new CsvParser();\\n  const records = parser.parse(text);\\n  const filter = new CsvFilter(records);\\n  console.log(`Total rows: ${filter.count()}`);\\n}\\n\\nfunction helpCommand() {\\n  console.log('Usage:\\\\n');\\n  console.log('Parsing CSV\\\\nnode dist/cli.js parse --input <file>\\\\n');\\n  console.log('Statistics\\\\nnode dist/cli.js stats --input <file>\\\\n');\\n  console.log('Help\\\\nnode dist/cli.js --help\\\\n');\\n}\\n\\nif (process.argv.length < 3) {\\n  helpCommand();\\n} else {\\n  const command = process.argv[2];\\n  if (command === 'parse') {\\n    const inputFile = process.argv.find(arg => arg.startsWith('--input='))?.split('=')[1];\\n    if (inputFile) {\\n      parseCommand(inputFile);\\n    } else {\\n      console.error('Missing input file. Use --input=<file>');\\n    }\\n  } else if (command === 'stats') {\\n    const inputFile = process.argv.find(arg => arg.startsWith('--input='))?.split('=')[1];\\n    if (inputFile) {\\n      statsCommand(inputFile);\\n    } else {\\n      console.error('Missing input file. Use --input=<file>');\\n    }\\n  } else if (command === '--help') {\\n    helpCommand();\\n  } else {\\n    console.error(`Unknown command: ${command}`);\\n  }\\n}\\n\"\n    }\n  ],\n  \"notes\": \"Fixed TypeScript errors by adding explicit types to parameters in src/cli.ts.\"\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 24847342000,
+  "load_duration": 4791709300,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 994353400,
+  "eval_count": 528,
+  "eval_duration": 6651948600
+}

@@ -1,0 +1,15 @@
+{
+  "errors": [],
+  "messages": [
+    {
+      "message": "It looks like the code is missing some expected imports and definitions. Here are a few suggestions to help you identify and fix the issues:",
+      "suggestions": [
+        "Ensure that all required modules (like `fs`, `path`, etc.) are imported at the top of your files.",
+        "Make sure that any custom types or interfaces are defined properly, especially in TypeScript files.",
+        "Check for missing semicolons or other syntax errors.",
+        "Verify that you have correctly implemented the CsvParser and CsvFilter classes as per their intended functionality.",
+        "Ensure that all tests (like those in `src/cli.ts` and `src/csv.ts`) are correctly set up to validate your implementation."
+      ]
+    }
+  ]
+}

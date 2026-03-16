@@ -1,0 +1,198 @@
+✖ CsvParser: parse simple CSV (2.103ms)
+✖ CsvParser: parse CSV with quoted fields (0.1209ms)
+✖ CsvParser: parse empty CSV returns empty array (0.0653ms)
+✖ CsvParser: parse single header line returns empty array (0.5996ms)
+✖ CsvParser: stringify rows to CSV (0.1252ms)
+✖ CsvParser: stringify quotes fields with commas (0.0622ms)
+✖ CsvParser: custom delimiter (0.0676ms)
+✖ CsvFilter: filter rows by predicate (0.0733ms)
+✖ CsvFilter: select specific columns (0.0857ms)
+✖ CsvFilter: sort rows (0.1687ms)
+✖ CsvFilter: count rows (0.0969ms)
+✔ CLI: --help exits with code 0 (40.8946ms)
+✖ CLI: parse command reads file and outputs JSON (42.2419ms)
+✖ CLI: stats command (40.1926ms)
+✔ README.md exists (0.4071ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 2
+ℹ fail 13
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 187.7251
+
+✖ failing tests:
+
+test at tests\oracle.test.js:22:1
+✖ CsvParser: parse simple CSV (2.103ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_05\workspace\tests\oracle.test.js:24:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:36:1
+✖ CsvParser: parse CSV with quoted fields (0.1209ms)
+  TypeError: CsvParser is not a constructor
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_05\workspace\tests\oracle.test.js:38:18)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3)
+
+test at tests\oracle.test.js:49:1
+✖ CsvParser: parse empty CSV returns empty array (0.0653ms)
+  TypeError: CsvParser is not a constructor
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_05\workspace\tests\oracle.test.js:51:18)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at tests\oracle.test.js:58:1
+✖ CsvParser: parse single header line returns empty array (0.5996ms)
+  TypeError: CsvParser is not a constructor
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_05\workspace\tests\oracle.test.js:60:18)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at tests\oracle.test.js:67:1
+✖ CsvParser: stringify rows to CSV (0.1252ms)
+  TypeError: CsvParser is not a constructor
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_05\workspace\tests\oracle.test.js:69:18)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at tests\oracle.test.js:90:1
+✖ CsvParser: stringify quotes fields with commas (0.0622ms)
+  TypeError: CsvParser is not a constructor
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_05\workspace\tests\oracle.test.js:92:18)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at tests\oracle.test.js:99:1
+✖ CsvParser: custom delimiter (0.0676ms)
+  TypeError: CsvParser is not a constructor
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_05\workspace\tests\oracle.test.js:101:18)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at tests\oracle.test.js:113:1
+✖ CsvFilter: filter rows by predicate (0.0733ms)
+  TypeError: CsvParser is not a constructor
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_05\workspace\tests\oracle.test.js:117:18)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at tests\oracle.test.js:128:1
+✖ CsvFilter: select specific columns (0.0857ms)
+  TypeError: CsvParser is not a constructor
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_05\workspace\tests\oracle.test.js:131:18)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at tests\oracle.test.js:143:1
+✖ CsvFilter: sort rows (0.1687ms)
+  TypeError: CsvParser is not a constructor
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_05\workspace\tests\oracle.test.js:146:18)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at tests\oracle.test.js:157:1
+✖ CsvFilter: count rows (0.0969ms)
+  TypeError: CsvParser is not a constructor
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_05\workspace\tests\oracle.test.js:160:18)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at tests\oracle.test.js:181:1
+✖ CLI: parse command reads file and outputs JSON (42.2419ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_05\workspace\tests\oracle.test.js:193:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:204:1
+✖ CLI: stats command (40.1926ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_05\workspace\tests\oracle.test.js:216:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

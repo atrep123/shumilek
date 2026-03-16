@@ -1,0 +1,4 @@
+Usage:
+  node dist/cli.js parse --input <file>
+  node dist/cli.js stats --input <file>
+  node dist/cli.js --help

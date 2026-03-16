@@ -1,0 +1,24 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "baseUrl": "http://localhost:11434",
+  "transport": "generate",
+  "formatKind": "json",
+  "schemaUsed": false,
+  "fallbackUsed": true,
+  "fallbackReason": "Structured chat returned non-JSON content: Unterminated string in JSON at position 21086 (line 9 column 19373)",
+  "usedFormatJson": true,
+  "doneReason": "stop",
+  "evalCount": 881,
+  "promptEvalCount": 4096,
+  "effectiveOptions": {
+    "num_predict": 6000,
+    "seed": 42,
+    "temperature": 0
+  },
+  "options": {
+    "temperature": 0.05,
+    "num_predict": 4800,
+    "seed": 42
+  },
+  "deterministicFallbackMode": "on-fail"
+}

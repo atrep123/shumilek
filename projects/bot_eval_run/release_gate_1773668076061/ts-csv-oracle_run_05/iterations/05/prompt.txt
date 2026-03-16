@@ -1,0 +1,409 @@
+Vytvor realisticky TypeScript projekt (bez externich zavislosti), ktery zpracuje CSV soubory a projde oracle testy.
+
+POZADAVKY / KONTRAKT:
+- Zadne externi npm balicky. Pouze Node.js builtin moduly.
+- VYSLOVNE ZAKAZANO: csv-parse, papaparse, fast-csv, commander, yargs (a jine externi balicky).
+- README.md je povinny.
+- Nevytvarej `dist/` ve vystupu (generuje ho `tsc`).
+- `package.json` nesmi mit `"type": "module"` (pouzij `commonjs`).
+- V TS nepouzivej externi helper knihovny. Pro kompatibilitu muzes pouzit `declare const require: any; declare const process: any;`.
+- Pouzij `const fs = require("node:fs")` (ne `declare const fs = ...`).
+- Musi existovat `tsconfig.json` a kompilace do `dist/` (CommonJS) pres `tsc -p tsconfig.json`.
+
+- `src/csv.ts` musi exportovat `CsvParser` a `CsvFilter`:
+
+  CsvParser:
+  - constructor(options?: { delimiter?: string }) — vychozi oddelovac je carka
+  - parse(text: string): Record<string, string>[] — parsuje CSV text s prvnim radkem jako hlavicka; vraci pole objektu
+  - stringify(rows: Record<string, string>[]): string — serializuje pole objektu zpet do CSV (s hlavickou)
+  - Musi podporovat quoted fields (uvozovky kolem poli obsahujicich oddelovac nebo uvozovky, escaped "" uvnitr)
+
+  CsvFilter:
+  - constructor(rows: Record<string, string>[])
+  - where(predicate: (row: Record<string, string>) => boolean): Record<string, string>[] — filtruje radky
+  - select(columns: string[]): Record<string, string>[] — vybere jen urcite sloupce
+  - sortBy(column: string): Record<string, string>[] — seradi radky podle hodnot sloupce (ascending, string compare)
+  - count(): number — pocet radku
+
+- `src/cli.ts` musi po kompilaci vytvorit spustitelny CLI v `dist/cli.js`:
+  - `--help` (exit code 0)
+  - `parse --input <soubor>` — nacte CSV soubor, vypise JSON pole radku na stdout
+  - `stats --input <soubor>` — nacte CSV soubor, vypise statistiky (pocet radku, sloupce) na stdout
+
+Technicka poznamka: abys nemusel resit @types/node, v TS nepouzivej `import fs from ...`.
+Pouzij `declare const require: any; declare const process: any;` a nacti builtin pres `const fs = require("node:fs")` atd.
+
+Poznamka: testy budeme pouzivat tyto (musis projit):
+--- BEGIN ORACLE TESTS (tests/oracle.test.js) ---
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+const { spawnSync } = require('node:child_process');
+
+function makeTempDir() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-ts-csv-'));
+}
+
+function runCli(workspaceDir, args) {
+  const cliPath = path.join(workspaceDir, 'dist', 'cli.js');
+  const res = spawnSync(process.execPath, [cliPath, ...args], { cwd: workspaceDir, encoding: 'utf8' });
+  return { code: res.status ?? 1, stdout: res.stdout || '', stderr: res.stderr || '' };
+}
+
+// ============================================================
+// CsvParser unit tests
+// ============================================================
+
+test('CsvParser: parse simple CSV', () => {
+  const { CsvParser } = require('../dist/csv.js');
+  assert.equal(typeof CsvParser, 'function');
+
+  const parser = new CsvParser();
+  const rows = parser.parse('name,age\nAlice,30\nBob,25\n');
+
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].name, 'Alice');
+  assert.equal(rows[0].age, '30');
+  assert.equal(rows[1].name, 'Bob');
+  assert.equal(rows[1].age, '25');
+});
+
+test('CsvParser: parse CSV with quoted fields', () => {
+  const { CsvParser } = require('../dist/csv.js');
+  const parser = new CsvParser();
+
+  const csv = 'name,bio\n"Alice","Likes ""coding"" and cats"\n"Bob","Hello, world"\n';
+  const rows = parser.parse(csv);
+
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].name, 'Alice');
+  assert.ok(rows[0].bio.includes('coding'));
+  assert.equal(rows[1].bio, 'Hello, world');
+});
+
+test('CsvParser: parse empty CSV returns empty array', () => {
+  const { CsvParser } = require('../dist/csv.js');
+  const parser = new CsvParser();
+
+  const rows = parser.parse('');
+  assert.ok(Array.isArray(rows));
+  assert.equal(rows.length, 0);
+});
+
+test('CsvParser: parse single header line returns empty array', () => {
+  const { CsvParser } = require('../dist/csv.js');
+  const parser = new CsvParser();
+
+  const rows = parser.parse('name,age\n');
+  assert.ok(Array.isArray(rows));
+  assert.equal(rows.length, 0);
+});
+
+test('CsvParser: stringify rows to CSV', () => {
+  const { CsvParser } = require('../dist/csv.js');
+  const parser = new CsvParser();
+
+  const rows = [
+    { name: 'Alice', age: '30' },
+    { name: 'Bob', age: '25' }
+  ];
+
+  const csv = parser.stringify(rows);
+  assert.ok(csv.includes('name'));
+  assert.ok(csv.includes('age'));
+  assert.ok(csv.includes('Alice'));
+  assert.ok(csv.includes('30'));
+  assert.ok(csv.includes('Bob'));
+
+  // Round-trip: parse the generated CSV back
+  const parsed = parser.parse(csv);
+  assert.equal(parsed.length, 2);
+  assert.equal(parsed[0].name, 'Alice');
+  assert.equal(parsed[1].age, '25');
+});
+
+test('CsvParser: stringify quotes fields with commas', () => {
+  const { CsvParser } = require('../dist/csv.js');
+  const parser = new CsvParser();
+
+  const rows = [{ name: 'Alice, Bob', age: '30' }];
+  const csv = parser.stringify(rows);
+  assert.ok(csv.includes('"Alice, Bob"'));
+});
+
+test('CsvParser: custom delimiter', () => {
+  const { CsvParser } = require('../dist/csv.js');
+  const parser = new CsvParser({ delimiter: ';' });
+
+  const rows = parser.parse('name;age\nAlice;30\n');
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].name, 'Alice');
+  assert.equal(rows[0].age, '30');
+});
+
+// ============================================================
+// CsvFilter tests
+// ============================================================
+
+test('CsvFilter: filter rows by predicate', () => {
+  const { CsvParser, CsvFilter } = require('../dist/csv.js');
+  assert.equal(typeof CsvFilter, 'function');
+
+  const parser = new CsvParser();
+  const rows = parser.parse('name,age\nAlice,30\nBob,25\nCharlie,35\n');
+
+  const filter = new CsvFilter(rows);
+  const adults = filter.where((row) => parseInt(row.age, 10) >= 30);
+
+  assert.equal(adults.length, 2);
+  assert.equal(adults[0].name, 'Alice');
+  assert.equal(adults[1].name, 'Charlie');
+});
+
+test('CsvFilter: select specific columns', () => {
+  const { CsvParser, CsvFilter } = require('../dist/csv.js');
+
+  const parser = new CsvParser();
+  const rows = parser.parse('name,age,city\nAlice,30,Prague\nBob,25,Brno\n');
+
+  const filter = new CsvFilter(rows);
+  const projected = filter.select(['name', 'city']);
+
+  assert.equal(projected.length, 2);
+  assert.deepEqual(Object.keys(projected[0]).sort(), ['city', 'name']);
+  assert.equal(projected[0].name, 'Alice');
+  assert.equal(projected[0].city, 'Prague');
+});
+
+test('CsvFilter: sort rows', () => {
+  const { CsvParser, CsvFilter } = require('../dist/csv.js');
+
+  const parser = new CsvParser();
+  const rows = parser.parse('name,age\nCharlie,35\nAlice,30\nBob,25\n');
+
+  const filter = new CsvFilter(rows);
+  const sorted = filter.sortBy('name');
+
+  assert.equal(sorted[0].name, 'Alice');
+  assert.equal(sorted[1].name, 'Bob');
+  assert.equal(sorted[2].name, 'Charlie');
+});
+
+test('CsvFilter: count rows', () => {
+  const { CsvParser, CsvFilter } = require('../dist/csv.js');
+
+  const parser = new CsvParser();
+  const rows = parser.parse('name,age\nAlice,30\nBob,25\n');
+
+  const filter = new CsvFilter(rows);
+  assert.equal(filter.count(), 2);
+});
+
+// ============================================================
+// CLI tests
+// ============================================================
+
+test('CLI: --help exits with code 0', (t) => {
+  const cliPath = path.join(__dirname, '..', 'dist', 'cli.js');
+  if (!fs.existsSync(cliPath)) {
+    t.skip('dist/cli.js not found');
+    return;
+  }
+  const result = runCli(path.join(__dirname, '..'), ['--help']);
+  assert.equal(result.code, 0);
+});
+
+test('CLI: parse command reads file and outputs JSON', (t) => {
+  const cliPath = path.join(__dirname, '..', 'dist', 'cli.js');
+  if (!fs.existsSync(cliPath)) {
+    t.skip('dist/cli.js not found');
+    return;
+  }
+
+  const dir = makeTempDir();
+  const csvFile = path.join(dir, 'data.csv');
+  fs.writeFileSync(csvFile, 'name,age\nAlice,30\nBob,25\n');
+
+  const result = runCli(path.join(__dirname, '..'), ['parse', '--input', csvFile]);
+  assert.equal(result.code, 0);
+
+  const stdout = result.stdout.trim();
+  const start = stdout.indexOf('[');
+  const end = stdout.lastIndexOf(']');
+  assert.ok(start >= 0 && end > start, 'Expected JSON array on stdout');
+  const parsed = JSON.parse(stdout.slice(start, end + 1));
+  assert.equal(parsed.length, 2);
+  assert.equal(parsed[0].name, 'Alice');
+});
+
+test('CLI: stats command', (t) => {
+  const cliPath = path.join(__dirname, '..', 'dist', 'cli.js');
+  if (!fs.existsSync(cliPath)) {
+    t.skip('dist/cli.js not found');
+    return;
+  }
+
+  const dir = makeTempDir();
+  const csvFile = path.join(dir, 'data.csv');
+  fs.writeFileSync(csvFile, 'name,age\nAlice,30\nBob,25\nCharlie,35\n');
+
+  const result = runCli(path.join(__dirname, '..'), ['stats', '--input', csvFile]);
+  assert.equal(result.code, 0);
+
+  const stdout = result.stdout.trim();
+  // Should contain row count
+  assert.ok(stdout.includes('3') || stdout.includes('rows'), `Expected stats output, got: ${stdout.slice(0, 200)}`);
+});
+
+test('README.md exists', () => {
+  const readmePath = path.join(__dirname, '..', 'README.md');
+  assert.ok(fs.existsSync(readmePath), 'README.md must exist');
+  const content = fs.readFileSync(readmePath, 'utf8');
+  assert.ok(content.length > 50, 'README.md should have meaningful content');
+});
+--- END ORACLE TESTS ---
+
+VYSTUPNI FORMAT (STRICT): vrat JEN JSON objekt tohoto tvaru:
+{
+  "mode": "full",
+  "files": [
+    {"path": "README.md", "content": "...\n"},
+    {"path": "package.json", "content": "...\n"},
+    {"path": "tsconfig.json", "content": "...\n"},
+    {"path": "src/csv.ts", "content": "...\n"},
+    {"path": "src/cli.ts", "content": "...\n"}
+  ],
+  "notes": "optional"
+}
+
+Pravidla:
+- Zadny markdown, zadne ``` bloky, zadny text mimo JSON.
+- Cesty jsou relativni, pouzij `/`, bez `..` a bez absolutnich cest.
+- Nezahrnuj vlastni `tests/` (pouziji se oracle testy).
+- `content` je vzdy kompletni obsah souboru (ne diff/snippet).
+- `package.json` muze byt minimalni (nepocitam s `npm install`).
+
+---
+PLANNER HINTS (planner: deepseek-r1:8b; non-binding, SPEC wins on conflict):
+- Create full files: README.md, package.json, tsconfig.json, src/csv.ts, src/cli.ts.
+- BOTH CsvParser AND CsvFilter MUST be in src/csv.ts. Export both as named classes.
+- CsvParser: constructor(options?: { delimiter?: string }), parse(text) returns Record<string,string>[], stringify(rows) returns CSV string.
+- parse() must split by lines, first line is header, handle quoted fields with escaped "" inside (RFC 4180 style).
+- stringify() must quote fields containing the delimiter or double-quotes.
+- CsvFilter: constructor(rows), where(predicate) filters, select(columns) projects, sortBy(column) sorts ascending string, count() returns number.
+- CLI: parse process.argv[2] for command: "parse" reads --input file and prints JSON, "stats" reads --input and prints stats, "--help" prints usage and exits 0.
+- In both .ts files use: declare const require: any; declare const process: any; then const fs = require("node:fs");
+- CRITICAL: ensure every string literal is properly closed. No unterminated strings.
+- tsconfig.json: outDir "dist", module "commonjs", target "es2020", strict true, esModuleInterop true, include ["src"].
+- package.json: name, version, NO dependencies or devDependencies, do NOT set "type": "module".
+- Use only Node builtins. Compile to dist/ via tsc -p tsconfig.json (CommonJS).
+- Verify with oracle tests and cli --help.
+
+---
+NEPROSLO VALIDACI. Oprav nasledujici problemy.
+
+CHYBY:
+- src/csv.ts must define class CsvFilter
+- src/csv.ts missing CsvFilter.where()
+- src/csv.ts missing CsvFilter.select()
+- src/csv.ts missing CsvFilter.sortBy()
+- src/csv.ts missing CsvFilter.count()
+- Command failed: node "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\node_modules\typescript\bin\tsc" -p tsconfig.json (exit=2, timedOut=false)
+- Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)
+- Command failed: node dist/cli.js --help (exit=1, timedOut=false)
+
+LOGY (zkraceno):
+- node "C:\Users\atrep\Desktop\Test_AI_Code\shumilek\node_modules\typescript\bin\tsc" -p tsconfig.json
+  stdout: "src/csv.ts(33,99): error TS1126: Unexpected end of text.\r\n"
+- node --test tests/oracle.test.js
+  stdout: "Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 1,\n    expected: 0,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at tests\\oracle.test.js:181:1\n✖ CLI: parse command reads file and outputs JSON (40.5907ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  1 !== 0\n  \n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_05\\workspace\\tests\\oracle.test.js:193:10)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 1,\n    expected: 0,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at tests\\oracle.test.js:204:1\n✖ CLI: stats command (38.2907ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  1 !== 0\n  \n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_05\\workspace\\tests\\oracle.test.js:216:10)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 1,\n    expected: 0,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n"
+- node dist/cli.js --help
+  stderr: "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_05\\workspace\\dist\\csv.js:27\r\n                return value.includes(this.delimiter) || value.includes('\"') ? `\"${value.replace(/\"/g, '\"\\) : ;\r\n                                                                                                       ^^^^^^^^\r\n\r\nSyntaxError: Invalid or unexpected token\r\n    at wrapSafe (node:internal/modules/cjs/loader:1692:18)\r\n    at Module._compile (node:internal/modules/cjs/loader:1735:20)\r\n    at Object..js (node:internal/modules/cjs/loader:1893:10)\r\n    at Module.load (node:internal/modules/cjs/loader:1481:32)\r\n    at Module._load (node:internal/modules/cjs/loader:1300:12)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)\r\n    at Module.require (node:internal/modules/cjs/loader:1504:12)\r\n    at require (node:internal/modules/helpers:152:16)\r\n    at Object.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_05\\workspace\\dist\\cli.js:5:15)\r\n\r\nNode.js v24.12.0\r\n"
+
+AKTUALNI SOUBORY:
+- README.md
+- package.json
+- src/cli.ts
+- src/csv.ts
+- tests/oracle.test.js
+- tsconfig.json
+
+KONTEXT SOUBORU (pro opravu):
+--- FILE: src/csv.ts ---
+// src/csv.ts
+
+declare const require: any;
+const fs = require('node:fs');
+export {}
+
+class CsvParser {
+  private delimiter: string;
+
+  constructor(options?: { delimiter?: string }) {
+    this.delimiter = options?.delimiter || ',';
+  }
+
+  parse(text: string): Record<string, string>[] {
+    const lines = text.split('\n');
+    const headers = lines[0].split(this.delimiter);
+    return lines.slice(1).map(line => {
+      const values = line.split(new RegExp(`\s*${this.delimiter}\s*|(?<=")${this.delimiter}(?=")`, 'g'));
+      return headers.reduce((acc, header, index) => {
+        acc[header] = values[index].replace(/(^"|"$)/g, '');
+        return acc;
+      }, {} as Record<string, string>);
+    });
+  }
+
+  stringify(rows: Record<string, string>[]): string {
+    if (rows.length === 0) return '';
+
+    const headers = Object.keys(rows[0]);
+    const quotedFields = rows.map(row => {
+      return headers.map(header => {
+        const value = row[header];
+        return value.includes(this.delimiter) || value.includes('"') ? `"${value.replace(/"/g, '"\
+--- FILE: README.md ---
+# CSV Processor
+This is a simple CSV processor written in TypeScript using Node.js built-in modules.
+
+## Features
+- Parse CSV files with support for quoted fields.
+- Filter, select, sort, and count rows.
+- CLI interface for parsing and statistics.
+
+## Usage
+### Parsing CSV
+```bash
+node dist/cli.js parse --input <file>
+```
+
+### Statistics
+```bash
+node dist/cli.js stats --input <file>
+```
+
+### Help
+```bash
+node dist/cli.js --help
+```
+
+--- FILE: tsconfig.json ---
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "module": "commonjs",
+    "target": "es2020",
+    "strict": true,
+    "esModuleInterop": true
+  },
+  "include": [
+    "src"
+  ]
+}
+
+VYSTUP: vrat JEN platny JSON objekt bez markdownu:
+{ "mode": "patch", "files": [ {"path":"...","content":"...\n"} ], "notes": "optional" }
+Pravidla: udelej jen minimalni nutne zmeny; posli jen soubory ktere menis nebo pridavas; u kazdeho posli VZDY cely obsah souboru.

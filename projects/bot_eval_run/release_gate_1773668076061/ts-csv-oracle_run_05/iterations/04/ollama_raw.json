@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-03-16T14:09:02.9211405Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/csv.ts\",\n      \"content\": \"// src/csv.ts\\n\\ndeclare const require: any;\\nconst fs = require('node:fs');\\nexport {}\\n\\nclass CsvParser {\\n  private delimiter: string;\\n\\n  constructor(options?: { delimiter?: string }) {\\n    this.delimiter = options?.delimiter || ',';\\n  }\\n\\n  parse(text: string): Record<string, string>[] {\\n    const lines = text.split('\\\\n');\\n    const headers = lines[0].split(this.delimiter);\\n    return lines.slice(1).map(line => {\\n      const values = line.split(new RegExp(`\\\\s*${this.delimiter}\\\\s*|(?<=\\\")${this.delimiter}(?=\\\")`, 'g'));\\n      return headers.reduce((acc, header, index) => {\\n        acc[header] = values[index].replace(/(^\\\"|\\\"$)/g, '');\\n        return acc;\\n      }, {} as Record<string, string>);\\n    });\\n  }\\n\\n  stringify(rows: Record<string, string>[]): string {\\n    if (rows.length === 0) return '';\\n\\n    const headers = Object.keys(rows[0]);\\n    const quotedFields = rows.map(row => {\\n      return headers.map(header => {\\n        const value = row[header];\\n        return value.includes(this.delimiter) || value.includes('\\\"') ? `\\\"${value.replace(/\\\"/g, '\\\"\\\\\"}]} "
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 17792562800,
+  "load_duration": 4700010200,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 977011000,
+  "eval_count": 339,
+  "eval_duration": 4237805100
+}

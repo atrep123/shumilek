@@ -1,0 +1,2 @@
+src/csv.ts(29,44): error TS1161: Unterminated regular expression literal.
+src/csv.ts(29,46): error TS1005: '}' expected.

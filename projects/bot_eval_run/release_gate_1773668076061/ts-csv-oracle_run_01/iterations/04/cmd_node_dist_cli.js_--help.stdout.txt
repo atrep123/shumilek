@@ -1,0 +1,11 @@
+Usage:
+
+Parsing CSV
+node dist/cli.js parse --input <file>
+
+Statistics
+node dist/cli.js stats --input <file>
+
+Help
+node dist/cli.js --help
+

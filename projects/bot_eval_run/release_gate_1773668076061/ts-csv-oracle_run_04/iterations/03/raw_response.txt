@@ -1,0 +1,7 @@
+{
+  "files": [
+    {
+      "path": "src/csv.ts",
+      "content": "// src/csv.ts\n\ndeclare const require: any;\ndeclare const process: any;\nconst fs = require('node:fs');\n\nexport interface CsvParserOptions {\n  delimiter?: string;\n}\n\nexport class CsvParser {\n  private delimiter: string;\n\n  constructor(options: CsvParserOptions = {}) {\n    this.delimiter = options.delimiter || ',';\n  }\n\n  parse(text: string): Record<string, string>[] {\n    const lines = text.split('\\n');\n    const headers = lines[0].split(this.delimiter);\n    return lines.slice(1).map(line => {\n      const values = line.split(new RegExp(`\\${this.delimiter}(?=(?:[^"}]
+  }
+  

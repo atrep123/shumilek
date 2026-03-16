@@ -1,0 +1,11 @@
+{
+  "count": 2,
+  "files": [
+    "src/cli.ts",
+    "src/csv.ts"
+  ],
+  "appliedAsPatch": true,
+  "forcePatchFromIncompleteFull": false,
+  "appliedFixes": [],
+  "skippedFixes": []
+}

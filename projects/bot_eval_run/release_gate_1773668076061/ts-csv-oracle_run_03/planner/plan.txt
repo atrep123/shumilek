@@ -1,0 +1,13 @@
+- Create full files: README.md, package.json, tsconfig.json, src/csv.ts, src/cli.ts.
+- BOTH CsvParser AND CsvFilter MUST be in src/csv.ts. Export both as named classes.
+- CsvParser: constructor(options?: { delimiter?: string }), parse(text) returns Record<string,string>[], stringify(rows) returns CSV string.
+- parse() must split by lines, first line is header, handle quoted fields with escaped "" inside (RFC 4180 style).
+- stringify() must quote fields containing the delimiter or double-quotes.
+- CsvFilter: constructor(rows), where(predicate) filters, select(columns) projects, sortBy(column) sorts ascending string, count() returns number.
+- CLI: parse process.argv[2] for command: "parse" reads --input file and prints JSON, "stats" reads --input and prints stats, "--help" prints usage and exits 0.
+- In both .ts files use: declare const require: any; declare const process: any; then const fs = require("node:fs");
+- CRITICAL: ensure every string literal is properly closed. No unterminated strings.
+- tsconfig.json: outDir "dist", module "commonjs", target "es2020", strict true, esModuleInterop true, include ["src"].
+- package.json: name, version, NO dependencies or devDependencies, do NOT set "type": "module".
+- Use only Node builtins. Compile to dist/ via tsc -p tsconfig.json (CommonJS).
+- Verify with oracle tests and cli --help.

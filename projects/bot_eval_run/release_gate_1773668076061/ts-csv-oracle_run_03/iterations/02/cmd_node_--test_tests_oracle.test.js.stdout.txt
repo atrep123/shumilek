@@ -1,0 +1,286 @@
+✖ CsvParser: parse simple CSV (1.5201ms)
+✖ CsvParser: parse CSV with quoted fields (0.4384ms)
+✖ CsvParser: parse empty CSV returns empty array (0.4045ms)
+✖ CsvParser: parse single header line returns empty array (0.4531ms)
+✖ CsvParser: stringify rows to CSV (0.4181ms)
+✖ CsvParser: stringify quotes fields with commas (0.3807ms)
+✖ CsvParser: custom delimiter (0.4206ms)
+✖ CsvFilter: filter rows by predicate (0.4861ms)
+✖ CsvFilter: select specific columns (0.4225ms)
+✖ CsvFilter: sort rows (0.4657ms)
+✖ CsvFilter: count rows (0.3806ms)
+✖ CLI: --help exits with code 0 (39.864ms)
+✖ CLI: parse command reads file and outputs JSON (39.5197ms)
+✖ CLI: stats command (38.9559ms)
+✔ README.md exists (0.5608ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 1
+ℹ fail 14
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 198.0585
+
+✖ failing tests:
+
+test at tests\oracle.test.js:22:1
+✖ CsvParser: parse simple CSV (1.5201ms)
+  C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\dist\csv.js:47
+                  if (value.includes(this.delimiter) || value.includes('))
+                                                                       ^^^
+  
+  SyntaxError: Invalid or unexpected token
+      at wrapSafe (node:internal/modules/cjs/loader:1692:18)
+      at Module._compile (node:internal/modules/cjs/loader:1735:20)
+      at Object..js (node:internal/modules/cjs/loader:1893:10)
+      at Module.load (node:internal/modules/cjs/loader:1481:32)
+      at Module._load (node:internal/modules/cjs/loader:1300:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+      at Module.require (node:internal/modules/cjs/loader:1504:12)
+      at require (node:internal/modules/helpers:152:16)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\tests\oracle.test.js:23:25)
+
+test at tests\oracle.test.js:36:1
+✖ CsvParser: parse CSV with quoted fields (0.4384ms)
+  C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\dist\csv.js:47
+                  if (value.includes(this.delimiter) || value.includes('))
+                                                                       ^^^
+  
+  SyntaxError: Invalid or unexpected token
+      at wrapSafe (node:internal/modules/cjs/loader:1692:18)
+      at Module._compile (node:internal/modules/cjs/loader:1735:20)
+      at Object..js (node:internal/modules/cjs/loader:1893:10)
+      at Module.load (node:internal/modules/cjs/loader:1481:32)
+      at Module._load (node:internal/modules/cjs/loader:1300:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+      at Module.require (node:internal/modules/cjs/loader:1504:12)
+      at require (node:internal/modules/helpers:152:16)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\tests\oracle.test.js:37:25)
+
+test at tests\oracle.test.js:49:1
+✖ CsvParser: parse empty CSV returns empty array (0.4045ms)
+  C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\dist\csv.js:47
+                  if (value.includes(this.delimiter) || value.includes('))
+                                                                       ^^^
+  
+  SyntaxError: Invalid or unexpected token
+      at wrapSafe (node:internal/modules/cjs/loader:1692:18)
+      at Module._compile (node:internal/modules/cjs/loader:1735:20)
+      at Object..js (node:internal/modules/cjs/loader:1893:10)
+      at Module.load (node:internal/modules/cjs/loader:1481:32)
+      at Module._load (node:internal/modules/cjs/loader:1300:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+      at Module.require (node:internal/modules/cjs/loader:1504:12)
+      at require (node:internal/modules/helpers:152:16)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\tests\oracle.test.js:50:25)
+
+test at tests\oracle.test.js:58:1
+✖ CsvParser: parse single header line returns empty array (0.4531ms)
+  C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\dist\csv.js:47
+                  if (value.includes(this.delimiter) || value.includes('))
+                                                                       ^^^
+  
+  SyntaxError: Invalid or unexpected token
+      at wrapSafe (node:internal/modules/cjs/loader:1692:18)
+      at Module._compile (node:internal/modules/cjs/loader:1735:20)
+      at Object..js (node:internal/modules/cjs/loader:1893:10)
+      at Module.load (node:internal/modules/cjs/loader:1481:32)
+      at Module._load (node:internal/modules/cjs/loader:1300:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+      at Module.require (node:internal/modules/cjs/loader:1504:12)
+      at require (node:internal/modules/helpers:152:16)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\tests\oracle.test.js:59:25)
+
+test at tests\oracle.test.js:67:1
+✖ CsvParser: stringify rows to CSV (0.4181ms)
+  C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\dist\csv.js:47
+                  if (value.includes(this.delimiter) || value.includes('))
+                                                                       ^^^
+  
+  SyntaxError: Invalid or unexpected token
+      at wrapSafe (node:internal/modules/cjs/loader:1692:18)
+      at Module._compile (node:internal/modules/cjs/loader:1735:20)
+      at Object..js (node:internal/modules/cjs/loader:1893:10)
+      at Module.load (node:internal/modules/cjs/loader:1481:32)
+      at Module._load (node:internal/modules/cjs/loader:1300:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+      at Module.require (node:internal/modules/cjs/loader:1504:12)
+      at require (node:internal/modules/helpers:152:16)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\tests\oracle.test.js:68:25)
+
+test at tests\oracle.test.js:90:1
+✖ CsvParser: stringify quotes fields with commas (0.3807ms)
+  C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\dist\csv.js:47
+                  if (value.includes(this.delimiter) || value.includes('))
+                                                                       ^^^
+  
+  SyntaxError: Invalid or unexpected token
+      at wrapSafe (node:internal/modules/cjs/loader:1692:18)
+      at Module._compile (node:internal/modules/cjs/loader:1735:20)
+      at Object..js (node:internal/modules/cjs/loader:1893:10)
+      at Module.load (node:internal/modules/cjs/loader:1481:32)
+      at Module._load (node:internal/modules/cjs/loader:1300:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+      at Module.require (node:internal/modules/cjs/loader:1504:12)
+      at require (node:internal/modules/helpers:152:16)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\tests\oracle.test.js:91:25)
+
+test at tests\oracle.test.js:99:1
+✖ CsvParser: custom delimiter (0.4206ms)
+  C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\dist\csv.js:47
+                  if (value.includes(this.delimiter) || value.includes('))
+                                                                       ^^^
+  
+  SyntaxError: Invalid or unexpected token
+      at wrapSafe (node:internal/modules/cjs/loader:1692:18)
+      at Module._compile (node:internal/modules/cjs/loader:1735:20)
+      at Object..js (node:internal/modules/cjs/loader:1893:10)
+      at Module.load (node:internal/modules/cjs/loader:1481:32)
+      at Module._load (node:internal/modules/cjs/loader:1300:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+      at Module.require (node:internal/modules/cjs/loader:1504:12)
+      at require (node:internal/modules/helpers:152:16)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\tests\oracle.test.js:100:25)
+
+test at tests\oracle.test.js:113:1
+✖ CsvFilter: filter rows by predicate (0.4861ms)
+  C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\dist\csv.js:47
+                  if (value.includes(this.delimiter) || value.includes('))
+                                                                       ^^^
+  
+  SyntaxError: Invalid or unexpected token
+      at wrapSafe (node:internal/modules/cjs/loader:1692:18)
+      at Module._compile (node:internal/modules/cjs/loader:1735:20)
+      at Object..js (node:internal/modules/cjs/loader:1893:10)
+      at Module.load (node:internal/modules/cjs/loader:1481:32)
+      at Module._load (node:internal/modules/cjs/loader:1300:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+      at Module.require (node:internal/modules/cjs/loader:1504:12)
+      at require (node:internal/modules/helpers:152:16)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\tests\oracle.test.js:114:36)
+
+test at tests\oracle.test.js:128:1
+✖ CsvFilter: select specific columns (0.4225ms)
+  C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\dist\csv.js:47
+                  if (value.includes(this.delimiter) || value.includes('))
+                                                                       ^^^
+  
+  SyntaxError: Invalid or unexpected token
+      at wrapSafe (node:internal/modules/cjs/loader:1692:18)
+      at Module._compile (node:internal/modules/cjs/loader:1735:20)
+      at Object..js (node:internal/modules/cjs/loader:1893:10)
+      at Module.load (node:internal/modules/cjs/loader:1481:32)
+      at Module._load (node:internal/modules/cjs/loader:1300:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+      at Module.require (node:internal/modules/cjs/loader:1504:12)
+      at require (node:internal/modules/helpers:152:16)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\tests\oracle.test.js:129:36)
+
+test at tests\oracle.test.js:143:1
+✖ CsvFilter: sort rows (0.4657ms)
+  C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\dist\csv.js:47
+                  if (value.includes(this.delimiter) || value.includes('))
+                                                                       ^^^
+  
+  SyntaxError: Invalid or unexpected token
+      at wrapSafe (node:internal/modules/cjs/loader:1692:18)
+      at Module._compile (node:internal/modules/cjs/loader:1735:20)
+      at Object..js (node:internal/modules/cjs/loader:1893:10)
+      at Module.load (node:internal/modules/cjs/loader:1481:32)
+      at Module._load (node:internal/modules/cjs/loader:1300:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+      at Module.require (node:internal/modules/cjs/loader:1504:12)
+      at require (node:internal/modules/helpers:152:16)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\tests\oracle.test.js:144:36)
+
+test at tests\oracle.test.js:157:1
+✖ CsvFilter: count rows (0.3806ms)
+  C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\dist\csv.js:47
+                  if (value.includes(this.delimiter) || value.includes('))
+                                                                       ^^^
+  
+  SyntaxError: Invalid or unexpected token
+      at wrapSafe (node:internal/modules/cjs/loader:1692:18)
+      at Module._compile (node:internal/modules/cjs/loader:1735:20)
+      at Object..js (node:internal/modules/cjs/loader:1893:10)
+      at Module.load (node:internal/modules/cjs/loader:1481:32)
+      at Module._load (node:internal/modules/cjs/loader:1300:12)
+      at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+      at Module.require (node:internal/modules/cjs/loader:1504:12)
+      at require (node:internal/modules/helpers:152:16)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\tests\oracle.test.js:158:36)
+
+test at tests\oracle.test.js:171:1
+✖ CLI: --help exits with code 0 (39.864ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\tests\oracle.test.js:178:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:181:1
+✖ CLI: parse command reads file and outputs JSON (39.5197ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\tests\oracle.test.js:193:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:204:1
+✖ CLI: stats command (38.9559ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_03\workspace\tests\oracle.test.js:216:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

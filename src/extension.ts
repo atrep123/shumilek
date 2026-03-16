@@ -13,6 +13,7 @@ import {
   WorkspaceIndex,
   ProjectMap
 } from './workspace';
+import { sanitizeMapSegment, formatProjectMapMarkdown } from './projectMap';
 import { ContextProviderRegistry } from './contextProviders';
 import { TurnOrchestrator } from './orchestration';
 import { PIPELINE_STATUS_ICONS, PIPELINE_STATUS_TEXT } from './statusMessages';
@@ -68,6 +69,14 @@ import {
 import { buildCompressedMessages } from './contextMemory';
 import { buildObsidianChatArchive, updateObsidianArchiveIndex } from './obsidianArchive';
 import { humanizeApiError, isTransientError, isSafeUrl, normalizeTaskWeight, isChatMessage, normalizeScore, pickBrainModel, getNonce } from './utils';
+import {
+  getLastAssistantMessage,
+  extractPreferredFencedCodeBlock,
+  sanitizeChatMessages,
+  formatQualityReport,
+  buildStructuredOutput,
+  normalizeExternalScore
+} from './chatPersistence';
 import { isSlashCommand, executeSlashCommand, SlashCommandContext } from './slashCommands';
 import { runDoctorChecks, formatDoctorReport } from './doctor';
 import { ModelRouter } from './modelRouter';
@@ -166,6 +175,20 @@ import {
   getActiveWorkspaceFileUri,
   buildEditorContext
 } from './contextBuilder';
+import {
+  ToolCall,
+  ToolResult,
+  ToolCallOptions,
+  EditorPlan,
+  buildToolOnlyPrompt,
+  buildEditorFirstInstructions,
+  sanitizeEditorAnswer,
+  buildEditorStateMessage,
+  extractJsonPayload,
+  coerceEditorAction,
+  parseEditorPlanResponse,
+  getToolRequirements
+} from './toolUtils';
 // (Types imported from ./types)
 
 // Webview message types
@@ -189,26 +212,6 @@ interface ValidatorPayload {
   prompt: string;
   response: string;
   context?: string;
-}
-
-interface ToolCall {
-  name: string;
-  arguments?: Record<string, unknown>;
-}
-
-interface ToolResult {
-  ok: boolean;
-  tool: string;
-  message?: string;
-  data?: unknown;
-  approved?: boolean;
-}
-
-interface ToolCallOptions {
-  forceJson?: boolean;
-  systemPromptOverride?: string;
-  primaryModel?: string;
-  fallbackModel?: string;
 }
 
 // === Global State ===
@@ -391,45 +394,6 @@ let responseHistory: ResponseHistoryEntry[] = [];
 const MAX_HISTORY_SIZE = 20;
 const lastReadHashes = new Map<string, { hash: string; updatedAt: number }>();
 
-function getLastAssistantMessage(messages: ChatMessage[]): ChatMessage | undefined {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const m = messages[i];
-    if (m?.role === 'assistant') return m;
-  }
-  return undefined;
-}
-
-function extractPreferredFencedCodeBlock(text: string): { code: string; lang?: string } | null {
-  const fenceRegex = /```([a-zA-Z0-9_-]+)?\s*\n([\s\S]*?)```/g;
-  const matches: Array<{ lang?: string; code: string }> = [];
-
-  let match: RegExpExecArray | null;
-  while ((match = fenceRegex.exec(text)) !== null) {
-    const lang = typeof match[1] === 'string' ? match[1].trim().toLowerCase() : undefined;
-    const code = typeof match[2] === 'string' ? match[2] : '';
-    if (code.trim().length > 0) matches.push({ lang, code });
-  }
-  if (matches.length === 0) return null;
-
-  const preferred = ['ino', 'arduino', 'cpp', 'c', 'c++'];
-  const best = matches.find(m => m.lang && preferred.includes(m.lang)) ?? matches[0];
-  return { code: best.code.replace(/\r\n/g, '\n').trimEnd(), lang: best.lang };
-}
-
-function sanitizeChatMessages(raw: unknown): ChatMessage[] {
-  if (!raw || typeof raw !== 'object') return [];
-  const maybeState = raw as any;
-  const arr = Array.isArray(maybeState.messages) ? maybeState.messages : [];
-  const sanitized = arr.filter(isChatMessage).map((m: ChatMessage) => ({
-    role: m.role,
-    content: m.content,
-    timestamp: typeof m.timestamp === 'number' ? m.timestamp : undefined
-  }));
-
-  // Prevent UI/perf issues on very large histories.
-  return sanitized.slice(-200);
-}
-
 function loadChatMessages(context: vscode.ExtensionContext): ChatMessage[] {
   try {
     const saved = context.workspaceState.get<ChatState>('chatState');
@@ -467,36 +431,6 @@ function postToAllWebviews(message: WebviewMessage): void {
   }
 }
 
-function formatQualityReport(results: QualityCheckResult[]): string {
-  if (results.length === 0) return '';
-  const lines = results.map(result => {
-    const status = result.unavailable ? 'SKIPPED' : (result.ok ? 'PASS' : 'FAIL');
-    const scoreText = typeof result.score === 'number'
-      ? ` (skore ${result.score}${typeof result.threshold === 'number' ? ` / prah ${result.threshold}` : ''}${typeof result.rawScore === 'number' && result.rawScore !== result.score ? `, raw ${result.rawScore}` : ''})`
-      : '';
-    const details = result.details ? ` - ${result.details}` : '';
-    return `- ${result.name}: ${status}${scoreText}${details}`;
-  });
-  return lines.join('\n');
-}
-
-function buildStructuredOutput(
-  response: string,
-  summary: string | null,
-  checks: QualityCheckResult[],
-  includeResponse: boolean = true
-): string {
-  const report = formatQualityReport(checks);
-  let out = includeResponse ? `## Vysledek\n\n${response.trim()}` : response.trim();
-  if (report) {
-    out += `\n\n## Kontroly kvality\n${report}`;
-  }
-  if (summary && summary.trim()) {
-    out += `\n\n## Strucne shrnuti\n${summary.trim()}`;
-  }
-  return out;
-}
-
 async function summarizeResponse(
   baseUrl: string,
   model: string,
@@ -530,25 +464,6 @@ async function summarizeResponse(
     outputChannel?.appendLine(`[Summarizer] Failed: ${String(e)}`);
     return null;
   }
-}
-
-function normalizeExternalScore(
-  score: number | undefined,
-  threshold?: number
-): { score?: number; rawScore?: number } {
-  if (typeof score !== 'number') return { score };
-  const rawScore = score;
-  if (score > 1 && score <= 100 && (typeof threshold !== 'number' || threshold <= 1)) {
-    return { score: score / 100, rawScore };
-  }
-  return { score, rawScore };
-}
-
-function getToolRequirements(prompt: string): { requireToolCall: boolean; requireMutation: boolean } {
-  const normalized = prompt.toLowerCase();
-  const requireMutation = /(vytvo[rř]|ulo[zž]|zapi[sš]|napi[sš]|uprav|upravit|přepi[sš]|prepis|přidej|pridej|sma[zž]|smaz|smazat|prejmenuj|přejmenuj|rename|delete|write|edit|modify|create|replace|patch|apply_patch|write_file|replace_lines|run_terminal_command|spust|spustit|prikaz|přikaz|terminal)/.test(normalized);
-  const requireToolCall = requireMutation || /(přečti|precti|zobraz|otevri|otevř|najdi|hledej|search|list_files|read_file|get_active_file|symboly|symbol|definice|definition|reference|references|diagnostik|diagnostics|lsp|get_symbols|get_workspace_symbols|get_definition|get_references|get_type_info|get_diagnostics|run_terminal_command|fetch|web|stahni|stáhni|url)/.test(normalized);
-  return { requireToolCall, requireMutation };
 }
 
 async function callExternalValidator(
@@ -2770,63 +2685,6 @@ function buildToolInstructions(): string {
   ].join('\n');
 }
 
-function buildToolOnlyPrompt(requireMutation: boolean): string {
-  const rules = [
-    'Jsi vykonavac nastroju.',
-    'Odpovidej pouze JSONem bez markdownu.',
-    'Format: {"name":"<tool>","arguments":{...}} nebo pole takovych objektu.',
-    requireMutation
-      ? 'Musis provest zmenu souboru (write_file/replace_lines).'
-      : 'Musis pouzit alespon jeden tool_call.'
-  ];
-  const tools = [
-    'list_files',
-    'read_file',
-    'get_active_file',
-    'search_in_files',
-    'get_symbols',
-    'get_workspace_symbols',
-    'get_definition',
-    'get_references',
-    'get_type_info',
-    'get_diagnostics',
-    'replace_lines',
-    'apply_patch',
-    'write_file',
-    'pick_save_path',
-    'route_file',
-    'rename_file',
-    'delete_file',
-    'run_terminal_command',
-    'fetch_webpage'
-  ];
-  return [...rules, `Dostupne nastroje: ${tools.join(', ')}`].join('\n');
-}
-
-interface EditorPlan {
-  answer?: string;
-  actions?: ToolCall[];
-  notes?: string[];
-}
-
-function sanitizeEditorAnswer(answer: string, results: ToolResult[]): string {
-  const trimmed = answer.trim();
-  if (!trimmed) return '';
-  const allOk = results.length > 0 && results.every(r => r.ok && r.approved !== false);
-  const lines = trimmed.split(/\r\n|\n/);
-  const filtered = lines.filter(line => {
-    const lower = line.toLowerCase();
-    if (/(kompil|kompilac|build|lint|test)/i.test(lower)) {
-      return false;
-    }
-    if (allOk && /(nenalezen|neexistuje|soubor nebyl|error|fail|chyba)/i.test(lower)) {
-      return false;
-    }
-    return true;
-  });
-  return filtered.join('\n').trim();
-}
-
 function formatDisplayPath(input: string): string {
   const decoded = decodePathInput(input).replace(/\\/g, '/');
   const parts = decoded.split('/').filter(Boolean);
@@ -2861,99 +2719,6 @@ function formatDisplayPath(input: string): string {
     output = `.../${tail}`;
   }
   return output;
-}
-
-function buildEditorStateMessage(session?: ToolSessionState): string | undefined {
-  if (!session) return undefined;
-  const parts: string[] = [];
-  if (session.lastWritePath) {
-    parts.push(`last_write_path: ${session.lastWritePath}`);
-  }
-  if (session.lastWriteAction) {
-    parts.push(`last_write_action: ${session.lastWriteAction}`);
-  }
-  if (parts.length === 0) return undefined;
-  return ['EDITOR_STATE:', ...parts, 'Use last_write_path if you need to edit the latest file.'].join('\n');
-}
-
-function extractJsonPayload(text: string): string | undefined {
-  const trimmed = text.trim();
-  if (!trimmed) return undefined;
-  if (trimmed.startsWith('{') || trimmed.startsWith('[')) return trimmed;
-  const fenceRegex = /```(?:json)?\s*([\s\S]*?)```/gi;
-  let match: RegExpExecArray | null;
-  while ((match = fenceRegex.exec(text)) !== null) {
-    const candidate = match[1]?.trim();
-    if (!candidate) continue;
-    if (candidate.startsWith('{') || candidate.startsWith('[')) return candidate;
-  }
-  const firstBrace = text.indexOf('{');
-  const lastBrace = text.lastIndexOf('}');
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    return text.slice(firstBrace, lastBrace + 1).trim();
-  }
-  return undefined;
-}
-
-function coerceEditorAction(raw: Record<string, unknown>): ToolCall | null {
-  const name = typeof raw.name === 'string'
-    ? raw.name
-    : (typeof raw.tool === 'string'
-      ? raw.tool
-      : (typeof raw.type === 'string'
-        ? raw.type
-        : (typeof raw.action === 'string' ? raw.action : '')));
-  if (!name) return null;
-  const args = raw.arguments && typeof raw.arguments === 'object'
-    ? raw.arguments as Record<string, unknown>
-    : Object.fromEntries(Object.entries(raw).filter(([key]) => !['name', 'tool', 'type', 'action'].includes(key)));
-  return { name, arguments: args };
-}
-
-function parseEditorPlanResponse(text: string): { plan?: EditorPlan; error?: string } {
-  const payload = extractJsonPayload(text);
-  if (!payload) return { error: 'missing JSON payload' };
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(payload);
-  } catch (err) {
-    return { error: `invalid JSON: ${String(err)}` };
-  }
-
-  if (Array.isArray(parsed)) {
-    const actions = parsed
-      .map(item => (item && typeof item === 'object') ? coerceEditorAction(item as Record<string, unknown>) : null)
-      .filter((item): item is ToolCall => Boolean(item));
-    return { plan: { actions } };
-  }
-
-  if (!parsed || typeof parsed !== 'object') {
-    return { error: 'JSON must be object or array' };
-  }
-
-  const obj = parsed as Record<string, unknown>;
-  const answer = typeof obj.answer === 'string'
-    ? obj.answer
-    : (typeof obj.response === 'string' ? obj.response : undefined);
-  const notes = Array.isArray(obj.notes)
-    ? obj.notes.filter(item => typeof item === 'string') as string[]
-    : undefined;
-
-  let rawActions: unknown = obj.actions;
-  if (!Array.isArray(rawActions)) {
-    rawActions = obj.toolCalls ?? obj.edits ?? obj.calls;
-  }
-  let actions: ToolCall[] | undefined;
-  if (Array.isArray(rawActions)) {
-    actions = rawActions
-      .map(item => (item && typeof item === 'object') ? coerceEditorAction(item as Record<string, unknown>) : null)
-      .filter((item): item is ToolCall => Boolean(item));
-  } else if (obj.name || obj.tool || obj.type || obj.action) {
-    const single = coerceEditorAction(obj);
-    actions = single ? [single] : undefined;
-  }
-
-  return { plan: { answer, actions, notes } };
 }
 
 async function applyEditorPlan(
@@ -3198,12 +2963,6 @@ function getWorkspaceFolderForProjectMap(preferredUri?: vscode.Uri): vscode.Work
   return folders[0];
 }
 
-function sanitizeMapSegment(value: string): string {
-  const cleaned = value.normalize('NFKD').replace(/[^\x00-\x7F]/g, '');
-  const normalized = cleaned.replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '');
-  return normalized || 'root';
-}
-
 function getProjectMapPathsForFolder(folder: vscode.WorkspaceFolder): { mapPath: string; cachePath: string } {
   const mapPath = getProjectMapPath();
   const cachePath = getProjectMapCachePath();
@@ -3225,38 +2984,6 @@ function getProjectMapPathsForFolder(folder: vscode.WorkspaceFolder): { mapPath:
     mapPath: sanitizeRelativePath(mapPathWithSuffix, mapPath),
     cachePath: sanitizeRelativePath(cachePathWithSuffix, cachePath)
   };
-}
-
-function formatProjectMapMarkdown(map: ProjectMap): string {
-  const lines: string[] = [];
-  lines.push('# Project Map');
-  lines.push(`Updated: ${new Date(map.lastUpdated).toISOString()}`);
-  lines.push('');
-  lines.push('## Tree');
-  lines.push(map.tree ? map.tree : '- (empty)');
-  lines.push('');
-  lines.push('## Key Files');
-  if (map.keyFiles.length === 0) {
-    lines.push('- (none)');
-  } else {
-    for (const file of map.keyFiles) {
-      lines.push(`- ${file}`);
-    }
-  }
-  lines.push('');
-  lines.push('## Modules');
-  if (map.modules.length === 0) {
-    lines.push('- (none)');
-  } else {
-    for (const mod of map.modules) {
-      lines.push(`- ${mod.name}: ${mod.summary}`);
-      for (const file of mod.files) {
-        lines.push(`  - ${file}`);
-      }
-    }
-  }
-  lines.push('');
-  return lines.join('\n');
 }
 
 async function writeProjectMapFiles(
@@ -3485,21 +3212,6 @@ async function resolveWorkspaceUri(
   }
 
   return await tryUri(vscode.Uri.joinPath(folders[0].uri, cleaned));
-}
-
-function buildEditorFirstInstructions(): string {
-  return [
-    'EDITOR-FIRST MODE:',
-    'Return a single JSON object only (no markdown, no tool_call tags).',
-    'Schema:',
-    '{"answer":"...", "actions":[{"name":"replace_lines","arguments":{"path":"...","startLine":1,"endLine":1,"text":"...","expected":"..."}}]}',
-    'Prefer patch-first edits when possible.',
-    'Actions supported: apply_patch, write_file, replace_lines, rename_file, delete_file.',
-    'apply_patch expects unified diff in arguments.diff.',
-    'Use 1-based line numbers for replace_lines.',
-    'If you are unsure about path, omit it and provide suggestedName/extension for write_file.',
-    'No extra keys are required. Do not include analysis or commentary.'
-  ].join('\n');
 }
 
 function getFullDocumentRange(doc: vscode.TextDocument): vscode.Range {

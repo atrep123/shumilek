@@ -1,0 +1,91 @@
+{
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace",
+  "deterministicFallback": {
+    "mode": "on-fail",
+    "tsTodo": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "nodeApi": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "totalActivations": 0,
+    "totalRecoveries": 0,
+    "totalTargetedActivations": 0,
+    "totalTargetedRecoveries": 0,
+    "totalCanonicalActivations": 0,
+    "totalCanonicalRecoveries": 0,
+    "totalRawPasses": 0,
+    "totalRawFailures": 0,
+    "totalRecoveredByFallback": 0,
+    "fallbackDependencyRate": 0
+  },
+  "reliability": {
+    "rawPasses": 0,
+    "rawFailures": 0,
+    "recoveredByFallback": 0,
+    "fallbackDependencyRate": 0
+  },
+  "parseStats": {
+    "plannerFailures": 0,
+    "schemaFailures": 0,
+    "jsonRepairFailures": 0,
+    "parseFailures": 0,
+    "jsonParseFailures": 0,
+    "placeholderFailures": 0,
+    "otherFailures": 0
+  },
+  "ok": false,
+  "diagnostics": [
+    "Command failed: node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json (exit=2, timedOut=false)",
+    "Command failed: node --test tests/oracle.test.js (exit=1, timedOut=false)"
+  ],
+  "commands": [
+    {
+      "command": "node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace",
+      "ok": false,
+      "exitCode": 2,
+      "timedOut": false,
+      "durationMs": 1258,
+      "stdout": "src/cli.ts(35,41): error TS7006: Parameter 'arg' implicitly has an 'any' type.\r\nsrc/cli.ts(42,41): error TS7006: Parameter 'arg' implicitly has an 'any' type.\r\n",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace",
+      "ok": false,
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 252,
+      "stdout": "✖ CsvParser: parse simple CSV (1.6556ms)\n✖ CsvParser: parse CSV with quoted fields (0.1213ms)\n✔ CsvParser: parse empty CSV returns empty array (0.1302ms)\n✖ CsvParser: parse single header line returns empty array (0.0824ms)\n✖ CsvParser: stringify rows to CSV (0.2971ms)\n✔ CsvParser: stringify quotes fields with commas (0.1042ms)\n✖ CsvParser: custom delimiter (0.0943ms)\n✖ CsvFilter: filter rows by predicate (0.1428ms)\n✖ CsvFilter: select specific columns (0.1601ms)\n✖ CsvFilter: sort rows (0.1753ms)\n✖ CsvFilter: count rows (0.0791ms)\n✔ CLI: --help exits with code 0 (40.4164ms)\n✖ CLI: parse command reads file and outputs JSON (40.7772ms)\n✖ CLI: stats command (39.9147ms)\n✔ README.md exists (0.378ms)\nℹ tests 15\nℹ suites 0\nℹ pass 4\nℹ fail 11\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 187.3701\n\n✖ failing tests:\n\ntest at tests\\oracle.test.js:22:1\n✖ CsvParser: parse simple CSV (1.6556ms)\n  SyntaxError: Invalid regular expression: /${this.delimiter}(?=(?:[^'\"]*(?:['\"](?:[^'\"']*['\"])*[^'\"']*)*[^'\"']*$)/: Unterminated group\n      at new RegExp (<anonymous>)\n      at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\dist\\csv.js:14:39\n      at Array.map (<anonymous>)\n      at CsvParser.parse (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\dist\\csv.js:13:31)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\tests\\oracle.test.js:27:23)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.start (node:internal/test_runner/test:1003:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17)\n\ntest at tests\\oracle.test.js:36:1\n✖ CsvParser: parse CSV with quoted fields (0.1213ms)\n  SyntaxError: Invalid regular expression: /${this.delimiter}(?=(?:[^'\"]*(?:['\"](?:[^'\"']*['\"])*[^'\"']*)*[^'\"']*$)/: Unterminated group\n      at new RegExp (<anonymous>)\n      at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\dist\\csv.js:14:39\n      at Array.map (<anonymous>)\n      at CsvParser.parse (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\dist\\csv.js:13:31)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\tests\\oracle.test.js:41:23)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n\ntest at tests\\oracle.test.js:58:1\n✖ CsvParser: parse single header line returns empty array (0.0824ms)\n  SyntaxError: Invalid regular expression: /${this.delimiter}(?=(?:[^'\"]*(?:['\"](?:[^'\"']*['\"])*[^'\"']*)*[^'\"']*$)/: Unterminated group\n      at new RegExp (<anonymous>)\n      at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\dist\\csv.js:14:39\n      at Array.map (<anonymous>)\n      at CsvParser.parse (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\dist\\csv.js:13:31)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\tests\\oracle.test.js:62:23)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n\ntest at tests\\oracle.test.js:67:1\n✖ CsvParser: stringify rows to CSV (0.2971ms)\n  SyntaxError: Invalid regular expression: /${this.delimiter}(?=(?:[^'\"]*(?:['\"](?:[^'\"']*['\"])*[^'\"']*)*[^'\"']*$)/: Unterminated group\n      at new RegExp (<anonymous>)\n      at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\dist\\csv.js:14:39\n      at Array.map (<anonymous>)\n      at CsvParser.parse (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\dist\\csv.js:13:31)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\tests\\oracle.test.js:84:25)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n\ntest at tests\\oracle.test.js:99:1\n✖ CsvParser: custom delimiter (0.0943ms)\n  SyntaxError: Invalid regular expression: /${this.delimiter}(?=(?:[^'\"]*(?:['\"](?:[^'\"']*['\"])*[^'\"']*)*[^'\"']*$)/: Unterminated group\n      at new RegExp (<anonymous>)\n      at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\dist\\csv.js:14:39\n      at Array.map (<anonymous>)\n      at CsvParser.parse (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\dist\\csv.js:13:31)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\tests\\oracle.test.js:103:23)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n\ntest at tests\\oracle.test.js:113:1\n✖ CsvFilter: filter rows by predicate (0.1428ms)\n  SyntaxError: Invalid regular expression: /${this.delimiter}(?=(?:[^'\"]*(?:['\"](?:[^'\"']*['\"])*[^'\"']*)*[^'\"']*$)/: Unterminated group\n      at new RegExp (<anonymous>)\n      at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\dist\\csv.js:14:39\n      at Array.map (<anonymous>)\n      at CsvParser.parse (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\dist\\csv.js:13:31)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\tests\\oracle.test.js:118:23)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n\ntest at tests\\oracle.test.js:128:1\n✖ CsvFilter: select specific columns (0.1601ms)\n  SyntaxError: Invalid regular expression: /${this.delimiter}(?=(?:[^'\"]*(?:['\"](?:[^'\"']*['\"])*[^'\"']*)*[^'\"']*$)/: Unterminated group\n      at new RegExp (<anonymous>)\n      at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\dist\\csv.js:14:39\n      at Array.map (<anonymous>)\n      at CsvParser.parse (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\dist\\csv.js:13:31)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\tests\\oracle.test.js:132:23)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n\ntest at tests\\oracle.test.js:143:1\n✖ CsvFilter: sort rows (0.1753ms)\n  SyntaxError: Invalid regular expression: /${this.delimiter}(?=(?:[^'\"]*(?:['\"](?:[^'\"']*['\"])*[^'\"']*)*[^'\"']*$)/: Unterminated group\n      at new RegExp (<anonymous>)\n      at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\dist\\csv.js:14:39\n      at Array.map (<anonymous>)\n      at CsvParser.parse (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\dist\\csv.js:13:31)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\tests\\oracle.test.js:147:23)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n\ntest at tests\\oracle.test.js:157:1\n✖ CsvFilter: count rows (0.0791ms)\n  SyntaxError: Invalid regular expression: /${this.delimiter}(?=(?:[^'\"]*(?:['\"](?:[^'\"']*['\"])*[^'\"']*)*[^'\"']*$)/: Unterminated group\n      at new RegExp (<anonymous>)\n      at C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\dist\\csv.js:14:39\n      at Array.map (<anonymous>)\n      at CsvParser.parse (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\dist\\csv.js:13:31)\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\tests\\oracle.test.js:161:23)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n\ntest at tests\\oracle.test.js:181:1\n✖ CLI: parse command reads file and outputs JSON (40.7772ms)\n  AssertionError [ERR_ASSERTION]: Expected JSON array on stdout\n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\tests\\oracle.test.js:198:10)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: false,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n\ntest at tests\\oracle.test.js:204:1\n✖ CLI: stats command (39.9147ms)\n  AssertionError [ERR_ASSERTION]: Expected stats output, got: \n      at TestContext.<anonymous> (C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace\\tests\\oracle.test.js:220:10)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1106:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)\n      at Test.postRun (node:internal/test_runner/test:1235:19)\n      at Test.run (node:internal/test_runner/test:1163:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: false,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n",
+      "stderr": ""
+    },
+    {
+      "command": "node dist/cli.js --help",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773668076061\\ts-csv-oracle_run_04\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 60,
+      "stdout": "Usage:\n\nParsing CSV\nnode dist/cli.js parse --input <file>\n\nStatistics\nnode dist/cli.js stats --input <file>\n\nHelp\nnode dist/cli.js --help\n\n",
+      "stderr": ""
+    }
+  ]
+}

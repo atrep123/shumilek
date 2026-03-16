@@ -1,0 +1,17 @@
+C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_02\workspace\dist\csv.js:30
+                    return '"' + value.replace(/"/g, '"\);
+                                                     ^^^^^
+
+SyntaxError: Invalid or unexpected token
+    at wrapSafe (node:internal/modules/cjs/loader:1692:18)
+    at Module._compile (node:internal/modules/cjs/loader:1735:20)
+    at Object..js (node:internal/modules/cjs/loader:1893:10)
+    at Module.load (node:internal/modules/cjs/loader:1481:32)
+    at Module._load (node:internal/modules/cjs/loader:1300:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+    at Module.require (node:internal/modules/cjs/loader:1504:12)
+    at require (node:internal/modules/helpers:152:16)
+    at Object.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\release_gate_1773668076061\ts-csv-oracle_run_02\workspace\dist\cli.js:6:34)
+
+Node.js v24.12.0

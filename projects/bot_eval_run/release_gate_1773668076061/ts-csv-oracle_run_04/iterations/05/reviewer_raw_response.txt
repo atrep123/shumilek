@@ -1,0 +1,4 @@
+{  
+  "errorMessage": "Unknown command: help",
+  "errorType": "RuntimeError"
+}

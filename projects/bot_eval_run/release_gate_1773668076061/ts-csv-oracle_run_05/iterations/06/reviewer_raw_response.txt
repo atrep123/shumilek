@@ -1,0 +1,1 @@
+{ "errors": [ { "message": "Unexpected token a", "line": 23, "column": 5 } ] }

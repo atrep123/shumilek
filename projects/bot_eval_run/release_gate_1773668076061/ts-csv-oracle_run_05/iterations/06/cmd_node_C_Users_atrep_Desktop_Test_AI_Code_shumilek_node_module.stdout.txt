@@ -1,0 +1,3 @@
+src/csv.ts(33,113): error TS1002: Unterminated string literal.
+src/csv.ts(34,7): error TS1005: ',' expected.
+src/csv.ts(76,1): error TS1160: Unterminated template literal.

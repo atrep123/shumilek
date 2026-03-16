@@ -1,0 +1,11 @@
+{
+  "name": "csv-processor",
+  "version": "1.0.0",
+  "description": "A simple CSV processor written in TypeScript using Node.js built-in modules.",
+  "main": "dist/cli.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "author": "Your Name",
+  "license": "MIT"
+}

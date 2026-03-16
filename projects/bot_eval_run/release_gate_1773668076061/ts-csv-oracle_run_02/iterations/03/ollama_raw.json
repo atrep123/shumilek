@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:14b",
+  "created_at": "2026-03-16T13:43:11.7243987Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/csv.ts\",\n      \"content\": \"// src/csv.ts\\n\\ndeclare const require: any;\\nconst fs = require('node:fs');\\n\\ntype CsvParserOptions = {\\n  delimiter?: string;\\n};\\n\\nclass CsvParser {\\n  private delimiter: string;\\n\\n  constructor(options: CsvParserOptions = {}) {\\n    this.delimiter = options.delimiter || ',';\\n  }\\n\\n  parse(text: string): Record<string, string>[] {\\n    const lines = text.split('\\\\n');\\n    const headers = lines[0].split(this.delimiter);\\n    return lines.slice(1).map(line => {\\n      const values = line.split(this.delimiter);\\n      const record: Record<string, string> = {};\\n      for (let i = 0; i < headers.length; i++) {\\n        record[headers[i]] = values[i];\\n      }\\n      return record;\\n    });\\n  }\\n\\n  stringify(rows: Record<string, string>[]): string {\\n    if (rows.length === 0) return '';\\n\\n    const headers = Object.keys(rows[0]);\\n    const headerLine = headers.join(this.delimiter);\\n\\n    const lines = rows.map(row => {\\n      return headers.map(header => {\\n        const value = row[header];\\n        if (value.includes(this.delimiter) || value.includes('\" }]}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 20500312900,
+  "load_duration": 5309800500,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 1002180700,
+  "eval_count": 323,
+  "eval_duration": 4099879400
+}
