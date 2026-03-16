@@ -217,6 +217,14 @@ try {
   ORACLE_NODE_PROJECT_API_LARGE_TESTS_SNIPPET = '// (oracle tests missing on disk)';
 }
 
+const ORACLE_TS_CSV_DIR = path.join(__dirname, 'botEval', 'oracle', 'ts_csv');
+let ORACLE_TS_CSV_TESTS_SNIPPET = '';
+try {
+  ORACLE_TS_CSV_TESTS_SNIPPET = fs.readFileSync(path.join(ORACLE_TS_CSV_DIR, 'tests', 'oracle.test.js'), 'utf8');
+} catch {
+  ORACLE_TS_CSV_TESTS_SNIPPET = '// (oracle tests missing on disk)';
+}
+
 const SCENARIOS: Scenario[] = [
   {
     id: 'python-ai-stdlib',
@@ -522,6 +530,72 @@ const SCENARIOS: Scenario[] = [
       '- `content` je vzdy kompletni obsah souboru (ne diff/snippet).',
     ].join('\n'),
     validate: async (workspaceDir: string, _context: EvalRunContext) => validateNodeProjectApiLarge(workspaceDir),
+  },
+  {
+    id: 'ts-csv-oracle',
+    title: 'TypeScript CSV processor + CLI validated with oracle tests',
+    prompt: [
+      'Vytvor realisticky TypeScript projekt (bez externich zavislosti), ktery zpracuje CSV soubory a projde oracle testy.',
+      '',
+      'POZADAVKY / KONTRAKT:',
+      '- Zadne externi npm balicky. Pouze Node.js builtin moduly.',
+      '- VYSLOVNE ZAKAZANO: csv-parse, papaparse, fast-csv, commander, yargs (a jine externi balicky).',
+      '- README.md je povinny.',
+      '- Nevytvarej `dist/` ve vystupu (generuje ho `tsc`).',
+      '- `package.json` nesmi mit `"type": "module"` (pouzij `commonjs`).',
+      '- V TS nepouzivej externi helper knihovny. Pro kompatibilitu muzes pouzit `declare const require: any; declare const process: any;`.',
+      '- Pouzij `const fs = require("node:fs")` (ne `declare const fs = ...`).',
+      '- Musi existovat `tsconfig.json` a kompilace do `dist/` (CommonJS) pres `tsc -p tsconfig.json`.',
+      '',
+      '- `src/csv.ts` musi exportovat `CsvParser` a `CsvFilter`:',
+      '',
+      '  CsvParser:',
+      '  - constructor(options?: { delimiter?: string }) — vychozi oddelovac je carka',
+      '  - parse(text: string): Record<string, string>[] — parsuje CSV text s prvnim radkem jako hlavicka; vraci pole objektu',
+      '  - stringify(rows: Record<string, string>[]): string — serializuje pole objektu zpet do CSV (s hlavickou)',
+      '  - Musi podporovat quoted fields (uvozovky kolem poli obsahujicich oddelovac nebo uvozovky, escaped "" uvnitr)',
+      '',
+      '  CsvFilter:',
+      '  - constructor(rows: Record<string, string>[])',
+      '  - where(predicate: (row: Record<string, string>) => boolean): Record<string, string>[] — filtruje radky',
+      '  - select(columns: string[]): Record<string, string>[] — vybere jen urcite sloupce',
+      '  - sortBy(column: string): Record<string, string>[] — seradi radky podle hodnot sloupce (ascending, string compare)',
+      '  - count(): number — pocet radku',
+      '',
+      '- `src/cli.ts` musi po kompilaci vytvorit spustitelny CLI v `dist/cli.js`:',
+      '  - `--help` (exit code 0)',
+      '  - `parse --input <soubor>` — nacte CSV soubor, vypise JSON pole radku na stdout',
+      '  - `stats --input <soubor>` — nacte CSV soubor, vypise statistiky (pocet radku, sloupce) na stdout',
+      '',
+      'Technicka poznamka: abys nemusel resit @types/node, v TS nepouzivej `import fs from ...`.',
+      'Pouzij `declare const require: any; declare const process: any;` a nacti builtin pres `const fs = require("node:fs")` atd.',
+      '',
+      'Poznamka: testy budeme pouzivat tyto (musis projit):',
+      '--- BEGIN ORACLE TESTS (tests/oracle.test.js) ---',
+      ORACLE_TS_CSV_TESTS_SNIPPET.trimEnd(),
+      '--- END ORACLE TESTS ---',
+      '',
+      'VYSTUPNI FORMAT (STRICT): vrat JEN JSON objekt tohoto tvaru:',
+      '{',
+      '  "mode": "full",',
+      '  "files": [',
+      '    {"path": "README.md", "content": "...\\n"},',
+      '    {"path": "package.json", "content": "...\\n"},',
+      '    {"path": "tsconfig.json", "content": "...\\n"},',
+      '    {"path": "src/csv.ts", "content": "...\\n"},',
+      '    {"path": "src/cli.ts", "content": "...\\n"}',
+      '  ],',
+      '  "notes": "optional"',
+      '}',
+      '',
+      'Pravidla:',
+      '- Zadny markdown, zadne ``` bloky, zadny text mimo JSON.',
+      '- Cesty jsou relativni, pouzij `/`, bez `..` a bez absolutnich cest.',
+      '- Nezahrnuj vlastni `tests/` (pouziji se oracle testy).',
+      '- `content` je vzdy kompletni obsah souboru (ne diff/snippet).',
+      '- `package.json` muze byt minimalni (nepocitam s `npm install`).',
+    ].join('\n'),
+    validate: async (workspaceDir: string, context: EvalRunContext) => validateTsCsvOracle(workspaceDir, context),
   },
 ];
 
@@ -6504,6 +6578,177 @@ export async function validateNodeProjectApiLarge(workspaceDir: string): Promise
   return { ok: diagnostics.length === 0, diagnostics, commands };
 }
 
+async function validateTsCsvOracle(workspaceDir: string, _context: EvalRunContext): Promise<ValidationResult> {
+  const diagnostics: string[] = [];
+  const required = ['README.md', 'package.json', 'tsconfig.json', 'src/csv.ts', 'src/cli.ts'];
+
+  await fs.promises.rm(path.join(workspaceDir, 'dist'), { recursive: true, force: true });
+  await fs.promises.rm(path.join(workspaceDir, 'node_modules'), { recursive: true, force: true });
+
+  try {
+    await fs.promises.rm(path.join(workspaceDir, 'tests'), { recursive: true, force: true });
+    await installOracleFiles({ oracleDir: ORACLE_TS_CSV_DIR, workspaceDir });
+  } catch (e: any) {
+    diagnostics.push(`Failed to install oracle tests: ${String(e?.message || e)}`);
+  }
+
+  for (const rel of required) {
+    const abs = path.join(workspaceDir, rel);
+    if (!fs.existsSync(abs)) diagnostics.push(`Missing required file: ${rel}`);
+  }
+
+  try {
+    const files = await listFilesRecursively(workspaceDir);
+    if (files.some(f => f.startsWith('dist/'))) diagnostics.push('Failed to clean dist/ before validation');
+    if (files.some(f => f.startsWith('node_modules/'))) diagnostics.push('Failed to clean node_modules/ before validation');
+  } catch (e: any) {
+    diagnostics.push(`Failed to scan workspace files: ${String(e?.message || e)}`);
+  }
+
+  // Validate package.json
+  try {
+    const pkgPath = path.join(workspaceDir, 'package.json');
+    const pkg = JSON.parse(await fs.promises.readFile(pkgPath, 'utf8'));
+    const deps = pkg.dependencies && typeof pkg.dependencies === 'object' ? Object.keys(pkg.dependencies) : [];
+    const devDeps = pkg.devDependencies && typeof pkg.devDependencies === 'object' ? Object.keys(pkg.devDependencies) : [];
+    if (deps.length > 0 || devDeps.length > 0) {
+      diagnostics.push('No dependencies allowed (dependencies/devDependencies must be empty or missing)');
+    }
+    if (pkg.type === 'module') diagnostics.push('package.json must not set "type": "module" (use commonjs or omit)');
+  } catch (e: any) {
+    diagnostics.push(`Invalid package.json: ${String(e?.message || e)}`);
+  }
+
+  // Validate tsconfig.json
+  try {
+    const tsconfigPath = path.join(workspaceDir, 'tsconfig.json');
+    const tsconfig = JSON.parse(await fs.promises.readFile(tsconfigPath, 'utf8'));
+    const compilerOptions = (tsconfig && typeof tsconfig === 'object' ? tsconfig.compilerOptions : null) || {};
+    if (compilerOptions.module && String(compilerOptions.module).toLowerCase() !== 'commonjs') {
+      diagnostics.push('tsconfig.json should compile as CommonJS (compilerOptions.module = "commonjs")');
+    }
+    if (compilerOptions.outDir && String(compilerOptions.outDir).replace(/\\/g, '/') !== 'dist') {
+      diagnostics.push('tsconfig.json should emit to dist/ (compilerOptions.outDir = "dist")');
+    }
+  } catch (e: any) {
+    diagnostics.push(`Invalid tsconfig.json: ${String(e?.message || e)}`);
+  }
+
+  // Validate src/csv.ts exports
+  try {
+    const csvPath = path.join(workspaceDir, 'src', 'csv.ts');
+    if (fs.existsSync(csvPath)) {
+      const csvContent = await fs.promises.readFile(csvPath, 'utf8');
+      if (!/\bclass\s+CsvParser\b/.test(csvContent)) diagnostics.push('src/csv.ts must define class CsvParser');
+      if (!/\bclass\s+CsvFilter\b/.test(csvContent)) diagnostics.push('src/csv.ts must define class CsvFilter');
+      for (const method of ['parse', 'stringify']) {
+        if (!new RegExp(`\\b${method}\\s*\\(`).test(csvContent)) {
+          diagnostics.push(`src/csv.ts missing CsvParser.${method}()`);
+        }
+      }
+      for (const method of ['where', 'select', 'sortBy', 'count']) {
+        if (!new RegExp(`\\b${method}\\s*\\(`).test(csvContent)) {
+          diagnostics.push(`src/csv.ts missing CsvFilter.${method}()`);
+        }
+      }
+      if (/csv-parse|papaparse|fast-csv/i.test(csvContent)) {
+        diagnostics.push('src/csv.ts must not use external CSV packages');
+      }
+    }
+  } catch (e: any) {
+    diagnostics.push(`Failed to scan src/csv.ts: ${String(e?.message || e)}`);
+  }
+
+  // Validate src/cli.ts
+  try {
+    const cliPath = path.join(workspaceDir, 'src', 'cli.ts');
+    if (fs.existsSync(cliPath)) {
+      const cliContent = await fs.promises.readFile(cliPath, 'utf8');
+      if (/commander|yargs|minimist/i.test(cliContent)) {
+        diagnostics.push('CLI must parse process.argv manually; do not use commander/yargs/minimist');
+      }
+      for (const cmd of ['parse', 'stats']) {
+        if (!new RegExp(`\\b${cmd}\\b`, 'i').test(cliContent)) diagnostics.push(`src/cli.ts should support command "${cmd}"`);
+      }
+    }
+  } catch (e: any) {
+    diagnostics.push(`Failed to scan src/cli.ts: ${String(e?.message || e)}`);
+  }
+
+  // Validate source only uses builtin modules
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const builtinModules: string[] = require('node:module').builtinModules || [];
+    const builtin = new Set<string>(builtinModules.map((m: string) => (typeof m === 'string' ? m : String(m))));
+    for (const m of [...builtin]) {
+      if (m.startsWith('node:')) builtin.add(m.slice('node:'.length));
+      else builtin.add(`node:${m}`);
+    }
+
+    const sourceFiles = (await listFilesRecursively(workspaceDir)).filter(p => {
+      if (p.startsWith('tests/')) return false;
+      if (p.startsWith('dist/')) return false;
+      if (p.startsWith('node_modules/')) return false;
+      return p.endsWith('.ts') || p.endsWith('.js');
+    });
+    const requireRe = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
+    const importRe = /^\s*import\s+.*from\s+['"]([^'"]+)['"]/gm;
+
+    for (const rel of sourceFiles) {
+      const abs = path.join(workspaceDir, rel);
+      const content = await fs.promises.readFile(abs, 'utf8');
+      let m: RegExpExecArray | null;
+      while ((m = requireRe.exec(content))) {
+        const spec = m[1];
+        if (!spec) continue;
+        if (spec.startsWith('.') || spec.startsWith('/') || spec.startsWith('node:')) continue;
+        if (!builtin.has(spec)) diagnostics.push(`Non-builtin require "${spec}" in ${rel}`);
+      }
+      while ((m = importRe.exec(content))) {
+        const spec = m[1];
+        if (!spec) continue;
+        if (spec.startsWith('.') || spec.startsWith('/') || spec.startsWith('node:')) continue;
+        if (!builtin.has(spec)) diagnostics.push(`Non-builtin import "${spec}" in ${rel}`);
+      }
+    }
+  } catch (e: any) {
+    diagnostics.push(`Failed to scan TS imports: ${String(e?.message || e)}`);
+  }
+
+  // Run compilation and oracle tests
+  const repoRoot = path.resolve(__dirname, '..');
+  const tscPath = path.join(repoRoot, 'node_modules', 'typescript', 'bin', 'tsc');
+  if (!fs.existsSync(tscPath)) {
+    diagnostics.push(`TypeScript compiler not found at ${tscPath}`);
+    return { ok: false, diagnostics };
+  }
+
+  await fs.promises.rm(path.join(workspaceDir, 'dist'), { recursive: true, force: true });
+
+  const cmdTimeoutMs = 10 * 60 * 1000;
+  const commands: CommandResult[] = [];
+  commands.push(await runCommand({ command: `node "${tscPath}" -p tsconfig.json`, cwd: workspaceDir, timeoutMs: cmdTimeoutMs }));
+  commands.push(await runCommand({ command: 'node --test tests/oracle.test.js', cwd: workspaceDir, timeoutMs: cmdTimeoutMs }));
+  commands.push(await runCommand({ command: 'node dist/cli.js --help', cwd: workspaceDir, timeoutMs: 60_000 }));
+
+  for (const c of commands) {
+    if (!c.ok) diagnostics.push(`Command failed: ${c.command} (exit=${c.exitCode}, timedOut=${c.timedOut})`);
+  }
+
+  const logs = commands.map(c => `${c.stdout}\n${c.stderr}`).join('\n');
+  if (/cannot find module '.*dist[\\\/]csv\.js'/i.test(logs)) {
+    diagnostics.push('dist/csv.js missing: ensure src/csv.ts compiles and tsconfig emits to dist/');
+  }
+  if (/cannot find module '.*dist[\\\/]cli\.js'/i.test(logs)) {
+    diagnostics.push('dist/cli.js missing: ensure src/cli.ts compiles to dist/cli.js');
+  }
+  if (/the specified path does not exist: 'tsconfig\.json'/i.test(logs)) {
+    diagnostics.push('tsconfig.json missing or invalid for tsc -p tsconfig.json');
+  }
+
+  return { ok: diagnostics.length === 0, diagnostics, commands };
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -7156,6 +7401,17 @@ function buildDeterministicPlannerFallback(scenarioId: string): string {
       '- Verify with npm install and oracle tests.'
     ].join('\n');
   }
+  if (scenarioId === 'ts-csv-oracle') {
+    return [
+      '- Create full files: README.md, package.json, tsconfig.json, src/csv.ts, src/cli.ts.',
+      '- CsvParser: constructor(options?: { delimiter?: string }), parse(text) returns Record<string,string>[], stringify(rows) returns CSV string.',
+      '- Support quoted fields with escaped "" inside quotes.',
+      '- CsvFilter: constructor(rows), where(predicate), select(columns), sortBy(column), count().',
+      '- CLI: parse --input <file> prints JSON rows, stats --input <file> prints row count + column names, --help exits 0.',
+      '- Use only Node builtins. Compile to dist/ via tsc -p tsconfig.json (CommonJS).',
+      '- Verify with oracle tests and cli --help.'
+    ].join('\n');
+  }
   return '';
 }
 
@@ -7225,6 +7481,8 @@ function getScenarioCoreRequiredFiles(scenarioId: string): string[] {
         'src/lib/errors.js',
         'src/lib/id.js'
       ];
+    case 'ts-csv-oracle':
+      return ['README.md', 'package.json', 'tsconfig.json', 'src/csv.ts', 'src/cli.ts'];
     default:
       return [];
   }
@@ -7281,6 +7539,17 @@ function buildFirstIterationContractHint(scenarioId: string): string {
       '- In members/tasks/comments routers use paths relative to mountpoint ("/", "/:taskId"), do not repeat full project/task prefixes.',
       '- Do NOT call `app.listen(...)` or `server.listen(...)` in imported modules; oracle loads app directly via supertest.',
       '- Avoid uncaught throw in routes/services; ensure failures always return JSON { error: { code, message } } and never HTML error page.'
+    ].join('\n');
+  }
+  if (scenarioId === 'ts-csv-oracle') {
+    return [
+      '- This is iteration 1: mode MUST be "full". Do not return "patch".',
+      '- files[] MUST contain: README.md, package.json, tsconfig.json, src/csv.ts, src/cli.ts.',
+      '- src/csv.ts must export CsvParser (parse/stringify with quoted field support, custom delimiter) and CsvFilter (where/select/sortBy/count).',
+      '- src/cli.ts: parse --input <file> prints JSON rows, stats --input <file> prints stats, --help exits 0.',
+      '- Use only Node builtins. No external dependencies in package.json.',
+      '- tsconfig.json: outDir = "dist", module = "commonjs".',
+      '- Use declare const require/process for TS compatibility. Load builtins via const fs = require("node:fs").'
     ].join('\n');
   }
   return '';
