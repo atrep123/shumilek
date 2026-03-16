@@ -188,4 +188,33 @@ describe('botEvalCheckpointManager', () => {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
   });
+
+  it('normalizes Windows-style latestRunDir when building checkpoint ids', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-checkpoint-registry-win-'));
+    try {
+      const registryPath = path.join(tmp, 'checkpoint_registry.json');
+      const updated = updateCheckpointRegistry(registryPath, {
+        generatedAt: '2026-03-14T12:00:00.000Z',
+        manifestVersion: 1,
+        manifestPath: path.join(tmp, 'manifest.json'),
+        rootDir: tmp,
+        window: 3,
+        inputs: ['C:\\runs\\release_gate_ci_nightly_1004_1'],
+        baselineDir: 'projects/bot_eval_run/stable_baseline',
+        splitRollups: [],
+        checkpoint: {
+          qualified: true,
+          reasons: [],
+          latestRunDir: 'C:\\runs\\release_gate_ci_nightly_1004_1',
+          baselineDir: 'projects/bot_eval_run/stable_baseline',
+          latestQualifiedScenarioIds: ['node-api-oracle']
+        }
+      }, true);
+
+      assert.equal(updated.activeCheckpointId, 'release_gate_ci_nightly_1004_1@manifest-v1');
+      assert.equal(updated.entries[0].id, 'release_gate_ci_nightly_1004_1@manifest-v1');
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
 });

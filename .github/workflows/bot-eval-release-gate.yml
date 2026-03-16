@@ -1,4 +1,4 @@
-name: Bot Eval Release Gate
+﻿name: Bot Eval Release Gate
 
 on:
   pull_request:
@@ -69,12 +69,12 @@ jobs:
           try {
             $null = Invoke-WebRequest -Uri "$baseUrl/api/tags" -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
             Add-Content -Path $env:GITHUB_OUTPUT -Value "ready=true"
-            Write-Host "Ollama reachable at $baseUrl — gate-pr will run"
-          } catch {
-            Add-Content -Path $env:GITHUB_OUTPUT -Value "ready=false"
-            Write-Host "::notice::Ollama not reachable at $baseUrl — gate-pr steps will be skipped"
+            Write-Host "Ollama reachable at $baseUrl - gate-pr will run"
           }
-
+          catch {
+            Add-Content -Path $env:GITHUB_OUTPUT -Value "ready=false"
+            Write-Host "::notice::Ollama not reachable at $baseUrl - gate-pr steps will be skipped"
+          }
       - name: Setup Node.js
         if: steps.caps.outputs.ready == 'true'
         uses: actions/setup-node@v4
@@ -172,12 +172,12 @@ jobs:
           try {
             $null = Invoke-WebRequest -Uri "$baseUrl/api/tags" -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
             Add-Content -Path $env:GITHUB_OUTPUT -Value "ready=true"
-            Write-Host "Ollama reachable at $baseUrl — gate-nightly will run"
-          } catch {
-            Add-Content -Path $env:GITHUB_OUTPUT -Value "ready=false"
-            Write-Host "::notice::Ollama not reachable at $baseUrl — gate-nightly steps will be skipped"
+            Write-Host "Ollama reachable at $baseUrl - gate-nightly will run"
           }
-
+          catch {
+            Add-Content -Path $env:GITHUB_OUTPUT -Value "ready=false"
+            Write-Host "::notice::Ollama not reachable at $baseUrl - gate-nightly steps will be skipped"
+          }
       - name: Setup Node.js
         if: steps.caps.outputs.ready == 'true'
         uses: actions/setup-node@v4
