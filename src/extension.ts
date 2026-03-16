@@ -3,6 +3,9 @@ import { Logger } from './logger';
 import * as path from 'path';
 import { exec } from 'child_process';
 import fetch, { Headers, Response } from 'node-fetch';
+import { fetchWithTimeout } from './fetchUtils';
+import { streamPlainOllamaChat } from './responseStreaming';
+import { executeModelCallWithMessages } from './modelCall';
 import {
   buildAirLLMStartCommand as buildAirLLMStartCommandPure,
   readAirLLMConfig
@@ -16,7 +19,7 @@ import { sanitizeMapSegment, formatProjectMapMarkdown } from './projectMap';
 import { ContextProviderRegistry } from './contextProviders';
 import { TurnOrchestrator } from './orchestration';
 import { PIPELINE_STATUS_ICONS, PIPELINE_STATUS_TEXT } from './statusMessages';
-import { parseToolCalls, resolveToolPermissionScope } from './toolingProtocol';
+import { parseToolCalls } from './toolingProtocol';
 import { getMiniUnavailableMessage, isMiniAccepted } from './validationPolicy';
 import {
   runValidationPipeline as runValidationPipelinePure,
@@ -55,7 +58,8 @@ import {
   GuardianStats,
   QualityCheckResult,
   ResponseHistoryEntry,
-  AutoApprovePolicy
+  AutoApprovePolicy,
+  WebviewWrapper
 } from './types';
 import { buildCompressedMessages } from './contextMemory';
 import { buildObsidianChatArchive, updateObsidianArchiveIndex } from './obsidianArchive';
@@ -76,6 +80,7 @@ import { loadWorkspaceInstructions, setWorkspaceInstructionsLogger } from './wor
 import { ChatRequestConcurrencyGuard } from './chatConcurrency';
 import { getWebviewContent } from './webviewContent';
 import { computeRetryDecision, buildRetryFeedbackMessage } from './retryDecision';
+import { runToolCall } from './toolExecution';
 import {
   parseServerUrl,
   resolveExecutionMode,
@@ -170,14 +175,6 @@ interface WebviewMessage {
   prompt?: string;
   text?: string;
   [key: string]: unknown;
-}
-
-// Fetch options type
-interface FetchOptions {
-  method?: string;
-  headers?: Headers | Record<string, string>;
-  body?: string;
-  signal?: AbortSignal;
 }
 
 // External validator payload
@@ -1526,12 +1523,6 @@ export function deactivate() {
 // CHAT HANDLER WITH GUARDIAN
 // ============================================================
 
-// Wrapper interface for both Panel and View
-interface WebviewWrapper {
-  webview: vscode.Webview;
-  visible: boolean;
-}
-
 // Wrap WebviewPanel
 function wrapPanel(panel: vscode.WebviewPanel): WebviewWrapper {
   return {
@@ -1637,27 +1628,6 @@ async function handleWebviewMessage(
   }
 }
 
-// Handle chat for WebviewView (sidebar)
-async function _handleChatForView(
-  view: vscode.WebviewView,
-  context: vscode.ExtensionContext,
-  prompt: string,
-  messages: ChatMessage[],
-  retryCount: number = 0
-): Promise<void> {
-  return handleChatInternal(wrapView(view), context, prompt, messages, retryCount);
-}
-
-async function _handleChat(
-  panel: vscode.WebviewPanel,
-  context: vscode.ExtensionContext,
-  prompt: string,
-  messages: ChatMessage[],
-  retryCount: number = 0
-): Promise<void> {
-  return handleChatInternal(wrapPanel(panel), context, prompt, messages, retryCount);
-}
-
 // === VALIDATION PIPELINE (delegates to validationPipeline.ts) ===
 
 function getValidationPipelineDeps(): ValidationPipelineDeps {
@@ -1687,141 +1657,6 @@ async function runValidationPipeline(
   return runValidationPipelinePure(fullResponse, toolSession, cfg, getValidationPipelineDeps());
 }
 
-// ============================================================
-// PLAIN OLLAMA STREAMING (extracted from handleChatInternal)
-// ============================================================
-async function streamPlainOllamaChat(opts: {
-  url: string;
-  model: string;
-  apiMessages: Array<{role: string; content: string}>;
-  timeout: number;
-  panel: WebviewWrapper;
-  abortCtrl: AbortController;
-  guardianEnabled: boolean;
-}): Promise<string> {
-  const { url, model, apiMessages, timeout, panel, abortCtrl, guardianEnabled } = opts;
-  const res = await fetchWithTimeout(url, {
-    method: 'POST',
-    headers: new Headers({ 'Content-Type': 'application/json' }),
-    body: JSON.stringify({
-      model,
-      stream: true,
-      messages: apiMessages,
-      options: {
-        repeat_penalty: 1.2,
-        repeat_last_n: 256,
-        num_predict: getMaxOutputTokens(2048),
-        num_ctx: getContextTokens()
-      }
-    }),
-    signal: abortCtrl.signal
-  }, timeout);
-
-  if (!res.ok || !res.body) {
-    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-  }
-
-  const decoder = new TextDecoder();
-  let buffer = '';
-  let fullResponse = '';
-  let lastChunkTime = Date.now();
-  const STALL_TIMEOUT = 10000;
-
-  let recentChunks: string[] = [];
-  const CHUNK_WINDOW = 20;
-
-  if (!res.body || typeof res.body[Symbol.asyncIterator] !== 'function') {
-    throw new Error('Response body is not readable stream');
-  }
-
-  for await (const chunk of res.body as any) {
-    if (!chunk) continue;
-    const now = Date.now();
-    if (now - lastChunkTime > STALL_TIMEOUT && fullResponse.length > 100) {
-      outputChannel?.appendLine('[Guardian] Stall detected, stopping generation');
-      break;
-    }
-    lastChunkTime = now;
-
-    buffer += decoder.decode(chunk, { stream: true });
-
-    if (buffer.length > 100000) {
-      outputChannel?.appendLine('[Error] Buffer overflow detected, stopping stream');
-      if (!abortCtrl.signal.aborted) {
-        abortCtrl.abort();
-      }
-      break;
-    }
-
-    let newlineIndex;
-    let linesProcessed = 0;
-    while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
-      if (++linesProcessed > 10000) {
-        outputChannel?.appendLine('[Warning] Stream processing limit reached');
-        break;
-      }
-
-      const line = buffer.slice(0, newlineIndex).trim();
-      buffer = buffer.slice(newlineIndex + 1);
-      if (!line) continue;
-
-      try {
-        const json = JSON.parse(line);
-        if (!json || typeof json !== 'object') {
-          continue;
-        }
-        if (!json.message || typeof json.message !== 'object') {
-          continue;
-        }
-        const delta = json.message.content || '';
-        if (delta) {
-          fullResponse += delta;
-
-          if (fullResponse.length > 500000) {
-            outputChannel?.appendLine('[Warning] Response too long, truncating');
-            fullResponse = fullResponse.slice(0, 500000) + '\n\n[Odpověď zkrácena - příliš dlouhá]';
-            if (!abortCtrl.signal.aborted) {
-              abortCtrl.abort();
-            }
-            break;
-          }
-
-          if (guardianEnabled) {
-            recentChunks.push(delta);
-            if (recentChunks.length > CHUNK_WINDOW) {
-              recentChunks.shift();
-            }
-
-            const recentText = recentChunks.join('');
-            if (recentText.length > 100) {
-              const halfLen = Math.floor(recentText.length / 2);
-              const firstHalf = recentText.slice(0, halfLen);
-              const secondHalf = recentText.slice(recentText.length - halfLen);
-              if (firstHalf === secondHalf && firstHalf.length > 0) {
-                outputChannel?.appendLine('[Guardian] Real-time loop detected, stopping');
-                panel.webview.postMessage({
-                  type: 'guardianAlert',
-                  message: '🛡️ Smyčka detekována, zastavuji generování'
-                });
-                if (!abortCtrl.signal.aborted) {
-                  abortCtrl.abort();
-                }
-                break;
-              }
-            }
-          }
-
-          panel.webview.postMessage({ type: 'responseChunk', text: delta });
-        }
-      } catch {
-        // Ignore malformed JSON
-      }
-    }
-  }
-
-  return fullResponse;
-}
-
 async function handleChatInternal(
   panel: WebviewWrapper,
   context: vscode.ExtensionContext,
@@ -1839,9 +1674,9 @@ async function handleChatInternal(
   const {
     systemPrompt, timeout, pipelineAlwaysOn, useAirLLM,
     airllmAutoStart, airllmWaitForHealthy, guardianEnabled, miniModelEnabled,
-    configuredExecutionMode, validationPolicy, autoApprovePolicy, maxAutoSteps: _maxAutoSteps,
+    configuredExecutionMode, validationPolicy, autoApprovePolicy,
     contextProviderNames, contextProviderTokenBudget, stepTimeout, toolsEnabled,
-    toolsConfirmEdits, toolsMaxIterations: _toolsMaxIterations, effectiveAutoSteps, workspaceIndexEnabled,
+    toolsConfirmEdits, effectiveAutoSteps, workspaceIndexEnabled,
     validatorLogsEnabled, summarizerEnabled, rewardEnabled, rewardEndpoint,
     rewardThreshold, hhemEnabled, hhemEndpoint, hhemThreshold, ragasEnabled,
     ragasEndpoint, ragasThreshold, modelPreset
@@ -2440,7 +2275,8 @@ PŘÍSTUP K PRÁCI:
         timeout,
         panel,
         abortCtrl: localAbortController,
-        guardianEnabled
+        guardianEnabled,
+        log: (msg) => outputChannel?.appendLine(msg)
       });
     }
 
@@ -2725,7 +2561,11 @@ async function applyEditorPlan(
         }
       }
     }
-    const result = await runToolCall(panel, action, confirmEdits, session, autoApprovePolicy);
+    const result = await runToolCall(panel, action, confirmEdits, session, autoApprovePolicy, {
+      log: (msg) => outputChannel?.appendLine(msg),
+      postToAllWebviews,
+      getMutationHandlerDeps
+    });
     results.push(result);
   }
 
@@ -2795,7 +2635,8 @@ async function generateEditorFirstResponse(
         workingMessages,
         timeout,
         abortSignal,
-        true
+        true,
+        (msg) => outputChannel?.appendLine(msg)
       );
     } catch (err) {
       if (fallbackModel && !switchedToFallback && currentModel !== fallbackModel) {
@@ -3240,48 +3081,8 @@ async function applyFileContent(uri: vscode.Uri, newText: string): Promise<boole
   return await doc.save();
 }
 
-async function runToolCall(
-  panel: WebviewWrapper,
-  call: ToolCall,
-  confirmEdits: boolean,
-  session?: ToolSessionState,
-  autoApprovePolicy?: AutoApprovePolicy
-): Promise<ToolResult> {
-  const name = call.name;
-  const args = call.arguments || {};
-  const autoApprove = autoApprovePolicy ?? {
-    read: true,
-    edit: false,
-    commands: false,
-    browser: false,
-    mcp: false
-  };
-
-  outputChannel?.appendLine(`[Tools] ${name}`);
-  postToAllWebviews({ type: 'toolEvent', name });
-  const permissionScope = resolveToolPermissionScope(name);
-  if (confirmEdits && permissionScope !== 'edit' && !autoApprove[permissionScope]) {
-    const choice = await vscode.window.showInformationMessage(
-      `Povolit akci "${name}" (scope: ${permissionScope})?`,
-      { modal: true },
-      'Povolit',
-      'Zamitnout'
-    );
-    if (choice !== 'Povolit') {
-      return { ok: true, tool: name, approved: false, message: `akce zamitnuta (scope: ${permissionScope})` };
-    }
-  }
-  if (panel && panel.visible) {
-    panel.webview.postMessage({
-      type: 'pipelineStatus',
-      icon: PIPELINE_STATUS_ICONS.tools,
-      text: `Tool: ${name}`,
-      statusType: 'step',
-      loading: true
-    });
-  }
-
-  const mutationHandlerDeps: MutationHandlerDeps = {
+function getMutationHandlerDeps(): MutationHandlerDeps {
+  return {
     DEFAULT_MAX_LSP_RESULTS,
     DEFAULT_MAX_READ_BYTES,
     DEFAULT_MAX_WRITE_BYTES,
@@ -3327,114 +3128,6 @@ async function runToolCall(
     resolveAutoSaveTargetUri,
     isSafeUrl
   };
-
-  try {
-    switch (name) {
-      case 'list_files': return handleListFilesTool(name, args, mutationHandlerDeps);
-      case 'read_file': return handleReadFileTool(name, args, mutationHandlerDeps);
-      case 'get_active_file': return handleGetActiveFileTool(name, args, mutationHandlerDeps);
-      case 'search_in_files': return handleSearchInFilesTool(name, args, mutationHandlerDeps);
-      case 'apply_patch': return handleApplyPatchTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      case 'get_symbols': return handleGetSymbolsTool(name, args, mutationHandlerDeps);
-      case 'get_workspace_symbols': return handleGetWorkspaceSymbolsTool(name, args, mutationHandlerDeps);
-      case 'get_definition': return handleGetDefinitionTool(name, args, mutationHandlerDeps);
-      case 'get_references': return handleGetReferencesTool(name, args, mutationHandlerDeps);
-      case 'get_type_info': return handleGetTypeInfoTool(name, args, mutationHandlerDeps);
-      case 'get_diagnostics': return handleGetDiagnosticsTool(name, args, mutationHandlerDeps);
-      case 'route_file': return handleRouteFileTool(name, args, mutationHandlerDeps);
-      case 'pick_save_path': return handlePickSavePathTool(name, args, mutationHandlerDeps);
-      case 'replace_lines': return handleReplaceLinesTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      case 'write_file': return handleWriteFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      case 'rename_file': return handleRenameFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      case 'delete_file': return handleDeleteFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      case 'run_terminal_command': return handleRunTerminalCommandTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps);
-      case 'fetch_webpage': return handleFetchWebpageTool(name, args, mutationHandlerDeps);
-
-      default:
-        return { ok: false, tool: name, message: 'neznamy nastroj' };
-    }
-  } catch (err) {
-    return { ok: false, tool: name, message: `chyba: ${String(err)}` };
-  }
-}
-
-async function executeModelCallWithMessages(
-  baseUrl: string,
-  model: string,
-  systemPrompt: string,
-  messages: ChatMessage[],
-  timeout: number,
-  abortSignal?: AbortSignal,
-  forceJson?: boolean
-): Promise<string> {
-  const url = `${baseUrl}/api/chat`;
-  const contextTokens = getContextTokens();
-  const options = {
-    repeat_penalty: 1.2,
-    repeat_last_n: 256,
-    num_predict: getMaxOutputTokens(forceJson ? 1024 : 2048),
-    temperature: forceJson ? 0.1 : 0.3,
-    num_ctx: contextTokens
-  };
-  const { apiMessages: compressedMsgs, compressed } = buildCompressedMessages(systemPrompt, messages, contextTokens);
-  if (compressed.wasCompressed) {
-    outputChannel?.appendLine(
-      `[ContextMemory/executeModel] Compressed: ${compressed.stats.originalCount} msgs -> ` +
-      `${compressed.stats.summarizedCount} summarized + ${compressed.stats.recentCount} recent`
-    );
-  }
-  const body: Record<string, unknown> = {
-    model,
-    stream: true,
-    messages: compressedMsgs,
-    options
-  };
-  if (forceJson) {
-    body.format = 'json';
-  }
-  const res = await fetchWithTimeout(url, {
-    method: 'POST',
-    headers: new Headers({ 'Content-Type': 'application/json' }),
-    body: JSON.stringify(body),
-    signal: abortSignal
-  }, timeout);
-
-  if (!res.ok || !res.body) {
-    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-  }
-
-  const decoder = new TextDecoder();
-  let buffer = '';
-  let fullResponse = '';
-  let lastChunkAt = Date.now();
-  const STREAM_STALL_MS = 15000;
-
-  for await (const chunk of res.body as any) {
-    if (!chunk) continue;
-    const now = Date.now();
-    if (now - lastChunkAt > STREAM_STALL_MS && fullResponse.length > 50) {
-      outputChannel?.appendLine('[executeModelCallWithMessages] Stream stall detected, aborting');
-      break;
-    }
-    lastChunkAt = now;
-    buffer += decoder.decode(chunk, { stream: true });
-    let newlineIndex;
-    while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
-      const line = buffer.slice(0, newlineIndex).trim();
-      buffer = buffer.slice(newlineIndex + 1);
-      if (!line) continue;
-      try {
-        const parsed = JSON.parse(line);
-        if (parsed.message?.content) {
-          fullResponse += parsed.message.content;
-        }
-      } catch {
-        // Ignore malformed JSON
-      }
-    }
-  }
-
-  return fullResponse;
 }
 
 interface DiagnosticEntry { path: string; line: number; message: string; severity: string }
@@ -3538,7 +3231,8 @@ async function generateWithTools(
         workingMessages,
         timeout,
         abortSignal,
-        toolOptions?.forceJson ?? false
+        toolOptions?.forceJson ?? false,
+        (msg) => outputChannel?.appendLine(msg)
       );
     } catch (err) {
       if (fallbackModel && !switchedToFallback && currentModel !== fallbackModel) {
@@ -3606,7 +3300,11 @@ async function generateWithTools(
     }
 
     for (const call of calls) {
-      const result = await runToolCall(panel, call, confirmEdits, session, autoApprovePolicy);
+      const result = await runToolCall(panel, call, confirmEdits, session, autoApprovePolicy, {
+        log: (msg) => outputChannel?.appendLine(msg),
+        postToAllWebviews,
+        getMutationHandlerDeps
+      });
       // Track tool call/result pair
       if (session) {
         if (!session.toolCallRecords) session.toolCallRecords = [];
@@ -3732,7 +3430,7 @@ async function executeModelCall(
   userPrompt: string,
   timeout: number,
   guardianEnabled: boolean,
-  _silentMode: boolean = true,  // Don't stream to UI during validation
+  _silentMode = true,
   stepTimeoutMs?: number
 ): Promise<string> {
   const url = `${baseUrl}/api/chat`;
@@ -3824,53 +3522,6 @@ async function executeModelCall(
       throw new Error('Timeout při generování kroku');
     }
     throw err;
-  }
-}
-
-async function fetchWithTimeout(
-  url: string,
-  options: FetchOptions,
-  timeout: number
-): Promise<Response> {
-  const controller = new AbortController();
-  let timeoutId: NodeJS.Timeout | null = null;
-
-  const originalSignal = options.signal as AbortSignal | undefined;
-  
-  // Forward caller aborts into our controller and clean up timeout
-  const abortHandler = () => {
-    if (timeoutId !== null) {
-      clearTimeout(timeoutId);
-      timeoutId = null;
-    }
-    if (!controller.signal.aborted) {
-      controller.abort();
-    }
-  };
-  
-  if (originalSignal) {
-    if (originalSignal.aborted) {
-      abortHandler();
-    } else {
-      originalSignal.addEventListener('abort', abortHandler);
-    }
-  }
-
-  try {
-    timeoutId = setTimeout(abortHandler, timeout);
-
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal
-    });
-    return response;
-  } finally {
-    if (timeoutId !== null) {
-      clearTimeout(timeoutId);
-    }
-    if (originalSignal) {
-      originalSignal.removeEventListener('abort', abortHandler);
-    }
   }
 }
 
