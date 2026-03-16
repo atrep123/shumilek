@@ -2,7 +2,7 @@
 import { Logger } from './logger';
 import * as path from 'path';
 import { exec } from 'child_process';
-import fetch, { Headers, Response } from 'node-fetch';
+import fetch, { Headers } from 'node-fetch';
 import { fetchWithTimeout } from './fetchUtils';
 import { streamPlainOllamaChat } from './responseStreaming';
 import { executeModelCallWithMessages } from './modelCall';
@@ -19,7 +19,6 @@ import { sanitizeMapSegment, formatProjectMapMarkdown } from './projectMap';
 import { ContextProviderRegistry } from './contextProviders';
 import { TurnOrchestrator } from './orchestration';
 import { PIPELINE_STATUS_ICONS, PIPELINE_STATUS_TEXT } from './statusMessages';
-import { parseToolCalls } from './toolingProtocol';
 import { getMiniUnavailableMessage, isMiniAccepted } from './validationPolicy';
 import {
   runValidationPipeline as runValidationPipelinePure,
@@ -81,6 +80,7 @@ import { ChatRequestConcurrencyGuard } from './chatConcurrency';
 import { getWebviewContent } from './webviewContent';
 import { computeRetryDecision, buildRetryFeedbackMessage } from './retryDecision';
 import { runToolCall } from './toolExecution';
+import { generateWithTools } from './toolGeneration';
 import {
   parseServerUrl,
   resolveExecutionMode,
@@ -95,29 +95,9 @@ import {
   getToolsWriteToastSetting,
   toggleToolsEnabledSetting,
   toggleSafeModeSetting,
-  ToolRequirements,
   resolveChatConfig
 } from './configResolver';
 import {
-  handleApplyPatchTool,
-  handleDeleteFileTool,
-  handleGetActiveFileTool,
-  handleGetDefinitionTool,
-  handleGetDiagnosticsTool,
-  handlePickSavePathTool,
-  handleGetReferencesTool,
-  handleGetSymbolsTool,
-  handleGetTypeInfoTool,
-  handleGetWorkspaceSymbolsTool,
-  handleFetchWebpageTool,
-  handleListFilesTool,
-  handleReadFileTool,
-  handleRenameFileTool,
-  handleReplaceLinesTool,
-  handleRouteFileTool,
-  handleRunTerminalCommandTool,
-  handleSearchInFilesTool,
-  handleWriteFileTool,
   MutationHandlerDeps
 } from './toolHandlers';
 import {
@@ -156,9 +136,7 @@ import {
   buildEditorContext
 } from './contextBuilder';
 import {
-  ToolCall,
   ToolResult,
-  ToolCallOptions,
   EditorPlan,
   buildToolOnlyPrompt,
   buildEditorFirstInstructions,
@@ -388,14 +366,14 @@ async function saveChatMessages(context: vscode.ExtensionContext, messages: Chat
   }
 }
 
-function postToAllWebviews(message: WebviewMessage): void {
+function postToAllWebviews(message: unknown): void {
   try {
-    currentPanel?.webview.postMessage(message);
+    currentPanel?.webview.postMessage(message as WebviewMessage);
   } catch {
     // ignore
   }
   try {
-    sidebarView?.webview.postMessage(message);
+    sidebarView?.webview.postMessage(message as WebviewMessage);
   } catch {
     // ignore
   }
@@ -1639,7 +1617,40 @@ function getValidationPipelineDeps(): ValidationPipelineDeps {
     guardian,
     responseHistoryManager,
     svedomi,
-    generateWithTools,
+    generateWithTools: (
+      panel,
+      baseUrl,
+      model,
+      systemPrompt,
+      messages,
+      timeout,
+      maxIterations,
+      confirmEdits,
+      requirements,
+      options,
+      abortSignal,
+      session,
+      autoApprovePolicy
+    ) => generateWithTools(
+      panel,
+      baseUrl,
+      model,
+      systemPrompt,
+      messages,
+      timeout,
+      maxIterations,
+      confirmEdits,
+      {
+        log: (msg) => outputChannel?.appendLine(msg),
+        postToAllWebviews,
+        getMutationHandlerDeps
+      },
+      requirements,
+      options,
+      abortSignal,
+      session,
+      autoApprovePolicy
+    ),
     runPostEditVerification,
     runExternalValidators,
     summarizeResponse,
@@ -1994,6 +2005,11 @@ PŘÍSTUP K PRÁCI:
               stepTimeout,
               effectiveAutoSteps,
               toolsConfirmEdits,
+              {
+                log: (msg) => outputChannel?.appendLine(msg),
+                postToAllWebviews,
+                getMutationHandlerDeps
+              },
               stepRequirements,
               {
                 forceJson: stepRequirements.requireToolCall,
@@ -2255,6 +2271,11 @@ PŘÍSTUP K PRÁCI:
         stepTimeout,
         effectiveAutoSteps,
         toolsConfirmEdits,
+        {
+          log: (msg) => outputChannel?.appendLine(msg),
+          postToAllWebviews,
+          getMutationHandlerDeps
+        },
         toolRequirements,
         {
           forceJson: toolRequirements.requireToolCall,
@@ -3128,295 +3149,6 @@ function getMutationHandlerDeps(): MutationHandlerDeps {
     resolveAutoSaveTargetUri,
     isSafeUrl
   };
-}
-
-interface DiagnosticEntry { path: string; line: number; message: string; severity: string }
-
-/**
- * Collect error-level VS Code diagnostics from all open workspace files.
- * Waits briefly for language servers to update after file writes.
- */
-async function collectPostWriteDiagnostics(): Promise<DiagnosticEntry[]> {
-  // Give language servers a moment to process the written files
-  await new Promise(resolve => setTimeout(resolve, 800));
-
-  const allDiagnostics = vscode.languages.getDiagnostics();
-  const errors: DiagnosticEntry[] = [];
-  const folders = vscode.workspace.workspaceFolders;
-
-  for (const [uri, diagnostics] of allDiagnostics) {
-    // Only include files within the workspace
-    if (folders && !folders.some(f => uri.fsPath.startsWith(f.uri.fsPath))) continue;
-    // Skip node_modules, .git, etc.
-    const rel = vscode.workspace.asRelativePath(uri, false);
-    if (rel.includes('node_modules') || rel.startsWith('.git')) continue;
-
-    for (const diag of diagnostics) {
-      if (diag.severity === vscode.DiagnosticSeverity.Error) {
-        errors.push({
-          path: rel,
-          line: diag.range.start.line + 1,
-          message: diag.message,
-          severity: 'error'
-        });
-      }
-    }
-    if (errors.length >= 30) break;
-  }
-  return errors;
-}
-
-async function generateWithTools(
-  panel: WebviewWrapper,
-  baseUrl: string,
-  model: string,
-  systemPrompt: string,
-  messages: ChatMessage[],
-  timeout: number,
-  maxIterations: number,
-  confirmEdits: boolean,
-  requirements?: ToolRequirements,
-  toolOptions?: ToolCallOptions,
-  abortSignal?: AbortSignal,
-  session?: ToolSessionState,
-  autoApprovePolicy?: AutoApprovePolicy
-): Promise<string> {
-  const MAX_SELF_CORRECTIONS = 3;
-  const iterations = clampNumber(maxIterations, 6, 1, 10);
-  const workingMessages = messages.map(m => ({ ...m }));
-  const requireToolCall = requirements?.requireToolCall ?? false;
-  const requireMutation = requirements?.requireMutation ?? false;
-  const startHadMutations = session?.hadMutations ?? false;
-  let sawToolCall = false;
-  let localMutation = false;
-  let selfCorrectionCount = 0;
-  const systemPromptOverride = toolOptions?.systemPromptOverride ?? systemPrompt;
-  const fallbackModel = (toolOptions?.fallbackModel || '').trim();
-  let currentModel = (toolOptions?.primaryModel || model).trim();
-  let switchedToFallback = false;
-
-  if (outputChannel) {
-    const fallbackLabel = fallbackModel ? `, fallback=${fallbackModel}` : '';
-    outputChannel.appendLine(`[Tools] Model selection: primary=${currentModel}${fallbackLabel}`);
-  }
-
-  if (requireToolCall || requireMutation) {
-    workingMessages.push({
-      role: 'system',
-      content: [
-        'TOOL MODE:',
-        'Odpovidej vyhradne tool_call bloky. Zadny text mimo tool_call.',
-        requireMutation
-          ? 'Musis provest zmenu souboru (write_file/replace_lines).'
-          : 'Musis pouzit aspon jeden tool_call.',
-        'Priklad:',
-        '<tool_call>{"name":"write_file","arguments":{"path":"out/priklad.txt","text":"..."} }</tool_call>'
-      ].join('\n')
-    });
-  }
-
-  for (let i = 0; i < iterations; i++) {
-    if (abortSignal?.aborted) {
-      const abortErr = new Error('AbortError');
-      abortErr.name = 'AbortError';
-      throw abortErr;
-    }
-
-    let response: string;
-    try {
-      response = await executeModelCallWithMessages(
-        baseUrl,
-        currentModel,
-        systemPromptOverride,
-        workingMessages,
-        timeout,
-        abortSignal,
-        toolOptions?.forceJson ?? false,
-        (msg) => outputChannel?.appendLine(msg)
-      );
-    } catch (err) {
-      if (fallbackModel && !switchedToFallback && currentModel !== fallbackModel) {
-        outputChannel?.appendLine(`[Tools] Tool model failed, switching to fallback: ${fallbackModel}`);
-        currentModel = fallbackModel;
-        switchedToFallback = true;
-        continue;
-      }
-      throw err;
-    }
-
-    const { calls, remainingText, errors } = parseToolCalls(response);
-    if (calls.length === 0) {
-      if (errors.length > 0) {
-        if (requireToolCall) {
-          workingMessages.push({
-            role: 'system',
-            content: [
-              'Neplatny format tool callu.',
-              'Posli pouze tool_call bloky s validnim JSON.',
-              'Neposilej python/bash prikazy ani text mimo tool_call.'
-            ].join('\n')
-          });
-          if (fallbackModel && !switchedToFallback && currentModel !== fallbackModel) {
-            outputChannel?.appendLine(`[Tools] Switching to fallback tool model: ${fallbackModel}`);
-            currentModel = fallbackModel;
-            switchedToFallback = true;
-          }
-          continue;
-        }
-        return `Chyba: neplatny format tool callu (${errors.join('; ')})`;
-      }
-      if (requireToolCall) {
-        if (i >= iterations - 1) {
-          return 'Chyba: model nepouzil nastroje. Pouzij tool_call a proved pozadovanou akci.';
-        }
-        workingMessages.push({
-          role: 'system',
-          content: [
-            'MUSIS pouzit nastroje.',
-            'Odpovidej pouze tool_call bloky, bez jineho textu.',
-            requireMutation
-              ? 'Povinne: write_file/replace_lines (zapis do souboru).'
-              : 'Povinne: alespon jeden tool_call.',
-            'Kdyz nevis cestu, pouzij pick_save_path a pak write_file.'
-          ].join('\n')
-        });
-        if (fallbackModel && !switchedToFallback && currentModel !== fallbackModel) {
-          outputChannel?.appendLine(`[Tools] Switching to fallback tool model: ${fallbackModel}`);
-          currentModel = fallbackModel;
-          switchedToFallback = true;
-        }
-        continue;
-      }
-      return response.trim() ? response : 'Chyba: prazdna odpoved';
-    }
-
-    sawToolCall = true;
-    if (remainingText) {
-      outputChannel?.appendLine('[Tools] Ignoring mixed text with tool calls');
-      workingMessages.push({
-        role: 'system',
-        content: 'V odpovedi byly i jine znaky mimo tool_call. Ignoruji je, posilej pouze tool_call bloky.'
-      });
-    }
-
-    for (const call of calls) {
-      const result = await runToolCall(panel, call, confirmEdits, session, autoApprovePolicy, {
-        log: (msg) => outputChannel?.appendLine(msg),
-        postToAllWebviews,
-        getMutationHandlerDeps
-      });
-      // Track tool call/result pair
-      if (session) {
-        if (!session.toolCallRecords) session.toolCallRecords = [];
-        session.toolCallRecords.push({
-          tool: call.name,
-          args: call.arguments ?? {},
-          ok: result.ok,
-          message: result.message
-        });
-      }
-      if (!result.ok) {
-        const message = result.message ?? 'unknown error';
-        outputChannel?.appendLine(`[Tools] ${call.name} failed: ${message}`);
-        if (result.data !== undefined) {
-          try {
-            const serialized = JSON.stringify(result.data);
-            if (serialized) {
-              outputChannel?.appendLine(`[Tools] ${call.name} data: ${serialized.slice(0, 1000)}`);
-            }
-          } catch {
-            outputChannel?.appendLine(`[Tools] ${call.name} data: [unserializable]`);
-          }
-        }
-      }
-      workingMessages.push({
-        role: 'assistant',
-        content: `<tool_call>${JSON.stringify(call)}</tool_call>`
-      });
-      workingMessages.push({
-        role: 'system',
-        content: `<tool_result>${JSON.stringify(result)}</tool_result>`
-      });
-      if (result.ok && ['write_file', 'replace_lines', 'rename_file', 'delete_file'].includes(call.name)) {
-        localMutation = true;
-      }
-    }
-
-    const mutated = session?.hadMutations ?? localMutation;
-    if (requireMutation && !mutated) {
-      if (i >= iterations - 1) {
-        return 'Chyba: nebyla provedena zadna zmena souboru. Pouzij write_file nebo replace_lines.';
-      }
-      workingMessages.push({
-        role: 'system',
-        content: 'Musis provest zmenu souboru (write_file/replace_lines). Pouhe cteni nebo listovani nestaci.'
-      });
-    } else if (mutated) {
-      // Self-correction: check diagnostics on written files before returning
-      if (selfCorrectionCount < MAX_SELF_CORRECTIONS && i < iterations - 1) {
-        const diagErrors = await collectPostWriteDiagnostics();
-        if (diagErrors.length > 0) {
-          selfCorrectionCount++;
-          outputChannel?.appendLine(`[SelfCorrect] Attempt ${selfCorrectionCount}/${MAX_SELF_CORRECTIONS}: ${diagErrors.length} error(s) detected`);
-          if (panel && panel.visible) {
-            panel.webview.postMessage({
-              type: 'pipelineStatus',
-              icon: '🔧',
-              text: `Auto-oprava ${selfCorrectionCount}/${MAX_SELF_CORRECTIONS}: ${diagErrors.length} chyb...`,
-              statusType: 'step',
-              loading: true
-            });
-          }
-          workingMessages.push({
-            role: 'system',
-            content: [
-              'SELF-CORRECTION: The code you just wrote has errors. Fix them NOW using write_file or replace_lines.',
-              'ERRORS:',
-              ...diagErrors.slice(0, 15).map(d => `- ${d.path}:${d.line}: ${d.message}`),
-              diagErrors.length > 15 ? `... and ${diagErrors.length - 15} more errors` : '',
-              '',
-              'Fix ALL errors. Do not explain, just use tool_call to fix the code.'
-            ].filter(Boolean).join('\n')
-          });
-          continue;
-        }
-      }
-      const writePath = session?.lastWritePath;
-      const correctionNote = selfCorrectionCount > 0
-        ? ` (auto-corrected ${selfCorrectionCount}x)`
-        : '';
-      // Log tool call records summary
-      if (session?.toolCallRecords && session.toolCallRecords.length > 0) {
-        const writes = session.toolCallRecords.filter(r => ['write_file', 'replace_lines'].includes(r.tool));
-        const failedWrites = writes.filter(r => !r.ok);
-        const successfulWrites = writes.filter(r => r.ok);
-        outputChannel?.appendLine(`[ToolTrack] Total calls: ${session.toolCallRecords.length}, writes: ${writes.length}, failed writes: ${failedWrites.length}`);
-        if (failedWrites.length > 0) {
-          for (const fw of failedWrites) {
-            outputChannel?.appendLine(`[ToolTrack] Failed write: ${fw.tool} -> ${fw.message ?? 'unknown'}`);
-          }
-        }
-        // Fabrication detection: model claims mutation but all writes failed
-        if (writes.length > 0 && successfulWrites.length === 0) {
-          outputChannel?.appendLine('[ToolTrack] WARNING: All write operations failed — possible fabricated edit');
-          return 'Chyba: vsechny zapisy selhaly. Soubory nebyly zmeneny.';
-        }
-      }
-      return writePath
-        ? `Hotovo: zmena souboru provedena (${writePath}).${correctionNote}`
-        : `Hotovo: zmena souboru provedena.${correctionNote}`;
-    } else if (requireToolCall && sawToolCall) {
-      return 'Hotovo: nastroje byly pouzity.';
-    }
-  }
-
-  if (requireToolCall && !sawToolCall) {
-    return 'Chyba: model nepouzil nastroje. Pouzij tool_call a proved pozadovanou akci.';
-  }
-  if (requireMutation && !(session?.hadMutations ?? localMutation) && !startHadMutations) {
-    return 'Chyba: nebyla provedena zadna zmena souboru. Pouzij write_file nebo replace_lines.';
-  }
-  return 'Chyba: prekrocen limit tool iteraci';
 }
 
 /**
