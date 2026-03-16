@@ -2832,6 +2832,39 @@ describe('botEval large node-project scenario', function () {
     assert.equal(hasNodeProjectCommentsArityDrift(content), false);
   });
 
+  it('bridge adapter normalizes non-string comment messages before returning contract payload', () => {
+    const files = [
+      {
+        path: 'src/modules/comments/routes.js',
+        content: [
+          "const router = require('express').Router();",
+          "const commentsService = require('./service');",
+          "router.get('/', async (req, res) => res.json({ comments: await commentsService.getAllComments(req.params.projectId, req.params.taskId) }));",
+          "router.post('/', async (req, res) => res.status(201).json({ comment: await commentsService.addComment(req.params.projectId, req.params.taskId, req.body.message) }));",
+          'module.exports = router;'
+        ].join('\n')
+      },
+      {
+        path: 'src/modules/comments/service.js',
+        content: [
+          'const comments = [];',
+          'async function createComment(projectId, taskId, message) {',
+          '  const comment = { id: \"c1\", projectId, taskId, message };',
+          '  comments.push(comment);',
+          '  return comment;',
+          '}',
+          'module.exports = { createComment };'
+        ].join('\n')
+      }
+    ];
+    const patched = applyNodeProjectRouteServiceAdapterBridges(files);
+    const service = patched.find(f => f.path === 'src/modules/comments/service.js');
+    assert.ok(service, 'service file missing');
+    const content = String(service?.content || '');
+    assert.ok(content.includes("typeof normalized.message !== 'string'"));
+    assert.ok(content.includes("return typeof normalized.message !== 'string' ? { ...normalized, message: normalizedMessage } : normalized;"));
+  });
+
   it('detects spurious nested-module files when canonical module exists', () => {
     const files = [
       { path: 'src/modules/projects/routes.js' },
