@@ -70,8 +70,10 @@
                                          {
                                              "command":  "shumilek.guardianStats",
                                              "title":  "Ĺ umĂ­lek: Guardian statistiky"
-                                         },
-                                         {
+                                         },                                         {
+                                             "command":  "shumilek.doctor",
+                                             "title":  "Ĺ umĂ­lek: Doctor diagnostika"
+                                         },                                         {
                                              "command":  "shumilek.addTask",
                                              "title":  "Ĺ umĂ­lek: PĹ™idat Ăşkol pro SvÄ›domĂ­"
                                          },

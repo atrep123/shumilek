@@ -56,6 +56,11 @@ import {
 import { buildCompressedMessages } from './contextMemory';
 import { buildObsidianChatArchive, updateObsidianArchiveIndex } from './obsidianArchive';
 import { humanizeApiError, isTransientError, isSafeUrl, normalizeTaskWeight, isChatMessage, normalizeScore, pickBrainModel, getNonce } from './utils';
+import { isSlashCommand, executeSlashCommand, SlashCommandContext } from './slashCommands';
+import { runDoctorChecks, formatDoctorReport } from './doctor';
+import { ModelRouter } from './modelRouter';
+import { compactMessages, shouldCompact } from './sessionCompactor';
+import { loadWorkspaceInstructions, setWorkspaceInstructionsLogger } from './workspaceInstructions';
 import { ChatRequestConcurrencyGuard } from './chatConcurrency';
 import {
   handleApplyPatchTool,
@@ -1017,6 +1022,9 @@ const guardian = new ResponseGuardian();
 const svedomi = new SvedomiValidator();
 const contextProviders = new ContextProviderRegistry();
 
+// Model router for intelligent failover (OpenClaw-inspired)
+let modelRouter: ModelRouter | undefined;
+
 // Task database (persisted in VS Code state)
 let tasksDatabase: Task[] = [];
 
@@ -1173,11 +1181,22 @@ export function activate(context: vscode.ExtensionContext) {
   setHallucinationLogger((msg: string) => Logger.info(msg));
   setSvedomiLogger(outputChannel);
   setSvedomiStats(guardianStats);
+  setWorkspaceInstructionsLogger((msg: string) => outputChannel?.appendLine(msg));
 
   // Load persisted history (sanitize to prevent corrupted state from breaking the webview)
   chatMessages.length = 0;
   chatMessages.push(...loadChatMessages(context));
   outputChannel.appendLine(`[Init] Loaded ${chatMessages.length} message(s) from history`);
+
+  // Initialize model router for intelligent failover (OpenClaw-inspired)
+  {
+    const initBaseUrl = parseServerUrl(config.get<string>('baseUrl', 'http://localhost:11434'), 'http://localhost:11434').baseUrl;
+    const initModels = config.get<string[]>('brainModels', []) ?? [];
+    const mainModel = config.get<string>('model', 'deepseek-coder-v2:16b');
+    const allModels = [mainModel, ...initModels.filter(m => m !== mainModel)];
+    modelRouter = new ModelRouter({ baseUrl: initBaseUrl, models: allModels });
+    outputChannel.appendLine(`[Init] ModelRouter initialized with ${allModels.length} model(s)`);
+  }
 
   // Register Sidebar View Provider
   sidebarProvider = new ShumilekViewProvider(context);
@@ -1461,6 +1480,31 @@ export function activate(context: vscode.ExtensionContext) {
     );
   });
 
+  // Command: Doctor diagnostics (OpenClaw-inspired)
+  const doctorCmd = vscode.commands.registerCommand('shumilek.doctor', async () => {
+    const cfg = vscode.workspace.getConfiguration('shumilek');
+    const preset = resolveModelPreset(cfg.get<string>('modelPreset', 'custom'));
+    const bUrl = parseServerUrl(cfg.get<string>('baseUrl', 'http://localhost:11434'), 'http://localhost:11434').baseUrl;
+    const report = await runDoctorChecks({
+      baseUrl: bUrl,
+      mainModel: cfg.get<string>('model', preset?.model ?? 'deepseek-coder-v2:16b'),
+      writerModel: cfg.get<string>('writerModel', preset?.writerModel ?? ''),
+      rozumModel: cfg.get<string>('rozumModel', preset?.rozumModel ?? 'deepseek-r1:8b'),
+      svedomiModel: cfg.get<string>('miniModel', preset?.miniModel ?? 'qwen2.5:3b')
+    });
+    const md = formatDoctorReport(report);
+    outputChannel?.appendLine(md);
+    // Show in webview if available
+    const response = md;
+    if (currentPanel) {
+      currentPanel.webview.postMessage({ type: 'response', text: response });
+    } else if (sidebarView) {
+      sidebarView.webview.postMessage({ type: 'response', text: response });
+    } else {
+      vscode.window.showInformationMessage(report.ok ? '🩺 Doctor: Vše OK' : '🩺 Doctor: Nalezeny problémy — viz Output panel');
+    }
+  });
+
   // Command: Add new learning task
   const addTaskCmd = vscode.commands.registerCommand('shumilek.addTask', async () => {
     const title = await vscode.window.showInputBox({ 
@@ -1733,7 +1777,7 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   context.subscriptions.push(
-    openChatCmd, startAirLLMCmd, switchBackendCmd, clearHistoryCmd, guardianStatsCmd, addTaskCmd, viewTasksCmd,
+    openChatCmd, startAirLLMCmd, switchBackendCmd, clearHistoryCmd, guardianStatsCmd, doctorCmd, addTaskCmd, viewTasksCmd,
     scanWorkspaceCmd, showWorkspaceInfoCmd, exportLastResponseCmd, exportHistoryToObsidianCmd, applyLastResponseCmd,
     toggleToolsEnabledCmd, toggleToolsConfirmEditsCmd,
     ...projectMapWatchers
@@ -2324,6 +2368,65 @@ async function handleChatInternal(
     return;
   }
 
+  // === SLASH COMMANDS (OpenClaw-inspired) ===
+  if (retryCount === 0 && isSlashCommand(trimmedPrompt)) {
+    outputChannel?.appendLine(`[SlashCmd] Handling: ${trimmedPrompt}`);
+    messages.push({ role: 'user', content: trimmedPrompt, timestamp: Date.now() });
+    const slashCtx: SlashCommandContext = {
+      messages,
+      guardianStats,
+      modelInfo: {
+        main: baseModel,
+        writer: writerModel,
+        rozum: rozumModel,
+        svedomi: miniModel,
+        backend: backendType,
+        baseUrl
+      },
+      orchestrationState: 'idle',
+      svedomiCacheSize: 0,
+      responseHistoryStats: responseHistoryManager.getStats(),
+      saveMessages: () => saveChatMessages(context, messages),
+      resetGuardian: () => guardian.resetHistory(),
+      runDoctor: async () => {
+        const report = await runDoctorChecks({
+          baseUrl,
+          mainModel: baseModel,
+          writerModel,
+          rozumModel,
+          svedomiModel: miniModel
+        });
+        return formatDoctorReport(report);
+      },
+      compactSession: async () => {
+        const result = compactMessages(messages);
+        if (result.compacted) {
+          messages.length = 0;
+          messages.push(...result.messages);
+          await saveChatMessages(context, messages);
+        }
+        return { compacted: result.compacted, saved: result.saved };
+      }
+    };
+    const slashResult = await executeSlashCommand(trimmedPrompt, slashCtx);
+    if (slashResult.handled) {
+      if (slashResult.clearHistory) {
+        lastClearedMessages = messages.slice();
+        lastClearedAt = Date.now();
+        messages.length = 0;
+        guardian.resetHistory();
+        await saveChatMessages(context, messages);
+        postToAllWebviews({ type: 'historyCleared' });
+      }
+      if (slashResult.response) {
+        messages.push({ role: 'assistant', content: slashResult.response, timestamp: Date.now() });
+        await saveChatMessages(context, messages);
+        panel.webview.postMessage({ type: 'response', text: slashResult.response });
+      }
+      return;
+    }
+  }
+
   if (!chatRequestGuard.tryAcquire(retryCount)) {
     panel.webview.postMessage({
       type: 'responseError',
@@ -2365,6 +2468,9 @@ async function handleChatInternal(
   });
   const workspaceContext = providerContext ? `\n\n${providerContext}` : '';
 
+  // === WORKSPACE INSTRUCTIONS (AGENTS.md pattern, OpenClaw-inspired) ===
+  const workspaceInstructions = await loadWorkspaceInstructions();
+
   // Enhanced system prompt with anti-loop instructions and workspace context
   const retryFeedbackSection = retryFeedback
     ? `
@@ -2386,7 +2492,7 @@ PŘÍSTUP K PRÁCI:
 - Pokud je potřeba zkontrolovat mnoho souborů, projdi je VŠECHNY
 - Nespěchej - kvalita je důležitější než rychlost
 - Pokud je vstup prilis dlouhy, zpracuj ho po blocich a prubezne shrnuj
-- Dokumentuj své kroky a zjištění${retryFeedbackSection}${workspaceContext}`;
+- Dokumentuj své kroky a zjištění${retryFeedbackSection}${workspaceInstructions}${workspaceContext}`;
 
   let toolsModel = config.get<string>('toolsModel', '').trim();
   let toolsFallbackModel = config.get<string>('toolsFallbackModel', 'qwen2.5:14b-instruct').trim();
