@@ -2177,6 +2177,141 @@ async function runValidationPipeline(
   };
 }
 
+// ============================================================
+// PLAIN OLLAMA STREAMING (extracted from handleChatInternal)
+// ============================================================
+async function streamPlainOllamaChat(opts: {
+  url: string;
+  model: string;
+  apiMessages: Array<{role: string; content: string}>;
+  timeout: number;
+  panel: WebviewWrapper;
+  abortCtrl: AbortController;
+  guardianEnabled: boolean;
+}): Promise<string> {
+  const { url, model, apiMessages, timeout, panel, abortCtrl, guardianEnabled } = opts;
+  const res = await fetchWithTimeout(url, {
+    method: 'POST',
+    headers: new Headers({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({
+      model,
+      stream: true,
+      messages: apiMessages,
+      options: {
+        repeat_penalty: 1.2,
+        repeat_last_n: 256,
+        num_predict: getMaxOutputTokens(2048),
+        num_ctx: getContextTokens()
+      }
+    }),
+    signal: abortCtrl.signal
+  }, timeout);
+
+  if (!res.ok || !res.body) {
+    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+  }
+
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let fullResponse = '';
+  let lastChunkTime = Date.now();
+  const STALL_TIMEOUT = 10000;
+
+  let recentChunks: string[] = [];
+  const CHUNK_WINDOW = 20;
+
+  if (!res.body || typeof res.body[Symbol.asyncIterator] !== 'function') {
+    throw new Error('Response body is not readable stream');
+  }
+
+  for await (const chunk of res.body as any) {
+    if (!chunk) continue;
+    const now = Date.now();
+    if (now - lastChunkTime > STALL_TIMEOUT && fullResponse.length > 100) {
+      outputChannel?.appendLine('[Guardian] Stall detected, stopping generation');
+      break;
+    }
+    lastChunkTime = now;
+
+    buffer += decoder.decode(chunk, { stream: true });
+
+    if (buffer.length > 100000) {
+      outputChannel?.appendLine('[Error] Buffer overflow detected, stopping stream');
+      if (!abortCtrl.signal.aborted) {
+        abortCtrl.abort();
+      }
+      break;
+    }
+
+    let newlineIndex;
+    let linesProcessed = 0;
+    while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+      if (++linesProcessed > 10000) {
+        outputChannel?.appendLine('[Warning] Stream processing limit reached');
+        break;
+      }
+
+      const line = buffer.slice(0, newlineIndex).trim();
+      buffer = buffer.slice(newlineIndex + 1);
+      if (!line) continue;
+
+      try {
+        const json = JSON.parse(line);
+        if (!json || typeof json !== 'object') {
+          continue;
+        }
+        if (!json.message || typeof json.message !== 'object') {
+          continue;
+        }
+        const delta = json.message.content || '';
+        if (delta) {
+          fullResponse += delta;
+
+          if (fullResponse.length > 500000) {
+            outputChannel?.appendLine('[Warning] Response too long, truncating');
+            fullResponse = fullResponse.slice(0, 500000) + '\n\n[Odpověď zkrácena - příliš dlouhá]';
+            if (!abortCtrl.signal.aborted) {
+              abortCtrl.abort();
+            }
+            break;
+          }
+
+          if (guardianEnabled) {
+            recentChunks.push(delta);
+            if (recentChunks.length > CHUNK_WINDOW) {
+              recentChunks.shift();
+            }
+
+            const recentText = recentChunks.join('');
+            if (recentText.length > 100) {
+              const halfLen = Math.floor(recentText.length / 2);
+              const firstHalf = recentText.slice(0, halfLen);
+              const secondHalf = recentText.slice(recentText.length - halfLen);
+              if (firstHalf === secondHalf && firstHalf.length > 0) {
+                outputChannel?.appendLine('[Guardian] Real-time loop detected, stopping');
+                panel.webview.postMessage({
+                  type: 'guardianAlert',
+                  message: '🛡️ Smyčka detekována, zastavuji generování'
+                });
+                if (!abortCtrl.signal.aborted) {
+                  abortCtrl.abort();
+                }
+                break;
+              }
+            }
+          }
+
+          panel.webview.postMessage({ type: 'responseChunk', text: delta });
+        }
+      } catch {
+        // Ignore malformed JSON
+      }
+    }
+  }
+
+  return fullResponse;
+}
+
 async function handleChatInternal(
   panel: WebviewWrapper,
   context: vscode.ExtensionContext,
@@ -2726,8 +2861,6 @@ PŘÍSTUP K PRÁCI:
 
   let fullResponse = '';
   let streamedToUi = false;
-  let lastChunkTime = Date.now();
-  const STALL_TIMEOUT = 10000; // 10s without new content = stall
   const generationStartMs = Date.now();
 
   try {
@@ -2790,133 +2923,16 @@ PŘÍSTUP K PRÁCI:
       );
     } else {
       streamedToUi = true;
-      const res = await fetchWithTimeout(url, {
-        method: 'POST',
-        headers: new Headers({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({
-          model: writerModel,
-          stream: true,
-          messages: apiMessages,
-          options: {
-            repeat_penalty: 1.2,  // Penalize repetition
-            repeat_last_n: 256,   // Look back 256 tokens
-            num_predict: getMaxOutputTokens(2048),    // Limit max tokens
-            num_ctx: getContextTokens()
-          }
-        }),
-        signal: abortController.signal
-      }, timeout);
-
-    if (!res.ok || !res.body) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      fullResponse = await streamPlainOllamaChat({
+        url,
+        model: writerModel,
+        apiMessages,
+        timeout,
+        panel,
+        abortCtrl: localAbortController,
+        guardianEnabled
+      });
     }
-
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    // Real-time loop detection during streaming
-    let recentChunks: string[] = [];
-    const CHUNK_WINDOW = 20;
-
-    // Iterate over readable stream chunks
-    // Safety: check body exists and is iterable
-    if (!res.body || typeof res.body[Symbol.asyncIterator] !== 'function') {
-      throw new Error('Response body is not readable stream');
-    }
-    
-    for await (const chunk of res.body as any) {
-      if (!chunk) continue;
-      // Check for stall
-      const now = Date.now();
-      if (now - lastChunkTime > STALL_TIMEOUT && fullResponse.length > 100) {
-        outputChannel?.appendLine('[Guardian] Stall detected, stopping generation');
-        break;
-      }
-      lastChunkTime = now;
-
-      buffer += decoder.decode(chunk, { stream: true });
-
-      // Prevent buffer overflow - if buffer grows too large without newlines, something is wrong
-      if (buffer.length > 100000) {
-        outputChannel?.appendLine('[Error] Buffer overflow detected, stopping stream');
-        if (abortController && !abortController.signal.aborted) {
-          abortController.abort();
-        }
-        break;
-      }
-
-      let newlineIndex;
-      let linesProcessed = 0;
-      while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
-        // Safety: prevent infinite loop on malformed stream
-        if (++linesProcessed > 10000) {
-          outputChannel?.appendLine('[Warning] Stream processing limit reached');
-          break;
-        }
-        
-        const line = buffer.slice(0, newlineIndex).trim();
-        buffer = buffer.slice(newlineIndex + 1);
-        if (!line) continue;
-
-        try {
-          const json = JSON.parse(line);
-          // Validate JSON structure
-          if (!json || typeof json !== 'object') {
-            continue;
-          }
-          // Additional safety: check message object exists
-          if (!json.message || typeof json.message !== 'object') {
-            continue;
-          }
-          const delta = json.message.content || '';
-          if (delta) {
-            fullResponse += delta;
-            
-            // Safety check - prevent extremely long responses from freezing UI
-            if (fullResponse.length > 500000) {
-              outputChannel?.appendLine('[Warning] Response too long, truncating');
-              fullResponse = fullResponse.slice(0, 500000) + '\n\n[Odpověď zkrácena - příliš dlouhá]';
-              if (abortController && !abortController.signal.aborted) {
-                abortController.abort();
-              }
-              break;
-            }
-            
-            // Real-time loop detection
-            if (guardianEnabled) {
-              recentChunks.push(delta);
-              if (recentChunks.length > CHUNK_WINDOW) {
-                recentChunks.shift();
-              }
-              
-              // Check for real-time loop
-              const recentText = recentChunks.join('');
-              if (recentText.length > 100) {
-                const halfLen = Math.floor(recentText.length / 2);
-                const firstHalf = recentText.slice(0, halfLen);
-                const secondHalf = recentText.slice(recentText.length - halfLen);
-                if (firstHalf === secondHalf && firstHalf.length > 0) {
-                  outputChannel?.appendLine('[Guardian] Real-time loop detected, stopping');
-                  panel.webview.postMessage({ 
-                    type: 'guardianAlert', 
-                    message: '🛡️ Smyčka detekována, zastavuji generování' 
-                  });
-                  if (abortController && !abortController.signal.aborted) {
-                    abortController.abort();
-                  }
-                  break;
-                }
-              }
-            }
-
-            panel.webview.postMessage({ type: 'responseChunk', text: delta });
-          }
-        } catch {
-          // Ignore malformed JSON
-        }
-      }
-    }
-  }
 
     orchestrator.transition('verify', { stepMode: false, hadMutations: toolSession.hadMutations });
 
