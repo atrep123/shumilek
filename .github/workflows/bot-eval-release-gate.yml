@@ -101,20 +101,46 @@ jobs:
         if: steps.caps.outputs.ready == 'true'
         id: baseline
         run: |
-          $candidate = $env:BOT_EVAL_BASELINE_DIR
-          if ($null -eq $candidate) { $candidate = '' }
-          $candidate = $candidate.Trim()
-          if ([string]::IsNullOrWhiteSpace($candidate)) {
+          function Resolve-BaselinePath([string]$candidate) {
+            if ([string]::IsNullOrWhiteSpace($candidate)) { return '' }
+            try {
+              $resolved = [System.IO.Path]::GetFullPath($candidate.Trim())
+              $resultsPath = Join-Path $resolved 'results.json'
+              if (Test-Path -LiteralPath $resultsPath) {
+                return $resolved
+              }
+            } catch {
+              Write-Host "::notice::Skipping unusable baseline candidate: $candidate"
+            }
+            return ''
+          }
+
+          $resolved = Resolve-BaselinePath $env:BOT_EVAL_BASELINE_DIR
+          if ([string]::IsNullOrWhiteSpace($resolved)) {
             $pointerPath = Join-Path $PWD 'projects/bot_eval_run/release_baseline.txt'
-            if (Test-Path $pointerPath) { $candidate = (Get-Content -Raw $pointerPath).Trim() }
+            if (Test-Path -LiteralPath $pointerPath) {
+              $resolved = Resolve-BaselinePath (Get-Content -Raw $pointerPath)
+            }
           }
-          if ([string]::IsNullOrWhiteSpace($candidate)) {
-            throw 'Release-gate baseline missing. Set repo variable BOT_EVAL_BASELINE_DIR or update projects/bot_eval_run/release_baseline.txt.'
+          if ([string]::IsNullOrWhiteSpace($resolved)) {
+            $runnerRoot = if ([string]::IsNullOrWhiteSpace($env:BOT_EVAL_RUN_ROOT)) {
+              Join-Path $PWD 'projects/bot_eval_run'
+            } else {
+              $env:BOT_EVAL_RUN_ROOT
+            }
+            if (Test-Path -LiteralPath $runnerRoot) {
+              $fallback = Get-ChildItem -LiteralPath $runnerRoot -Directory -Filter 'release_gate_ci_nightly_*' |
+                Sort-Object LastWriteTimeUtc -Descending |
+                Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'results.json') } |
+                Select-Object -First 1
+              if ($fallback) {
+                $resolved = $fallback.FullName
+                Write-Host "Using fallback nightly baseline: $resolved"
+              }
+            }
           }
-          $resolved = [System.IO.Path]::GetFullPath($candidate)
-          $resultsPath = Join-Path $resolved 'results.json'
-          if (-not (Test-Path $resultsPath)) {
-            throw "Baseline directory is invalid (results.json missing): $resultsPath"
+          if ([string]::IsNullOrWhiteSpace($resolved)) {
+            throw 'Release-gate baseline missing or unusable. Set BOT_EVAL_BASELINE_DIR, update projects/bot_eval_run/release_baseline.txt, or ensure BOT_EVAL_RUN_ROOT contains a completed release_gate_ci_nightly_* run.'
           }
           "baseline_dir=$resolved" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           Write-Host "Using baseline: $resolved" 
@@ -142,7 +168,8 @@ jobs:
       - name: Cleanup old bot-eval directories (PR)
         if: steps.caps.outputs.ready == 'true' && always()
         run: |
-          npm run bot:eval:cleanup -- --root projects/bot_eval_run --policy "release_gate_ci_pr_:10" --out "${{ steps.gate.outputs.out_dir }}/cleanup_report.json"
+          $cleanupOut = Join-Path $env:RUNNER_TEMP "bot_eval_cleanup_pr_${env:GITHUB_RUN_ID}_${env:GITHUB_RUN_ATTEMPT}.json"
+          npm run bot:eval:cleanup -- --root projects/bot_eval_run --policy "release_gate_ci_pr_:10" --out "$cleanupOut"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   gate-nightly:
@@ -212,20 +239,46 @@ jobs:
         if: steps.caps.outputs.ready == 'true'
         id: baseline
         run: |
-          $candidate = $env:BOT_EVAL_BASELINE_DIR
-          if ($null -eq $candidate) { $candidate = '' }
-          $candidate = $candidate.Trim()
-          if ([string]::IsNullOrWhiteSpace($candidate)) {
+          function Resolve-BaselinePath([string]$candidate) {
+            if ([string]::IsNullOrWhiteSpace($candidate)) { return '' }
+            try {
+              $resolved = [System.IO.Path]::GetFullPath($candidate.Trim())
+              $resultsPath = Join-Path $resolved 'results.json'
+              if (Test-Path -LiteralPath $resultsPath) {
+                return $resolved
+              }
+            } catch {
+              Write-Host "::notice::Skipping unusable baseline candidate: $candidate"
+            }
+            return ''
+          }
+
+          $resolved = Resolve-BaselinePath $env:BOT_EVAL_BASELINE_DIR
+          if ([string]::IsNullOrWhiteSpace($resolved)) {
             $pointerPath = Join-Path $PWD 'projects/bot_eval_run/release_baseline.txt'
-            if (Test-Path $pointerPath) { $candidate = (Get-Content -Raw $pointerPath).Trim() }
+            if (Test-Path -LiteralPath $pointerPath) {
+              $resolved = Resolve-BaselinePath (Get-Content -Raw $pointerPath)
+            }
           }
-          if ([string]::IsNullOrWhiteSpace($candidate)) {
-            throw 'Release-gate baseline missing. Set repo variable BOT_EVAL_BASELINE_DIR or update projects/bot_eval_run/release_baseline.txt.'
+          if ([string]::IsNullOrWhiteSpace($resolved)) {
+            $runnerRoot = if ([string]::IsNullOrWhiteSpace($env:BOT_EVAL_RUN_ROOT)) {
+              Join-Path $PWD 'projects/bot_eval_run'
+            } else {
+              $env:BOT_EVAL_RUN_ROOT
+            }
+            if (Test-Path -LiteralPath $runnerRoot) {
+              $fallback = Get-ChildItem -LiteralPath $runnerRoot -Directory -Filter 'release_gate_ci_nightly_*' |
+                Sort-Object LastWriteTimeUtc -Descending |
+                Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'results.json') } |
+                Select-Object -First 1
+              if ($fallback) {
+                $resolved = $fallback.FullName
+                Write-Host "Using fallback nightly baseline: $resolved"
+              }
+            }
           }
-          $resolved = [System.IO.Path]::GetFullPath($candidate)
-          $resultsPath = Join-Path $resolved 'results.json'
-          if (-not (Test-Path $resultsPath)) {
-            throw "Baseline directory is invalid (results.json missing): $resultsPath"
+          if ([string]::IsNullOrWhiteSpace($resolved)) {
+            throw 'Release-gate baseline missing or unusable. Set BOT_EVAL_BASELINE_DIR, update projects/bot_eval_run/release_baseline.txt, or ensure BOT_EVAL_RUN_ROOT contains a completed release_gate_ci_nightly_* run.'
           }
           "baseline_dir=$resolved" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           Write-Host "Using baseline: $resolved" 
@@ -377,5 +430,6 @@ jobs:
       - name: Cleanup old bot-eval directories (nightly)
         if: steps.caps.outputs.ready == 'true' && always()
         run: |
-          npm run bot:eval:cleanup -- --root $env:BOT_EVAL_RUN_ROOT --policy "release_gate_ci_nightly_:10" --policy "release_gate_ci_pr_:10" --out "${{ steps.gate.outputs.out_dir }}/cleanup_report.json"
+          $cleanupOut = Join-Path $env:RUNNER_TEMP "bot_eval_cleanup_nightly_${env:GITHUB_RUN_ID}_${env:GITHUB_RUN_ATTEMPT}.json"
+          npm run bot:eval:cleanup -- --root $env:BOT_EVAL_RUN_ROOT --policy "release_gate_ci_nightly_:10" --policy "release_gate_ci_pr_:10" --out "$cleanupOut"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
