@@ -90,7 +90,9 @@ import {
   toggleToolsEnabledSetting,
   toggleSafeModeSetting,
   ToolRequirements,
-  ResolvedExecutionMode
+  ResolvedExecutionMode,
+  resolveChatConfig,
+  ChatConfig
 } from './configResolver';
 import {
   handleApplyPatchTool,
@@ -2184,88 +2186,22 @@ async function handleChatInternal(
   retryFeedback?: string
 ): Promise<void> {
   const config = vscode.workspace.getConfiguration('shumilek');
-  const modelPreset = config.get<string>('modelPreset', 'custom');
-  const preset = resolveModelPreset(modelPreset);
-  let baseModel = config.get<string>('model', preset?.model ?? 'deepseek-coder-v2:16b');
-  let writerModel = config.get<string>('writerModel', preset?.writerModel ?? baseModel);
-  let brainModels = config.get<string[]>('brainModels', preset?.brainModels ?? []);
-  const pipelineAlwaysOn = config.get<boolean>('pipelineAlwaysOn', true);
-  const backendType = config.get<string>('backendType', 'ollama');
-  const useAirLLM = backendType === 'airllm';
-  const airllmServerUrl = config.get<string>('airllm.serverUrl', 'http://localhost:11435');
-  const airllmModel = config.get<string>('airllm.model', 'Qwen/Qwen2.5-72B-Instruct');
-  const airllmAutoStart = config.get<boolean>('airllm.autoStart', false);
-  const airllmWaitForHealthy = config.get<number>('airllm.waitForHealthySeconds', 30);
-  let baseUrl = useAirLLM ? airllmServerUrl : config.get<string>('baseUrl', 'http://localhost:11434');
-  const baseUrlInfo = parseServerUrl(baseUrl, useAirLLM ? 'http://localhost:11435' : 'http://localhost:11434');
-  baseUrl = baseUrlInfo.baseUrl;
-  
-  const systemPrompt = config.get<string>('systemPrompt', 'Jsi pomocný asistent pro programování. Odpovídej stručně a přesně. Používej český jazyk. NIKDY neopakuj stejné věty.');
-  
-  const timeout = resolveTimeoutMs(config);
-  
-  // Validate maxRetries
-  let maxRetries = config.get<number>('maxRetries', 2);
-  if (typeof maxRetries !== 'number' || isNaN(maxRetries) || maxRetries < 0) {
-    maxRetries = 2;
-  }
-  maxRetries = Math.min(maxRetries, 5); // Max 5 retries
-  
-  const guardianEnabled = config.get<boolean>('guardianEnabled', true);
-  const miniModelEnabled = config.get<boolean>('miniModelEnabled', true);
-  let miniModel = config.get<string>('miniModel', preset?.miniModel ?? 'qwen2.5:3b');
-  let rozumModel = config.get<string>('rozumModel', preset?.rozumModel ?? 'deepseek-r1:8b');
-  const configuredExecutionMode = getConfiguredExecutionMode(config);
-  const validationPolicy = getValidationPolicy(config);
-  const autoApprovePolicy = getAutoApprovePolicy(config);
-  const maxAutoSteps = clampNumber(config.get<number>('maxAutoSteps', 4), 4, 1, 20);
-  const contextProviderNames = getContextProviders(config);
-  const contextProviderTokenBudget = getContextProviderTokenBudget(config);
-  const stepTimeout = resolveStepTimeoutMs(config, timeout);
-  const toolsEnabledSetting = config.get<boolean>('toolsEnabled', true);
-  const toolsEnabled = toolsEnabledSetting;
-  const toolsConfirmEdits = config.get<boolean>('toolsConfirmEdits', false);
-  const toolsMaxIterations = config.get<number>('toolsMaxIterations', 6);
-  const effectiveAutoSteps = Math.min(Math.max(1, toolsMaxIterations), maxAutoSteps);
-  const workspaceIndexEnabled = config.get<boolean>('workspaceIndexEnabled', true);
-  const validatorLogsEnabled = config.get<boolean>('validatorLogsEnabled', true);
-  const rewardEnabled = config.get<boolean>('rewardEnabled', true);
-  const rewardEndpoint = config.get<string>('rewardEndpoint', '');
-  const rewardThreshold = config.get<number>('rewardThreshold', 0.7);
-  const hhemEnabled = config.get<boolean>('hhemEnabled', true);
-  const hhemEndpoint = config.get<string>('hhemEndpoint', '');
-  const hhemThreshold = config.get<number>('hhemThreshold', 0.5);
-  const ragasEnabled = config.get<boolean>('ragasEnabled', true);
-  const ragasEndpoint = config.get<string>('ragasEndpoint', '');
-  const ragasThreshold = config.get<number>('ragasThreshold', 0.75);
-  const summarizerEnabled = config.get<boolean>('summarizerEnabled', true);
-  let summarizerModel = config.get<string>('summarizerModel', preset?.summarizerModel ?? 'qwen2.5:3b');
-
-  if (preset) {
-    baseModel = preset.model;
-    writerModel = preset.writerModel || preset.model;
-    rozumModel = preset.rozumModel;
-    miniModel = preset.miniModel;
-    summarizerModel = preset.summarizerModel || preset.miniModel || preset.model;
-    brainModels = preset.brainModels.slice();
-  }
-  if (useAirLLM) {
-    const resolvedAirModel = (airllmModel || '').trim();
-    if (resolvedAirModel) {
-      baseModel = resolvedAirModel;
-    }
-    writerModel = baseModel;
-    rozumModel = baseModel;
-    miniModel = baseModel;
-    summarizerModel = baseModel;
-    brainModels = [baseModel];
-  }
-  if (!writerModel) writerModel = baseModel;
-  if (!brainModels || brainModels.length === 0) brainModels = [baseModel];
-  if (!summarizerModel || summarizerModel === 'pegasus-large') {
-    summarizerModel = baseModel;
-  }
-  if (preset) {
+  const chatCfg = resolveChatConfig(config);
+  let {
+    baseModel, writerModel, brainModels, miniModel, rozumModel, summarizerModel,
+    baseUrl, maxRetries
+  } = chatCfg;
+  const {
+    systemPrompt, timeout, pipelineAlwaysOn, useAirLLM,
+    airllmAutoStart, airllmWaitForHealthy, guardianEnabled, miniModelEnabled,
+    configuredExecutionMode, validationPolicy, autoApprovePolicy, maxAutoSteps,
+    contextProviderNames, contextProviderTokenBudget, stepTimeout, toolsEnabled,
+    toolsConfirmEdits, toolsMaxIterations, effectiveAutoSteps, workspaceIndexEnabled,
+    validatorLogsEnabled, summarizerEnabled, rewardEnabled, rewardEndpoint,
+    rewardThreshold, hhemEnabled, hhemEndpoint, hhemThreshold, ragasEnabled,
+    ragasEndpoint, ragasThreshold, modelPreset
+  } = chatCfg;
+  if (chatCfg.modelPreset !== 'custom' && resolveModelPreset(chatCfg.modelPreset)) {
     outputChannel?.appendLine(`[Models] Preset applied: ${modelPreset}`);
   }
 
@@ -2315,7 +2251,7 @@ async function handleChatInternal(
         writer: writerModel,
         rozum: rozumModel,
         svedomi: miniModel,
-        backend: backendType,
+        backend: useAirLLM ? 'airllm' : 'ollama',
         baseUrl
       },
       orchestrationState: 'idle',

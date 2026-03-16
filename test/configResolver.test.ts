@@ -8,7 +8,7 @@ mock('vscode', {
 });
 
 import { expect } from 'chai';
-import { parseServerUrl, resolveModelPreset, clampNumber, MODEL_PRESETS, resolveExecutionMode } from '../src/configResolver';
+import { parseServerUrl, resolveModelPreset, clampNumber, MODEL_PRESETS, resolveExecutionMode, resolveChatConfig } from '../src/configResolver';
 
 describe('configResolver', () => {
   describe('parseServerUrl', () => {
@@ -131,6 +131,88 @@ describe('configResolver', () => {
 
     it('should return chat for hybrid when no mutation required', () => {
       expect(resolveExecutionMode('hybrid', { requireToolCall: false, requireMutation: false })).to.equal('chat');
+    });
+  });
+
+  describe('resolveChatConfig', () => {
+    function makeConfig(overrides: Record<string, any> = {}) {
+      return {
+        get: (key: string, def: any) => (key in overrides ? overrides[key] : def)
+      } as any;
+    }
+
+    it('should return default config when no overrides', () => {
+      const cfg = resolveChatConfig(makeConfig());
+      expect(cfg.baseUrl).to.equal('http://localhost:11434');
+      expect(cfg.maxRetries).to.equal(2);
+      expect(cfg.guardianEnabled).to.equal(true);
+      expect(cfg.toolsEnabled).to.equal(true);
+      expect(cfg.rewardThreshold).to.equal(0.7);
+    });
+
+    it('should apply fast preset', () => {
+      const cfg = resolveChatConfig(makeConfig({ modelPreset: 'fast' }));
+      expect(cfg.baseModel).to.equal('qwen2.5-coder:7b');
+      expect(cfg.writerModel).to.equal('qwen2.5-coder:7b');
+      expect(cfg.miniModel).to.equal('qwen2.5:3b');
+      expect(cfg.modelPreset).to.equal('fast');
+    });
+
+    it('should apply quality preset', () => {
+      const cfg = resolveChatConfig(makeConfig({ modelPreset: 'quality' }));
+      expect(cfg.baseModel).to.equal('deepseek-coder-v2:16b');
+      expect(cfg.writerModel).to.equal('deepseek-coder-v2:16b');
+    });
+
+    it('should override all models for AirLLM backend', () => {
+      const cfg = resolveChatConfig(makeConfig({
+        backendType: 'airllm',
+        'airllm.model': 'test-model'
+      }));
+      expect(cfg.useAirLLM).to.equal(true);
+      expect(cfg.baseModel).to.equal('test-model');
+      expect(cfg.writerModel).to.equal('test-model');
+      expect(cfg.rozumModel).to.equal('test-model');
+      expect(cfg.miniModel).to.equal('test-model');
+      expect(cfg.summarizerModel).to.equal('test-model');
+      expect(cfg.brainModels).to.deep.equal(['test-model']);
+    });
+
+    it('should use AirLLM server URL when backend is airllm', () => {
+      const cfg = resolveChatConfig(makeConfig({
+        backendType: 'airllm',
+        'airllm.serverUrl': 'http://remote:9000'
+      }));
+      expect(cfg.baseUrl).to.equal('http://remote:9000');
+    });
+
+    it('should clamp maxRetries to 5', () => {
+      const cfg = resolveChatConfig(makeConfig({ maxRetries: 100 }));
+      expect(cfg.maxRetries).to.equal(5);
+    });
+
+    it('should default negative maxRetries to 2', () => {
+      const cfg = resolveChatConfig(makeConfig({ maxRetries: -1 }));
+      expect(cfg.maxRetries).to.equal(2);
+    });
+
+    it('should resolve effectiveAutoSteps as min of toolsMaxIterations and maxAutoSteps', () => {
+      const cfg = resolveChatConfig(makeConfig({ toolsMaxIterations: 3, maxAutoSteps: 10 }));
+      expect(cfg.effectiveAutoSteps).to.equal(3);
+    });
+
+    it('should use custom baseUrl when backend is ollama', () => {
+      const cfg = resolveChatConfig(makeConfig({ baseUrl: 'http://my-host:5555' }));
+      expect(cfg.baseUrl).to.equal('http://my-host:5555');
+    });
+
+    it('should fallback pegasus-large summarizerModel to baseModel', () => {
+      const cfg = resolveChatConfig(makeConfig({
+        modelPreset: 'custom',
+        summarizerModel: 'pegasus-large',
+        model: 'my-model'
+      }));
+      expect(cfg.summarizerModel).to.equal('my-model');
     });
   });
 });
