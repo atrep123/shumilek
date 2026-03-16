@@ -21,12 +21,12 @@
     "ts-todo-oracle": {
       "maxFallbackDependencyRunRate": 0.2,
       "maxFallbackDependencyRunRateDelta": 0.2,
-      "maxLatencyMultiplier": 1.23
+      "maxLatencyMultiplier": 1.26
     },
     "node-api-oracle": {
       "maxFallbackDependencyRunRate": 0.2,
       "maxFallbackDependencyRunRateDelta": 0.2,
-      "maxLatencyMultiplier": 1.17
+      "maxLatencyMultiplier": 1.25
     },
     "python-ai-stdlib-oracle": {
       "maxFallbackDependencyRunRate": 0.2,

@@ -1,0 +1,6 @@
+Usage:
+  list --data <path>
+  add <title> --data <path>
+  done <id> --data <path>
+  remove <id> --data <path>
+  --help

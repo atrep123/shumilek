@@ -1,0 +1,14 @@
+{
+  "generatedAt": "2026-03-16T09:15:56.310Z",
+  "candidateDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773650886447",
+  "stableDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_stable_nightly",
+  "statePath": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\baseline_promotion_state.json",
+  "requiredConsecutive": 2,
+  "streakBefore": 0,
+  "streakAfter": 1,
+  "qualified": true,
+  "qualificationReason": "qualified",
+  "promoted": false,
+  "promotionMessage": "qualified but streak 1/2 is below threshold",
+  "lastPromotion": null
+}

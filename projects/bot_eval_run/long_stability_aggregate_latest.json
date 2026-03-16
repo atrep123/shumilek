@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-03-15T20:56:49.421Z",
+  "generatedAt": "2026-03-16T09:15:57.842Z",
   "inputs": [
-    "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773602833835",
     "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773604789572",
-    "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773606591921"
+    "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773606591921",
+    "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773650886447"
   ],
   "baselineDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773595116385",
   "allGatePassed": true,
@@ -11,7 +11,7 @@
   "scenarios": [
     {
       "scenario": "node-api-oracle",
-      "runs": 3,
+      "runs": 2,
       "passRate": {
         "avg": 1,
         "min": 1,
@@ -28,14 +28,14 @@
         "max": 0
       },
       "avgMs": {
-        "avg": 93456.66666666667,
+        "avg": 91623,
         "min": 90791,
-        "max": 97124
+        "max": 92455
       },
       "avgMsDeltaVsBaseline": {
-        "avg": -2810.3333333333335,
+        "avg": -4644,
         "min": -5476,
-        "max": 857
+        "max": -3812
       },
       "parseErrorRunsTotal": {
         "planner": 0,
@@ -48,7 +48,7 @@
     },
     {
       "scenario": "node-project-api-large",
-      "runs": 3,
+      "runs": 2,
       "passRate": {
         "avg": 1,
         "min": 1,
@@ -65,14 +65,14 @@
         "max": 0
       },
       "avgMs": {
-        "avg": 140427,
+        "avg": 139738,
         "min": 137707,
-        "max": 141805
+        "max": 141769
       },
       "avgMsDeltaVsBaseline": {
-        "avg": 140427,
+        "avg": 139738,
         "min": 137707,
-        "max": 141805
+        "max": 141769
       },
       "parseErrorRunsTotal": {
         "planner": 0,
@@ -85,7 +85,7 @@
     },
     {
       "scenario": "python-ai-stdlib-oracle",
-      "runs": 3,
+      "runs": 2,
       "passRate": {
         "avg": 1,
         "min": 1,
@@ -102,13 +102,13 @@
         "max": 0
       },
       "avgMs": {
-        "avg": 43720,
-        "min": 43461,
+        "avg": 43849.5,
+        "min": 43582,
         "max": 44117
       },
       "avgMsDeltaVsBaseline": {
-        "avg": -33,
-        "min": -292,
+        "avg": 96.5,
+        "min": -171,
         "max": 364
       },
       "parseErrorRunsTotal": {
@@ -122,7 +122,7 @@
     },
     {
       "scenario": "ts-todo-oracle",
-      "runs": 3,
+      "runs": 2,
       "passRate": {
         "avg": 1,
         "min": 1,
@@ -139,14 +139,14 @@
         "max": 0
       },
       "avgMs": {
-        "avg": 44647,
+        "avg": 43880,
         "min": 43603,
-        "max": 46181
+        "max": 44157
       },
       "avgMsDeltaVsBaseline": {
-        "avg": -2173,
+        "avg": -2940,
         "min": -3217,
-        "max": -639
+        "max": -2663
       },
       "parseErrorRunsTotal": {
         "planner": 0,

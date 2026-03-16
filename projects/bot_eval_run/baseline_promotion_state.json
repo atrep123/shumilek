@@ -1,11 +1,17 @@
-﻿{
-    "streak":  0,
-    "version":  1,
-    "lastCandidateDir":  "",
-    "history":  [
-
-                ],
-    "requiredConsecutive":  2,
-    "lastQualifiedAt":  null,
-    "lastPromotion":  null
+{
+  "version": 1,
+  "requiredConsecutive": 2,
+  "streak": 1,
+  "history": [
+    {
+      "at": "2026-03-16T09:15:56.310Z",
+      "candidateDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773650886447",
+      "qualified": true,
+      "promoted": false,
+      "streakAfter": 1,
+      "reason": "qualified but streak 1/2 is below threshold"
+    }
+  ],
+  "lastCandidateDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773650886447",
+  "lastQualifiedAt": "2026-03-16T09:15:56.310Z"
 }
