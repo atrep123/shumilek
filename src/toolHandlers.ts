@@ -105,6 +105,26 @@ export interface MutationHandlerDeps {
   buildAutoFileName: (options: { title?: string; suggestedName?: string; extension?: string; content?: string }) => string;
   resolveAutoSaveTargetUri: (fileName: string) => Promise<{ uri?: vscode.Uri; error?: string }>;
   isSafeUrl: (raw: string) => { safe: boolean; reason?: string };
+  openExternalUrl: (url: string) => Promise<boolean>;
+}
+
+export async function handleBrowserOpenPageTool(
+  name: string,
+  args: Record<string, unknown>,
+  deps: MutationHandlerDeps
+): Promise<ToolResultLike> {
+  const url = deps.asString(args.url);
+  if (!url) return { ok: false, tool: name, message: 'url je povinne' };
+
+  const urlCheck = deps.isSafeUrl(url);
+  if (!urlCheck.safe) {
+    return { ok: false, tool: name, message: `URL blokována: ${urlCheck.reason}` };
+  }
+
+  const opened = await deps.openExternalUrl(url);
+  return opened
+    ? { ok: true, tool: name, message: `otevreno: ${url}`, data: { url } }
+    : { ok: false, tool: name, message: `nepodarilo se otevrit: ${url}`, data: { url } };
 }
 
 export async function handleReplaceLinesTool(
@@ -528,7 +548,7 @@ export async function handleFetchWebpageTool(
   args: Record<string, unknown>,
   deps: MutationHandlerDeps
 ): Promise<ToolResultLike> {
-  const url = deps.asString(args.url);
+  const url = deps.asString(args.url) ?? deps.asString(args.href);
   if (!url) return { ok: false, tool: name, message: 'url je povinne' };
 
   const urlCheck = deps.isSafeUrl(url);

@@ -3,6 +3,7 @@ import { PIPELINE_STATUS_ICONS } from './statusMessages';
 import { resolveToolPermissionScope } from './toolingProtocol';
 import {
   handleApplyPatchTool,
+  handleBrowserOpenPageTool,
   handleDeleteFileTool,
   handleGetActiveFileTool,
   handleGetDefinitionTool,
@@ -98,6 +99,8 @@ export async function runToolCall(
       case 'delete_file': return handleDeleteFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
       case 'run_terminal_command': return handleRunTerminalCommandTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps);
       case 'fetch_webpage': return handleFetchWebpageTool(name, args, mutationHandlerDeps);
+      case 'browser_fetch_page': return handleFetchWebpageTool(name, args, mutationHandlerDeps);
+      case 'browser_open_page': return handleBrowserOpenPageTool(name, args, mutationHandlerDeps);
       default:
         return { ok: false, tool: name, message: 'neznamy nastroj' };
     }

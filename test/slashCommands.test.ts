@@ -37,6 +37,22 @@ function makeCtx(overrides: Record<string, any> = {}) {
     resetGuardian: () => {},
     runDoctor: async () => '### Doctor\nAll OK',
     compactSession: async () => ({ compacted: true, saved: 8 }),
+    toolsInfo: {
+      enabled: true,
+      confirmEdits: false,
+      autoApprove: {
+        read: true,
+        edit: false,
+        commands: false,
+        browser: false,
+        mcp: false,
+      },
+    },
+    getWorkspaceInstructions: async () => ({
+      files: ['.shumilek/AGENTS.md'],
+      totalChars: 123,
+      truncated: false,
+    }),
     ...overrides,
   };
 }
@@ -88,6 +104,8 @@ describe('executeSlashCommand', () => {
       expect(result.response).to.include('/doctor');
       expect(result.response).to.include('/compact');
       expect(result.response).to.include('/new');
+      expect(result.response).to.include('/tools');
+      expect(result.response).to.include('/instructions');
     });
 
     it('should work with /h alias', async () => {
@@ -191,6 +209,32 @@ describe('executeSlashCommand', () => {
     it('should work with /doc alias', async () => {
       const result = await executeSlashCommand('/doc', makeCtx());
       expect(result.handled).to.be.true;
+    });
+  });
+
+  describe('/tools', () => {
+    it('should show tools runtime status', async () => {
+      const result = await executeSlashCommand('/tools', makeCtx());
+      expect(result.handled).to.be.true;
+      expect(result.response).to.include('Tools enabled');
+      expect(result.response).to.include('Auto-approve browser');
+    });
+  });
+
+  describe('/instructions', () => {
+    it('should show loaded instruction files', async () => {
+      const result = await executeSlashCommand('/instructions', makeCtx());
+      expect(result.handled).to.be.true;
+      expect(result.response).to.include('.shumilek/AGENTS.md');
+      expect(result.response).to.include('123');
+    });
+
+    it('should handle missing instruction files', async () => {
+      const result = await executeSlashCommand('/instructions', makeCtx({
+        getWorkspaceInstructions: async () => ({ files: [], totalChars: 0, truncated: false })
+      }));
+      expect(result.handled).to.be.true;
+      expect(result.response).to.include('Nebyl nalezen');
     });
   });
 

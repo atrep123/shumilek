@@ -28,6 +28,7 @@ describe('toolUtils', () => {
       expect(result).to.include('list_files');
       expect(result).to.include('write_file');
       expect(result).to.include('fetch_webpage');
+      expect(result).to.include('browser_open_page');
     });
   });
 

@@ -75,7 +75,7 @@ import { isSlashCommand, executeSlashCommand, SlashCommandContext } from './slas
 import { runDoctorChecks, formatDoctorReport } from './doctor';
 import { ModelRouter } from './modelRouter';
 import { compactMessages } from './sessionCompactor';
-import { loadWorkspaceInstructions, setWorkspaceInstructionsLogger } from './workspaceInstructions';
+import { loadWorkspaceInstructionBundle, setWorkspaceInstructionsLogger } from './workspaceInstructions';
 import { ChatRequestConcurrencyGuard } from './chatConcurrency';
 import { getWebviewContent } from './webviewContent';
 import { computeRetryDecision, buildRetryFeedbackMessage } from './retryDecision';
@@ -1730,6 +1730,8 @@ async function handleChatInternal(
     return;
   }
 
+  const workspaceInstructionBundle = await loadWorkspaceInstructionBundle();
+
   // === SLASH COMMANDS (OpenClaw-inspired) ===
   if (retryCount === 0 && isSlashCommand(trimmedPrompt)) {
     outputChannel?.appendLine(`[SlashCmd] Handling: ${trimmedPrompt}`);
@@ -1768,7 +1770,23 @@ async function handleChatInternal(
           await saveChatMessages(context, messages);
         }
         return { compacted: result.compacted, saved: result.saved };
-      }
+      },
+      toolsInfo: {
+        enabled: toolsEnabled,
+        confirmEdits: toolsConfirmEdits,
+        autoApprove: autoApprovePolicy ?? {
+          read: true,
+          edit: false,
+          commands: false,
+          browser: false,
+          mcp: false
+        }
+      },
+      getWorkspaceInstructions: async () => ({
+        files: workspaceInstructionBundle.files.map(file => file.path),
+        totalChars: workspaceInstructionBundle.files.reduce((sum, file) => sum + file.includedChars, 0),
+        truncated: workspaceInstructionBundle.files.some(file => file.truncated)
+      })
     };
     const slashResult = await executeSlashCommand(trimmedPrompt, slashCtx);
     if (slashResult.handled) {
@@ -1831,7 +1849,7 @@ async function handleChatInternal(
   const workspaceContext = providerContext ? `\n\n${providerContext}` : '';
 
   // === WORKSPACE INSTRUCTIONS (AGENTS.md pattern, OpenClaw-inspired) ===
-  const workspaceInstructions = await loadWorkspaceInstructions();
+  const workspaceInstructions = workspaceInstructionBundle.text;
 
   // Enhanced system prompt with anti-loop instructions and workspace context
   const retryFeedbackSection = retryFeedback
@@ -2506,6 +2524,8 @@ function buildToolInstructions(): string {
     '- delete_file { path: string }',
     '- run_terminal_command { command: string, timeoutMs?: number }',
     '- fetch_webpage { url: string }',
+    '- browser_fetch_page { url: string }',
+    '- browser_open_page { url: string }',
     '',
     'RULES:',
     '- When editing, read the file first and use replace_lines with precise line content matches.',
@@ -3147,7 +3167,8 @@ function getMutationHandlerDeps(): MutationHandlerDeps {
     tokenizeRouteText,
     buildAutoFileName,
     resolveAutoSaveTargetUri,
-    isSafeUrl
+    isSafeUrl,
+    openExternalUrl: async (raw: string) => Promise.resolve(vscode.env.openExternal(vscode.Uri.parse(raw)))
   };
 }
 

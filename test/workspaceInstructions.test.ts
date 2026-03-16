@@ -31,8 +31,10 @@ mock('vscode', vscodeMock);
 
 import { expect } from 'chai';
 import {
+  loadWorkspaceInstructionBundle,
   loadWorkspaceInstructions,
   getInstructionFilePath,
+  getInstructionFilePaths,
   setWorkspaceInstructionsLogger
 } from '../src/workspaceInstructions';
 
@@ -70,7 +72,7 @@ describe('workspaceInstructions', () => {
       const result = await loadWorkspaceInstructions();
       expect(result).to.include('agent rules');
       expect(result).to.include('.shumilek/AGENTS.md');
-      expect(result).to.not.include('root');
+      expect(result).to.include('root');
     });
 
     it('falls back to AGENTS.md when .shumilek files missing', async () => {
@@ -128,6 +130,27 @@ describe('workspaceInstructions', () => {
       const result = await loadWorkspaceInstructions();
       expect(result).to.include('[WORKSPACE INSTRUKCE z .shumilek/AGENTS.md]');
     });
+
+    it('loads multiple instruction files in priority order within budget', async () => {
+      fakeFs['/workspace/.shumilek/AGENTS.md'] = { type: 1, size: 20, content: 'agent rules' };
+      fakeFs['/workspace/.shumilek/instructions.md'] = { type: 1, size: 20, content: 'local rules' };
+      fakeFs['/workspace/AGENTS.md'] = { type: 1, size: 20, content: 'root rules' };
+
+      const result = await loadWorkspaceInstructions(500);
+      expect(result).to.include('.shumilek/AGENTS.md');
+      expect(result).to.include('.shumilek/instructions.md');
+      expect(result).to.include('AGENTS.md');
+    });
+
+    it('returns bundle metadata for included files', async () => {
+      fakeFs['/workspace/.shumilek/AGENTS.md'] = { type: 1, size: 10, content: 'agent rules' };
+      fakeFs['/workspace/AGENTS.md'] = { type: 1, size: 9, content: 'root rule' };
+
+      const bundle = await loadWorkspaceInstructionBundle(500);
+      expect(bundle.files.map(f => f.path)).to.deep.equal(['.shumilek/AGENTS.md', 'AGENTS.md']);
+      expect(bundle.text).to.include('agent rules');
+      expect(bundle.text).to.include('root rule');
+    });
   });
 
   // ---------- getInstructionFilePath ----------
@@ -150,6 +173,14 @@ describe('workspaceInstructions', () => {
     it('falls back to later files', async () => {
       fakeFs['/workspace/.shumilek/SOUL.md'] = { type: 1, size: 5, content: 'x' };
       expect(await getInstructionFilePath()).to.equal('.shumilek/SOUL.md');
+    });
+  });
+
+  describe('getInstructionFilePaths', () => {
+    it('returns all matching relative paths in priority order', async () => {
+      fakeFs['/workspace/.shumilek/instructions.md'] = { type: 1, size: 5, content: 'x' };
+      fakeFs['/workspace/AGENTS.md'] = { type: 1, size: 5, content: 'y' };
+      expect(await getInstructionFilePaths()).to.deep.equal(['.shumilek/instructions.md', 'AGENTS.md']);
     });
   });
 

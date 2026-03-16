@@ -62,7 +62,9 @@ export function buildToolOnlyPrompt(requireMutation: boolean): string {
     'rename_file',
     'delete_file',
     'run_terminal_command',
-    'fetch_webpage'
+    'fetch_webpage',
+    'browser_fetch_page',
+    'browser_open_page'
   ];
   return [...rules, `Dostupne nastroje: ${tools.join(', ')}`].join('\n');
 }

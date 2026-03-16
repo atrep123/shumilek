@@ -14,6 +14,7 @@ if (!vscodeMock.languages) vscodeMock.languages = { getDiagnostics: () => [] };
 mock('vscode', vscodeMock);
 
 const {
+  handleBrowserOpenPageTool,
   handleReplaceLinesTool,
   handleWriteFileTool,
   handleReadFileTool,
@@ -104,7 +105,8 @@ function makeDeps(overrides?: Record<string, any>) {
         if (!['http:', 'https:'].includes(u.protocol)) return { safe: false, reason: 'bad protocol' };
         return { safe: true };
       } catch { return { safe: false, reason: 'invalid URL' }; }
-    }
+    },
+    openExternalUrl: async () => true
   };
   return { ...base, ...overrides };
 }
@@ -538,6 +540,35 @@ describe('handleFetchWebpageTool', () => {
     const result = await handleFetchWebpageTool('fetch_webpage', { url: 'ftp://evil.com' }, deps);
     expect(result.ok).to.be.false;
     expect(result.message).to.include('blokována');
+  });
+
+  it('accepts href alias for browser-prefixed fetches', async () => {
+    const deps = makeDeps();
+    const result = await handleFetchWebpageTool('browser_fetch_page', { href: 'ftp://evil.com' }, deps);
+    expect(result.ok).to.be.false;
+    expect(result.message).to.include('blokována');
+  });
+});
+
+describe('handleBrowserOpenPageTool', () => {
+  it('rejects unsafe URL', async () => {
+    const deps = makeDeps();
+    const result = await handleBrowserOpenPageTool('browser_open_page', { url: 'ftp://evil.com' }, deps);
+    expect(result.ok).to.be.false;
+    expect(result.message).to.include('blokována');
+  });
+
+  it('opens safe URL via injected dependency', async () => {
+    let openedUrl = '';
+    const deps = makeDeps({
+      openExternalUrl: async (url: string) => {
+        openedUrl = url;
+        return true;
+      }
+    });
+    const result = await handleBrowserOpenPageTool('browser_open_page', { url: 'https://example.com' }, deps);
+    expect(result.ok).to.be.true;
+    expect(openedUrl).to.equal('https://example.com');
   });
 });
 
