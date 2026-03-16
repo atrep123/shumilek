@@ -13,6 +13,7 @@ type CompareOptions = {
   minPassRateDelta?: number;
   maxFallbackDependencyRunRate?: number;
   maxFallbackDependencyRunRateDelta?: number;
+  maxLatencyMultiplier?: number;
   maxClusterIncreaseRules: GateClusterThreshold[];
   scenarioThresholdsFile?: string;
   scenarioThresholds: Record<string, ScenarioThresholdRule>;
@@ -67,12 +68,14 @@ type ScenarioThresholdRule = {
   minPassRateDelta?: number;
   maxFallbackDependencyRunRate?: number;
   maxFallbackDependencyRunRateDelta?: number;
+  maxLatencyMultiplier?: number;
 };
 
 type GateThresholds = {
   minPassRateDelta: number;
   maxFallbackDependencyRunRate: number;
   maxFallbackDependencyRunRateDelta: number;
+  maxLatencyMultiplier: number;
   maxClusterIncreaseRules: GateClusterThreshold[];
   scenarioOverrides: Record<string, ScenarioThresholdRule>;
 };
@@ -97,6 +100,7 @@ type GateConfigFile = {
   minPassRateDelta?: number;
   maxFallbackDependencyRunRate?: number;
   maxFallbackDependencyRunRateDelta?: number;
+  maxLatencyMultiplier?: number;
   maxClusterIncreaseRules?: GateClusterThreshold[];
   scenarioOverrides?: Record<string, ScenarioThresholdRule>;
 };
@@ -284,6 +288,9 @@ function normalizeScenarioThresholdMap(raw: any): Record<string, ScenarioThresho
     if (item.maxFallbackDependencyRunRateDelta != null && Number.isFinite(Number(item.maxFallbackDependencyRunRateDelta))) {
       next.maxFallbackDependencyRunRateDelta = Number(item.maxFallbackDependencyRunRateDelta);
     }
+    if (item.maxLatencyMultiplier != null && Number.isFinite(Number(item.maxLatencyMultiplier))) {
+      next.maxLatencyMultiplier = Number(item.maxLatencyMultiplier);
+    }
     out[scenario] = next;
   }
   return out;
@@ -327,6 +334,9 @@ function loadGateConfigFile(absPath: string): GateConfigFile {
       : undefined,
     maxFallbackDependencyRunRateDelta: Number.isFinite(Number((raw as any).maxFallbackDependencyRunRateDelta))
       ? Number((raw as any).maxFallbackDependencyRunRateDelta)
+      : undefined,
+    maxLatencyMultiplier: Number.isFinite(Number((raw as any).maxLatencyMultiplier))
+      ? Number((raw as any).maxLatencyMultiplier)
       : undefined,
     maxClusterIncreaseRules: normalizeClusterIncreaseRules((raw as any).maxClusterIncreaseRules),
     scenarioOverrides: normalizeScenarioThresholdMap((raw as any).scenarioOverrides)
@@ -448,6 +458,7 @@ export function evaluateAcceptanceGate(params: {
     minPassRateDelta?: number;
     maxFallbackDependencyRunRate?: number;
     maxFallbackDependencyRunRateDelta?: number;
+    maxLatencyMultiplier?: number;
     maxClusterIncreaseRules?: GateClusterThreshold[];
     scenarioOverrides?: Record<string, ScenarioThresholdRule>;
   };
@@ -462,6 +473,9 @@ export function evaluateAcceptanceGate(params: {
     maxFallbackDependencyRunRateDelta: Number.isFinite(Number(params.thresholds?.maxFallbackDependencyRunRateDelta))
       ? Number(params.thresholds?.maxFallbackDependencyRunRateDelta)
       : 0.2,
+    maxLatencyMultiplier: Number.isFinite(Number(params.thresholds?.maxLatencyMultiplier))
+      ? Number(params.thresholds?.maxLatencyMultiplier)
+      : 0,
     maxClusterIncreaseRules: Array.isArray(params.thresholds?.maxClusterIncreaseRules)
       ? params.thresholds!.maxClusterIncreaseRules!.map(rule => ({ id: String(rule.id), maxIncrease: Number(rule.maxIncrease) }))
       : [],
@@ -515,6 +529,21 @@ export function evaluateAcceptanceGate(params: {
         message: `Scenario ${row.scenario}: fallbackDependencyRunRateDelta ${row.delta.fallbackDependencyRunRate.toFixed(4)} exceeds max ${maxFallbackDependencyRunRateDelta.toFixed(4)}`
       });
     }
+
+    const maxLatencyMultiplier = scenarioOverride.maxLatencyMultiplier ?? thresholds.maxLatencyMultiplier;
+    if (maxLatencyMultiplier > 0 && row.baseline.avgMs > 0) {
+      const maxAllowedMs = row.baseline.avgMs * maxLatencyMultiplier;
+      if (row.candidate.avgMs > maxAllowedMs) {
+        violations.push({
+          scope: 'scenario',
+          scenario: row.scenario,
+          metric: 'latencyMultiplier',
+          actual: row.candidate.avgMs / row.baseline.avgMs,
+          expected: maxLatencyMultiplier,
+          message: `Scenario ${row.scenario}: latency ${Math.round(row.candidate.avgMs)}ms exceeds ${maxLatencyMultiplier.toFixed(2)}x baseline ${Math.round(row.baseline.avgMs)}ms (max ${Math.round(maxAllowedMs)}ms)`
+        });
+      }
+    }
   }
 
   if (thresholds.maxClusterIncreaseRules.length > 0) {
@@ -562,6 +591,9 @@ async function main() {
     if (opts.maxClusterIncreaseRules.length === 0 && Array.isArray(gateConfig.maxClusterIncreaseRules)) {
       opts.maxClusterIncreaseRules = gateConfig.maxClusterIncreaseRules;
     }
+    if (opts.maxLatencyMultiplier == null && gateConfig.maxLatencyMultiplier != null) {
+      opts.maxLatencyMultiplier = gateConfig.maxLatencyMultiplier;
+    }
   }
   if (gateConfig.scenarioOverrides && Object.keys(gateConfig.scenarioOverrides).length > 0) {
     opts.scenarioThresholds = { ...gateConfig.scenarioOverrides, ...opts.scenarioThresholds };
@@ -593,6 +625,7 @@ async function main() {
       minPassRateDelta: opts.minPassRateDelta,
       maxFallbackDependencyRunRate: opts.maxFallbackDependencyRunRate,
       maxFallbackDependencyRunRateDelta: opts.maxFallbackDependencyRunRateDelta,
+      maxLatencyMultiplier: opts.maxLatencyMultiplier,
       maxClusterIncreaseRules: opts.maxClusterIncreaseRules,
       scenarioOverrides: opts.scenarioThresholds
     }

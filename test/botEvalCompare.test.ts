@@ -216,4 +216,80 @@ describe('botEval compare and failure clustering helpers', () => {
     });
     assert.equal(relaxedScenario.passed, true);
   });
+
+  it('enforces latency multiplier threshold', () => {
+    const scenarios = compareSummaries({
+      baselineSummaryRows: [
+        { scenario: 'node-api-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 100000 }
+      ],
+      candidateSummaryRows: [
+        { scenario: 'node-api-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 130000 }
+      ]
+    });
+
+    const withinLimit = evaluateAcceptanceGate({
+      enabled: true,
+      scenarios,
+      clusterDelta: [],
+      thresholds: { maxLatencyMultiplier: 1.5 }
+    });
+    assert.equal(withinLimit.passed, true);
+
+    const exceeded = evaluateAcceptanceGate({
+      enabled: true,
+      scenarios,
+      clusterDelta: [],
+      thresholds: { maxLatencyMultiplier: 1.2 }
+    });
+    assert.equal(exceeded.passed, false);
+    assert.ok(exceeded.violations.some(v => v.metric === 'latencyMultiplier'));
+  });
+
+  it('skips latency check when baseline avgMs is zero (new scenario)', () => {
+    const scenarios = compareSummaries({
+      baselineSummaryRows: [
+        { scenario: 'node-project-api-large', passRate: 0, rawRunPassRate: 0, fallbackDependencyRunRate: 0, avgMs: 0 }
+      ],
+      candidateSummaryRows: [
+        { scenario: 'node-project-api-large', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 141769 }
+      ]
+    });
+    const gate = evaluateAcceptanceGate({
+      enabled: true,
+      scenarios,
+      clusterDelta: [],
+      thresholds: { maxLatencyMultiplier: 1.2 }
+    });
+    assert.ok(!gate.violations.some(v => v.metric === 'latencyMultiplier'));
+  });
+
+  it('applies per-scenario latency multiplier override', () => {
+    const scenarios = compareSummaries({
+      baselineSummaryRows: [
+        { scenario: 'ts-todo-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 50000 },
+        { scenario: 'node-api-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 90000 }
+      ],
+      candidateSummaryRows: [
+        { scenario: 'ts-todo-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 70000 },
+        { scenario: 'node-api-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 100000 }
+      ]
+    });
+
+    const gate = evaluateAcceptanceGate({
+      enabled: true,
+      scenarios,
+      clusterDelta: [],
+      thresholds: {
+        maxLatencyMultiplier: 1.1,
+        scenarioOverrides: {
+          'ts-todo-oracle': { maxLatencyMultiplier: 1.5 }
+        }
+      }
+    });
+    // ts-todo: 70000/50000 = 1.4x, override allows 1.5x → pass
+    // node-api: 100000/90000 = 1.11x, global allows 1.1x → fail
+    assert.equal(gate.passed, false);
+    assert.ok(gate.violations.some(v => v.scenario === 'node-api-oracle' && v.metric === 'latencyMultiplier'));
+    assert.ok(!gate.violations.some(v => v.scenario === 'ts-todo-oracle' && v.metric === 'latencyMultiplier'));
+  });
 });

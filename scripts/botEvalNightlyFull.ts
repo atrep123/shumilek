@@ -165,7 +165,50 @@ async function main() {
     } catch { /* ignore */ }
   }
 
-  // Step 5: Stability aggregate (local trending)
+  // Step 5: Baseline promotion
+  const latestGateDirs = fs.readdirSync(opts.root, { withFileTypes: true })
+    .filter(d => d.isDirectory() && /^release_gate_\d+$/.test(d.name))
+    .map(d => path.join(opts.root, d.name))
+    .sort();
+  const latestGateDir = latestGateDirs.length > 0 ? latestGateDirs[latestGateDirs.length - 1] : '';
+  let promoteCode = 0;
+  if (latestGateDir && fs.existsSync(path.join(latestGateDir, 'summary.json'))) {
+    const promoteStatePath = path.join(opts.root, 'baseline_promotion_state.json');
+    const promoteStableDir = path.join(opts.root, 'release_gate_stable_nightly');
+    const promoteArgs = [
+      tsNode,
+      path.join(repoRoot, 'scripts', 'botEvalBaselinePromote.ts'),
+      '--candidate', latestGateDir,
+      '--stable', promoteStableDir,
+      '--state', promoteStatePath,
+      '--scenario', 'ts-todo-oracle',
+      '--requiredConsecutive', '2',
+      '--maxPlannerErrorRate', '0.15'
+    ];
+    promoteCode = await runStep('Baseline Promote', promoteArgs, repoRoot);
+    if (promoteCode !== 0) {
+      // eslint-disable-next-line no-console
+      console.error(`Baseline promote failed with code ${promoteCode}`);
+    }
+    // Auto-update baseline pointer on successful promotion
+    const promoteReport = path.join(latestGateDir, 'baseline_promotion.json');
+    if (promoteCode === 0 && fs.existsSync(promoteReport)) {
+      try {
+        const report = JSON.parse(fs.readFileSync(promoteReport, 'utf8'));
+        if (report.promoted) {
+          const baselinePointerPath = path.join(opts.root, 'release_baseline.txt');
+          fs.writeFileSync(baselinePointerPath, latestGateDir, 'utf8');
+          // eslint-disable-next-line no-console
+          console.log(`Baseline pointer updated to ${latestGateDir}`);
+        }
+      } catch { /* ignore parse errors */ }
+    }
+  } else {
+    // eslint-disable-next-line no-console
+    console.log('\nSkipping baseline promotion (no recent gate with summary.json)');
+  }
+
+  // Step 6: Stability aggregate (local trending)
   const releaseGateDirs = fs.readdirSync(opts.root, { withFileTypes: true })
     .filter(d => d.isDirectory() && /^release_gate_\d+$/.test(d.name))
     .map(d => path.join(opts.root, d.name))
@@ -185,7 +228,7 @@ async function main() {
     console.log(`\nSkipping stability aggregate (need ≥2 release_gate dirs, found ${releaseGateDirs.length})`);
   }
 
-  // Step 6: Cleanup old run/batch dirs (keep last 10 per prefix)
+  // Step 7: Cleanup old run/batch dirs (keep last 10 per prefix)
   const cleanupArgs = [
     tsNode,
     path.join(repoRoot, 'scripts', 'botEvalCleanup.ts'),
@@ -196,6 +239,8 @@ async function main() {
     '--policy', 'release_gate_ci_nightly_:10'
   ];
   const cleanupCode = await runStep('Cleanup', cleanupArgs, repoRoot);
+  // eslint-disable-next-line no-console
+  console.log(`  Promote:      ${latestGateDir ? (promoteCode === 0 ? 'PASS' : 'FAIL') : 'SKIP'}`);
   // eslint-disable-next-line no-console
   console.log(`  Cleanup:      ${cleanupCode === 0 ? 'PASS' : 'FAIL'}`);
   // eslint-disable-next-line no-console
