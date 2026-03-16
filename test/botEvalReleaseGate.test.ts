@@ -24,7 +24,7 @@ describe('botEvalReleaseGate baseline pointer helpers', () => {
 
   it('falls back to default scenarios when explicit list is empty', () => {
     const opts = parseReleaseGateArgs(['--scenarios', ',']);
-    assert.deepEqual(opts.scenarios, ['ts-todo-oracle', 'node-api-oracle', 'python-ai-stdlib-oracle', 'node-project-api-large']);
+    assert.deepEqual(opts.scenarios, ['ts-todo-oracle', 'node-api-oracle', 'ts-csv-oracle', 'python-ai-stdlib-oracle', 'node-project-api-large']);
   });
 
   it('prefers explicit baseline over pointer file', () => {

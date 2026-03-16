@@ -28,6 +28,14 @@ type ReleaseGateOptions = {
   scenarioThresholdRules: string[];
 };
 
+const DEFAULT_RELEASE_GATE_SCENARIOS = [
+  'ts-todo-oracle',
+  'node-api-oracle',
+  'ts-csv-oracle',
+  'python-ai-stdlib-oracle',
+  'node-project-api-large'
+];
+
 function normalizeDeterministicFallbackMode(raw?: string): 'off' | 'on-fail' | 'always' {
   const value = String(raw || '').trim().toLowerCase();
   if (value === 'off' || value === 'always' || value === 'on-fail') return value;
@@ -42,7 +50,7 @@ function parseArgs(argv: string[]): ReleaseGateOptions {
     outDir: undefined,
     compareOut: undefined,
     runs: 10,
-    scenarios: ['ts-todo-oracle', 'node-api-oracle', 'python-ai-stdlib-oracle', 'node-project-api-large'],
+    scenarios: [...DEFAULT_RELEASE_GATE_SCENARIOS],
     model: process.env.BOT_EVAL_MODEL || 'qwen2.5-coder:14b',
     plannerModel: process.env.BOT_EVAL_PLANNER_MODEL || 'deepseek-r1:8b',
     reviewerModel: process.env.BOT_EVAL_REVIEWER_MODEL || 'qwen2.5:3b',
@@ -189,7 +197,7 @@ function parseArgs(argv: string[]): ReleaseGateOptions {
   if (!Number.isFinite(opts.hardTimeoutSec) || opts.hardTimeoutSec! <= 0) opts.hardTimeoutSec = 1200;
   if (!Number.isFinite(opts.topClusters) || opts.topClusters <= 0) opts.topClusters = 12;
   if (opts.scenarios.length === 0) {
-    opts.scenarios = ['ts-todo-oracle', 'node-api-oracle', 'python-ai-stdlib-oracle', 'node-project-api-large'];
+    opts.scenarios = [...DEFAULT_RELEASE_GATE_SCENARIOS];
   }
   return opts;
 }
@@ -226,7 +234,7 @@ function printUsageAndExit(code: number): never {
     '  --baselinePointer <path>   Path to baseline pointer file (default: projects/bot_eval_run/release_baseline.txt)',
     '  --lockBaseline             On PASS, write candidate dir into baseline pointer file',
     '  --runs <n>                 Runs per scenario (default: 10)',
-    '  --scenarios <csv>          Scenario ids (default: ts-todo-oracle,node-api-oracle,python-ai-stdlib-oracle)',
+    '  --scenarios <csv>          Scenario ids (default: ts-todo-oracle,node-api-oracle,ts-csv-oracle,python-ai-stdlib-oracle,node-project-api-large)',
     '  --model <name>             Model (default: qwen2.5-coder:14b)',
     '  --plannerModel <name>      Planner model',
     '  --reviewerModel <name>     Reviewer model',

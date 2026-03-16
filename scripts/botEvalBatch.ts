@@ -60,6 +60,17 @@ type DeterministicFallbackStats = {
     rawFailures: number;
     recoveredByFallback: number;
   };
+  tsCsv: {
+    activations: number;
+    recoveries: number;
+    targetedActivations: number;
+    targetedRecoveries: number;
+    canonicalActivations: number;
+    canonicalRecoveries: number;
+    rawPasses: number;
+    rawFailures: number;
+    recoveredByFallback: number;
+  };
   nodeApi: {
     activations: number;
     recoveries: number;
@@ -146,11 +157,17 @@ type SummaryRow = {
   topFailureClusters: FailureClusterCount[];
 };
 
-const DEFAULT_BATCH_SCENARIOS = ['ts-todo-oracle', 'node-api-oracle', 'python-ai-stdlib-oracle'];
+const DEFAULT_BATCH_SCENARIOS = [
+  'ts-todo-oracle',
+  'node-api-oracle',
+  'ts-csv-oracle',
+  'python-ai-stdlib-oracle',
+  'node-project-api-large'
+];
 
 function supportsExplicitRawMetricsForScenario(scenario: string): boolean {
   const value = String(scenario || '').trim().toLowerCase();
-  return value === 'ts-todo-oracle' || value === 'node-api-oracle';
+  return value === 'ts-todo-oracle' || value === 'node-api-oracle' || value === 'ts-csv-oracle';
 }
 
 function deriveRawOutcomeForRun(run: RunResult): {
@@ -266,6 +283,7 @@ function emptyDeterministicFallback(mode: 'off' | 'on-fail' | 'always' = 'on-fai
   return {
     mode,
     tsTodo: emptyScenario(),
+    tsCsv: emptyScenario(),
     nodeApi: emptyScenario(),
     totalActivations: 0,
     totalRecoveries: 0,
@@ -479,7 +497,7 @@ function printUsageAndExit(code: number): never {
     'Usage: npm run bot:eval:batch -- [options]',
     '',
     'Options:',
-    '  --scenarios <csv>          Scenario ids (default: ts-todo-oracle,node-api-oracle,python-ai-stdlib-oracle)',
+    '  --scenarios <csv>          Scenario ids (default: ts-todo-oracle,node-api-oracle,ts-csv-oracle,python-ai-stdlib-oracle,node-project-api-large)',
     '  --scenario <id>            Scenario id (repeatable, replaces defaults)',
     '  --runs <n>                 Runs per scenario (default: 3)',
     '  --model <name>             Model (default: qwen2.5-coder:14b)',
@@ -789,6 +807,17 @@ async function runSingle(params: {
           rawPasses: Number(src?.tsTodo?.rawPasses) || 0,
           rawFailures: Number(src?.tsTodo?.rawFailures) || 0,
           recoveredByFallback: Number(src?.tsTodo?.recoveredByFallback) || 0
+        },
+        tsCsv: {
+          activations: Number(src?.tsCsv?.activations) || 0,
+          recoveries: Number(src?.tsCsv?.recoveries) || 0,
+          targetedActivations: Number(src?.tsCsv?.targetedActivations) || 0,
+          targetedRecoveries: Number(src?.tsCsv?.targetedRecoveries) || 0,
+          canonicalActivations: Number(src?.tsCsv?.canonicalActivations) || 0,
+          canonicalRecoveries: Number(src?.tsCsv?.canonicalRecoveries) || 0,
+          rawPasses: Number(src?.tsCsv?.rawPasses) || 0,
+          rawFailures: Number(src?.tsCsv?.rawFailures) || 0,
+          recoveredByFallback: Number(src?.tsCsv?.recoveredByFallback) || 0
         },
         nodeApi: {
           activations: Number(src?.nodeApi?.activations) || 0,
