@@ -1,11 +1,6 @@
 const mock = require('mock-require');
-mock('vscode', {
-  workspace: {
-    getConfiguration: () => ({
-      get: (_k: string, d: any) => d
-    })
-  }
-});
+const { vscodeMock } = require('./helpers/vscodeMockShared');
+mock('vscode', vscodeMock);
 
 import { expect } from 'chai';
 import { getMinimalWebviewContent, getWebviewContent } from '../src/webviewContent';
