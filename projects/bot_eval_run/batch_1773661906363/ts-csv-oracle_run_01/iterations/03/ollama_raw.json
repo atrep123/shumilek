@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:7b",
+  "created_at": "2026-03-16T11:53:52.7405103Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"README.md\",\n      \"content\": \"# CSV Parser\\n\\nThis is a simple CSV parser written in TypeScript.\\n\"\n    },\n    {\n      \"path\": \"package.json\",\n      \"content\": \"{\\n  \\\"name\\\": \\\"csv-parser\\\",\\n  \\\"version\\\": \\\"1.0.0\\\",\\n  \\\"description\\\": \\\"A simple CSV parser\\\",\\n  \\\"main\\\": \\\"dist/cli.js\\\",\\n  \\\"scripts\\\": {\\n    \\\"build\\\": \\\"tsc\\\",\\n    \\\"test\\\": \\\"node --test tests/oracle.test.js\\\"\\n  },\\n  \\\"dependencies\\\": {\\n    \\\"typescript\\\": \\\"^5.0.0\\\"\\n  }\\n}\"\n    },\n    {\n      \"path\": \"tsconfig.json\",\n      \"content\": \"{\\n  \\\"compilerOptions\\\": {\\n    \\\"target\\\": \\\"ES6\\\",\\n    \\\"module\\\": \\\"commonjs\\\",\\n    \\\"outDir\\\": \\\"dist\\\",\\n    \\\"strict\\\": true,\\n    \\\"esModuleInterop\\\": true\\n  },\\n  \\\"include\\\": [\\n    \\\"src/**/*\\\"\\n  ]\\n}\"\n    },\n    {\n      \"path\": \"src/csv.ts\",\n      \"content\": \"export class CsvParser {\\n  parse(content: string): any[] {\\n    const lines = content.split('\\\\n');\\n    const headers = lines[0].split(',').map(header => header.trim());\\n    return lines.slice(1).map(line => {\\n      const values = line.split(',').map(value => value.trim());\\n      return headers.reduce((acc, header, index) => ({ ...acc, [header]: values[index] }), {});\\n    });\\n  }\\n}\"\n    }\n  ]\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 13209427500,
+  "load_duration": 2708950500,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 497791500,
+  "eval_count": 377,
+  "eval_duration": 2486536000
+}

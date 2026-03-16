@@ -1,0 +1,10 @@
+src/cli.ts(30,22): error TS1002: Unterminated string literal.
+src/cli.ts(31,3): error TS1005: ',' expected.
+src/cli.ts(31,11): error TS1005: ',' expected.
+src/cli.ts(32,3): error TS1005: ',' expected.
+src/cli.ts(32,11): error TS1005: ',' expected.
+src/cli.ts(33,3): error TS1005: ',' expected.
+src/cli.ts(33,12): error TS1005: ',' expected.
+src/cli.ts(33,61): error TS1002: Unterminated string literal.
+src/cli.ts(34,3): error TS1005: ',' expected.
+src/cli.ts(34,18): error TS1005: ')' expected.

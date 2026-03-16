@@ -1,0 +1,20 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# CSV Parser\n\nThis is a simple CSV parser written in TypeScript.\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"csv-parser\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple CSV parser\",\n  \"main\": \"dist/cli.js\",\n  \"scripts\": {\n    \"build\": \"tsc\",\n    \"test\": \"node --test tests/oracle.test.js\"\n  },\n  \"dependencies\": {\n    \"typescript\": \"^5.0.0\"\n  }\n}"
+    },
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES6\",\n    \"module\": \"commonjs\",\n    \"outDir\": \"dist\",\n    \"strict\": true,\n    \"esModuleInterop\": true\n  },\n  \"include\": [\n    \"src/**/*\"\n  ]\n}"
+    },
+    {
+      "path": "src/csv.ts",
+      "content": "export class CsvParser {\n  parse(content: string): any[] {\n    const lines = content.split('\\n');\n    const headers = lines[0].split(',').map(header => header.trim());\n    return lines.slice(1).map(line => {\n      const values = line.split(',').map(value => value.trim());\n      return headers.reduce((acc, header, index) => ({ ...acc, [header]: values[index] }), {});\n    });\n  }\n}"
+    }
+  ]
+}

@@ -13,7 +13,7 @@ import { ContextProviderRegistry } from './contextProviders';
 import { TurnOrchestrator } from './orchestration';
 import { PIPELINE_STATUS_ICONS, PIPELINE_STATUS_TEXT } from './statusMessages';
 import { parseToolCalls, resolveToolPermissionScope } from './toolingProtocol';
-import { getMiniUnavailableMessage, isMiniAccepted, shouldRetryMiniValidation } from './validationPolicy';
+import { getMiniUnavailableMessage, isMiniAccepted } from './validationPolicy';
 import { 
   Rozum, 
   setRozumLogger, 
@@ -61,6 +61,7 @@ import { compactMessages, shouldCompact } from './sessionCompactor';
 import { loadWorkspaceInstructions, setWorkspaceInstructionsLogger } from './workspaceInstructions';
 import { ChatRequestConcurrencyGuard } from './chatConcurrency';
 import { getMinimalWebviewContent, getWebviewContent } from './webviewContent';
+import { computeRetryDecision, buildRetryFeedbackMessage } from './retryDecision';
 import {
   parseServerUrl,
   resolveTimeoutMs,
@@ -2959,49 +2960,30 @@ PŘÍSTUP K PRÁCI:
       const { hallucinationResult, guardianResult, miniResult, external } = vResult;
       const { rewardResult, hhemResult, ragasResult } = external;
 
-      const shouldRetryMini = shouldRetryMiniValidation(miniResult, validationPolicy);
-      const shouldRetryGuardian = guardianResult.shouldRetry;
-      const shouldRetryHallucination = hallucinationResult.isHallucination && hallucinationResult.confidence > 0.7;
-      const shouldRetryReward = rewardEnabled && !rewardResult.ok && !rewardResult.unavailable;
-      const shouldRetryHhem = hhemEnabled && !hhemResult.ok && !hhemResult.unavailable;
-      const shouldRetryRagas = ragasEnabled && !ragasResult.ok && !ragasResult.unavailable;
-      const failClosedUnavailableReward = rewardEnabled && rewardResult.unavailable && validationPolicy === 'fail-closed';
-      const failClosedUnavailableHhem = hhemEnabled && hhemResult.unavailable && validationPolicy === 'fail-closed';
-      const failClosedUnavailableRagas = ragasEnabled && ragasResult.unavailable && validationPolicy === 'fail-closed';
-      const shouldRetryAny = shouldRetryMini || shouldRetryGuardian || shouldRetryHallucination || shouldRetryReward || shouldRetryHhem || shouldRetryRagas || failClosedUnavailableReward || failClosedUnavailableHhem || failClosedUnavailableRagas;
-      const retryBlockedByTools = toolsEnabled && toolSession.hadMutations;
+      const retryDecision = computeRetryDecision({
+        hallucinationResult, guardianResult, miniResult,
+        rewardResult, hhemResult, ragasResult,
+        validationPolicy, guardianEnabled,
+        rewardEnabled, rewardThreshold,
+        hhemEnabled, hhemThreshold,
+        ragasEnabled, ragasThreshold,
+        toolsHadMutations: toolSession.hadMutations,
+        toolsEnabled,
+        retryCount, maxRetries
+      });
 
-      if (shouldRetryAny && retryCount < maxRetries && !retryBlockedByTools) {
-        const retrySource = shouldRetryHallucination
-          ? 'Hallucination'
-          : (shouldRetryMini
-            ? 'Mini-model'
-            : (shouldRetryReward
-              ? 'Reward'
-              : (shouldRetryHhem ? 'HHEM' : (shouldRetryRagas ? 'RAGAS' : 'Guardian'))));
-        const retryDetail = shouldRetryHallucination
-          ? `Halucinace ${(hallucinationResult.confidence * 100).toFixed(0)}%`
-          : (shouldRetryMini
-            ? `Skóre ${miniResult!.score}/10 - ${miniResult!.reason}`
-            : (shouldRetryReward
-              ? `Reward pod prahem ${rewardThreshold}`
-              : (shouldRetryHhem
-                ? `HHEM pod prahem ${hhemThreshold}`
-                : (shouldRetryRagas ? `RAGAS pod prahem ${ragasThreshold}` : `Problém detekován`))));
+      if (retryDecision.shouldRetry) {
+        const retryFeedbackMessage = buildRetryFeedbackMessage(
+          retryDecision, hallucinationResult, guardianResult, miniResult,
+          guardianEnabled, hallucinationDetector.getSummary(hallucinationResult)
+        );
 
-        const retryFeedbackMessage = [
-          `Duvod: ${retrySource} - ${retryDetail}`,
-          guardianEnabled && guardianResult.issues.length > 0 ? `Guardian: ${guardianResult.issues.join(', ')}` : '',
-          miniResult ? `Svedomi: ${miniResult.score}/10 - ${miniResult.reason}` : '',
-          hallucinationResult.isHallucination ? `Halucinace: ${hallucinationDetector.getSummary(hallucinationResult)}` : ''
-        ].filter(Boolean).join('\n');
-
-        outputChannel?.appendLine(`[Retry] Spoustim retry - duvod: ${retrySource}`);
+        outputChannel?.appendLine(`[Retry] Spoustim retry - duvod: ${retryDecision.retrySource}`);
         guardianStats.retriesTriggered++;
 
         postToAllWebviews({
           type: 'guardianAlert',
-          message: `🔄 ${retrySource}: ${retryDetail}. Zkouším znovu (${retryCount + 1}/${maxRetries})`
+          message: `🔄 ${retryDecision.retrySource}: ${retryDecision.retryDetail}. Zkouším znovu (${retryCount + 1}/${maxRetries})`
         });
 
         if (messages[messages.length - 1]?.role === 'assistant') {
@@ -3011,8 +2993,8 @@ PŘÍSTUP K PRÁCI:
         await new Promise(resolve => setTimeout(resolve, 1000));
         return handleChatInternal(panel, context, trimmedPrompt, messages, retryCount + 1, retryFeedbackMessage);
       }
-      if (retryBlockedByTools && shouldRetryAny) {
-        outputChannel?.appendLine('[Retry] Skipping retry because tool edits were applied');
+      if (retryDecision.blocked) {
+        outputChannel?.appendLine(`[Retry] Skipping retry because ${retryDecision.blockedReason}`);
         if (validationPolicy === 'fail-closed') {
           postToAllWebviews({ type: 'responseError', text: 'Publish blocked: fail-closed validation policy.' });
           return;
@@ -3022,9 +3004,9 @@ PŘÍSTUP K PRÁCI:
       // Fail-closed: block publish when external validators are unavailable
       if (validationPolicy === 'fail-closed') {
         const unavailableNames: string[] = [];
-        if (failClosedUnavailableReward) unavailableNames.push('Reward');
-        if (failClosedUnavailableHhem) unavailableNames.push('HHEM');
-        if (failClosedUnavailableRagas) unavailableNames.push('RAGAS');
+        if (rewardEnabled && rewardResult.unavailable) unavailableNames.push('Reward');
+        if (hhemEnabled && hhemResult.unavailable) unavailableNames.push('HHEM');
+        if (ragasEnabled && ragasResult.unavailable) unavailableNames.push('RAGAS');
         if (unavailableNames.length > 0) {
           const label = unavailableNames.join(', ');
           outputChannel?.appendLine(`[FailClosed] Blocking publish: ${label} unavailable in fail-closed mode`);

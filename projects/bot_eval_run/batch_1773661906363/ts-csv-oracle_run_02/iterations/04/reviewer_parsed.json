@@ -1,0 +1,14 @@
+{
+  "errors": [
+    "The provided code snippets indicate that the `dist/cli.js` file is missing from your project. This file appears to be responsible for executing the CLI commands defined in the `src/cli.ts` file.",
+    "To resolve this issue, you need to compile your TypeScript files into JavaScript using the command: `tsc`",
+    "After compiling, ensure that the `dist/cli.js` file is present and correctly compiled. You can check the contents of the `dist/` directory after running `tsc`.",
+    "If the `dist/cli.js` file still doesn't exist, there might be an issue with your TypeScript configuration or compilation process. Review your `tsconfig.json` to ensure it's set up correctly for compiling into a JavaScript file.",
+    "Additionally, verify that all required modules and dependencies are properly installed in your project. Missing packages can cause issues during the build process."
+  ],
+  "suggestions": [
+    "Run `tsc` again to recompile your TypeScript files.",
+    "Check your `tsconfig.json` for any configuration errors or missing settings related to output directory.",
+    "Ensure that all required dependencies are installed by running `npm install` (or equivalent) in your project root."
+  ]
+}

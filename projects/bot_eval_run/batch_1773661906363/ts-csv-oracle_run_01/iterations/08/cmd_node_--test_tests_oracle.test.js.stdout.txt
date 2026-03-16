@@ -1,0 +1,247 @@
+✖ CsvParser: parse simple CSV (1.791ms)
+✖ CsvParser: parse CSV with quoted fields (0.1842ms)
+✔ CsvParser: parse empty CSV returns empty array (0.1414ms)
+✖ CsvParser: parse single header line returns empty array (0.1582ms)
+✔ CsvParser: stringify rows to CSV (0.1733ms)
+✖ CsvParser: stringify quotes fields with commas (2.2643ms)
+✖ CsvParser: custom delimiter (0.1451ms)
+✖ CsvFilter: filter rows by predicate (0.6186ms)
+✖ CsvFilter: select specific columns (0.1625ms)
+✖ CsvFilter: sort rows (0.1278ms)
+✖ CsvFilter: count rows (0.0719ms)
+✖ CLI: --help exits with code 0 (37.6211ms)
+✖ CLI: parse command reads file and outputs JSON (38.6624ms)
+✖ CLI: stats command (38.6979ms)
+✔ README.md exists (0.3571ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 3
+ℹ fail 12
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 181.0395
+
+✖ failing tests:
+
+test at tests\oracle.test.js:22:1
+✖ CsvParser: parse simple CSV (1.791ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  3 !== 2
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1773661906363\ts-csv-oracle_run_01\workspace\tests\oracle.test.js:29:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 3,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:36:1
+✖ CsvParser: parse CSV with quoted fields (0.1842ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  3 !== 2
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1773661906363\ts-csv-oracle_run_01\workspace\tests\oracle.test.js:43:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 3,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:58:1
+✖ CsvParser: parse single header line returns empty array (0.1582ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1773661906363\ts-csv-oracle_run_01\workspace\tests\oracle.test.js:64:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:90:1
+✖ CsvParser: stringify quotes fields with commas (2.2643ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(csv.includes('"Alice, Bob"'))
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1773661906363\ts-csv-oracle_run_01\workspace\tests\oracle.test.js:96:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:99:1
+✖ CsvParser: custom delimiter (0.1451ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1773661906363\ts-csv-oracle_run_01\workspace\tests\oracle.test.js:104:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:113:1
+✖ CsvFilter: filter rows by predicate (0.6186ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'undefined'
+  - 'function'
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1773661906363\ts-csv-oracle_run_01\workspace\tests\oracle.test.js:115:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:128:1
+✖ CsvFilter: select specific columns (0.1625ms)
+  TypeError: CsvFilter is not a constructor
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1773661906363\ts-csv-oracle_run_01\workspace\tests\oracle.test.js:134:18)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at tests\oracle.test.js:143:1
+✖ CsvFilter: sort rows (0.1278ms)
+  TypeError: CsvFilter is not a constructor
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1773661906363\ts-csv-oracle_run_01\workspace\tests\oracle.test.js:149:18)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at tests\oracle.test.js:157:1
+✖ CsvFilter: count rows (0.0719ms)
+  TypeError: CsvFilter is not a constructor
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1773661906363\ts-csv-oracle_run_01\workspace\tests\oracle.test.js:163:18)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at tests\oracle.test.js:171:1
+✖ CLI: --help exits with code 0 (37.6211ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1773661906363\ts-csv-oracle_run_01\workspace\tests\oracle.test.js:178:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:181:1
+✖ CLI: parse command reads file and outputs JSON (38.6624ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1773661906363\ts-csv-oracle_run_01\workspace\tests\oracle.test.js:193:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:204:1
+✖ CLI: stats command (38.6979ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1773661906363\ts-csv-oracle_run_01\workspace\tests\oracle.test.js:216:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

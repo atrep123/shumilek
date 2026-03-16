@@ -2,36 +2,8 @@ const mock = require('mock-require');
 const path = require('path');
 const { strict: assert } = require('assert');
 
-const vscodeMock = {
-  workspace: {
-    findFiles: async () => [],
-    fs: {
-      stat: async () => ({ type: 0 }),
-      createDirectory: async () => {},
-      writeFile: async () => {}
-    },
-    openTextDocument: async (arg: any) => {
-      if (arg && typeof arg === 'object' && 'content' in arg) {
-        return { uri: { fsPath: 'preview' }, getText: () => String(arg.content) };
-      }
-      return { uri: arg, getText: () => '' };
-    },
-    asRelativePath: (value: any) => {
-      if (!value) return '';
-      const fsPath = typeof value === 'string' ? value : value.fsPath;
-      return String(fsPath).replace(/^[A-Za-z]:[\\/]/, '').replace(/\\/g, '/');
-    }
-  },
-  window: {
-    activeTextEditor: undefined,
-    showTextDocument: async () => {},
-    showInformationMessage: async () => 'Vytvorit'
-  },
-  Uri: {
-    file: (fsPath: string) => ({ fsPath: path.normalize(fsPath) })
-  }
-};
-
+// Import the shared vscode mock — same object used by coreHandlers
+const { vscodeMock } = require('./helpers/vscodeMockShared');
 mock('vscode', vscodeMock);
 
 const {

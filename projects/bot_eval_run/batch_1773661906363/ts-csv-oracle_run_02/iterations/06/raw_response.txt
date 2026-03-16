@@ -1,0 +1,12 @@
+{
+  "files": [
+    {
+      "path": "src/csv.ts",
+      "content": "export class CsvParser {\n  parse(content: string): any[] {\n    const lines = content.split('\\n');\n    const headers = lines[0].split(',').map(header => header.trim());\n    const rows = [];\n\n    for (let i = 1; i < lines.length; i++) {\n      const row = {};\n      const values = lines[i].split(',').map(value => value.trim());\n\n      headers.forEach((header, index) => {\n        row[header] = values[index];\n      });\n\n      rows.push(row);\n    }\n\n    return rows;\n  }\n}\n\nexport class CsvFilter {\n  filter(rows: any[], column: string, value: string): any[] {\n    return rows.filter(row => row[column] === value);\n  }\n}\n"
+    },
+    {
+      "path": "src/cli.ts",
+      "content": "const fs = require('node:fs');\n\nfunction parseFile(filePath) {\n  const content = fs.readFileSync(filePath, 'utf8');\n  const parser = new CsvParser();\n  const rows = parser.parse(content);\n  console.log(JSON.stringify(rows, null, 2));\n}\n\nfunction statsFile(filePath) {\n  const content = fs.readFileSync(filePath, 'utf8');\n  const parser = new CsvParser();\n  const rows = parser.parse(content);\n  const rowCount = rows.length;\n  const columnNames = Object.keys(rows[0]).join(', ');\n  console.log(`Rows: ${rowCount}\nColumns: ${columnNames}`);\n}\n\nfunction filterFile(filePath, column, value) {\n  const content = fs.readFileSync(filePath, 'utf8');\n  const parser = new CsvParser();\n  const rows = parser.parse(content);\n  const filteredRows = rows.filter(row => row[column] === value);\n  console.log(JSON.stringify(filteredRows, null, 2));\n}\n\nconst args = process.argv.slice(2);\nif (args.includes('--help')) {\n  console.log('Usage:\n  parse --input <file>\n  stats --input <file>\n  filter --column <column> --value <value> --input <file>');\n  process.exit(0);\n} else if (args[0] === 'parse' && args[1] === '--input') {\n  parseFile(args[2]);\n} else if (args[0] === 'stats' && args[1] === '--input') {\n  statsFile(args[2]);\n} else if (args[0] === 'filter' && args[1] === '--column' && args[3] === '--value' && args[5] === '--input') {\n  filterFile(args[4], args[2], args[6]);\n} else {\n  console.error('Invalid command. Use --help for usage instructions.');\n  process.exit(1);\n}\n"
+    }
+  ]
+}

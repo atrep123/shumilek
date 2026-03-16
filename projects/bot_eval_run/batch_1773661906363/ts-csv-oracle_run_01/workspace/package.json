@@ -1,0 +1,13 @@
+{
+  "name": "csv-parser",
+  "version": "1.0.0",
+  "description": "A simple CSV parser",
+  "main": "dist/cli.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test tests/oracle.test.js"
+  },
+  "dependencies": {
+    "typescript": "^5.0.0"
+  }
+}

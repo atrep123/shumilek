@@ -1,0 +1,7 @@
+- Create full files: README.md, package.json, tsconfig.json, src/csv.ts, src/cli.ts.
+- CsvParser: constructor(options?: { delimiter?: string }), parse(text) returns Record<string,string>[], stringify(rows) returns CSV string.
+- Support quoted fields with escaped "" inside quotes.
+- CsvFilter: constructor(rows), where(predicate), select(columns), sortBy(column), count().
+- CLI: parse --input <file> prints JSON rows, stats --input <file> prints row count + column names, --help exits 0.
+- Use only Node builtins. Compile to dist/ via tsc -p tsconfig.json (CommonJS).
+- Verify with oracle tests and cli --help.

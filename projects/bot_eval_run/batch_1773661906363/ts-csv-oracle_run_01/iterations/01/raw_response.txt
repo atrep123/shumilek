@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# CSV Processor\n\nThis project provides a simple CSV processor using Node.js built-in modules.\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"csv-processor\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple CSV processor\",\n  \"main\": \"dist/cli.js\",\n  \"scripts\": {\n    \"build\": \"tsc -p tsconfig.json\",\n    \"test\": \"node tests/oracle.test.js\"\n  }\n}\n"
+    },
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES6\",\n    \"module\": \"commonjs\",\n    \"outDir\": \"dist\",\n    \"strict\": true,\n    \"esModuleInterop\": true\n  },\n  \"include\": [\n    \"src/**/*\"\n  ]\n}\n"
+    },
+    {
+      "path": "src/csv.ts",
+      "content": "const fs = require('node:fs');\n\nexport class CsvParser {\n  constructor(options?: { delimiter?: string }) {\n    this.delimiter = options?.delimiter || ',';\n  }\n\n  parse(text: string): Record<string, string>[] {\n    const lines = text.split('\\n').filter(line => line.trim() !== '');\n    const header = lines[0].split(this.delimiter);\n    return lines.slice(1).map(line => {\n      const values = line.split(this.delimiter);\n      const obj: Record<string, string> = {};\n      for (let i = 0; i < header.length; i++) {\n        obj[header[i]] = values[i].trim().replace(/^\"|\"$/g, '');\n      }\n      return obj;\n    });\n  }\n\n  stringify(rows: Record<string, string>[]): string {\n    const header = Object.keys(rows[0]).join(this.delimiter);\n    const body = rows.map(row => Object.values(row).map(value => value.includes(this.delimiter) ? `\"${value.replace(/\"/g, '\"\\"}]} 

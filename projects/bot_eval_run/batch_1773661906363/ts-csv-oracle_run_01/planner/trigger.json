@@ -1,0 +1,8 @@
+{
+  "strategy": "on-fail",
+  "scenarioId": "ts-csv-oracle",
+  "triggerIteration": 1,
+  "diagnostics": [
+    "Parse/write failed: First iteration must use mode \"full\" with all core files. Missing: src/cli.ts"
+  ]
+}

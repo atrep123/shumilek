@@ -1,0 +1,22 @@
+{
+  "name": "csv-parser",
+  "version": "1.0.0",
+  "description": "A simple CSV parser written in TypeScript",
+  "main": "dist/cli.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test tests/oracle.test.js"
+  },
+  "keywords": [
+    "csv",
+    "parser",
+    "typescript"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^18.0.0",
+    "node:test": "0.0.0"
+  }
+}

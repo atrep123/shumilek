@@ -7404,10 +7404,16 @@ function buildDeterministicPlannerFallback(scenarioId: string): string {
   if (scenarioId === 'ts-csv-oracle') {
     return [
       '- Create full files: README.md, package.json, tsconfig.json, src/csv.ts, src/cli.ts.',
+      '- BOTH CsvParser AND CsvFilter MUST be in src/csv.ts. Export both as named classes.',
       '- CsvParser: constructor(options?: { delimiter?: string }), parse(text) returns Record<string,string>[], stringify(rows) returns CSV string.',
-      '- Support quoted fields with escaped "" inside quotes.',
-      '- CsvFilter: constructor(rows), where(predicate), select(columns), sortBy(column), count().',
-      '- CLI: parse --input <file> prints JSON rows, stats --input <file> prints row count + column names, --help exits 0.',
+      '- parse() must split by lines, first line is header, handle quoted fields with escaped "" inside (RFC 4180 style).',
+      '- stringify() must quote fields containing the delimiter or double-quotes.',
+      '- CsvFilter: constructor(rows), where(predicate) filters, select(columns) projects, sortBy(column) sorts ascending string, count() returns number.',
+      '- CLI: parse process.argv[2] for command: "parse" reads --input file and prints JSON, "stats" reads --input and prints stats, "--help" prints usage and exits 0.',
+      '- In both .ts files use: declare const require: any; declare const process: any; then const fs = require("node:fs");',
+      '- CRITICAL: ensure every string literal is properly closed. No unterminated strings.',
+      '- tsconfig.json: outDir "dist", module "commonjs", target "es2020", strict true, esModuleInterop true, include ["src"].',
+      '- package.json: name, version, NO dependencies or devDependencies, do NOT set "type": "module".',
       '- Use only Node builtins. Compile to dist/ via tsc -p tsconfig.json (CommonJS).',
       '- Verify with oracle tests and cli --help.'
     ].join('\n');
@@ -7544,12 +7550,18 @@ function buildFirstIterationContractHint(scenarioId: string): string {
   if (scenarioId === 'ts-csv-oracle') {
     return [
       '- This is iteration 1: mode MUST be "full". Do not return "patch".',
-      '- files[] MUST contain: README.md, package.json, tsconfig.json, src/csv.ts, src/cli.ts.',
-      '- src/csv.ts must export CsvParser (parse/stringify with quoted field support, custom delimiter) and CsvFilter (where/select/sortBy/count).',
-      '- src/cli.ts: parse --input <file> prints JSON rows, stats --input <file> prints stats, --help exits 0.',
-      '- Use only Node builtins. No external dependencies in package.json.',
-      '- tsconfig.json: outDir = "dist", module = "commonjs".',
-      '- Use declare const require/process for TS compatibility. Load builtins via const fs = require("node:fs").'
+      '- files[] MUST contain exactly: README.md, package.json, tsconfig.json, src/csv.ts, src/cli.ts.',
+      '- BOTH CsvParser AND CsvFilter classes MUST be defined in src/csv.ts (same file).',
+      '- CsvParser: constructor(options?: { delimiter?: string }), parse(text: string): Record<string, string>[], stringify(rows: Record<string, string>[]): string.',
+      '- parse() must handle quoted fields: commas inside quotes, escaped "" inside quotes.',
+      '- CsvFilter: constructor(rows: Record<string, string>[]), where(predicate), select(columns), sortBy(column), count().',
+      '- Both classes MUST be exported: export class CsvParser { ... } and export class CsvFilter { ... }.',
+      '- src/cli.ts: read process.argv, handle "parse --input <file>" (prints JSON array of rows), "stats --input <file>" (prints row count and column names), "--help" exits 0.',
+      '- CLI must use: declare const require: any; declare const process: any; const fs = require("node:fs");',
+      '- CRITICAL: Every string literal and template literal MUST be properly closed. Do not leave unterminated strings.',
+      '- tsconfig.json: { "compilerOptions": { "outDir": "dist", "module": "commonjs", "target": "es2020", "strict": true, "esModuleInterop": true }, "include": ["src"] }.',
+      '- package.json: no dependencies, no devDependencies, do NOT set "type": "module".',
+      '- Use only Node builtins. No external dependencies whatsoever.'
     ].join('\n');
   }
   return '';

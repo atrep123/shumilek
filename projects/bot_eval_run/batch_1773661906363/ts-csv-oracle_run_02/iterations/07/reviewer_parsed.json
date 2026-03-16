@@ -1,0 +1,10 @@
+{
+  "errors": [
+    {
+      "message": "Unexpected token H in JSON at position 0",
+      "lineNumber": 1,
+      "columnNumber": 1,
+      "sourceName": "dist/cli.js"
+    }
+  ]
+}

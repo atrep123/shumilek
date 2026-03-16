@@ -1,0 +1,3 @@
+{
+  "response": "To resolve the issues you're encountering, let's go through and correct the code step-by-step. Here are the key changes needed for `src/csv.ts`, `src/cli.ts`, and `README.md` to ensure everything works as expected:\n\n### src/csv.ts\n1. Add a CsvFilter class with methods for parsing rows based on conditions.\n2. Ensure proper error handling and usage instructions in CLI commands.\n3. Correct the syntax errors in CLI script files.\n\n### README.md\n1. Update the README to include correct usage instructions.\n\nLet's start by updating `src/csv.ts` first, then we can move on to other files."
+}

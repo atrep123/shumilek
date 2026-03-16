@@ -1,0 +1,3 @@
+{
+  "response": "To resolve the issues you're encountering, we need to make several adjustments and corrections to your code. Here's a step-by-step guide to fix the problems:\n\n1. **Fix Syntax Errors**: The `dist/cli.js` file has syntax errors that prevent it from running correctly.\n2. **Correct Function Calls**: Ensure function calls are correct and properly formatted.\n3. **Add Missing Imports**: Make sure all necessary imports are included at the top of your files.\n4. **Improve Error Handling**: Add more robust error handling to provide better feedback to users.\n5. **Ensure Correct Usage Instructions**: Update usage instructions for both `parse` and `stats` commands.\n\nLet's start by addressing these issues one by one."
+}

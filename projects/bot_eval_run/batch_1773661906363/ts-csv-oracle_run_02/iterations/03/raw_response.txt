@@ -1,0 +1,20 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# CSV Parser\n\nThis is a simple CSV parser written in TypeScript.\n\n## Installation\n\n```bash\ngit clone https://github.com/yourusername/csv-parser.git\ncd csv-parser\ntsc\n```\n\n## Usage\n\n### Parse CSV File\n\n```bash\nnode dist/cli.js parse --input path/to/file.csv\n```\n\n### Get Stats for CSV File\n\n```bash\nnode dist/cli.js stats --input path/to/file.csv\n```\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"csv-parser\",\n  \"version\": \"1.0.0\",\n  \"description\": \"A simple CSV parser written in TypeScript\",\n  \"main\": \"dist/cli.js\",\n  \"scripts\": {\n    \"build\": \"tsc\",\n    \"test\": \"node --test tests/oracle.test.js\"\n  },\n  \"keywords\": [\n    \"csv\",\n    \"parser\",\n    \"typescript\"\n  ],\n  \"author\": \"Your Name\",\n  \"license\": \"MIT\",\n  \"devDependencies\": {\n    \"typescript\": \"^5.0.0\",\n    \"@types/node\": \"^18.0.0\",\n    \"node:test\": \"0.0.0\"\n  }\n}\n"
+    },
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES6\",\n    \"module\": \"commonjs\",\n    \"outDir\": \"dist\",\n    \"strict\": true,\n    \"esModuleInterop\": true,\n    \"skipLibCheck\": true,\n    \"forceConsistentCasingInFileNames\": true\n  },\n  \"include\": [\n    \"src/**/*\"\n  ]\n}\n"
+    },
+    {
+      "path": "src/csv.ts",
+      "content": "export class CsvParser {\n  parse(content: string): any[] {\n    const lines = content.split('\\n');\n    const headers = lines[0].split(',').map(header => header.trim());\n    const rows = [];\n\n    for (let i = 1; i < lines.length; i++) {\n      const row = {};\n      const values = lines[i].split(',').map(value => value.trim());\n\n      headers.forEach((header, index) => {\n        row[header] = values[index];\n      });\n\n      rows.push(row);\n    }\n\n    return rows;\n  }\n}\n"
+    }
+  ]
+}

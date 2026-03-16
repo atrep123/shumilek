@@ -1,0 +1,8 @@
+{
+  "files": [
+    {
+      "path": "src/cli.ts",
+      "content": "const fs = require('node:fs');\n\nfunction parseFile(filePath) {\n  const content = fs.readFileSync(filePath, 'utf8');\n  const parser = new CsvParser();\n  const rows = parser.parse(content);\n  console.log(JSON.stringify(rows, null, 2));\n}\n\nfunction statsFile(filePath) {\n  const content = fs.readFileSync(filePath, 'utf8');\n  const parser = new CsvParser();\n  const rows = parser.parse(content);\n  const rowCount = rows.length;\n  const columnNames = Object.keys(rows[0]).join(', ');\n  console.log(`Rows: ${rowCount}\nColumns: ${columnNames}`);\n}\n\nconst args = process.argv.slice(2);\nif (args.includes('--help')) {\n  console.log('Usage:\n  parse --input <file>\n  stats --input <file>');\n  process.exit(0);\n} else if (args[0] === 'parse' && args[1] === '--input') {\n  parseFile(args[2]);\n} else if (args[0] === 'stats' && args[1] === '--input') {\n  statsFile(args[2]);\n} else {\n  console.error('Invalid command. Use --help for usage instructions.');\n  process.exit(1);\n}\n"
+    }
+  ]
+}

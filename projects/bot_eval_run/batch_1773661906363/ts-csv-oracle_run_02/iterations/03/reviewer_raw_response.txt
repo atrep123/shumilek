@@ -1,0 +1,10 @@
+{  
+  "errors": [
+    {
+      "message": "Unexpected token ','",
+      "lineNumber": 20,
+      "columnNumber": 1
+    }
+  ],
+  "status": 400
+}

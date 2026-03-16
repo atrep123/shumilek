@@ -1,0 +1,14 @@
+{
+  "context": {
+    "file_path": "./src/cli.ts",
+    "content": "\nconst fs = require('node:fs');\n\nfunction parseFile(filePath) {\n  const content = fs.readFileSync(filePath, 'utf8');\n  const parser = new CsvParser();\n  const rows = parser.parse(content);\n  console.log(JSON.stringify(rows, null, 2));\n}\n\nfunction statsFile(filePath) {\n  const content = fs.readFileSync(filePath, 'utf8');\n  const parser = new CsvParser();\n  const rows = parser.parse(content);\n  const rowCount = rows.length;\n  const columnNames = Object.keys(rows[0]).join(', ');"
+  },
+  "errors": [
+    {
+      "message": "README.md exists",
+      "file_path": "./README.md",
+      "line_number": 1,
+      "column_number": null
+    }
+  ]
+}
