@@ -1,0 +1,8 @@
+{
+  "files": [
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst { sendError } = require('../../lib/errors');\n\nconst tasks = [];\n\nconst createTask = async (projectId, task) => {\n  if (!task.name) {\n    return sendError(res, 400, 'BAD_REQUEST', 'Task name is required');\n  }\n  const newTask = { id: randomUUID(), projectId, ...task };\n  tasks.push(newTask);\n  return newTask;\n};\n\nconst getAllTasks = async (projectId, status) => {\n  const list = Array.isArray(tasks) ? tasks : [];\n  const byProject = projectId == null ? list : list.filter(task => task && String(task.projectId || '') === String(projectId));\n  if (status === 'todo' || status === 'done') return byProject.filter(task => task && task.status === status);\n  return byProject;\n};\n\nconst updateTaskStatus = async (projectId, taskId, status) => {\n  const normalized = status === 'done' ? 'done' : 'todo';\n  const list = Array.isArray(tasks) ? tasks : [];\n  const target = list.find(task => task && String(task.id || '') === String(taskId || '') && String(task.projectId || '') === String(projectId || ''));\n  if (!target) return null;\n  target.status = normalized;\n  return target;\n};\n\nmodule.exports = { createTask, getAllTasks, updateTaskStatus };\n"
+    }
+  ]
+}

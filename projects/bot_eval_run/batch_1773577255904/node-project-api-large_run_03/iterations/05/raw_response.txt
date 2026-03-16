@@ -1,0 +1,44 @@
+{
+  "files": [
+    {
+      "path": "src/lib/errors.js",
+      "content": "const sendError = (res, status, code, message) => {\n  res.status(status).json({ error: { code, message } });\n};\n\nmodule.exports = { sendError };\n"
+    },
+    {
+      "path": "src/lib/id.js",
+      "content": "const { randomUUID } = require('node:crypto');\n\nmodule.exports = { randomUUID };\n"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { createComment, getComments } = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', async (req, res) => {\n  try {\n    const comment = await createComment(req.body);\n    res.status(201).json(comment);\n  } catch (error) {\n    sendError(res, 400, error.code, error.message);\n  }\n});\n\nrouter.get('/', async (req, res) => {\n  try {\n    const comments = await getComments(req.params.projectId);\n    res.json(comments);\n  } catch (error) {\n    sendError(res, 400, error.code, error.message);\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { randomUUID } = require('../../lib/id');\nconst { sendError } = require('../../lib/errors');\n\nconst comments = [];\n\nconst createComment = async (body) => {\n  if (!body.message) {\n    throw sendError(400, 'BAD_REQUEST', 'Message is required');\n  }\n  const comment = { id: randomUUID(), ...body };\n  comments.push(comment);\n  return comment;\n};\n\nconst getComments = async (projectId) => {\n  return comments.filter(comment => comment.projectId === projectId);\n};\n\nmodule.exports = { createComment, getComments };\n"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { createMember } = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', async (req, res) => {\n  try {\n    const member = await createMember(req.body);\n    res.status(201).json(member);\n  } catch (error) {\n    sendError(res, 400, error.code, error.message);\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('../../lib/id');\nconst { sendError } = require('../../lib/errors');\n\nconst members = [];\n\nconst createMember = async (body) => {\n  if (!body.userId || !body.role) {\n    throw sendError(400, 'BAD_REQUEST', 'User ID and role are required');\n  }\n  const member = { id: randomUUID(), ...body };\n  members.push(member);\n  return member;\n};\n\nmodule.exports = { createMember };\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { createProject } = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', async (req, res) => {\n  try {\n    const project = await createProject(req.body);\n    res.status(201).json(project);\n  } catch (error) {\n    sendError(res, 400, error.code, error.message);\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('../../lib/id');\nconst { sendError } = require('../../lib/errors');\n\nconst projects = [];\n\nconst createProject = async (body) => {\n  if (!body.name) {\n    throw sendError(400, 'BAD_REQUEST', 'Name is required');\n  }\n  const project = { id: randomUUID(), ...body };\n  projects.push(project);\n  return project;\n};\n\nmodule.exports = { createProject };\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { createTask, getTasks } = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.post('/', async (req, res) => {\n  try {\n    const task = await createTask(req.body);\n    res.status(201).json(task);\n  } catch (error) {\n    sendError(res, 400, error.code, error.message);\n  }\n});\n\nrouter.get('/', async (req, res) => {\n  try {\n    const tasks = await getTasks(req.params.projectId);\n    res.json(tasks);\n  } catch (error) {\n    sendError(res, 400, error.code, error.message);\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('../../lib/id');\nconst { sendError } = require('../../lib/errors');\n\nconst tasks = [];\n\nconst createTask = async (body) => {\n  if (!body.name) {\n    throw sendError(400, 'BAD_REQUEST', 'Name is required');\n  }\n  const task = { id: randomUUID(), ...body };\n  tasks.push(task);\n  return task;\n};\n\nconst getTasks = async (projectId) => {\n  return tasks.filter(task => task.projectId === projectId);\n};\n\nmodule.exports = { createTask, getTasks };\n"
+    }
+  ]
+}

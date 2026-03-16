@@ -1,0 +1,6 @@
+{
+  "review": "Task status contract mismatch: use `todo` / `done` statuses (not `open` or `pending`).",
+  "priorityFiles": [
+    "src/modules/tasks/service.js"
+  ]
+}

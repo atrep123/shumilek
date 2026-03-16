@@ -1,0 +1,10 @@
+- Implement in-memory repositories and services for projects, tasks, members, and comments
+- Create project routes and service for project creation and listing
+- Create member routes and service for adding members to projects
+- Create task routes and service for adding tasks to projects
+- Create comment routes and service for adding comments to tasks
+- Ensure error handling and validation for all endpoints
+- Implement filtering and patching of tasks
+- Write unit tests for all implemented features
+- Run tests and fix any issues
+- Build and package the project

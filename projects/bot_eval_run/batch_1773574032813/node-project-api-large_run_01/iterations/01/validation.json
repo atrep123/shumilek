@@ -1,0 +1,9 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Task status contract mismatch: use `todo` / `done` statuses (not `open` or `pending`)",
+    "Task status contract mismatch: PATCH status must allow only \"todo\" or \"done\" (pending/open are not allowed).",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

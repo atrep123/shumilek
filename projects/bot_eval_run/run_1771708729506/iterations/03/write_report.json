@@ -1,8 +1,0 @@
-{
-  "count": 1,
-  "files": [
-    "src/store.ts"
-  ],
-  "appliedAsPatch": true,
-  "forcePatchFromIncompleteFull": true
-}

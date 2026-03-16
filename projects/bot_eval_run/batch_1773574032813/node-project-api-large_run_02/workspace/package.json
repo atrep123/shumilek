@@ -1,0 +1,15 @@
+{
+  "name": "project-management-api",
+  "version": "1.0.0",
+  "description": "A Node.js monolith for a Project Management API",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "jest": "^27.0.6",
+    "supertest": "^6.2.3"
+  }
+}

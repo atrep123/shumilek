@@ -1,7 +1,0 @@
-usage: cli.py [-h] {train,generate} ...
-
-positional arguments:
-  {train,generate}
-
-options:
-  -h, --help        show this help message and exit

@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:7b",
+  "created_at": "2026-03-15T11:47:45.4685983Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/modules/projects/members/controller.js\",\n      \"content\": \"const { getProjectMembers } = require('../service');\\nconst { sendError } = require('../../lib/errors');\\n\\nconst getProjectMembersById = async (req, res) => {\\n  try {\\n    const members = await getProjectMembers(req.params.projectId);\\n    if (!members) {\\n      throw sendError(null, 404, 'NOT_FOUND', 'Members not found');\\n    }\\n    res.json(members);\\n  } catch (error) {\\n    sendError(res, error.status || 500, error.code, error.message);\\n  }\\n};\\n\\nmodule.exports = { getProjectMembersById };\\n\"\n    },\n    {\n      \"path\": \"src/modules/projects/members/routes.js\",\n      \"content\": \"const express = require('express');\\nconst router = express.Router();\\nconst { getProjectMembersById } = require('../controller');\\n\\nrouter.get('/:projectId/members', getProjectMembersById);\\n\\nmodule.exports = router;\\n\"\n    }\n  ]\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 10593725600,
+  "load_duration": 2389826000,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 518177700,
+  "eval_count": 253,
+  "eval_duration": 1699556500
+}

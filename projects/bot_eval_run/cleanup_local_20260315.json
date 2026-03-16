@@ -1,0 +1,252 @@
+{
+  "generatedAt": "2026-03-14T23:24:33.552Z",
+  "root": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run",
+  "dryRun": false,
+  "policies": [
+    {
+      "prefix": "batch_",
+      "keep": 5
+    },
+    {
+      "prefix": "debug_",
+      "keep": 3
+    },
+    {
+      "prefix": "release_gate_",
+      "keep": 10
+    },
+    {
+      "prefix": "run_large_",
+      "keep": 3
+    },
+    {
+      "prefix": "batch_large_",
+      "keep": 3
+    },
+    {
+      "prefix": "batch_infra_",
+      "keep": 3
+    }
+  ],
+  "results": [
+    {
+      "prefix": "batch_",
+      "keep": 5,
+      "matched": 115,
+      "kept": [
+        "batch_large_hybrid_7b_v1_20260304",
+        "batch_large_hybrid_32b_v4_timeout600_20260305",
+        "batch_large_hybrid_32b_v2_20260304",
+        "batch_large_hybrid_14b_v6_autorestart_20260305",
+        "batch_large_hybrid_14b_v5_autorestart_servicefix_20260305"
+      ],
+      "deleted": [
+        "batch_large_hybrid_14b_v4_autorestart_20260305",
+        "batch_large_hybrid_14b_v3_20260304",
+        "batch_large_hybrid_14b_v2b_20260304",
+        "batch_large_hybrid_14b_v2_20260304",
+        "batch_large_20260301_155906",
+        "batch_infra_recovery_smoke_20260304",
+        "batch_infra_autorestart_smoke_20260304",
+        "batch_infra_abort_smoke_20260304",
+        "batch_infra_abort_smoke2_20260304",
+        "batch_1772717548021",
+        "batch_1772714794192",
+        "batch_1772713371210",
+        "batch_1772711932665",
+        "batch_1772656240752",
+        "batch_1772652501239",
+        "batch_1772651652040",
+        "batch_1772649269976",
+        "batch_1772648225874",
+        "batch_1772646608393",
+        "batch_1772644928902",
+        "batch_1772643288750",
+        "batch_1772637621270",
+        "batch_1772617348141",
+        "batch_1772624171405",
+        "batch_1772603202128",
+        "batch_1772608279313",
+        "batch_1772602597363",
+        "batch_1772599903026",
+        "batch_1772591086007",
+        "batch_1772586363883",
+        "batch_1772568337829",
+        "batch_1772575186046",
+        "batch_1772564469241",
+        "batch_1772557025894",
+        "batch_1772553089865",
+        "batch_1772550557502",
+        "batch_1772548099954",
+        "batch_1772546542227",
+        "batch_1772544978810",
+        "batch_1772541835853",
+        "batch_1772540249971",
+        "batch_1772538474458",
+        "batch_1772536482437",
+        "batch_1772534834465",
+        "batch_1772533055234",
+        "batch_1772529062904",
+        "batch_1772527813773",
+        "batch_1772525112535",
+        "batch_1772517790282",
+        "batch_1772517141288",
+        "batch_1772509513068",
+        "batch_1772505750048",
+        "batch_1772504899584",
+        "batch_1772504707211",
+        "batch_1772504429693",
+        "batch_1772504074579",
+        "batch_1772503435289",
+        "batch_1772503002827",
+        "batch_1772502394046",
+        "batch_1772502118537",
+        "batch_1772499270031",
+        "batch_1772497877217",
+        "batch_1772494458876",
+        "batch_1772493245324",
+        "batch_1772492219244",
+        "batch_1772491860262",
+        "batch_1772490541524",
+        "batch_1772488889784",
+        "batch_1772486194932",
+        "batch_1772449641368",
+        "batch_1772447177364",
+        "batch_1772438049147",
+        "batch_1772433726185",
+        "batch_1772420530506",
+        "batch_1772413786680",
+        "batch_1772411358640",
+        "batch_1772407834170",
+        "batch_1772386459858",
+        "batch_1772383196076",
+        "batch_1772380675741",
+        "batch_1772378081633",
+        "batch_1771760634949",
+        "batch_1771763807099",
+        "batch_1771760309078",
+        "batch_1771757380529",
+        "batch_1771756646101",
+        "batch_1771756332977",
+        "batch_1771754239855",
+        "batch_1771753672975",
+        "batch_1771748133856",
+        "batch_1771747798870",
+        "batch_1771747249411",
+        "batch_1771711383076",
+        "batch_1771710552064",
+        "batch_1771709242645",
+        "batch_1771706954381",
+        "batch_1771703728306",
+        "batch_1771702303613",
+        "batch_1771700100895",
+        "batch_1771693923861",
+        "batch_1771690085111",
+        "batch_1770649989706",
+        "batch_1770647448514",
+        "batch_1770643297744",
+        "batch_1770640212304",
+        "batch_1770638836021",
+        "batch_1770638229859",
+        "batch_1770637451141",
+        "batch_1770635317539",
+        "batch_1770633735152"
+      ]
+    },
+    {
+      "prefix": "debug_",
+      "keep": 3,
+      "matched": 21,
+      "kept": [
+        "debug_ts_raw_no_fallback_qwen_afterfix3_177188",
+        "debug_ts_raw_no_fallback_qwen_afterfix2_177188",
+        "debug_ts_raw_no_fallback_qwen_afterfix_177188"
+      ],
+      "deleted": [
+        "debug_ts_raw_no_fallback_afterfix_177188",
+        "debug_ts_raw_no_fallback_177187",
+        "debug_post_best_patch_177181",
+        "debug_post_best_patch_177180",
+        "debug_ts_ab_with_planner",
+        "debug_ts_ab_without_planner",
+        "debug_schema_first_all_sanity",
+        "debug_schema_first_node_batch3",
+        "debug_planner_schema_first_fix_v2",
+        "debug_planner_schema_first_fix",
+        "debug_batch_scenario_flag_fix",
+        "debug_node_raw_off_batch3_after_norm",
+        "debug_node_raw_off_batch3",
+        "debug_node_raw_off",
+        "debug_ts_rawrate_after",
+        "debug_ts_raw_off_after_fix2",
+        "debug_ts_raw_off_after_fix",
+        "debug_ts_raw_off"
+      ]
+    },
+    {
+      "prefix": "release_gate_",
+      "keep": 10,
+      "matched": 13,
+      "kept": [
+        "release_gate_1773498284860",
+        "release_gate_pointer_smoke_177184",
+        "release_gate_planner_on_fail_fix_177188",
+        "release_gate_planner_on_fail_fix2_longrun10_177188",
+        "release_gate_planner_on_fail_fix2_177188",
+        "release_gate_planner_on_fail_177186",
+        "release_gate_longrun_177185",
+        "release_gate_after_schema_first_177179",
+        "release_gate_after_parser_fix_177178",
+        "release_gate_after_parse_stats_cleanup_177183"
+      ],
+      "deleted": [
+        "release_gate_after_best_patch_177182",
+        "release_gate_1771779555997",
+        "release_gate_1771775059227"
+      ]
+    },
+    {
+      "prefix": "run_large_",
+      "keep": 3,
+      "matched": 3,
+      "kept": [
+        "run_large_hybrid_patch_promote_32b_v3_20260302",
+        "run_large_hybrid_patch_promote_32b_v2_20260302",
+        "run_large_hybrid_32b_v23_single_regression"
+      ],
+      "deleted": []
+    },
+    {
+      "prefix": "batch_large_",
+      "keep": 3,
+      "matched": 10,
+      "kept": [
+        "batch_large_hybrid_7b_v1_20260304",
+        "batch_large_hybrid_32b_v4_timeout600_20260305",
+        "batch_large_hybrid_32b_v2_20260304"
+      ],
+      "deleted": [
+        "batch_large_hybrid_14b_v6_autorestart_20260305",
+        "batch_large_hybrid_14b_v5_autorestart_servicefix_20260305",
+        "batch_large_hybrid_14b_v4_autorestart_20260305",
+        "batch_large_hybrid_14b_v3_20260304",
+        "batch_large_hybrid_14b_v2b_20260304",
+        "batch_large_hybrid_14b_v2_20260304",
+        "batch_large_20260301_155906"
+      ]
+    },
+    {
+      "prefix": "batch_infra_",
+      "keep": 3,
+      "matched": 4,
+      "kept": [
+        "batch_infra_recovery_smoke_20260304",
+        "batch_infra_autorestart_smoke_20260304",
+        "batch_infra_abort_smoke_20260304"
+      ],
+      "deleted": [
+        "batch_infra_abort_smoke2_20260304"
+      ]
+    }
+  ]
+}

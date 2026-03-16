@@ -1,1 +1,0 @@
-{ "review": "type: 'module'", "priorityFiles": ["package.json"] }

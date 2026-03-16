@@ -1,0 +1,9 @@
+{
+  "strategy": "on-fail",
+  "scenarioId": "node-project-api-large",
+  "triggerIteration": 1,
+  "diagnostics": [
+    "Command failed: node --test --test-concurrency=1 tests/oracle.test.js (exit=1, timedOut=false)",
+    "App contract failed: export app as module.exports = app / exports.app / default export in src/app.*"
+  ]
+}

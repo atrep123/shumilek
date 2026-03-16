@@ -1,0 +1,10 @@
+- Initialize the project with `npm init -y` and install dependencies (express, etc.).
+- Create the folder structure: `src`, `src/services`, `src/routes`, `src/models`, `src/app.js`, `src/server.js`.
+- Implement the project service with CRUD operations using in-memory storage.
+- Implement the task service with CRUD operations and associations to projects.
+- Implement the member service with CRUD operations and associations to projects.
+- Implement the comment service with CRUD operations and associations to tasks.
+- Create routes for each service (projects, tasks, members, comments).
+- Set up the main app in `app.js` and the server in `server.js`.
+- Implement error handling to return JSON for all errors (4xx, 5xx).
+- Write the test file `oracle.test.js` and run the tests to ensure the implementation passes.

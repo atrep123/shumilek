@@ -1,8 +1,0 @@
-{
-  "errors": [
-    {
-      "message": "The TaskStore class is missing the 'markAsDone' method implementation.",
-      "line": 21
-    }
-  ]
-}

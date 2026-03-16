@@ -1,0 +1,8 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const router = require('express').Router();\nconst projectsService = require('./service');\nconst { sendError } = require('../../lib/errors');\n\nrouter.get('/', async (_req, res) => res.json({ projects: await projectsService.getAllProjects() }));\nrouter.post('/', async (req, res) => {\n  const name = String(req.body?.name || \"\").trim();\n  if (!name) return sendError(res, 400, 'BAD_REQUEST', 'Project name is required');\n  const duplicate = await projectsService.getProjectByName(name);\n  if (duplicate) return sendError(res, 409, 'PROJECT_DUPLICATE', 'Project already exists');\n  const project = await projectsService.createProject(req.body);\n  return res.status(201).json({ project });\n});\nrouter.get('/:projectId', async (req, res) => {\n  const project = await projectsService.getProjectById(req.params.projectId);\n  if (!project) return sendError(res, 404, 'PROJECT_NOT_FOUND', 'Project not found');\n  return res.json({ project });\n});\n\nmodule.exports = router;\n"
+    }
+  ]
+}

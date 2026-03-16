@@ -1,3 +1,0 @@
-{
-  "error": "AssertionError [ERR_ASSERTION]: assertion failed: typeof mod.createServer !== 'function'"
-}

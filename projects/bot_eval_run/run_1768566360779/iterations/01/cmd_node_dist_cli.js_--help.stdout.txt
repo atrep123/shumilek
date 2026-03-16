@@ -1,7 +1,0 @@
-
-Usage:
-  cli list --data <path>
-  cli add <title> --data <path>
-  cli done <id> --data <path>
-  cli remove <id> --data <path>
-

@@ -1,0 +1,8 @@
+{
+  "files": [
+    {
+      "path": "src/app.js",
+      "content": "const express = require('express');\nconst projectsRouter = require('./modules/projects/routes');\nconst membersRouter = require('./modules/members/routes');\nconst tasksRouter = require('./modules/tasks/routes');\nconst commentsRouter = require('./modules/comments/routes');\n\nconst app = express();\n\napp.use(express.json());\n\napp.use('/projects', projectsRouter);\napp.use('/projects/:projectId/members', membersRouter);\napp.use('/projects/:projectId/tasks', tasksRouter);\napp.use('/projects/:projectId/tasks/:taskId/comments', commentsRouter);\n\napp.get('/health', (req, res) => {\n  res.json({ ok: true });\n});\n\nmodule.exports = app;\n"
+    }
+  ]
+}

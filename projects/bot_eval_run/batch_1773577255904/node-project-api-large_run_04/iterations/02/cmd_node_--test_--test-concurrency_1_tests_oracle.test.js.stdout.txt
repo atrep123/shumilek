@@ -1,0 +1,13 @@
+✔ health + empty project list (157.2396ms)
+✔ project create/list/get + duplicate + validation (30.0319ms)
+✔ members endpoints (14.0985ms)
+✔ tasks create/list/filter + patch status (16.2755ms)
+✔ comments + not-found and payload contract (14.9309ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 433.9292

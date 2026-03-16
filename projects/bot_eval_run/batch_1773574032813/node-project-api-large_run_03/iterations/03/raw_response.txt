@@ -1,0 +1,12 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/members/controller.js",
+      "content": "const { getProjectMembers } = require('../service');\nconst { sendError } = require('../../lib/errors');\n\nconst getProjectMembersById = async (req, res) => {\n  try {\n    const members = await getProjectMembers(req.params.projectId);\n    if (!members) {\n      throw sendError(null, 404, 'NOT_FOUND', 'Members not found');\n    }\n    res.json(members);\n  } catch (error) {\n    sendError(res, error.status || 500, error.code, error.message);\n  }\n};\n\nmodule.exports = { getProjectMembersById };\n"
+    },
+    {
+      "path": "src/modules/projects/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { getProjectMembersById } = require('../controller');\n\nrouter.get('/:projectId/members', getProjectMembersById);\n\nmodule.exports = router;\n"
+    }
+  ]
+}

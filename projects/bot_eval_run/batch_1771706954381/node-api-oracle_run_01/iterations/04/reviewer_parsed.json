@@ -1,4 +1,0 @@
-{
-  "error": "FileNotFound",
-  "message": "The file 'openapi.json' was not found in the current directory. Please ensure it exists and is included in your repository."
-}

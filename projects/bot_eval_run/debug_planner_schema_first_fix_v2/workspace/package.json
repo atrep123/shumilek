@@ -1,7 +1,0 @@
-{
-  "name": "todo-api",
-  "version": "1.0.0",
-  "description": "A simple REST API for managing TODO items",
-  "main": "src/server.js",
-  "type": "commonjs"
-}

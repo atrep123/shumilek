@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "path": "src/lib/errors.js",
+      "content": "// src/lib/errors.js\nconst AppError = class extends Error {\n  constructor(status, code, message) {\n    super(message);\n    this.status = status;\n    this.code = code;\n  }\n};\n\nmodule.exports = { AppError };\n"
+    },
+    {
+      "path": "src/lib/id.js",
+      "content": "// src/lib/id.js\nconst { randomUUID } = require('node:crypto');\n\nmodule.exports = { randomUUID };\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "// src/modules/tasks/routes.js\nconst express = require('express');\nconst router = express.Router({ mergeParams: true });\nconst service = require('./service');\nconst { AppError, sendError } = require('../../lib/errors');\n\nrouter.get('/', async (req, res) => {\n  const projectId = req.params.projectId;\n  const statusFilter = req.query.status;\n  try {\n    const tasks = await service.listTasks(projectId, statusFilter);\n    if (!tasks) return sendError(res, 404, 'NOT_FOUND', 'Project not found');\n    res.json({ tasks });\n  } catch (error) {\n    sendError(res, error.status || 500, error.code || 'INTERNAL_ERROR', error.message);\n  }\n});\n\nrouter.post('/', async (req, res) => {\n  const projectId = req.params.projectId;\n  const { title } = req.body;\n  if (!title) return sendError(res, 400, 'INVALID_INPUT', 'Title is required');\n  try {\n    const task = await service.createTask(projectId, title);\n    res.status(201).json({ task });\n  } catch (error) {\n    sendError(res, error.status || 500, error.code || 'INTERNAL_ERROR', error.message);\n  }\n});\n\nrouter.patch('/:taskId', async (req, res) => {\n  const projectId = req.params.projectId;\n  const taskId = req.params.taskId;\n  const { status } = req.body;\n  if (!['todo', 'done'].includes(status)) return sendError(res, 400, 'INVALID_INPUT', 'Invalid task status');\n  try {\n    const updatedTask = await service.updateTaskStatus(projectId, taskId, status);\n    if (!updatedTask) return sendError(res, 404, 'NOT_FOUND', 'Task not found');\n    res.json({ task: updatedTask });\n  } catch (error) {\n    sendError(res, error.status || 500, error.code || 'INTERNAL_ERROR', error.message);\n  }\n});\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "// src/modules/tasks/service.js\nconst { randomUUID } = require('../../lib/id');\nconst projectsService = require('../projects/service');\n\nlet tasksStore = {};\n\nasync function listTasks(projectId, statusFilter) {\n  const project = await projectsService.getProjectById(projectId);\n  if (!project) return null;\n  let tasks = Object.values(tasksStore).filter(task => task.projectId === projectId);\n  if (statusFilter) {\n    tasks = tasks.filter(task => task.status === statusFilter);\n  }\n  return tasks;\n}\n\nasync function createTask(projectId, title) {\n  const project = await projectsService.getProjectById(projectId);\n  if (!project) throw new AppError(404, 'NOT_FOUND', 'Project not found');\n  const taskId = randomUUID();\n  const task = { id: taskId, projectId, title, status: 'todo' };\n  tasksStore[taskId] = task;\n  return task;\n}\n\nasync function updateTaskStatus(projectId, taskId, status) {\n  if (!['todo', 'done'].includes(status)) throw new AppError(400, 'INVALID_INPUT', 'Invalid task status');\n  const task = tasksStore[taskId];\n  if (!task || task.projectId !== projectId) return null;\n  task.status = status;\n  return task;\n}\n\nmodule.exports = { listTasks, createTask, updateTaskStatus };\n"
+    }
+  ],
+  "notes": "Updated task routes and service to ensure correct status handling and validation."
+}

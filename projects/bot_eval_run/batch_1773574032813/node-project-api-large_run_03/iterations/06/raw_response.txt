@@ -1,0 +1,8 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/members/controller.js",
+      "content": "const { getProjectMembersById } = require('../service');\n\nfunction getProjectMembersById(req, res) {\n  const { projectId } = req.params;\n  const members = getProjectMembersById(projectId);\n  if (members) {\n    res.json(members);\n  } else {\n    res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Project members not found' } });\n  }\n}\n\nmodule.exports = { getProjectMembersById };\n"
+    }
+  ]
+}

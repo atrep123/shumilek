@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:7b",
+  "created_at": "2026-03-15T11:49:58.4969559Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/modules/projects/members/controller.js\",\n      \"content\": \"const { getProjectMembersById } = require('../service');\\n\\nfunction getProjectMembersById(req, res) {\\n  const { projectId } = req.params;\\n  const members = getProjectMembersById(projectId);\\n  if (members) {\\n    res.json(members);\\n  } else {\\n    res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Project members not found' } });\\n  }\\n}\\n\\nmodule.exports = { getProjectMembersById };\\n\"\n    }\n  ]\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 6707658900,
+  "load_duration": 2379139300,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 504208700,
+  "eval_count": 148,
+  "eval_duration": 922961500
+}

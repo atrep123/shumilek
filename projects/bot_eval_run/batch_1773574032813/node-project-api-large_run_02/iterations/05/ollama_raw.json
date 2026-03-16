@@ -1,0 +1,16 @@
+{
+  "model": "qwen2.5-coder:7b",
+  "created_at": "2026-03-15T11:42:25.0452838Z",
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"files\": [\n    {\n      \"path\": \"src/modules/tasks/service.js\",\n      \"content\": \"const { randomUUID } = require('node:crypto');\\nconst { sendError } = require('../../lib/errors');\\n\\nconst tasks = [];\\n\\nconst createTask = async (projectId, task) => {\\n  if (!task.name) {\\n    return sendError(res, 400, 'BAD_REQUEST', 'Task name is required');\\n  }\\n  const newTask = { id: randomUUID(), projectId, ...task };\\n  tasks.push(newTask);\\n  return newTask;\\n};\\n\\nconst getAllTasks = async (projectId, status) => {\\n  const list = Array.isArray(tasks) ? tasks : [];\\n  const byProject = projectId == null ? list : list.filter(task => task && String(task.projectId || '') === String(projectId));\\n  if (status === 'todo' || status === 'done') return byProject.filter(task => task && task.status === status);\\n  return byProject;\\n};\\n\\nconst updateTaskStatus = async (projectId, taskId, status) => {\\n  const normalized = status === 'done' ? 'done' : 'todo';\\n  const list = Array.isArray(tasks) ? tasks : [];\\n  const target = list.find(task => task && String(task.id || '') === String(taskId || '') && String(task.projectId || '') === String(projectId || ''));\\n  if (!target) return null;\\n  target.status = normalized;\\n  return target;\\n};\\n\\nmodule.exports = { createTask, getAllTasks, updateTaskStatus };\\n\"\n    }\n  ]\n}"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 13514958500,
+  "load_duration": 2486452100,
+  "prompt_eval_count": 4096,
+  "prompt_eval_duration": 494024600,
+  "eval_count": 370,
+  "eval_duration": 2417103500
+}

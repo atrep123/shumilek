@@ -47,7 +47,7 @@ function printUsageAndExit(code: number): never {
   console.log([
     'Usage: npm run bot:eval:nightly:full -- [options]',
     '',
-    'Chains: release-gate → checkpoint → calibrate → tuner',
+    'Chains: release-gate → checkpoint → calibrate → promote → tuner → stability → cleanup',
     '',
     'Options:',
     '  --runs <n>           Release gate runs per scenario (default: 5)',
@@ -125,53 +125,14 @@ async function main() {
     console.error(`Calibrate failed with code ${calibrateCode}`);
   }
 
-  // Step 4: Tuner
-  const calibrationPath = path.join(opts.root, 'calibration_recommendation_latest.json');
-  const registryPath = path.join(opts.root, 'checkpoint_registry.json');
-  const statePath = path.join(opts.root, 'tuner_state.json');
-  const tunerArgs = [
-    tsNode,
-    path.join(repoRoot, 'scripts', 'botEvalTuner.ts'),
-    '--config', path.resolve('scripts/config/botEvalTuner.nightly.json'),
-    '--checkpointReport', path.join(opts.root, 'checkpoint_report_latest.json'),
-    '--calibration', calibrationPath,
-    '--registry', registryPath,
-    '--state', statePath,
-    '--applyDecision'
-  ];
-  const tunerCode = await runStep('Tuner', tunerArgs, repoRoot);
-  if (tunerCode !== 0) {
-    // eslint-disable-next-line no-console
-    console.error(`Tuner failed with code ${tunerCode}`);
-  }
-
-  // Summary
-  // eslint-disable-next-line no-console
-  console.log(`\n${'='.repeat(60)}\n[Summary]\n${'='.repeat(60)}`);
-  // eslint-disable-next-line no-console
-  console.log(`  Release gate: ${gateCode === 0 ? 'PASS' : 'FAIL'}`);
-  // eslint-disable-next-line no-console
-  console.log(`  Checkpoint:   ${checkpointCode === 0 ? 'PASS' : 'FAIL'}`);
-  // eslint-disable-next-line no-console
-  console.log(`  Calibrate:    ${calibrateCode === 0 ? 'PASS' : 'FAIL'}`);
-  // eslint-disable-next-line no-console
-  console.log(`  Tuner:        ${tunerCode === 0 ? 'PASS' : 'FAIL'}`);
-
-  if (fs.existsSync(path.join(opts.root, 'tuning_decision_latest.json'))) {
-    try {
-      const decision = JSON.parse(fs.readFileSync(path.join(opts.root, 'tuning_decision_latest.json'), 'utf8'));
-      // eslint-disable-next-line no-console
-      console.log(`  Tuner action: ${decision.action} (checkpoint: ${decision.latestCheckpointId || 'n/a'})`);
-    } catch { /* ignore */ }
-  }
-
-  // Step 5: Baseline promotion
+  // Step 4: Baseline promotion (runs BEFORE tuner so tuner sees current promotion state)
   const latestGateDirs = fs.readdirSync(opts.root, { withFileTypes: true })
     .filter(d => d.isDirectory() && /^release_gate_\d+$/.test(d.name))
     .map(d => path.join(opts.root, d.name))
     .sort();
   const latestGateDir = latestGateDirs.length > 0 ? latestGateDirs[latestGateDirs.length - 1] : '';
   let promoteCode = 0;
+  let promoteReportPath = '';
   if (latestGateDir && fs.existsSync(path.join(latestGateDir, 'summary.json'))) {
     const promoteStatePath = path.join(opts.root, 'baseline_promotion_state.json');
     const promoteStableDir = path.join(opts.root, 'release_gate_stable_nightly');
@@ -191,10 +152,10 @@ async function main() {
       console.error(`Baseline promote failed with code ${promoteCode}`);
     }
     // Auto-update baseline pointer on successful promotion
-    const promoteReport = path.join(latestGateDir, 'baseline_promotion.json');
-    if (promoteCode === 0 && fs.existsSync(promoteReport)) {
+    promoteReportPath = path.join(latestGateDir, 'baseline_promotion.json');
+    if (promoteCode === 0 && fs.existsSync(promoteReportPath)) {
       try {
-        const report = JSON.parse(fs.readFileSync(promoteReport, 'utf8'));
+        const report = JSON.parse(fs.readFileSync(promoteReportPath, 'utf8'));
         if (report.promoted) {
           const baselinePointerPath = path.join(opts.root, 'release_baseline.txt');
           fs.writeFileSync(baselinePointerPath, latestGateDir, 'utf8');
@@ -206,6 +167,29 @@ async function main() {
   } else {
     // eslint-disable-next-line no-console
     console.log('\nSkipping baseline promotion (no recent gate with summary.json)');
+  }
+
+  // Step 5: Tuner (receives --baselinePromotion from Step 4)
+  const calibrationPath = path.join(opts.root, 'calibration_recommendation_latest.json');
+  const registryPath = path.join(opts.root, 'checkpoint_registry.json');
+  const statePath = path.join(opts.root, 'tuner_state.json');
+  const tunerArgs = [
+    tsNode,
+    path.join(repoRoot, 'scripts', 'botEvalTuner.ts'),
+    '--config', path.resolve('scripts/config/botEvalTuner.nightly.json'),
+    '--checkpointReport', path.join(opts.root, 'checkpoint_report_latest.json'),
+    '--calibration', calibrationPath,
+    '--registry', registryPath,
+    '--state', statePath,
+    '--applyDecision'
+  ];
+  if (promoteReportPath && fs.existsSync(promoteReportPath)) {
+    tunerArgs.push('--baselinePromotion', promoteReportPath);
+  }
+  const tunerCode = await runStep('Tuner', tunerArgs, repoRoot);
+  if (tunerCode !== 0) {
+    // eslint-disable-next-line no-console
+    console.error(`Tuner failed with code ${tunerCode}`);
   }
 
   // Step 6: Stability aggregate (local trending)
@@ -239,12 +223,33 @@ async function main() {
     '--policy', 'release_gate_ci_nightly_:10'
   ];
   const cleanupCode = await runStep('Cleanup', cleanupArgs, repoRoot);
+
+  // Summary
+  // eslint-disable-next-line no-console
+  console.log(`\n${'='.repeat(60)}\n[Summary]\n${'='.repeat(60)}`);
+  // eslint-disable-next-line no-console
+  console.log(`  Release gate: ${gateCode === 0 ? 'PASS' : 'FAIL'}`);
+  // eslint-disable-next-line no-console
+  console.log(`  Checkpoint:   ${checkpointCode === 0 ? 'PASS' : 'FAIL'}`);
+  // eslint-disable-next-line no-console
+  console.log(`  Calibrate:    ${calibrateCode === 0 ? 'PASS' : 'FAIL'}`);
   // eslint-disable-next-line no-console
   console.log(`  Promote:      ${latestGateDir ? (promoteCode === 0 ? 'PASS' : 'FAIL') : 'SKIP'}`);
   // eslint-disable-next-line no-console
-  console.log(`  Cleanup:      ${cleanupCode === 0 ? 'PASS' : 'FAIL'}`);
+  console.log(`  Tuner:        ${tunerCode === 0 ? 'PASS' : 'FAIL'}`);
+
+  if (fs.existsSync(path.join(opts.root, 'tuning_decision_latest.json'))) {
+    try {
+      const decision = JSON.parse(fs.readFileSync(path.join(opts.root, 'tuning_decision_latest.json'), 'utf8'));
+      // eslint-disable-next-line no-console
+      console.log(`  Tuner action: ${decision.action} (checkpoint: ${decision.latestCheckpointId || 'n/a'})`);
+    } catch { /* ignore */ }
+  }
+
   // eslint-disable-next-line no-console
   console.log(`  Stability:    ${releaseGateDirs.length >= 2 ? (stabilityCode === 0 ? 'PASS' : 'FAIL') : 'SKIP'}`);
+  // eslint-disable-next-line no-console
+  console.log(`  Cleanup:      ${cleanupCode === 0 ? 'PASS' : 'FAIL'}`);
   // eslint-disable-next-line no-console
   console.log('');
 }

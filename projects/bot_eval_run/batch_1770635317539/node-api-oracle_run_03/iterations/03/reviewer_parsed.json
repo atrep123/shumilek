@@ -1,6 +1,0 @@
-{
-  "review": "Add package.json to the root of the project",
-  "priorityFiles": [
-    "package.json"
-  ]
-}

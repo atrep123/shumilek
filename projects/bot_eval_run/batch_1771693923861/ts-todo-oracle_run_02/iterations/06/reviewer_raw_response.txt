@@ -1,1 +1,0 @@
-{ "errors": [ { "message": "The 'commander' package is missing. Please install it by running `npm install commander`.", "severity": 2 } ] }

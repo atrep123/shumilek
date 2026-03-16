@@ -1,0 +1,80 @@
+✔ health + empty project list (98.8249ms)
+✔ project create/list/get + duplicate + validation (31.0649ms)
+✖ members endpoints (14.228ms)
+✖ tasks create/list/filter + patch status (20.8118ms)
+✖ comments + not-found and payload contract (14.8144ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 2
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 361.8919
+
+✖ failing tests:
+
+test at tests\oracle.test.js:92:1
+✖ members endpoints (14.228ms)
+  AssertionError [ERR_ASSERTION]: {"member":{"id":"0343428a-2db6-4673-a2da-0d84b7672df4","userId":"u-1","role":"owner"}}
+  
+  201 !== 409
+  
+      at expectErrorPayload (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1773574032813\node-project-api-large_run_03\workspace\tests\oracle.test.js:43:10)
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1773574032813\node-project-api-large_run_03\workspace\tests\oracle.test.js:114:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 201,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:122:1
+✖ tasks create/list/filter + patch status (20.8118ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(Array.isArray(listAll.body?.tasks))
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1773574032813\node-project-api-large_run_03\workspace\tests\oracle.test.js:144:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\oracle.test.js:160:1
+✖ comments + not-found and payload contract (14.8144ms)
+  AssertionError [ERR_ASSERTION]: <!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <title>Error</title>
+  </head>
+  <body>
+  <pre>Cannot GET /projects/b73c3715-34ce-4a46-827a-7c98c821b79f/tasks/38c085f4-5a4a-4dd8-9c24-1a8532256f2f/comments</pre>
+  </body>
+  </html>
+  
+  
+  404 !== 200
+  
+      at TestContext.<anonymous> (C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\batch_1773574032813\node-project-api-large_run_03\workspace\tests\oracle.test.js:186:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 404,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

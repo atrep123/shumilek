@@ -1,7 +1,0 @@
-{
-  "count": 2,
-  "files": [
-    "./dist/cli.js",
-    "./src/cli.ts"
-  ]
-}

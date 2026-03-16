@@ -1,0 +1,40 @@
+{
+  "files": [
+    {
+      "path": "src/modules/projects/members/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { getProjectMembersById } = require('../service');\n\nrouter.get('/:projectId/members', getProjectMembersById);\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { getProjectById } = require('../service');\n\nrouter.get('/:projectId', getProjectById);\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst projects = [];\n\nfunction getProjectById(projectId) {\n  return projects.find(project => project.id === projectId);\n}\n\nfunction createProject(name) {\n  if (!name) {\n    return null;\n  }\n  const project = { id: randomUUID(), name };\n  projects.push(project);\n  return project;\n}\n\nmodule.exports = { getProjectById, createProject };\n"
+    },
+    {
+      "path": "src/modules/projects/members/controller.js",
+      "content": "const { getProjectMembersById } = require('../service');\n\nfunction getProjectMembersById(req, res) {\n  const { projectId } = req.params;\n  const members = getProjectMembersById(projectId);\n  if (members) {\n    res.json(members);\n  } else {\n    res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Project members not found' } });\n  }\n}\n\nmodule.exports = { getProjectMembersById };\n"
+    },
+    {
+      "path": "src/modules/projects/members/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst members = [];\n\nfunction getProjectMembersById(projectId) {\n  return members.filter(member => member.projectId === projectId);\n}\n\nfunction createMember(projectId, userId, role) {\n  const member = { id: randomUUID(), projectId, userId, role };\n  members.push(member);\n  return member;\n}\n\nmodule.exports = { getProjectMembersById, createMember };\n"
+    },
+    {
+      "path": "src/modules/projects/tasks/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { getProjectTasksById } = require('../service');\n\nrouter.get('/:projectId/tasks', getProjectTasksById);\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/tasks/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst tasks = [];\n\nfunction getProjectTasksById(projectId) {\n  return tasks.filter(task => task.projectId === projectId);\n}\n\nfunction createTask(projectId, name, status) {\n  if (!name || !status) {\n    return null;\n  }\n  const task = { id: randomUUID(), projectId, name, status };\n  tasks.push(task);\n  return task;\n}\n\nmodule.exports = { getProjectTasksById, createTask };\n"
+    },
+    {
+      "path": "src/modules/projects/tasks/comments/routes.js",
+      "content": "const express = require('express');\nconst router = express.Router();\nconst { getTaskCommentsById } = require('../service');\n\nrouter.get('/:taskId/comments', getTaskCommentsById);\n\nmodule.exports = router;\n"
+    },
+    {
+      "path": "src/modules/projects/tasks/comments/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst comments = [];\n\nfunction getTaskCommentsById(taskId) {\n  return comments.filter(comment => comment.taskId === taskId);\n}\n\nfunction createComment(taskId, message) {\n  if (!message) {\n    return null;\n  }\n  const comment = { id: randomUUID(), taskId, message };\n  comments.push(comment);\n  return comment;\n}\n\nmodule.exports = { getTaskCommentsById, createComment };\n"
+    }
+  ]
+}

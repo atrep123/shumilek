@@ -1,3 +1,0 @@
-{
-  "error": "AssertionError [ERR_ASSERTION]: expected fs.existsSync to be a function"
-}

@@ -1,5 +1,0 @@
-{
-  "model": "qwen2.5-coder:32b",
-  "baseUrl": "http://localhost:11434",
-  "usedFormatJson": true
-}

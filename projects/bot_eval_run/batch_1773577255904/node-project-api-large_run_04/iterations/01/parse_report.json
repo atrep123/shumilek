@@ -1,0 +1,72 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "qwen2.5-coder:7b",
+      "ok": true,
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
+    },
+    {
+      "stage": "scenario_contract",
+      "model": "qwen2.5-coder:7b",
+      "ok": true,
+      "error": "Large scenario synthesized missing core files in first iteration: src/modules/projects/service.js, src/modules/tasks/routes.js, src/modules/tasks/service.js, src/modules/members/routes.js, src/modules/members/service.js, src/modules/comments/routes.js, src/modules/comments/service.js",
+      "errorKind": "schema"
+    }
+  ],
+  "finalOk": true,
+  "appliedFixes": [
+    "src/lib/errors.js: repaired sendError helper export contract",
+    "src/lib/id.js: repaired generateId helper export contract",
+    "src/modules/projects/controller.js: normalized randomUUID binding to node:crypto",
+    "src/modules/projects/members/controller.js: normalized randomUUID binding to node:crypto",
+    "src/modules/projects/tasks/controller.js: normalized randomUUID binding to node:crypto",
+    "src/modules/projects/tasks/comments/controller.js: normalized randomUUID binding to node:crypto",
+    "src/modules/projects/routes.js: canonicalized projects route contract (list/create/detail payload + validation)",
+    "src/modules/members/routes.js: normalized duplicate member contract (null->409)",
+    "src/modules/members/routes.js: normalized members create response shape (outcome.member -> member fallback)",
+    "src/modules/comments/routes.js: normalized comments create response shape (content -> message fallback)",
+    "src/modules/projects/tasks/comments/controller.js: removed spurious nested-module file (proper module exists at canonical path)",
+    "src/modules/projects/tasks/comments/routes.js: removed spurious nested-module file (proper module exists at canonical path)",
+    "src/modules/projects/tasks/controller.js: removed spurious nested-module file (proper module exists at canonical path)",
+    "src/modules/projects/tasks/routes.js: removed spurious nested-module file (proper module exists at canonical path)",
+    "src/modules/projects/members/controller.js: removed spurious nested-module file (proper module exists at canonical path)",
+    "src/modules/projects/members/routes.js: removed spurious nested-module file (proper module exists at canonical path)"
+  ],
+  "skippedFixes": [
+    "src/modules/projects/routes.js: detail route unchanged (service alias not detected)",
+    "src/modules/projects/routes.js: projects duplicate guard unchanged (service alias not detected)",
+    "src/modules/projects/routes.js: POST / status unchanged (POST / already returns 201 or no res.json success branch)",
+    "src/modules/projects/routes.js: no custom-error class normalization needed",
+    "src/modules/projects/routes.js: no errorHandler catch normalization needed",
+    "src/modules/projects/routes.js: sendError binding unchanged (sendError binding already present)",
+    "src/modules/tasks/routes.js: POST / status unchanged (POST / already returns 201 or no res.json success branch)",
+    "src/modules/tasks/routes.js: mergeParams router config unchanged (mergeParams already enabled)",
+    "src/modules/tasks/routes.js: task create payload unchanged (tasks create payload already aligned or pattern not detected)",
+    "src/modules/tasks/routes.js: task status/filter unchanged (tasks status/filter already aligned or pattern not detected)",
+    "src/modules/tasks/routes.js: tasks route canonicalization not required",
+    "src/modules/tasks/routes.js: no custom-error class normalization needed",
+    "src/modules/tasks/routes.js: no errorHandler catch normalization needed",
+    "src/modules/tasks/routes.js: sendError binding unchanged (sendError binding already present)",
+    "src/modules/members/routes.js: POST / status unchanged (POST / already returns 201 or no res.json success branch)",
+    "src/modules/members/routes.js: mergeParams router config unchanged (mergeParams already enabled)",
+    "src/modules/members/routes.js: members payload unchanged (members payload already aligned or pattern not detected)",
+    "src/modules/members/routes.js: members route canonicalization not required",
+    "src/modules/members/routes.js: no custom-error class normalization needed",
+    "src/modules/members/routes.js: no errorHandler catch normalization needed",
+    "src/modules/members/routes.js: sendError binding unchanged (sendError binding already present)",
+    "src/modules/comments/routes.js: POST / status unchanged (POST / already returns 201 or no res.json success branch)",
+    "src/modules/comments/routes.js: mergeParams router config unchanged (mergeParams already enabled)",
+    "src/modules/comments/routes.js: comments payload unchanged (comments payload already aligned or pattern not detected)",
+    "src/modules/comments/routes.js: comments route canonicalization not required",
+    "src/modules/comments/routes.js: no custom-error class normalization needed",
+    "src/modules/comments/routes.js: no errorHandler catch normalization needed",
+    "src/modules/comments/routes.js: sendError binding unchanged (sendError binding already present)",
+    "src/app.js: app mount contract unchanged (app mount signatures already present)",
+    "src/modules/members/service.js: members state-sharing template not required",
+    "src/lib/errors.js: sendError helper unchanged (sendError helper contract already valid)"
+  ]
+}

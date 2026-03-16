@@ -1,9 +1,0 @@
-{
-  "mode": "full",
-  "files": [
-    {"path": "mini_ai/markov.py"},
-    {"path": "mini_ai/cli.py"},
-    {"path": "README.md"}
-  ],
-  "notes": "Add missing files and update README with basic information."
-}

@@ -1,0 +1,80 @@
+{
+  "files": [
+    {
+      "path": "src/lib/errors.js",
+      "content": "const sendError = (res, status, code, message) => {\n  res.status(status).json({ error: { code, message } });\n};\n\nmodule.exports = { sendError };"
+    },
+    {
+      "path": "src/modules/comments/controller.js",
+      "content": "const { sendError } = require('../../lib/errors');\nconst { createComment } = require('./service');\n\nconst createCommentController = async (req, res) => {\n  try {\n    const comment = await createComment(req.params.projectId, req.params.taskId, req.body);\n    res.status(201).json(comment);\n  } catch (error) {\n    sendError(res, error.status || 500, error.code, error.message);\n  }\n};\n\nmodule.exports = { createCommentController };"
+    },
+    {
+      "path": "src/modules/comments/routes.js",
+      "content": "const express = require('express');\nconst { createCommentController } = require('./controller');\n\nconst router = express.Router();\n\nrouter.post('/:projectId/tasks/:taskId/comments', createCommentController);\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/members/controller.js",
+      "content": "const { sendError } = require('../../lib/errors');\nconst { createMember } = require('./service');\n\nconst createMemberController = async (req, res) => {\n  try {\n    const member = await createMember(req.params.projectId, req.body);\n    res.status(201).json(member);\n  } catch (error) {\n    sendError(res, error.status || 500, error.code, error.message);\n  }\n};\n\nmodule.exports = { createMemberController };"
+    },
+    {
+      "path": "src/modules/members/routes.js",
+      "content": "const express = require('express');\nconst { createMemberController } = require('./controller');\n\nconst router = express.Router();\n\nrouter.post('/:projectId/members', createMemberController);\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/projects/controller.js",
+      "content": "const { sendError } = require('../../lib/errors');\nconst { createProject } = require('./service');\n\nconst createProjectController = async (req, res) => {\n  try {\n    const project = await createProject(req.body);\n    res.status(201).json(project);\n  } catch (error) {\n    sendError(res, error.status || 500, error.code, error.message);\n  }\n};\n\nmodule.exports = { createProjectController };\n"
+    },
+    {
+      "path": "src/modules/projects/members/controller.js",
+      "content": "const { sendError } = require('../../lib/errors');\nconst { createMember } = require('./service');\n\nconst createMemberController = async (req, res) => {\n  try {\n    const member = await createMember(req.params.projectId, req.body);\n    res.status(201).json(member);\n  } catch (error) {\n    sendError(res, error.status || 500, error.code, error.message);\n  }\n};\n\nmodule.exports = { createMemberController };\n"
+    },
+    {
+      "path": "src/modules/projects/members/routes.js",
+      "content": "const express = require('express');\nconst { createMemberController } = require('./controller');\n\nconst router = express.Router();\n\nrouter.post('/:projectId/members', createMemberController);\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/projects/routes.js",
+      "content": "const express = require('express');\nconst { createProjectController } = require('./controller');\n\nconst router = express.Router();\n\nrouter.post('/', createProjectController);\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/projects/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst { sendError } = require('../lib/errors');\n\nconst projects = [];\n\nconst createProject = async (project) => {\n  if (!project.name) {\n    throw sendError(400, 'BAD_REQUEST', 'Project name is required');\n  }\n  const newProject = { id: randomUUID(), ...project };\n  projects.push(newProject);\n  return newProject;\n};\n\nmodule.exports = { createProject };\n"
+    },
+    {
+      "path": "src/modules/projects/tasks/comments/controller.js",
+      "content": "const { sendError } = require('../../lib/errors');\nconst { createComment } = require('./service');\n\nconst createCommentController = async (req, res) => {\n  try {\n    const comment = await createComment(req.params.projectId, req.params.taskId, req.body);\n    res.status(201).json(comment);\n  } catch (error) {\n    sendError(res, error.status || 500, error.code, error.message);\n  }\n};\n\nmodule.exports = { createCommentController };\n"
+    },
+    {
+      "path": "src/modules/projects/tasks/comments/routes.js",
+      "content": "const express = require('express');\nconst { createCommentController } = require('./controller');\n\nconst router = express.Router();\n\nrouter.post('/:projectId/tasks/:taskId/comments', createCommentController);\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/projects/tasks/controller.js",
+      "content": "const { sendError } = require('../../lib/errors');\nconst { createTask } = require('./service');\n\nconst createTaskController = async (req, res) => {\n  try {\n    const task = await createTask(req.params.projectId, req.body);\n    res.status(201).json(task);\n  } catch (error) {\n    sendError(res, error.status || 500, error.code, error.message);\n  }\n};\n\nmodule.exports = { createTaskController };\n"
+    },
+    {
+      "path": "src/modules/projects/tasks/routes.js",
+      "content": "const express = require('express');\nconst { createTaskController } = require('./controller');\n\nconst router = express.Router();\n\nrouter.post('/:projectId/tasks', createTaskController);\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/tasks/controller.js",
+      "content": "const { sendError } = require('../../lib/errors');\nconst { createTask } = require('./service');\n\nconst createTaskController = async (req, res) => {\n  try {\n    const task = await createTask(req.params.projectId, req.body);\n    res.status(201).json(task);\n  } catch (error) {\n    sendError(res, error.status || 500, error.code, error.message);\n  }\n};\n\nmodule.exports = { createTaskController };\n"
+    },
+    {
+      "path": "src/modules/tasks/routes.js",
+      "content": "const express = require('express');\nconst { createTaskController } = require('./controller');\n\nconst router = express.Router();\n\nrouter.post('/:projectId/tasks', createTaskController);\n\nmodule.exports = router;"
+    },
+    {
+      "path": "src/modules/tasks/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst { sendError } = require('../lib/errors');\n\nconst tasks = [];\n\nconst createTask = async (projectId, task) => {\n  const newTask = { id: randomUUID(), projectId, ...task };\n  tasks.push(newTask);\n  return newTask;\n};\n\nmodule.exports = { createTask };\n"
+    },
+    {
+      "path": "src/modules/comments/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst { sendError } = require('../lib/errors');\n\nconst comments = [];\n\nconst createComment = async (projectId, taskId, comment) => {\n  const newComment = { id: randomUUID(), projectId, taskId, ...comment };\n  comments.push(newComment);\n  return newComment;\n};\n\nmodule.exports = { createComment };\n"
+    },
+    {
+      "path": "src/modules/members/service.js",
+      "content": "const { randomUUID } = require('node:crypto');\nconst { sendError } = require('../lib/errors');\n\nconst members = [];\n\nconst createMember = async (projectId, member) => {\n  const newMember = { id: randomUUID(), projectId, ...member };\n  members.push(newMember);\n  return newMember;\n};\n\nmodule.exports = { createMember };\n"
+    }
+  ]
+}

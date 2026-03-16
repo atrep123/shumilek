@@ -199,6 +199,95 @@ describe('botEvalTuner', () => {
     }
   });
 
+  it('holds when promotion is qualified but not yet promoted and holdWhenPromotionPending is enabled', () => {
+    const decision = buildTuningDecision({
+      checkpointReport: {
+        generatedAt: '2026-03-16T10:00:00.000Z',
+        manifestVersion: 1,
+        manifestPath: 'manifest.json',
+        rootDir: 'root',
+        window: 10,
+        inputs: [],
+        baselineDir: 'baseline',
+        checkpoint: {
+          qualified: true,
+          reasons: [],
+          latestRunDir: 'C:\\runs\\release_gate_ci_nightly_3001_1',
+          latestQualifiedScenarioIds: ['ts-todo-oracle']
+        }
+      },
+      calibration: {
+        readiness: {
+          ready_to_tighten_pr: true,
+          reason_if_not_ready: ''
+        }
+      },
+      baselinePromotion: {
+        qualified: true,
+        promoted: false,
+        promotionMessage: 'streak 1/2 — promotion pending'
+      },
+      registry: {
+        activeCheckpointId: 'release_gate_ci_nightly_2999_1@manifest-v1'
+      },
+      policy: {
+        version: 1,
+        requireCheckpointQualification: true,
+        requireCalibrationReadiness: true,
+        rollbackOnCheckpointFailure: true,
+        holdWhenPromotionPending: true
+      }
+    });
+
+    assert.equal(decision.action, 'hold');
+    assert.match(decision.rationale.join(' | '), /promotion/i);
+    assert.equal(decision.targetCheckpointId, 'release_gate_ci_nightly_2999_1@manifest-v1');
+  });
+
+  it('accepts when promotion is qualified and already promoted with holdWhenPromotionPending enabled', () => {
+    const decision = buildTuningDecision({
+      checkpointReport: {
+        generatedAt: '2026-03-16T10:00:00.000Z',
+        manifestVersion: 1,
+        manifestPath: 'manifest.json',
+        rootDir: 'root',
+        window: 10,
+        inputs: [],
+        baselineDir: 'baseline',
+        checkpoint: {
+          qualified: true,
+          reasons: [],
+          latestRunDir: 'C:\\runs\\release_gate_ci_nightly_3002_1',
+          latestQualifiedScenarioIds: ['ts-todo-oracle']
+        }
+      },
+      calibration: {
+        readiness: {
+          ready_to_tighten_pr: true,
+          reason_if_not_ready: ''
+        }
+      },
+      baselinePromotion: {
+        qualified: true,
+        promoted: true,
+        promotionMessage: 'streak 2/2 — promoted'
+      },
+      registry: {
+        activeCheckpointId: 'release_gate_ci_nightly_2999_1@manifest-v1'
+      },
+      policy: {
+        version: 1,
+        requireCheckpointQualification: true,
+        requireCalibrationReadiness: true,
+        rollbackOnCheckpointFailure: true,
+        holdWhenPromotionPending: true
+      }
+    });
+
+    assert.equal(decision.action, 'accept');
+    assert.equal(decision.targetCheckpointId, 'release_gate_ci_nightly_3002_1@manifest-v1');
+  });
+
   it('updates tuner state without changing accepted checkpoint on hold', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-tuner-state-'));
     try {

@@ -1,9 +1,0 @@
-{
-  "count": 2,
-  "files": [
-    "src/server.js",
-    "src/routes/todoRoutes.js"
-  ],
-  "appliedAsPatch": true,
-  "forcePatchFromIncompleteFull": true
-}

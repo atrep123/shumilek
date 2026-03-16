@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Invalid shared helper import path in src/modules/comments/service.js: use ../../lib/id and ../../lib/errors",
+    "Invalid shared helper import path in src/modules/projects/service.js: use ../../lib/id and ../../lib/errors",
+    "Invalid shared helper import path in src/modules/tasks/service.js: use ../../lib/id and ../../lib/errors",
+    "Skipped oracle command checks because structural contract did not pass."
+  ],
+  "commands": []
+}

@@ -1,9 +1,0 @@
-{
-  "count": 2,
-  "files": [
-    "src/server.js",
-    "data/todos.json"
-  ],
-  "appliedAsPatch": true,
-  "forcePatchFromIncompleteFull": true
-}

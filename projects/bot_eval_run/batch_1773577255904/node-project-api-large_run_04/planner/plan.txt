@@ -1,0 +1,12 @@
+- Initialize project with `npm init -y` and install dependencies (express, supertest, etc.).
+- Create the directory structure with `src/` and `test/` directories.
+- Implement `src/app.js` to initialize Express and set up basic middleware.
+- Create service files for each domain (projects, tasks, members, comments) with CRUD operations.
+- Create route files for each domain to handle HTTP requests.
+- Implement error handling middleware for 400, 409, etc.
+- Write the test file `test/oracle.test.js` based on the provided specification.
+- Implement the required endpoints exactly as specified in the test.
+- Use `node:crypto` for generating unique IDs.
+- Use in-memory storage (arrays) for simplicity.
+- Write unit tests for each service and route.
+- Run the tests and fix any issues.

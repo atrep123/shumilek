@@ -1,0 +1,12 @@
+- We'll use Express for the framework.
+- We'll have a modular structure under `src/modules/` for each domain: projects, tasks, members, comments.
+- We'll have `src/app.js` for the app export and `src/server.js` for the server setup (without calling `listen` on import).
+- We'll use `node:crypto.randomUUID()` for generating IDs.
+- We'll define a consistent error format and handle errors appropriately.
+- README.md
+- package.json
+- src/app.js
+- src/server.js
+- src/modules/projects/routes.js
+- src/modules/projects/service.js
+- src/modules/tasks/routes.js

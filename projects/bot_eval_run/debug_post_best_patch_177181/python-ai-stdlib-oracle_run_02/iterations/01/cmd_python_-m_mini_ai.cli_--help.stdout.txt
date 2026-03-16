@@ -1,9 +1,0 @@
-usage: cli.py [-h] {train,generate} ...
-
-Character-level Markov chain generator.
-
-positional arguments:
-  {train,generate}
-
-options:
-  -h, --help        show this help message and exit

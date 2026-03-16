@@ -1,0 +1,6 @@
+{
+  "review": "Invalid shared helper import path in src/modules/tasks/service.js: use ../../lib/id and ../../lib/errors",
+  "priorityFiles": [
+    "src/modules/tasks/service.js"
+  ]
+}

@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-03-15T18:10:13.316Z",
+  "generatedAt": "2026-03-15T20:56:49.421Z",
   "inputs": [
-    "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773596504261",
-    "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773595116385",
-    "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773498284860"
+    "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773602833835",
+    "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773604789572",
+    "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773606591921"
   ],
-  "baselineDir": "C:\\actions-runner\\release_gate_stable_longrunC_20260224_075013",
+  "baselineDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773595116385",
   "allGatePassed": true,
   "gateFailures": [],
   "scenarios": [
@@ -28,14 +28,14 @@
         "max": 0
       },
       "avgMs": {
-        "avg": 94836.33333333333,
-        "min": 93927,
-        "max": 96267
+        "avg": 93456.66666666667,
+        "min": 90791,
+        "max": 97124
       },
       "avgMsDeltaVsBaseline": {
-        "avg": -2219.6666666666665,
-        "min": -3129,
-        "max": -789
+        "avg": -2810.3333333333335,
+        "min": -5476,
+        "max": 857
       },
       "parseErrorRunsTotal": {
         "planner": 0,
@@ -48,7 +48,7 @@
     },
     {
       "scenario": "node-project-api-large",
-      "runs": 1,
+      "runs": 3,
       "passRate": {
         "avg": 1,
         "min": 1,
@@ -65,22 +65,22 @@
         "max": 0
       },
       "avgMs": {
-        "avg": 140205,
-        "min": 140205,
-        "max": 140205
+        "avg": 140427,
+        "min": 137707,
+        "max": 141805
       },
       "avgMsDeltaVsBaseline": {
-        "avg": 140205,
-        "min": 140205,
-        "max": 140205
+        "avg": 140427,
+        "min": 137707,
+        "max": 141805
       },
       "parseErrorRunsTotal": {
-        "planner": 1,
+        "planner": 0,
         "jsonRepair": 0,
         "schema": 0,
         "jsonParse": 0,
         "placeholder": 0,
-        "other": 1
+        "other": 0
       }
     },
     {
@@ -102,14 +102,14 @@
         "max": 0
       },
       "avgMs": {
-        "avg": 43153.333333333336,
-        "min": 42288,
-        "max": 43753
+        "avg": 43720,
+        "min": 43461,
+        "max": 44117
       },
       "avgMsDeltaVsBaseline": {
-        "avg": 90.33333333333333,
-        "min": -775,
-        "max": 690
+        "avg": -33,
+        "min": -292,
+        "max": 364
       },
       "parseErrorRunsTotal": {
         "planner": 0,
@@ -139,14 +139,14 @@
         "max": 0
       },
       "avgMs": {
-        "avg": 46379.666666666664,
-        "min": 45228,
-        "max": 47091
+        "avg": 44647,
+        "min": 43603,
+        "max": 46181
       },
       "avgMsDeltaVsBaseline": {
-        "avg": 2133.6666666666665,
-        "min": 982,
-        "max": 2845
+        "avg": -2173,
+        "min": -3217,
+        "max": -639
       },
       "parseErrorRunsTotal": {
         "planner": 0,

@@ -1,4 +1,0 @@
-{
-  "status": "error",
-  "message": "ERR_ASSERTION: src/server.js must export createServer function"
-}

@@ -1,0 +1,9 @@
+{
+  "error": "RequestValidationError",
+  "message": "Invalid request: Missing required parameter 'projectId' in body or query string",
+  "data": {
+    "missing": [
+      "projectId"
+    ]
+  }
+}

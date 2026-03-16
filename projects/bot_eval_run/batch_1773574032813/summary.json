@@ -1,0 +1,46 @@
+[
+  {
+    "scenario": "node-project-api-large",
+    "pass": 1,
+    "total": 3,
+    "passRate": 0.3333333333333333,
+    "avgMs": 456383,
+    "runsWithPlannerError": 0,
+    "runsWithJsonRepairError": 0,
+    "jsonRepairErrorFiles": 0,
+    "runsWithSchemaFailure": 0,
+    "schemaFailures": 0,
+    "runsWithJsonParseFailure": 0,
+    "jsonParseFailures": 0,
+    "runsWithPlaceholderFailure": 0,
+    "placeholderFailures": 0,
+    "runsWithOtherParseFailure": 0,
+    "otherParseFailures": 0,
+    "runsWithDeterministicFallback": 0,
+    "deterministicFallbackActivations": 0,
+    "deterministicFallbackRecoveries": 0,
+    "deterministicFallbackTargetedActivations": 0,
+    "deterministicFallbackTargetedRecoveries": 0,
+    "deterministicFallbackCanonicalActivations": 0,
+    "deterministicFallbackCanonicalRecoveries": 0,
+    "rawPasses": 1,
+    "rawFailures": 2,
+    "rawPassRate": 0.3333333333333333,
+    "recoveredByFallback": 0,
+    "fallbackDependencyRate": 0,
+    "runsWithRawPass": 1,
+    "runsRecoveredByFallback": 0,
+    "rawRunPassRate": 0.3333333333333333,
+    "fallbackDependencyRunRate": 0,
+    "topFailureClusters": [
+      {
+        "id": "other",
+        "count": 4
+      },
+      {
+        "id": "timeout",
+        "count": 1
+      }
+    ]
+  }
+]

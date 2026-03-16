@@ -1,1 +1,0 @@
-files[] must be objects
