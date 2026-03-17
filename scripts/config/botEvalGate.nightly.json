@@ -33,6 +33,11 @@
       "maxFallbackDependencyRunRateDelta": 0.2,
       "maxLatencyMultiplier": 1.26
     },
+    "ts-csv-oracle": {
+      "maxFallbackDependencyRunRate": 0.2,
+      "maxFallbackDependencyRunRateDelta": 0.2,
+      "maxLatencyMultiplier": 1.26
+    },
     "node-project-api-large": {
       "maxFallbackDependencyRunRate": 0.2,
       "maxFallbackDependencyRunRateDelta": 0.2,

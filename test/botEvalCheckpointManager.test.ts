@@ -90,6 +90,12 @@ describe('botEvalCheckpointManager', () => {
             capabilities: ['tests'],
             blocking: true
           },
+          'ts-csv-oracle': {
+            splits: ['validation', 'regression'],
+            domains: ['typescript', 'csv'],
+            capabilities: ['contracts'],
+            blocking: true
+          },
           'node-project-api-large': {
             splits: ['holdout'],
             domains: ['node'],
@@ -114,7 +120,8 @@ describe('botEvalCheckpointManager', () => {
         summary: [
           { scenario: 'ts-todo-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 1100 },
           { scenario: 'node-api-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 1200 },
-          { scenario: 'python-ai-stdlib-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 1000 }
+          { scenario: 'python-ai-stdlib-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 1000 },
+          { scenario: 'ts-csv-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 1050 }
         ]
       });
       createComparableRun({
@@ -124,7 +131,8 @@ describe('botEvalCheckpointManager', () => {
         summary: [
           { scenario: 'ts-todo-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 1000 },
           { scenario: 'node-api-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 1150 },
-          { scenario: 'python-ai-stdlib-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 980 }
+          { scenario: 'python-ai-stdlib-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 980 },
+          { scenario: 'ts-csv-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 990 }
         ]
       });
       const latestRun = createComparableRun({
@@ -134,7 +142,8 @@ describe('botEvalCheckpointManager', () => {
         summary: [
           { scenario: 'ts-todo-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 900 },
           { scenario: 'node-api-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 1100 },
-          { scenario: 'python-ai-stdlib-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 950 }
+          { scenario: 'python-ai-stdlib-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 950 },
+          { scenario: 'ts-csv-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 940 }
         ]
       });
 
@@ -147,13 +156,19 @@ describe('botEvalCheckpointManager', () => {
       assert.equal(report.window, 3);
       assert.equal(report.checkpoint.qualified, true);
       assert.equal(report.checkpoint.latestRunDir, latestRun);
-      assert.deepEqual(report.checkpoint.latestQualifiedScenarioIds, ['node-api-oracle', 'python-ai-stdlib-oracle']);
+      assert.deepEqual(report.checkpoint.latestQualifiedScenarioIds, ['node-api-oracle', 'python-ai-stdlib-oracle', 'ts-csv-oracle']);
 
       const validationSplit = report.splitRollups.find(split => split.split === 'validation');
       assert.ok(validationSplit);
-      assert.deepEqual(validationSplit?.scenariosSeen, ['node-api-oracle']);
+      assert.deepEqual(validationSplit?.scenariosSeen, ['node-api-oracle', 'ts-csv-oracle']);
       assert.equal(validationSplit?.missingScenarios.length, 0);
       assert.equal(validationSplit?.scenarioRollups[0].avgMs.mean, 1150);
+      assert.equal(validationSplit?.scenarioRollups[1].avgMs.mean, 993.3333333333334);
+
+      const regressionSplit = report.splitRollups.find(split => split.split === 'regression');
+      assert.ok(regressionSplit);
+      assert.deepEqual(regressionSplit?.scenariosSeen, ['python-ai-stdlib-oracle', 'ts-csv-oracle']);
+      assert.equal(regressionSplit?.missingScenarios.length, 0);
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
