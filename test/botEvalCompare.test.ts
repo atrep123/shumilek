@@ -124,6 +124,69 @@ describe('botEval compare and failure clustering helpers', () => {
     assert.equal(row.delta.avgMs, -100);
   });
 
+  it('limits compare output to candidate scenarios when scenarioIds are provided', () => {
+    const deltas = compareSummaries({
+      baselineSummaryRows: [
+        {
+          scenario: 'node-api-oracle',
+          passRate: 1,
+          rawRunPassRate: 1,
+          fallbackDependencyRunRate: 0,
+          avgMs: 1000
+        },
+        {
+          scenario: 'ts-csv-oracle',
+          passRate: 0,
+          rawRunPassRate: 0,
+          fallbackDependencyRunRate: 0,
+          avgMs: 0
+        }
+      ],
+      candidateSummaryRows: [
+        {
+          scenario: 'ts-csv-oracle',
+          passRate: 1,
+          rawRunPassRate: 1,
+          fallbackDependencyRunRate: 0,
+          avgMs: 900
+        }
+      ],
+      scenarioIds: ['ts-csv-oracle']
+    });
+
+    assert.deepEqual(deltas.map(row => row.scenario), ['ts-csv-oracle']);
+    assert.equal(deltas[0].delta.passRate, 1);
+  });
+
+  it('does not penalize missing non-candidate scenarios in gate evaluation', () => {
+    const scenarios = compareSummaries({
+      baselineSummaryRows: [
+        { scenario: 'ts-todo-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 50000 },
+        { scenario: 'node-api-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 90000 },
+        { scenario: 'ts-csv-oracle', passRate: 0, rawRunPassRate: 0, fallbackDependencyRunRate: 0, avgMs: 0 }
+      ],
+      candidateSummaryRows: [
+        { scenario: 'ts-csv-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 100000 }
+      ],
+      scenarioIds: ['ts-csv-oracle']
+    });
+
+    const gate = evaluateAcceptanceGate({
+      enabled: true,
+      scenarios,
+      clusterDelta: [],
+      thresholds: {
+        minPassRateDelta: 0,
+        scenarioOverrides: {
+          'ts-csv-oracle': { maxLatencyMultiplier: 1.26 }
+        }
+      }
+    });
+
+    assert.equal(gate.passed, true);
+    assert.deepEqual(gate.violations, []);
+  });
+
   it('evaluates acceptance gate with scenario and cluster thresholds', () => {
     const scenarios = compareSummaries({
       baselineSummaryRows: [
