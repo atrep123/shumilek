@@ -157,6 +157,23 @@ type SummaryRow = {
   topFailureClusters: FailureClusterCount[];
 };
 
+type BatchInfraAbortRecord = {
+  scenario: string;
+  runIndex: number;
+  outDir: string;
+  kind: InfraFailureKind;
+  message: string;
+  source: 'validation' | 'run_log';
+  detectedAt: string;
+};
+
+type BatchErrorRecord = {
+  name: string;
+  message: string;
+  stack?: string;
+  occurredAt: string;
+};
+
 const DEFAULT_BATCH_SCENARIOS = [
   'ts-todo-oracle',
   'node-api-oracle',
@@ -974,6 +991,80 @@ export function summarize(results: RunResult[]): SummaryRow[] {
   return summary;
 }
 
+export async function persistBatchArtifacts(params: {
+  batchOutDir: string;
+  meta: Record<string, unknown>;
+  results: RunResult[];
+  summary: SummaryRow[];
+  infraRecoveryEvents: Array<{
+    scenario: string;
+    runIndex: number;
+    outDir: string;
+    kind: InfraFailureKind;
+    recovered: boolean;
+    attempts: number;
+    elapsedMs: number;
+    occurredAt: string;
+  }>;
+  infraRestartEvents: Array<{
+    scenario: string;
+    runIndex: number;
+    outDir: string;
+    kind: InfraFailureKind;
+    restartIndex: number;
+    command: string;
+    restartOk: boolean;
+    restartElapsedMs: number;
+    restartError?: string;
+    recoveredAfterRestart: boolean;
+    recoveryAttempts: number;
+    recoveryElapsedMs: number;
+    occurredAt: string;
+  }>;
+  infraAbort: BatchInfraAbortRecord | null;
+  totalPlannedRuns: number;
+  batchError?: BatchErrorRecord | null;
+}): Promise<void> {
+  await fs.promises.mkdir(params.batchOutDir, { recursive: true });
+  await fs.promises.writeFile(path.join(params.batchOutDir, 'meta.json'), JSON.stringify(params.meta, null, 2), 'utf8');
+  await fs.promises.writeFile(path.join(params.batchOutDir, 'results.json'), JSON.stringify(params.results, null, 2), 'utf8');
+  await fs.promises.writeFile(path.join(params.batchOutDir, 'summary.json'), JSON.stringify(params.summary, null, 2), 'utf8');
+  if (params.infraRecoveryEvents.length > 0) {
+    await fs.promises.writeFile(
+      path.join(params.batchOutDir, 'infra_recovery.json'),
+      JSON.stringify(params.infraRecoveryEvents, null, 2),
+      'utf8'
+    );
+  }
+  if (params.infraRestartEvents.length > 0) {
+    await fs.promises.writeFile(
+      path.join(params.batchOutDir, 'infra_restart.json'),
+      JSON.stringify(params.infraRestartEvents, null, 2),
+      'utf8'
+    );
+  }
+  if (params.infraAbort) {
+    const skippedRuns = Math.max(0, params.totalPlannedRuns - params.results.length);
+    await fs.promises.writeFile(
+      path.join(params.batchOutDir, 'infra_abort.json'),
+      JSON.stringify({
+        ...params.infraAbort,
+        plannedRuns: params.totalPlannedRuns,
+        executedRuns: params.results.length,
+        skippedRuns
+      }, null, 2),
+      'utf8'
+    );
+  }
+  if (params.batchError) {
+    await fs.promises.writeFile(
+      path.join(params.batchOutDir, 'batch_error.json'),
+      JSON.stringify(params.batchError, null, 2),
+      'utf8'
+    );
+  }
+}
+
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
   const repoRoot = path.resolve(__dirname, '..');
@@ -1042,153 +1133,141 @@ async function main() {
   }> = [];
   let infraRestartCount = 0;
   const totalPlannedRuns = opts.scenarios.length * opts.runs;
-  let infraAbort: {
-    scenario: string;
-    runIndex: number;
-    outDir: string;
-    kind: InfraFailureKind;
-    message: string;
-    source: 'validation' | 'run_log';
-    detectedAt: string;
-  } | null = null;
-  for (const scenario of opts.scenarios) {
-    for (let i = 1; i <= opts.runs; i++) {
-      const runOutDir = path.join(batchOutDir, `${scenario}_run_${String(i).padStart(2, '0')}`);
-      // eslint-disable-next-line no-console
-      console.log(`Running ${scenario} (${i}/${opts.runs})...`);
-      const res = await runSingle({ repoRoot, tsNodePath, opts, scenario, runIndex: i, outDir: runOutDir });
-      results.push(res);
-      // eslint-disable-next-line no-console
-      console.log(
-        `  -> ${res.ok ? 'OK' : 'FAIL'} (${Math.round(res.durationMs / 1000)}s) ${res.outDir}`
-      );
-      if (shouldAbortBatchOnInfraFailure(opts, res) && res.infraFailure) {
-        infraAbort = {
-          scenario,
-          runIndex: i,
-          outDir: res.outDir,
-          kind: res.infraFailure.kind,
-          message: res.infraFailure.message,
-          source: res.infraFailure.source,
-          detectedAt: new Date().toISOString()
-        };
-        // eslint-disable-next-line no-console
-        console.warn(
-          `  -> INFRA ABORT: ${res.infraFailure.kind} (${res.infraFailure.source}) ${res.infraFailure.message}`
-        );
-        break;
-      }
-      if (!opts.stopOnInfraFailure && res.infraFailure?.kind === 'ollama_unreachable') {
-        // In continue mode, wait for Ollama health recovery to avoid immediate repeated preflight failures.
-        // eslint-disable-next-line no-console
-        console.warn(
-          `  -> INFRA RECOVERY WAIT: probing ${opts.ollamaBaseUrl}/api/tags up to ${opts.infraRecoveryTimeoutSec}s`
-        );
-        let recovery = await waitForOllamaRecovery({
-          baseUrl: opts.ollamaBaseUrl,
-          timeoutMs: opts.infraRecoveryTimeoutSec * 1000,
-          pollMs: opts.infraRecoveryPollSec * 1000
-        });
-        infraRecoveryEvents.push({
-          scenario,
-          runIndex: i,
-          outDir: res.outDir,
-          kind: res.infraFailure.kind,
-          recovered: recovery.recovered,
-          attempts: recovery.attempts,
-          elapsedMs: recovery.elapsedMs,
-          occurredAt: new Date().toISOString()
-        });
-        // eslint-disable-next-line no-console
-        console.warn(
-          `  -> INFRA RECOVERY ${recovery.recovered ? 'OK' : 'TIMEOUT'} attempts=${recovery.attempts} wait=${Math.round(recovery.elapsedMs / 1000)}s`
-        );
+  let infraAbort: BatchInfraAbortRecord | null = null;
+  let batchError: BatchErrorRecord | null = null;
+  let thrownError: unknown;
 
-        if (shouldAttemptOllamaAutoRestart({
-          stopOnInfraFailure: opts.stopOnInfraFailure,
-          autoRestartOnInfraFailure: opts.autoRestartOnInfraFailure,
-          maxInfraRestarts: opts.maxInfraRestarts,
-          restartsUsed: infraRestartCount,
-          infraFailure: res.infraFailure,
-          recoveryRecovered: recovery.recovered
-        })) {
-          const restartCommand = resolveOllamaRestartCommand(opts.infraRestartCommand);
-          infraRestartCount += 1;
-          // eslint-disable-next-line no-console
-          console.warn(
-            `  -> INFRA RESTART ${infraRestartCount}/${opts.maxInfraRestarts}: ${restartCommand}`
-          );
-          const restartResult = await executeShellCommand({
-            command: restartCommand,
-            timeoutMs: opts.infraRestartTimeoutSec * 1000
-          });
-          if (opts.infraRestartCooldownSec > 0) {
-            await new Promise(resolve => setTimeout(resolve, opts.infraRestartCooldownSec * 1000));
-          }
-          recovery = await waitForOllamaRecovery({
-            baseUrl: opts.ollamaBaseUrl,
-            timeoutMs: opts.infraRecoveryTimeoutSec * 1000,
-            pollMs: opts.infraRecoveryPollSec * 1000
-          });
-          infraRestartEvents.push({
+  try {
+    for (const scenario of opts.scenarios) {
+      for (let i = 1; i <= opts.runs; i++) {
+        const runOutDir = path.join(batchOutDir, `${scenario}_run_${String(i).padStart(2, '0')}`);
+        // eslint-disable-next-line no-console
+        console.log(`Running ${scenario} (${i}/${opts.runs})...`);
+        const res = await runSingle({ repoRoot, tsNodePath, opts, scenario, runIndex: i, outDir: runOutDir });
+        results.push(res);
+        // eslint-disable-next-line no-console
+        console.log(
+          `  -> ${res.ok ? 'OK' : 'FAIL'} (${Math.round(res.durationMs / 1000)}s) ${res.outDir}`
+        );
+        if (shouldAbortBatchOnInfraFailure(opts, res) && res.infraFailure) {
+          infraAbort = {
             scenario,
             runIndex: i,
             outDir: res.outDir,
             kind: res.infraFailure.kind,
-            restartIndex: infraRestartCount,
-            command: restartResult.command,
-            restartOk: restartResult.ok,
-            restartElapsedMs: restartResult.elapsedMs,
-            restartError: restartResult.error,
-            recoveredAfterRestart: recovery.recovered,
-            recoveryAttempts: recovery.attempts,
-            recoveryElapsedMs: recovery.elapsedMs,
+            message: res.infraFailure.message,
+            source: res.infraFailure.source,
+            detectedAt: new Date().toISOString()
+          };
+          // eslint-disable-next-line no-console
+          console.warn(
+            `  -> INFRA ABORT: ${res.infraFailure.kind} (${res.infraFailure.source}) ${res.infraFailure.message}`
+          );
+          break;
+        }
+        if (!opts.stopOnInfraFailure && res.infraFailure?.kind === 'ollama_unreachable') {
+          // In continue mode, wait for Ollama health recovery to avoid immediate repeated preflight failures.
+          // eslint-disable-next-line no-console
+          console.warn(
+            `  -> INFRA RECOVERY WAIT: probing ${opts.ollamaBaseUrl}/api/tags up to ${opts.infraRecoveryTimeoutSec}s`
+          );
+          let recovery = await waitForOllamaRecovery({
+            baseUrl: opts.ollamaBaseUrl,
+            timeoutMs: opts.infraRecoveryTimeoutSec * 1000,
+            pollMs: opts.infraRecoveryPollSec * 1000
+          });
+          infraRecoveryEvents.push({
+            scenario,
+            runIndex: i,
+            outDir: res.outDir,
+            kind: res.infraFailure.kind,
+            recovered: recovery.recovered,
+            attempts: recovery.attempts,
+            elapsedMs: recovery.elapsedMs,
             occurredAt: new Date().toISOString()
           });
           // eslint-disable-next-line no-console
           console.warn(
-            `  -> INFRA RESTART RESULT ${restartResult.ok ? 'OK' : 'FAIL'} ` +
-            `restartWait=${Math.round(restartResult.elapsedMs / 1000)}s ` +
-            `postRecovery=${recovery.recovered ? 'OK' : 'TIMEOUT'}`
+            `  -> INFRA RECOVERY ${recovery.recovered ? 'OK' : 'TIMEOUT'} attempts=${recovery.attempts} wait=${Math.round(recovery.elapsedMs / 1000)}s`
           );
+
+          if (shouldAttemptOllamaAutoRestart({
+            stopOnInfraFailure: opts.stopOnInfraFailure,
+            autoRestartOnInfraFailure: opts.autoRestartOnInfraFailure,
+            maxInfraRestarts: opts.maxInfraRestarts,
+            restartsUsed: infraRestartCount,
+            infraFailure: res.infraFailure,
+            recoveryRecovered: recovery.recovered
+          })) {
+            const restartCommand = resolveOllamaRestartCommand(opts.infraRestartCommand);
+            infraRestartCount += 1;
+            // eslint-disable-next-line no-console
+            console.warn(
+              `  -> INFRA RESTART ${infraRestartCount}/${opts.maxInfraRestarts}: ${restartCommand}`
+            );
+            const restartResult = await executeShellCommand({
+              command: restartCommand,
+              timeoutMs: opts.infraRestartTimeoutSec * 1000
+            });
+            if (opts.infraRestartCooldownSec > 0) {
+              await new Promise(resolve => setTimeout(resolve, opts.infraRestartCooldownSec * 1000));
+            }
+            recovery = await waitForOllamaRecovery({
+              baseUrl: opts.ollamaBaseUrl,
+              timeoutMs: opts.infraRecoveryTimeoutSec * 1000,
+              pollMs: opts.infraRecoveryPollSec * 1000
+            });
+            infraRestartEvents.push({
+              scenario,
+              runIndex: i,
+              outDir: res.outDir,
+              kind: res.infraFailure.kind,
+              restartIndex: infraRestartCount,
+              command: restartResult.command,
+              restartOk: restartResult.ok,
+              restartElapsedMs: restartResult.elapsedMs,
+              restartError: restartResult.error,
+              recoveredAfterRestart: recovery.recovered,
+              recoveryAttempts: recovery.attempts,
+              recoveryElapsedMs: recovery.elapsedMs,
+              occurredAt: new Date().toISOString()
+            });
+            // eslint-disable-next-line no-console
+            console.warn(
+              `  -> INFRA RESTART RESULT ${restartResult.ok ? 'OK' : 'FAIL'} ` +
+              `restartWait=${Math.round(restartResult.elapsedMs / 1000)}s ` +
+              `postRecovery=${recovery.recovered ? 'OK' : 'TIMEOUT'}`
+            );
+          }
         }
       }
+      if (infraAbort) {
+        break;
+      }
     }
-    if (infraAbort) {
-      break;
-    }
+  } catch (err) {
+    thrownError = err;
+    const asError = err instanceof Error ? err : new Error(String(err));
+    batchError = {
+      name: asError.name,
+      message: asError.message,
+      stack: asError.stack,
+      occurredAt: new Date().toISOString()
+    };
   }
 
   const summary = summarize(results);
-  await fs.promises.writeFile(path.join(batchOutDir, 'results.json'), JSON.stringify(results, null, 2), 'utf8');
-  await fs.promises.writeFile(path.join(batchOutDir, 'summary.json'), JSON.stringify(summary, null, 2), 'utf8');
-  if (infraRecoveryEvents.length > 0) {
-    await fs.promises.writeFile(
-      path.join(batchOutDir, 'infra_recovery.json'),
-      JSON.stringify(infraRecoveryEvents, null, 2),
-      'utf8'
-    );
-  }
-  if (infraRestartEvents.length > 0) {
-    await fs.promises.writeFile(
-      path.join(batchOutDir, 'infra_restart.json'),
-      JSON.stringify(infraRestartEvents, null, 2),
-      'utf8'
-    );
-  }
-  if (infraAbort) {
-    const skippedRuns = Math.max(0, totalPlannedRuns - results.length);
-    await fs.promises.writeFile(
-      path.join(batchOutDir, 'infra_abort.json'),
-      JSON.stringify({
-        ...infraAbort,
-        plannedRuns: totalPlannedRuns,
-        executedRuns: results.length,
-        skippedRuns
-      }, null, 2),
-      'utf8'
-    );
-  }
+  await persistBatchArtifacts({
+    batchOutDir,
+    meta,
+    results,
+    summary,
+    infraRecoveryEvents,
+    infraRestartEvents,
+    infraAbort,
+    totalPlannedRuns,
+    batchError
+  });
 
   // eslint-disable-next-line no-console
   console.log('\nSummary:');
@@ -1306,6 +1385,10 @@ async function main() {
   }
   // eslint-disable-next-line no-console
   console.log(`\nBatch output: ${batchOutDir}`);
+
+  if (thrownError) {
+    throw thrownError;
+  }
 }
 
 if (require.main === module) {
