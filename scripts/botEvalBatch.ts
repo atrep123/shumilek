@@ -174,6 +174,20 @@ type BatchErrorRecord = {
   occurredAt: string;
 };
 
+type RunSingleParams = {
+  repoRoot: string;
+  tsNodePath: string;
+  opts: BatchOptions;
+  scenario: string;
+  runIndex: number;
+  outDir: string;
+};
+
+type BatchRuntimeDeps = {
+  repoRoot?: string;
+  runSingle?: (params: RunSingleParams) => Promise<RunResult>;
+};
+
 const DEFAULT_BATCH_SCENARIOS = [
   'ts-todo-oracle',
   'node-api-oracle',
@@ -734,14 +748,7 @@ export function shouldAttemptOllamaAutoRestart(params: {
   return params.restartsUsed < Math.max(0, Math.floor(params.maxInfraRestarts));
 }
 
-async function runSingle(params: {
-  repoRoot: string;
-  tsNodePath: string;
-  opts: BatchOptions;
-  scenario: string;
-  runIndex: number;
-  outDir: string;
-}): Promise<RunResult> {
+async function runSingle(params: RunSingleParams): Promise<RunResult> {
   const started = Date.now();
   const logPath = path.join(params.outDir, 'batch_run.log');
   await fs.promises.mkdir(params.outDir, { recursive: true });
@@ -1065,14 +1072,18 @@ export async function persistBatchArtifacts(params: {
   }
 }
 
-async function main() {
-  const opts = parseArgs(process.argv.slice(2));
-  const repoRoot = path.resolve(__dirname, '..');
+export async function runBatch(opts: BatchOptions, deps: BatchRuntimeDeps = {}): Promise<{
+  batchOutDir: string;
+  results: RunResult[];
+  summary: SummaryRow[];
+  infraAbort: BatchInfraAbortRecord | null;
+  batchError: BatchErrorRecord | null;
+}> {
+  const repoRoot = deps.repoRoot || path.resolve(__dirname, '..');
+  const runSingleImpl = deps.runSingle || runSingle;
   const tsNodePath = path.join(repoRoot, 'node_modules', 'ts-node', 'dist', 'bin.js');
   if (!fs.existsSync(tsNodePath)) {
-    // eslint-disable-next-line no-console
-    console.error(`ts-node not found at ${tsNodePath}`);
-    process.exit(1);
+    throw new Error(`ts-node not found at ${tsNodePath}`);
   }
 
   const batchId = Date.now();
@@ -1143,7 +1154,7 @@ async function main() {
         const runOutDir = path.join(batchOutDir, `${scenario}_run_${String(i).padStart(2, '0')}`);
         // eslint-disable-next-line no-console
         console.log(`Running ${scenario} (${i}/${opts.runs})...`);
-        const res = await runSingle({ repoRoot, tsNodePath, opts, scenario, runIndex: i, outDir: runOutDir });
+        const res = await runSingleImpl({ repoRoot, tsNodePath, opts, scenario, runIndex: i, outDir: runOutDir });
         results.push(res);
         // eslint-disable-next-line no-console
         console.log(
@@ -1389,6 +1400,19 @@ async function main() {
   if (thrownError) {
     throw thrownError;
   }
+
+  return {
+    batchOutDir,
+    results,
+    summary,
+    infraAbort,
+    batchError
+  };
+}
+
+async function main() {
+  const opts = parseArgs(process.argv.slice(2));
+  await runBatch(opts);
 }
 
 if (require.main === module) {
