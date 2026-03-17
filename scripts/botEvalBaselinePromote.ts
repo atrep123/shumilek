@@ -220,8 +220,20 @@ export function evaluateQualification(opts: PromoteOptions, summary: SummaryScen
   return { ok: true, reason: 'qualified' };
 }
 
-async function main() {
-  const opts = parseArgs(process.argv.slice(2));
+export async function runBaselinePromotion(opts: PromoteOptions): Promise<{
+  generatedAt: string;
+  candidateDir: string;
+  stableDir: string;
+  statePath: string;
+  requiredConsecutive: number;
+  streakBefore: number;
+  streakAfter: number;
+  qualified: boolean;
+  qualificationReason: string;
+  promoted: boolean;
+  promotionMessage: string;
+  lastPromotion: PromotionState['lastPromotion'] | null;
+}> {
   const summaryPath = path.join(opts.candidateDir, 'summary.json');
   if (!fs.existsSync(summaryPath)) {
     throw new Error(`Missing summary.json in candidate dir: ${summaryPath}`);
@@ -295,10 +307,16 @@ async function main() {
   await fs.promises.mkdir(path.dirname(opts.outPath), { recursive: true });
   await fs.promises.writeFile(opts.outPath, JSON.stringify(report, null, 2), 'utf8');
 
+  return report;
+}
+
+async function main() {
+  const opts = parseArgs(process.argv.slice(2));
+  const report = await runBaselinePromotion(opts);
   // eslint-disable-next-line no-console
   console.log(`Baseline promotion report: ${opts.outPath}`);
   // eslint-disable-next-line no-console
-  console.log(`Promotion decision: ${promotionMessage}`);
+  console.log(`Promotion decision: ${report.promotionMessage}`);
 }
 
 if (require.main === module) {
