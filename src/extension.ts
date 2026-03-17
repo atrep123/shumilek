@@ -6,6 +6,7 @@ import fetch, { Headers } from 'node-fetch';
 import { fetchWithTimeout } from './fetchUtils';
 import { streamPlainOllamaChat } from './responseStreaming';
 import { executeModelCallWithMessages } from './modelCall';
+import { runPostEditVerification } from './postEditVerification';
 import {
   buildAirLLMStartCommand as buildAirLLMStartCommandPure,
   readAirLLMConfig
@@ -180,55 +181,6 @@ function toAsciiLog(value: string): string {
   const normalized = input.normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
   const asciiOnly = normalized.replace(/[^\x00-\x7F]/g, '');
   return asciiOnly;
-}
-
-async function runVerificationCommand(command: string, cwd: string, timeoutMs: number): Promise<VerificationCommandResult> {
-  return await new Promise(resolve => {
-    exec(command, { cwd, windowsHide: true, timeout: timeoutMs, env: process.env, maxBuffer: 4 * 1024 * 1024 }, (err, stdout, stderr) => {
-      const exitCode = err ? (typeof (err as any).code === 'number' ? (err as any).code : null) : 0;
-      resolve({
-        command,
-        ok: !err,
-        exitCode,
-        stdout: String(stdout ?? ''),
-        stderr: String(stderr ?? '')
-      });
-    });
-  });
-}
-
-async function runPostEditVerification(timeoutMs: number): Promise<VerificationSummary> {
-  const folders = vscode.workspace.workspaceFolders;
-  if (!folders || folders.length === 0) {
-    return { ok: true, ran: [], failed: [] };
-  }
-  const root = folders[0].uri;
-  const packageUri = vscode.Uri.joinPath(root, 'package.json');
-
-  let scripts: Record<string, unknown> = {};
-  try {
-    const raw = await vscode.workspace.fs.readFile(packageUri);
-    const pkg = JSON.parse(Buffer.from(raw).toString('utf8'));
-    scripts = (pkg?.scripts && typeof pkg.scripts === 'object') ? pkg.scripts : {};
-  } catch {
-    return { ok: true, ran: [], failed: [] };
-  }
-
-  const commands: string[] = [];
-  if (typeof scripts.lint === 'string') commands.push('npm run -s lint');
-  if (typeof scripts.test === 'string') commands.push('npm run -s test');
-  if (typeof scripts.build === 'string') commands.push('npm run -s build');
-  if (commands.length === 0) return { ok: true, ran: [], failed: [] };
-
-  const cwd = root.fsPath;
-  const ran: VerificationCommandResult[] = [];
-  for (const command of commands.slice(0, 3)) {
-    const result = await runVerificationCommand(command, cwd, timeoutMs);
-    ran.push(result);
-    if (!result.ok) break;
-  }
-  const failed = ran.filter(r => !r.ok);
-  return { ok: failed.length === 0, ran, failed };
 }
 
 function buildAirLLMStartCommand(
