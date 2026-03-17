@@ -405,10 +405,16 @@ function buildClusterDelta(baseline: Map<string, number>, candidate: Map<string,
 export function compareSummaries(params: {
   baselineSummaryRows: any[];
   candidateSummaryRows: any[];
+  scenarioIds?: string[];
 }): ScenarioDelta[] {
   const baselineByScenario = mapSummaryByScenario(params.baselineSummaryRows);
   const candidateByScenario = mapSummaryByScenario(params.candidateSummaryRows);
-  const scenarios = new Set<string>([...baselineByScenario.keys(), ...candidateByScenario.keys()]);
+  const requestedScenarioIds = Array.isArray(params.scenarioIds)
+    ? params.scenarioIds.map(id => String(id || '').trim()).filter(Boolean)
+    : [];
+  const scenarios = requestedScenarioIds.length > 0
+    ? new Set<string>(requestedScenarioIds)
+    : new Set<string>([...baselineByScenario.keys(), ...candidateByScenario.keys()]);
   const deltas: ScenarioDelta[] = [];
 
   for (const scenario of scenarios) {
@@ -608,9 +614,13 @@ async function main() {
 
   const baselineSummary = summarize(baselineResults as any);
   const candidateSummary = summarize(candidateResults as any);
+  const candidateScenarioIds = candidateSummary
+    .map(row => String(row?.scenario || '').trim())
+    .filter(Boolean);
   const scenarios = compareSummaries({
     baselineSummaryRows: baselineSummary,
-    candidateSummaryRows: candidateSummary
+    candidateSummaryRows: candidateSummary,
+    scenarioIds: candidateScenarioIds
   });
 
   const baselineClusters = aggregateClusters(baselineResults);
