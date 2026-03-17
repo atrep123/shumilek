@@ -53,7 +53,6 @@ export function parseNightlyFullArgs(argv: string[]): FullOptions {
 }
 
 function printUsageAndExit(code: number): never {
-  // eslint-disable-next-line no-console
   console.log([
     'Usage: npm run bot:eval:nightly:full -- [options]',
     '',
@@ -71,7 +70,6 @@ function printUsageAndExit(code: number): never {
 
 function runStep(label: string, args: string[], cwd: string): Promise<number> {
   return new Promise((resolve) => {
-    // eslint-disable-next-line no-console
     console.log(`\n${'='.repeat(60)}\n[${label}] ${args.join(' ')}\n${'='.repeat(60)}\n`);
     const child = spawn(process.execPath, args, { cwd, stdio: 'inherit' });
     child.on('close', (code) => resolve(code ?? 1));
@@ -291,7 +289,6 @@ async function main() {
 
 if (require.main === module) {
   main().catch(err => {
-    // eslint-disable-next-line no-console
     console.error('botEvalNightlyFull failed:', err);
     process.exit(1);
   });
