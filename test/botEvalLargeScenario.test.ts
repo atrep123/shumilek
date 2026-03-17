@@ -2861,6 +2861,7 @@ describe('botEval large node-project scenario', function () {
     const service = patched.find(f => f.path === 'src/modules/comments/service.js');
     assert.ok(service, 'service file missing');
     const content = String(service?.content || '');
+    assert.ok(content.includes("normalized.message.message"));
     assert.ok(content.includes("typeof normalized.message !== 'string'"));
     assert.ok(content.includes("return typeof normalized.message !== 'string' ? { ...normalized, message: normalizedMessage } : normalized;"));
   });
