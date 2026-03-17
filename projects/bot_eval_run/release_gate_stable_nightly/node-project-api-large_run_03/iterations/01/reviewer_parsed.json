@@ -1,6 +1,0 @@
-{
-  "review": "add 'supertest' to dependencies or devDependencies in package.json",
-  "priorityFiles": [
-    "package.json"
-  ]
-}

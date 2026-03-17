@@ -1,5 +1,7 @@
-const { randomUUID } = require('node:crypto');
+const { randomUUID } = require('crypto');
+
 function generateId() {
   return randomUUID();
 }
+
 module.exports = { generateId };

@@ -1,6 +1,6 @@
 {
-  "review": "text",
+  "review": "add 'supertest' to dependencies or devDependencies in package.json",
   "priorityFiles": [
-    "src/lib/validation.js"
+    "package.json"
   ]
 }

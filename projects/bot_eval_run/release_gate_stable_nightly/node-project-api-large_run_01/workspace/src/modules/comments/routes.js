@@ -6,9 +6,6 @@ router.post('/', async (req, res) => {
   const message = String(req.body?.message || '').trim();
   if (!message) return sendError(res, 400, 'BAD_REQUEST', 'Message is required');
   const comment = await commentsService.addComment(req.params.projectId, req.params.taskId, message);
-  const __commentValue = comment && typeof comment === 'object' && !('message' in comment) && 'content' in comment
-      ? { ...comment, message: comment.content }
-      : comment;
-    return res.status(201).json({ comment: __commentValue });
+  return res.status(201).json({ comment });
 });
 module.exports = router;

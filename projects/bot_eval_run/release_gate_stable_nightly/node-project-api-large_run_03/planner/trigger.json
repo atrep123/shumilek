@@ -1,9 +1,0 @@
-{
-  "strategy": "on-fail",
-  "scenarioId": "node-project-api-large",
-  "triggerIteration": 1,
-  "diagnostics": [
-    "package.json should include \"supertest\" (dependencies or devDependencies) for oracle execution",
-    "Skipped oracle command checks because structural contract did not pass."
-  ]
-}

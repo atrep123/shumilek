@@ -289,25 +289,24 @@ Pravidla:
 
 ---
 PLANNER HINTS (planner: deepseek-r1:8b; non-binding, SPEC wins on conflict):
-- Create modular Express project under src/modules/ with projects, tasks, members, comments domains.
-- Create src/app.js exporting Express app (NO listen) and src/server.js starting the server.
-- Create src/lib/errors.js with AppError class and src/lib/id.js using crypto.randomUUID().
-- Each module has routes.js (relative paths from mount point) and service.js (in-memory store).
-- Mount routes: /projects, /projects/:projectId/members, /projects/:projectId/tasks, /projects/:projectId/tasks/:taskId/comments.
-- GET /health returns { ok: true }. All errors return { error: { code, message } } JSON.
-- Implement full CRUD: create/list/get projects, add/list members, create/list/filter/patch tasks, create/list comments.
-- Validate inputs: missing name/title/message/userId/role -> 400, not found -> 404, duplicate -> 409.
-- Task status filter via ?status=todo|done query param. PATCH status only allows todo|done.
-- Include supertest in package.json dependencies. Minimum 12 source files under src/.
-- Use mergeParams: true on sub-routers to access parent route params.
-- Verify with npm install and oracle tests.
+- We'll use Express for the framework.
+- We'll have a modular structure under `src/modules/` for each domain: projects, tasks, members, comments.
+- We'll have `src/app.js` for the app export and `src/server.js` for the server setup (without calling `listen` on import).
+- We'll use `node:crypto.randomUUID()` for generating IDs.
+- We'll define a consistent error format and handle errors appropriately.
+- README.md
+- package.json
+- src/app.js
+- src/server.js
+- src/modules/projects/routes.js
+- src/modules/projects/service.js
+- src/modules/tasks/routes.js
 
 ---
 NEPROSLO VALIDACI. Oprav nasledujici problemy.
 
 CHYBY:
-- Task status contract mismatch: use `todo` / `done` statuses (not `open` or `pending`)
-- Task status contract mismatch: PATCH status must allow only "todo" or "done" (pending/open are not allowed).
+- package.json should include "supertest" (dependencies or devDependencies) for oracle execution
 - Skipped oracle command checks because structural contract did not pass.
 
 NODE PROJECT CONTRACT FIX MAP (AUTO-GENERATED)
@@ -351,12 +350,6 @@ NON-NEGOTIABLE CONTRACT CHECKLIST (NODE PROJECT LARGE):
 - `tasks` status povolit jen `todo|done`; query filtr `?status=todo|done` musi realne filtrovat.
 - Pouzij CommonJS (`require`, `module.exports`) v app/server/routes/services.
 
-DULEZITE (NODE PROJECT CONTRACT MISMATCH):
-- Oprav endpoint behavior presne podle oracle kontraktu, ne jen strukturu souboru.
-- U validacnich chyb vzdy vrat 400 + `{ error: { code, message } }`.
-- U not-found vrat 404 + `{ error: { code, message } }`.
-- U duplicate vrat 409 + `{ error: { code, message } }`.
-
 STRICT IMPLEMENTATION TEMPLATE (NODE PROJECT LARGE):
 - Definuj `src/lib/errors.js` s helperem `sendError(res, status, code, message)` a pouzivej ho ve vsech route handlerech.
 - V route handlerech nepouzivej uncaught `throw`; validacni/not-found/duplicate vetve vracej JSON error payload hned.
@@ -368,23 +361,40 @@ STRICT IMPLEMENTATION TEMPLATE (NODE PROJECT LARGE):
 - `tasks`: vytvarej status `todo`, PATCH povol `todo|done`, filtr `?status=done` musi vratit jen done tasky.
 - Odpovedi drzet na shape: `{ project }`, `{ projects }`, `{ member }`, `{ members }`, `{ task }`, `{ tasks }`, `{ comment }`, `{ comments }`.
 
+DOPORUCENI REVIEWERA:
+add 'supertest' to dependencies or devDependencies in package.json
+
 AKTUALNI SOUBORY:
 - README.md
 - package.json
 - src/app.js
 - src/lib/errors.js
 - src/lib/id.js
-- src/lib/utils.js
-- src/lib/validation.js
 - src/modules/comments/routes.js
 - src/modules/comments/service.js
 - src/modules/members/routes.js
 - src/modules/members/service.js
+- src/modules/projects/repository.js
 - src/modules/projects/routes.js
 - src/modules/projects/service.js
 - src/modules/tasks/routes.js
 - src/modules/tasks/service.js
 - src/server.js
+
+KONTEXT SOUBORU (pro opravu):
+--- FILE: package.json ---
+{
+  "name": "project-management-api",
+  "version": "1.0.0",
+  "description": "A Node.js monolithic application for managing projects, tasks, members, and comments.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
 
 VYSTUP: vrat JEN platny JSON objekt bez markdownu:
 { "mode": "patch", "files": [ {"path":"...","content":"...\n"} ], "notes": "optional" }

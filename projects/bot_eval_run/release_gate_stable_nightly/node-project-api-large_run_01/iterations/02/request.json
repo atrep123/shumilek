@@ -8,7 +8,7 @@
   "fallbackReason": null,
   "usedFormatJson": false,
   "doneReason": "stop",
-  "evalCount": 1012,
+  "evalCount": 163,
   "promptEvalCount": 4096,
   "effectiveOptions": {
     "num_predict": 6000,
