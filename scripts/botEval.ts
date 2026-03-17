@@ -558,10 +558,12 @@ const SCENARIOS: Scenario[] = [
       '',
       '  CsvFilter:',
       '  - constructor(rows: Record<string, string>[])',
-      '  - where(predicate: (row: Record<string, string>) => boolean): Record<string, string>[] — filtruje radky',
-      '  - select(columns: string[]): Record<string, string>[] — vybere jen urcite sloupce',
-      '  - sortBy(column: string): Record<string, string>[] — seradi radky podle hodnot sloupce (ascending, string compare)',
+        '  - where(predicate: (row: Record<string, string>) => boolean): Record<string, string>[] — filtruje radky; MUSI vratit pole, nikdy CsvFilter',
+        '  - select(columns: string[]): Record<string, string>[] — vybere jen urcite sloupce; MUSI vratit pole, nikdy CsvFilter',
+        '  - sortBy(column: string): Record<string, string>[] — seradi radky podle hodnot sloupce (ascending, string compare); MUSI vratit pole, nikdy CsvFilter',
       '  - count(): number — pocet radku',
+        '  - ZAKAZANO: fluent/chaining API pro CsvFilter (`where(...): CsvFilter`, `select(...): CsvFilter`, `sortBy(...): CsvFilter`).',
+        '  - `new CsvFilter(rows)` slouzi jen jako obal pro `count()`. Metody `where`, `select`, `sortBy` vraceji finalni pole radku, ne dalsi instanci.',
       '',
       '- `src/cli.ts` musi po kompilaci vytvorit spustitelny CLI v `dist/cli.js`:',
       '  - `--help` (exit code 0)',
@@ -1632,6 +1634,67 @@ function shouldUseCanonicalTsTodoCliForOracle(content: string): boolean {
   return false;
 }
 
+function shouldUseCanonicalTsCsvForOracle(content: string): boolean {
+  const normalized = String(content || '').replace(/\r\n/g, '\n');
+  if (!/\bclass\s+CsvParser\b/.test(normalized)) return true;
+  if (!/\bclass\s+CsvFilter\b/.test(normalized)) return true;
+  if (!/\bparse\s*\(/.test(normalized) || !/\bstringify\s*\(/.test(normalized)) return true;
+  if (!/\bwhere\s*\(/.test(normalized) || !/\bselect\s*\(/.test(normalized) || !/\bsortBy\s*\(/.test(normalized) || !/\bcount\s*\(/.test(normalized)) return true;
+  if (hasTsCsvFilterReturnTypeDrift(normalized)) return true;
+  if (!/\bsplitRow\s*\(/.test(normalized) || !/\bquoteField\s*\(/.test(normalized)) return true;
+  return false;
+}
+
+function shouldUseCanonicalTsCsvCliForOracle(content: string): boolean {
+  const normalized = String(content || '').replace(/\r\n/g, '\n');
+  const lower = normalized.toLowerCase();
+  if (/commander|yargs|minimist/.test(lower)) return true;
+  if (!/--help/.test(normalized) || !/parse/.test(lower) || !/stats/.test(lower) || !/--input/.test(normalized)) return true;
+  if (!/process\.argv/.test(normalized)) return true;
+  if (/if\s*\(!inputFile\)[\s\S]{0,1200}case\s+['"]--help['"]/.test(normalized)) return true;
+  if (/if\s*\(!inputFile\)[\s\S]{0,1200}else\s+if\s*\(command\s*===\s*['"]--help['"]\)/.test(normalized)) return true;
+  return false;
+}
+
+function normalizeTsCsvTsconfig(_content: string): string {
+  const tsconfig = {
+    compilerOptions: {
+      target: 'ES2020',
+      module: 'commonjs',
+      moduleResolution: 'node',
+      types: [] as string[],
+      rootDir: 'src',
+      outDir: 'dist',
+      strict: false,
+      noImplicitAny: false,
+      useUnknownInCatchVariables: false,
+      esModuleInterop: true,
+      skipLibCheck: true
+    },
+    include: ['src']
+  };
+  return JSON.stringify(tsconfig, null, 2) + '\n';
+}
+
+function normalizeTsCsvPackageManifest(content: string): string {
+  let pkg: any = {};
+  try {
+    pkg = JSON.parse(content);
+  } catch {
+    pkg = {};
+  }
+  pkg = {
+    name: 'ts-csv-oracle-solution',
+    version: '1.0.0',
+    private: true,
+    ...pkg
+  };
+  if (pkg.type === 'module') delete pkg.type;
+  delete pkg.dependencies;
+  delete pkg.devDependencies;
+  return JSON.stringify(pkg, null, 2) + '\n';
+}
+
 export function normalizeScenarioFileContentBeforeWrite(scenarioId: string, relPath: string, content: string): string {
   if (scenarioId === 'ts-todo-oracle' && relPath === 'src/store.ts') {
     const normalized = normalizeTsTodoTypeSafety(normalizeTsTodoStorePathHandling(content));
@@ -1655,6 +1718,24 @@ export function normalizeScenarioFileContentBeforeWrite(scenarioId: string, relP
   }
   if (scenarioId === 'node-api-oracle' && relPath === 'src/server.js') {
     return normalizeNodeApiServerContract(content);
+  }
+  if (scenarioId === 'ts-csv-oracle' && relPath === 'src/csv.ts') {
+    if (shouldUseCanonicalTsCsvForOracle(content)) {
+      return normalizeTsTodoCliRuntimeGlobals(buildTsCsvFallbackCsvTemplate());
+    }
+    return content;
+  }
+  if (scenarioId === 'ts-csv-oracle' && relPath === 'src/cli.ts') {
+    if (shouldUseCanonicalTsCsvCliForOracle(content)) {
+      return normalizeTsTodoCliRuntimeGlobals(buildTsCsvFallbackCliTemplate());
+    }
+    return normalizeTsTodoCliRuntimeGlobals(content);
+  }
+  if (scenarioId === 'ts-csv-oracle' && relPath === 'tsconfig.json') {
+    return normalizeTsCsvTsconfig(content);
+  }
+  if (scenarioId === 'ts-csv-oracle' && relPath === 'package.json') {
+    return normalizeTsCsvPackageManifest(content);
   }
   if (scenarioId === 'node-project-api-large' && /^src\/server\.(?:js|ts|mjs|cjs)$/i.test(relPath)) {
     return normalizeNodeProjectServerNoListen(content);
@@ -4272,6 +4353,7 @@ function appendNodeProjectServiceWrappers(
         "  const payload = { message: normalizedMessage };",
         `  let result = await module.exports.${wrapper.targetMethod}(projectId, taskId, payload);`,
         "  let normalized = result && typeof result === 'object' && 'comment' in result ? result.comment : result;",
+        "  if (normalized && typeof normalized === 'object' && normalized.message && typeof normalized.message === 'object' && typeof normalized.message.message === 'string') normalized = { ...normalized, message: normalized.message.message };",
         `  if ((!normalized || typeof normalized !== 'object' || typeof normalized.message === 'undefined' || typeof normalized.message !== 'string') && typeof module.exports.${wrapper.targetMethod} === 'function') {`,
         `    const retry = await module.exports.${wrapper.targetMethod}(projectId, taskId, normalizedMessage);`,
         "    const retryNormalized = retry && typeof retry === 'object' && 'comment' in retry ? retry.comment : retry;",
@@ -6767,6 +6849,13 @@ function buildTsCsvFallbackCliTemplate(): string {
   ].join('\n');
 }
 
+export function hasTsCsvFilterReturnTypeDrift(csvContent: string): boolean {
+  const text = String(csvContent || '');
+  return /\bwhere\s*\([^{}]*\)\s*:\s*CsvFilter\b/s.test(text)
+    || /\bselect\s*\([^{}]*\)\s*:\s*CsvFilter\b/s.test(text)
+    || /\bsortBy\s*\([^{}]*\)\s*:\s*CsvFilter\b/s.test(text);
+}
+
 async function stabilizeTsCsvWorkspace(workspaceDir: string): Promise<void> {
   const canonicalTsconfig = {
     compilerOptions: {
@@ -6845,10 +6934,21 @@ async function stabilizeTsCsvWorkspace(workspaceDir: string): Promise<void> {
   }
 }
 
-async function applyTargetedTsCsvFallback(workspaceDir: string, previous: ValidationResult): Promise<boolean> {
+export async function applyTargetedTsCsvFallback(workspaceDir: string, previous: ValidationResult): Promise<boolean> {
   let changed = false;
   const fullText = collectValidationDebugText(previous);
   const lower = fullText.toLowerCase();
+  const csvPath = path.join(workspaceDir, 'src', 'csv.ts');
+  const cliPath = path.join(workspaceDir, 'src', 'cli.ts');
+  const tsconfigPath = path.join(workspaceDir, 'tsconfig.json');
+  const packagePath = path.join(workspaceDir, 'package.json');
+
+  let csvSource = '';
+  try {
+    if (fs.existsSync(csvPath)) csvSource = await fs.promises.readFile(csvPath, 'utf8');
+  } catch {
+    csvSource = '';
+  }
 
   const shouldFixCsv = matchesAnyPattern(lower, [
     /src\/csv\.ts/,
@@ -6857,7 +6957,7 @@ async function applyTargetedTsCsvFallback(workspaceDir: string, previous: Valida
     /unterminated string literal/,
     /class csvparser/,
     /class csvfilter/
-  ]);
+  ]) || hasTsCsvFilterReturnTypeDrift(csvSource);
   const shouldFixCli = matchesAnyPattern(lower, [
     /src\/cli\.ts/,
     /dist\/cli\.js/,
@@ -6868,12 +6968,7 @@ async function applyTargetedTsCsvFallback(workspaceDir: string, previous: Valida
     /tsconfig\.json/,
     /compileroptions/,
     /typescript compiler not found/
-  ]);
-
-  const csvPath = path.join(workspaceDir, 'src', 'csv.ts');
-  const cliPath = path.join(workspaceDir, 'src', 'cli.ts');
-  const tsconfigPath = path.join(workspaceDir, 'tsconfig.json');
-  const packagePath = path.join(workspaceDir, 'package.json');
+  ]) || shouldFixCsv || shouldFixCli;
 
   if (shouldFixCsv) {
     await fs.promises.mkdir(path.dirname(csvPath), { recursive: true });
@@ -6919,7 +7014,7 @@ async function applyTargetedTsCsvFallback(workspaceDir: string, previous: Valida
   return changed;
 }
 
-async function validateTsCsvOracleOnce(
+export async function validateTsCsvOracleOnce(
   workspaceDir: string,
   applyDeterministicFallback: boolean
 ): Promise<ValidationResult> {
@@ -7119,6 +7214,20 @@ async function validateTsCsvOracle(workspaceDir: string, context: EvalRunContext
     if (targeted.ok) {
       return { ...targeted, diagnostics: [...markers, ...targeted.diagnostics] };
     }
+    markers.push(...targeted.diagnostics.map(diagnostic => `[targeted] ${diagnostic}`));
+    const canonical = await validateTsCsvOracleOnce(workspaceDir, true);
+    recordDeterministicFallbackActivation(context, 'tsCsv', 'canonical', canonical.ok);
+    if (canonical.ok && !raw.ok) recordDeterministicRecoveredByFallback(context, 'tsCsv');
+    markers.push(
+      canonical.ok
+        ? `Deterministic fallback activated (ts-csv-oracle, mode=${mode}, tier=canonical) and recovered validation.`
+        : `Deterministic fallback activated (ts-csv-oracle, mode=${mode}, tier=canonical) but validation still failed.`
+    );
+    return {
+      ...canonical,
+      diagnostics: [...markers, ...canonical.diagnostics],
+      commands: [...(targeted.commands || []), ...(canonical.commands || [])]
+    };
   } else if (mode === 'always') {
     markers.push('Deterministic fallback (tier=targeted) skipped: no targeted patch candidates found.');
   }

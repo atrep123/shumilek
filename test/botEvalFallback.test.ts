@@ -1,6 +1,11 @@
 import { strict as assert } from 'assert';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 
 import {
+  applyTargetedTsCsvFallback,
+  hasTsCsvFilterReturnTypeDrift,
   normalizeNodeApiServerContract,
   normalizePythonOracleCliContract,
   normalizeScenarioFileContentBeforeWrite,
@@ -11,6 +16,7 @@ import {
   normalizeTsTodoTypeSafety,
   shouldFastFailNodeApiDiagnostics,
   shouldFastFailTsTodoDiagnostics,
+  validateTsCsvOracleOnce,
 } from '../scripts/botEval';
 
 describe('botEval deterministic fallback helpers', () => {
@@ -178,6 +184,170 @@ describe('botEval deterministic fallback helpers', () => {
     ].join('\n');
     const out = normalizeTsTodoTypeSafety(src);
     assert.ok(out.includes('catch (error: any) {'));
+  });
+
+  it('detects ts-csv CsvFilter return-type drift that requires canonical csv fallback', () => {
+    const src = [
+      'export class CsvFilter {',
+      '  where(predicate: (row: Record<string, string>) => boolean): CsvFilter {',
+      '    return this;',
+      '  }',
+      '  select(columns: string[]): CsvFilter {',
+      '    return this;',
+      '  }',
+      '  sortBy(column: string): CsvFilter {',
+      '    return this;',
+      '  }',
+      '}',
+      ''
+    ].join('\n');
+    assert.equal(hasTsCsvFilterReturnTypeDrift(src), true);
+    const realistic = [
+      'export class CsvFilter {',
+      '  private rows: Record<string, string>[];',
+      '  where(predicate: (row: Record<string, string>) => boolean): CsvFilter {',
+      '    const filteredRows = this.rows.filter(predicate);',
+      '    return new CsvFilter(filteredRows);',
+      '  }',
+      '}',
+      ''
+    ].join('\n');
+    assert.equal(hasTsCsvFilterReturnTypeDrift(realistic), true);
+    assert.equal(hasTsCsvFilterReturnTypeDrift('export class CsvFilter { count(): number { return 0; } }'), false);
+  });
+
+  it('recovers a raw ts-csv workspace through targeted csv fallback only', async function () {
+    this.timeout(120000);
+    const workspaceDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-ts-csv-targeted-'));
+
+    try {
+      fs.mkdirSync(path.join(workspaceDir, 'src'), { recursive: true });
+      fs.writeFileSync(path.join(workspaceDir, 'README.md'), '# CSV tool\n\nMinimal workspace for oracle validation.\n', 'utf8');
+      fs.writeFileSync(path.join(workspaceDir, 'package.json'), JSON.stringify({
+        name: 'ts-csv-raw-repro',
+        version: '1.0.0',
+        private: true
+      }, null, 2) + '\n', 'utf8');
+      fs.writeFileSync(path.join(workspaceDir, 'tsconfig.json'), JSON.stringify({
+        compilerOptions: {
+          target: 'ES2020',
+          module: 'commonjs',
+          moduleResolution: 'node',
+          rootDir: 'src',
+          outDir: 'dist',
+          strict: true,
+          esModuleInterop: true,
+          skipLibCheck: true
+        },
+        include: ['src']
+      }, null, 2) + '\n', 'utf8');
+      fs.writeFileSync(path.join(workspaceDir, 'src', 'csv.ts'), [
+        'export class CsvParser {',
+        '  parse(text: string): Record<string, string>[] {',
+        '    const lines = text.trim().split(/\\r?\\n/);',
+        '    if (lines.length === 0) return [];',
+        "    const headers = lines[0].split(',');",
+        '    return lines.slice(1).filter(Boolean).map(line => {',
+        "      const values = line.split(',');",
+        '      return headers.reduce((row, header, index) => {',
+        "        row[header] = values[index] || '';",
+        '        return row;',
+        '      }, {} as Record<string, string>);',
+        '    });',
+        '  }',
+        '',
+        '  stringify(rows: Record<string, string>[]): string {',
+        '    if (rows.length === 0) return "";',
+        '    const headers = Object.keys(rows[0]);',
+        '    const body = rows.map(row => headers.map(header => row[header] || "").join(","));',
+        "    return [headers.join(','), ...body].join('\\n');",
+        '  }',
+        '}',
+        '',
+        'export class CsvFilter {',
+        '  constructor(private rows: Record<string, string>[]) {}',
+        '  where(predicate: (row: Record<string, string>) => boolean): CsvFilter {',
+        '    return new CsvFilter(this.rows.filter(predicate));',
+        '  }',
+        '  select(columns: string[]): CsvFilter {',
+        '    return new CsvFilter(this.rows.map(row => columns.reduce((out, column) => {',
+        "      out[column] = row[column] || '';",
+        '      return out;',
+        '    }, {} as Record<string, string>)));',
+        '  }',
+        '  sortBy(column: string): CsvFilter {',
+        '    return new CsvFilter([...this.rows].sort((left, right) => left[column].localeCompare(right[column])));',
+        '  }',
+        '  count(): number {',
+        '    return this.rows.length;',
+        '  }',
+        '}',
+        ''
+      ].join('\n'), 'utf8');
+      fs.writeFileSync(path.join(workspaceDir, 'src', 'cli.ts'), [
+        'declare const require: any;',
+        'declare const process: any;',
+        "const fs = require('node:fs');",
+        "import { CsvParser, CsvFilter } from './csv';",
+        '',
+        'function help() {',
+        '  console.log(`Usage:\n  node dist/cli.js parse --input <file>\n  node dist/cli.js stats --input <file>\n  node dist/cli.js --help`);',
+        '}',
+        '',
+        'if (process.argv.length < 3) {',
+        '  help();',
+        '  process.exit(1);',
+        '}',
+        '',
+        'const command = process.argv[2];',
+        '',
+        "if (command === '--help') {",
+        '  help();',
+        '  process.exit(0);',
+        "} else if (command === 'parse' || command === 'stats') {",
+        "  const inputIndex = process.argv.indexOf('--input');",
+        '  if (inputIndex === -1 || inputIndex + 1 >= process.argv.length) {',
+        "    console.error('Missing --input argument');",
+        '    process.exit(1);',
+        '  }',
+        '',
+        '  const inputFile = process.argv[inputIndex + 1];',
+        '  if (!fs.existsSync(inputFile)) {',
+        '    console.error(`File not found: ${inputFile}`);',
+        '    process.exit(1);',
+        '  }',
+        '',
+        "  const fileContent = fs.readFileSync(inputFile, 'utf8');",
+        '  const parser = new CsvParser();',
+        '  const rows = parser.parse(fileContent);',
+        '',
+        "  if (command === 'parse') {",
+        '    console.log(JSON.stringify(rows));',
+        "  } else if (command === 'stats') {",
+        '    const filter = new CsvFilter(rows);',
+        '    console.log(`Rows: ${filter.count()}`);',
+        '    console.log(`Columns: ${Object.keys(rows[0]).join(\', \')}`);',
+        '  }',
+        '} else {',
+        "  console.error('Unknown command');",
+        '  process.exit(1);',
+        '}',
+        '',
+        ''
+      ].join('\n'), 'utf8');
+
+      const raw = await validateTsCsvOracleOnce(workspaceDir, false);
+      assert.equal(raw.ok, false);
+      assert.ok(raw.diagnostics.some(line => line.includes('Command failed: node --test tests/oracle.test.js')));
+
+      const targetedApplied = await applyTargetedTsCsvFallback(workspaceDir, raw);
+      assert.equal(targetedApplied, true);
+
+      const targeted = await validateTsCsvOracleOnce(workspaceDir, false);
+      assert.equal(targeted.ok, true, targeted.diagnostics.join('\n'));
+    } finally {
+      fs.rmSync(workspaceDir, { recursive: true, force: true });
+    }
   });
 
   it('replaces risky ts cli switch redeclare pattern with canonical fallback cli', () => {
@@ -396,6 +566,90 @@ describe('botEval deterministic fallback helpers', () => {
     const nodeOther = normalizeScenarioFileContentBeforeWrite('node-api-oracle', 'openapi.json', source);
     assert.ok(nodeServer.includes('module.exports = { createServer };'));
     assert.equal(nodeOther, source);
+  });
+
+  it('normalizes risky ts-csv csv contract before write', () => {
+    const source = [
+      'export class CsvParser {',
+      '  parse(text: string): Record<string, string>[] {',
+      '    return [];',
+      '  }',
+      '  stringify(rows: Record<string, string>[]): string {',
+      '    return "";',
+      '  }',
+      '}',
+      '',
+      'export class CsvFilter {',
+      '  constructor(private rows: Record<string, string>[]) {}',
+      '  where(predicate: (row: Record<string, string>) => boolean): CsvFilter {',
+      '    return new CsvFilter(this.rows.filter(predicate));',
+      '  }',
+      '  select(columns: string[]): CsvFilter {',
+      '    return new CsvFilter(this.rows);',
+      '  }',
+      '  sortBy(column: string): CsvFilter {',
+      '    return new CsvFilter(this.rows);',
+      '  }',
+      '  count(): number {',
+      '    return this.rows.length;',
+      '  }',
+      '}',
+      ''
+    ].join('\n');
+
+    const out = normalizeScenarioFileContentBeforeWrite('ts-csv-oracle', 'src/csv.ts', source);
+    assert.equal(hasTsCsvFilterReturnTypeDrift(out), false);
+    assert.ok(out.includes('where(predicate: (row: Record<string, string>) => boolean): Record<string, string>[]'));
+    assert.ok(out.includes('private splitRow(line: string): string[]'));
+    assert.ok(out.includes('private quoteField(field: string): string'));
+  });
+
+  it('normalizes risky ts-csv cli and compiler scaffolding before write', () => {
+    const cliSource = [
+      'declare const require: any;',
+      'declare const process: any;',
+      'const fs = require("node:fs");',
+      '',
+      'const command = process.argv[2];',
+      'let inputFile: string | undefined;',
+      'if (!inputFile) {',
+      "  console.error('Missing --input option');",
+      '  process.exit(1);',
+      '}',
+      'switch (command) {',
+      "  case '--help':",
+      '    process.exit(0);',
+      '    break;',
+      '}',
+      ''
+    ].join('\n');
+    const packageSource = JSON.stringify({
+      name: 'csv-processor',
+      type: 'module',
+      dependencies: { commander: '^1.0.0' },
+      devDependencies: { typescript: '^5.0.0' }
+    }, null, 2);
+    const tsconfigSource = JSON.stringify({
+      compilerOptions: {
+        target: 'ES2020',
+        module: 'commonjs',
+        strict: true
+      },
+      include: ['src']
+    }, null, 2);
+
+    const cli = normalizeScenarioFileContentBeforeWrite('ts-csv-oracle', 'src/cli.ts', cliSource);
+    const pkg = JSON.parse(normalizeScenarioFileContentBeforeWrite('ts-csv-oracle', 'package.json', packageSource));
+    const tsconfig = JSON.parse(normalizeScenarioFileContentBeforeWrite('ts-csv-oracle', 'tsconfig.json', tsconfigSource));
+
+    assert.ok(cli.includes("const { CsvParser } = require('./csv');"));
+    assert.ok(cli.includes("if (command === '--help' || command === '-h' || command === '')"));
+    assert.equal(pkg.type, undefined);
+    assert.equal(pkg.dependencies, undefined);
+    assert.equal(pkg.devDependencies, undefined);
+    assert.deepEqual(tsconfig.compilerOptions.types, []);
+    assert.equal(tsconfig.compilerOptions.rootDir, 'src');
+    assert.equal(tsconfig.compilerOptions.outDir, 'dist');
   });
 
   it('normalizes risky python oracle cli contract before write', () => {
