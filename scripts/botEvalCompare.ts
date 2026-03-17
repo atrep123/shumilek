@@ -59,6 +59,17 @@ type CompareReport = {
   gate: GateEvaluation;
 };
 
+type CompareRunResult = {
+  outPath: string;
+  report: CompareReport;
+};
+
+type CompareDeps = {
+  now?: () => string;
+  log?: (message: string) => void;
+  setExitCode?: (code: number) => void;
+};
+
 type GateClusterThreshold = {
   id: string;
   maxIncrease: number;
@@ -206,6 +217,10 @@ function parseArgs(argv: string[]): CompareOptions {
     if (!Number.isFinite(opts.maxFallbackDependencyRunRateDelta)) opts.maxFallbackDependencyRunRateDelta = 0.2;
   }
   return opts;
+}
+
+export function parseCompareArgs(argv: string[]): CompareOptions {
+  return parseArgs(argv);
 }
 
 function parseClusterIncreaseRule(raw: string): GateClusterThreshold {
@@ -576,8 +591,15 @@ export function evaluateAcceptanceGate(params: {
   };
 }
 
-async function main() {
-  const opts = parseArgs(process.argv.slice(2));
+export async function runCompare(
+  opts: CompareOptions,
+  deps: CompareDeps = {}
+): Promise<CompareRunResult> {
+  const now = deps.now || (() => new Date().toISOString());
+  const log = deps.log || (message => console.log(message));
+  const setExitCode = deps.setExitCode || (code => {
+    process.exitCode = code;
+  });
   const baselineDir = path.resolve(opts.baselineDir);
   const candidateDir = path.resolve(opts.candidateDir);
   let gateConfig: GateConfigFile = {};
@@ -642,7 +664,7 @@ async function main() {
   });
 
   const report: CompareReport = {
-    generatedAt: new Date().toISOString(),
+    generatedAt: now(),
     baselineDir,
     candidateDir,
     scenarios,
@@ -654,36 +676,36 @@ async function main() {
   await fs.promises.mkdir(path.dirname(outPath), { recursive: true });
   await fs.promises.writeFile(outPath, JSON.stringify(report, null, 2), 'utf8');
 
-  // eslint-disable-next-line no-console
-  console.log('Scenario deltas:');
+  log('Scenario deltas:');
   for (const row of report.scenarios) {
-    // eslint-disable-next-line no-console
-    console.log(
+    log(
       `- ${row.scenario}: passRateDelta=${Math.round(row.delta.passRate * 100)}pp` +
       ` rawRunPassRateDelta=${Math.round(row.delta.rawRunPassRate * 100)}pp` +
       ` fallbackDependencyRunRateDelta=${Math.round(row.delta.fallbackDependencyRunRate * 100)}pp` +
       ` avgMsDelta=${Math.round(row.delta.avgMs)}`
     );
   }
-  // eslint-disable-next-line no-console
-  console.log(
+  log(
     `Top cluster deltas: ${
       report.clusterDelta.map(c => `${c.id}:${c.delta > 0 ? '+' : ''}${c.delta}`).join(', ') || 'n/a'
     }`
   );
   if (gate.enabled) {
-    // eslint-disable-next-line no-console
-    console.log(`Gate: ${gate.passed ? 'PASS' : 'FAIL'} (${gate.violations.length} violation(s))`);
+    log(`Gate: ${gate.passed ? 'PASS' : 'FAIL'} (${gate.violations.length} violation(s))`);
     for (const violation of gate.violations) {
-      // eslint-disable-next-line no-console
-      console.log(`  - ${violation.message}`);
+      log(`  - ${violation.message}`);
     }
   }
-  // eslint-disable-next-line no-console
-  console.log(`Compare report: ${outPath}`);
+  log(`Compare report: ${outPath}`);
   if (gate.enabled && !gate.passed) {
-    process.exitCode = 2;
+    setExitCode(2);
   }
+  return { outPath, report };
+}
+
+async function main() {
+  const opts = parseArgs(process.argv.slice(2));
+  await runCompare(opts);
 }
 
 if (require.main === module) {

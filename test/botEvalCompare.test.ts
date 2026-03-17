@@ -1,12 +1,86 @@
 import { strict as assert } from 'assert';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 
 import {
   classifyFailureCluster,
   collectFailureClustersForRun,
 } from '../scripts/botEvalBatch';
-import { compareSummaries, evaluateAcceptanceGate } from '../scripts/botEvalCompare';
+import { compareSummaries, evaluateAcceptanceGate, parseCompareArgs, runCompare } from '../scripts/botEvalCompare';
+
+function createCompareRunResult(params: {
+  scenario?: string;
+  ok?: boolean;
+  durationMs?: number;
+}) {
+  return {
+    scenario: params.scenario || 'ts-todo-oracle',
+    runIndex: 1,
+    ok: params.ok ?? true,
+    exitCode: params.ok === false ? 1 : 0,
+    durationMs: params.durationMs ?? 100,
+    outDir: 'run-dir',
+    diagnostics: [],
+    timedOut: false,
+    parseStats: {
+      plannerFailures: 0,
+      schemaFailures: 0,
+      jsonRepairFailures: 0,
+      parseFailures: 0,
+      jsonParseFailures: 0,
+      placeholderFailures: 0,
+      otherFailures: 0
+    },
+    deterministicFallback: {
+      mode: 'on-fail',
+      tsTodo: {
+        activations: 0,
+        recoveries: 0,
+        targetedActivations: 0,
+        targetedRecoveries: 0,
+        canonicalActivations: 0,
+        canonicalRecoveries: 0,
+        rawPasses: 0,
+        rawFailures: 0,
+        recoveredByFallback: 0
+      },
+      tsCsv: {
+        activations: 0,
+        recoveries: 0,
+        targetedActivations: 0,
+        targetedRecoveries: 0,
+        canonicalActivations: 0,
+        canonicalRecoveries: 0,
+        rawPasses: 0,
+        rawFailures: 0,
+        recoveredByFallback: 0
+      },
+      nodeApi: {
+        activations: 0,
+        recoveries: 0,
+        targetedActivations: 0,
+        targetedRecoveries: 0,
+        canonicalActivations: 0,
+        canonicalRecoveries: 0,
+        rawPasses: 0,
+        rawFailures: 0,
+        recoveredByFallback: 0
+      },
+      totalActivations: 0,
+      totalRecoveries: 0,
+      totalTargetedActivations: 0,
+      totalTargetedRecoveries: 0,
+      totalCanonicalActivations: 0,
+      totalCanonicalRecoveries: 0,
+      totalRawPasses: 0,
+      totalRawFailures: 0,
+      totalRecoveredByFallback: 0,
+      fallbackDependencyRate: 0
+    },
+    infraFailure: null
+  };
+}
 
 describe('botEval compare and failure clustering helpers', () => {
   it('classifies common diagnostics into stable clusters', () => {
@@ -386,5 +460,100 @@ describe('botEval compare and failure clustering helpers', () => {
     ] as const);
 
     assert.deepEqual(ciLatencyOverrides, nightlyLatencyOverrides);
+  });
+
+  it('parses compare args for baseline, candidate, and gate options', () => {
+    const opts = parseCompareArgs([
+      '--baseline', 'baseline-dir',
+      '--candidate', 'candidate-dir',
+      '--out', 'compare.json',
+      '--gate',
+      '--topClusters', '5',
+      '--maxClusterIncrease', 'json_parse:2'
+    ]);
+
+    assert.equal(opts.baselineDir, 'baseline-dir');
+    assert.equal(opts.candidateDir, 'candidate-dir');
+    assert.equal(opts.outPath, 'compare.json');
+    assert.equal(opts.gateEnabled, true);
+    assert.equal(opts.topClusters, 5);
+    assert.deepEqual(opts.maxClusterIncreaseRules, [{ id: 'json_parse', maxIncrease: 2 }]);
+  });
+
+  it('writes compare report and keeps exit code unset on passing gate', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-compare-'));
+    try {
+      const baselineDir = path.join(root, 'baseline');
+      const candidateDir = path.join(root, 'candidate');
+      fs.mkdirSync(baselineDir, { recursive: true });
+      fs.mkdirSync(candidateDir, { recursive: true });
+
+      fs.writeFileSync(path.join(baselineDir, 'results.json'), JSON.stringify([
+        createCompareRunResult({ durationMs: 100 })
+      ], null, 2), 'utf8');
+      fs.writeFileSync(path.join(candidateDir, 'results.json'), JSON.stringify([
+        createCompareRunResult({ durationMs: 110 })
+      ], null, 2), 'utf8');
+
+      const exitCodes: number[] = [];
+      const logs: string[] = [];
+      const outPath = path.join(candidateDir, 'nested', 'compare.json');
+      const result = await runCompare({
+        ...parseCompareArgs(['--baseline', baselineDir, '--candidate', candidateDir, '--gate']),
+        outPath,
+        maxLatencyMultiplier: 1.5
+      }, {
+        now: () => '2026-03-17T12:00:00.000Z',
+        log: message => logs.push(message),
+        setExitCode: code => exitCodes.push(code)
+      });
+
+      assert.equal(result.outPath, path.resolve(outPath));
+      assert.equal(result.report.generatedAt, '2026-03-17T12:00:00.000Z');
+      assert.equal(result.report.gate.passed, true);
+      assert.deepEqual(exitCodes, []);
+      assert.ok(fs.existsSync(outPath));
+      const written = JSON.parse(fs.readFileSync(outPath, 'utf8'));
+      assert.equal(written.gate.passed, true);
+      assert.ok(logs.some(message => message.includes('Scenario deltas:')));
+      assert.ok(logs.some(message => message.includes('Compare report:')));
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('sets exit code 2 and records violations when gate fails', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-compare-'));
+    try {
+      const baselineDir = path.join(root, 'baseline');
+      const candidateDir = path.join(root, 'candidate');
+      fs.mkdirSync(baselineDir, { recursive: true });
+      fs.mkdirSync(candidateDir, { recursive: true });
+
+      fs.writeFileSync(path.join(baselineDir, 'results.json'), JSON.stringify([
+        createCompareRunResult({ durationMs: 100 })
+      ], null, 2), 'utf8');
+      fs.writeFileSync(path.join(candidateDir, 'results.json'), JSON.stringify([
+        createCompareRunResult({ durationMs: 180 })
+      ], null, 2), 'utf8');
+
+      const exitCodes: number[] = [];
+      const logs: string[] = [];
+      const result = await runCompare({
+        ...parseCompareArgs(['--baseline', baselineDir, '--candidate', candidateDir, '--gate']),
+        maxLatencyMultiplier: 1.2
+      }, {
+        now: () => '2026-03-17T12:00:00.000Z',
+        log: message => logs.push(message),
+        setExitCode: code => exitCodes.push(code)
+      });
+
+      assert.equal(result.report.gate.passed, false);
+      assert.ok(result.report.gate.violations.some(v => v.metric === 'latencyMultiplier'));
+      assert.deepEqual(exitCodes, [2]);
+      assert.ok(logs.some(message => message.includes('Gate: FAIL')));
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
   });
 });
