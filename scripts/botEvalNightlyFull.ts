@@ -15,7 +15,17 @@ type FullOptions = {
   extraArgs: string[];
 };
 
-function parseArgs(argv: string[]): FullOptions {
+type NightlyStepRunner = (label: string, args: string[], cwd: string) => Promise<number>;
+
+type NightlyFullDeps = {
+  repoRoot?: string;
+  runStep?: NightlyStepRunner;
+  log?: (message: string) => void;
+  error?: (message: string) => void;
+  setExitCode?: (code: number) => void;
+};
+
+export function parseNightlyFullArgs(argv: string[]): FullOptions {
   const opts: FullOptions = {
     runs: 5,
     gateConfig: path.resolve('scripts/config/botEvalGate.nightly.json'),
@@ -69,9 +79,23 @@ function runStep(label: string, args: string[], cwd: string): Promise<number> {
   });
 }
 
-async function main() {
-  const opts = parseArgs(process.argv.slice(2));
-  const repoRoot = path.resolve(__dirname, '..');
+export async function runNightlyFull(opts: FullOptions, deps: NightlyFullDeps = {}): Promise<{
+  gateCode: number;
+  checkpointCode: number;
+  calibrateCode: number;
+  promoteCode: number;
+  tunerCode: number;
+  stabilityCode: number;
+  cleanupCode: number;
+  latestGateDir: string;
+  promoteReportPath: string;
+  releaseGateDirs: string[];
+}> {
+  const repoRoot = deps.repoRoot || path.resolve(__dirname, '..');
+  const executeStep = deps.runStep || runStep;
+  const log = deps.log || ((message: string) => console.log(message));
+  const error = deps.error || ((message: string) => console.error(message));
+  const setExitCode = deps.setExitCode || ((code: number) => { process.exitCode = code; });
   const tsNode = path.join(repoRoot, 'node_modules', 'ts-node', 'dist', 'bin.js');
   if (!fs.existsSync(tsNode)) {
     throw new Error(`ts-node not found at ${tsNode}`);
@@ -90,12 +114,22 @@ async function main() {
     '--maxInfraRestarts', String(opts.maxInfraRestarts),
     ...opts.extraArgs
   ];
-  const gateCode = await runStep('Release Gate', gateArgs, repoRoot);
+  const gateCode = await executeStep('Release Gate', gateArgs, repoRoot);
   if (gateCode !== 0) {
-    // eslint-disable-next-line no-console
-    console.error(`Release gate failed with code ${gateCode}`);
-    process.exitCode = gateCode;
-    return;
+    error(`Release gate failed with code ${gateCode}`);
+    setExitCode(gateCode);
+    return {
+      gateCode,
+      checkpointCode: 1,
+      calibrateCode: 1,
+      promoteCode: 0,
+      tunerCode: 1,
+      stabilityCode: 0,
+      cleanupCode: 0,
+      latestGateDir: '',
+      promoteReportPath: '',
+      releaseGateDirs: []
+    };
   }
 
   // Step 2: Checkpoint
@@ -105,10 +139,9 @@ async function main() {
     '--window', String(opts.window),
     '--root', opts.root
   ];
-  const checkpointCode = await runStep('Checkpoint', checkpointArgs, repoRoot);
+  const checkpointCode = await executeStep('Checkpoint', checkpointArgs, repoRoot);
   if (checkpointCode !== 0) {
-    // eslint-disable-next-line no-console
-    console.error(`Checkpoint failed with code ${checkpointCode}`);
+    error(`Checkpoint failed with code ${checkpointCode}`);
   }
 
   // Step 3: Calibrate (with --includeLocalRuns for local dev)
@@ -119,10 +152,9 @@ async function main() {
     '--root', opts.root,
     '--includeLocalRuns'
   ];
-  const calibrateCode = await runStep('Calibrate', calibrateArgs, repoRoot);
+  const calibrateCode = await executeStep('Calibrate', calibrateArgs, repoRoot);
   if (calibrateCode !== 0) {
-    // eslint-disable-next-line no-console
-    console.error(`Calibrate failed with code ${calibrateCode}`);
+    error(`Calibrate failed with code ${calibrateCode}`);
   }
 
   // Step 4: Baseline promotion (runs BEFORE tuner so tuner sees current promotion state)
@@ -146,10 +178,9 @@ async function main() {
       '--requiredConsecutive', '2',
       '--maxPlannerErrorRate', '0.15'
     ];
-    promoteCode = await runStep('Baseline Promote', promoteArgs, repoRoot);
+    promoteCode = await executeStep('Baseline Promote', promoteArgs, repoRoot);
     if (promoteCode !== 0) {
-      // eslint-disable-next-line no-console
-      console.error(`Baseline promote failed with code ${promoteCode}`);
+      error(`Baseline promote failed with code ${promoteCode}`);
     }
     // Auto-update baseline pointer on successful promotion
     promoteReportPath = path.join(latestGateDir, 'baseline_promotion.json');
@@ -159,14 +190,12 @@ async function main() {
         if (report.promoted) {
           const baselinePointerPath = path.join(opts.root, 'release_baseline.txt');
           fs.writeFileSync(baselinePointerPath, latestGateDir, 'utf8');
-          // eslint-disable-next-line no-console
-          console.log(`Baseline pointer updated to ${latestGateDir}`);
+          log(`Baseline pointer updated to ${latestGateDir}`);
         }
       } catch { /* ignore parse errors */ }
     }
   } else {
-    // eslint-disable-next-line no-console
-    console.log('\nSkipping baseline promotion (no recent gate with summary.json)');
+    log('\nSkipping baseline promotion (no recent gate with summary.json)');
   }
 
   // Step 5: Tuner (receives --baselinePromotion from Step 4)
@@ -176,7 +205,7 @@ async function main() {
   const tunerArgs = [
     tsNode,
     path.join(repoRoot, 'scripts', 'botEvalTuner.ts'),
-    '--config', path.resolve('scripts/config/botEvalTuner.nightly.json'),
+    '--config', path.join(repoRoot, 'scripts', 'config', 'botEvalTuner.nightly.json'),
     '--checkpointReport', path.join(opts.root, 'checkpoint_report_latest.json'),
     '--calibration', calibrationPath,
     '--registry', registryPath,
@@ -186,10 +215,9 @@ async function main() {
   if (promoteReportPath && fs.existsSync(promoteReportPath)) {
     tunerArgs.push('--baselinePromotion', promoteReportPath);
   }
-  const tunerCode = await runStep('Tuner', tunerArgs, repoRoot);
+  const tunerCode = await executeStep('Tuner', tunerArgs, repoRoot);
   if (tunerCode !== 0) {
-    // eslint-disable-next-line no-console
-    console.error(`Tuner failed with code ${tunerCode}`);
+    error(`Tuner failed with code ${tunerCode}`);
   }
 
   // Step 6: Stability aggregate (local trending)
@@ -206,10 +234,9 @@ async function main() {
       path.join(repoRoot, 'scripts', 'botEvalStabilityAggregate.ts'),
       '--inputs', releaseGateDirs.join(',')
     ];
-    stabilityCode = await runStep('Stability Aggregate', stabilityArgs, repoRoot);
+    stabilityCode = await executeStep('Stability Aggregate', stabilityArgs, repoRoot);
   } else {
-    // eslint-disable-next-line no-console
-    console.log(`\nSkipping stability aggregate (need ≥2 release_gate dirs, found ${releaseGateDirs.length})`);
+    log(`\nSkipping stability aggregate (need ≥2 release_gate dirs, found ${releaseGateDirs.length})`);
   }
 
   // Step 7: Cleanup old run/batch dirs (keep last 10 per prefix)
@@ -222,36 +249,44 @@ async function main() {
     '--policy', 'release_gate_ci_pr_:10',
     '--policy', 'release_gate_ci_nightly_:10'
   ];
-  const cleanupCode = await runStep('Cleanup', cleanupArgs, repoRoot);
+  const cleanupCode = await executeStep('Cleanup', cleanupArgs, repoRoot);
 
   // Summary
-  // eslint-disable-next-line no-console
-  console.log(`\n${'='.repeat(60)}\n[Summary]\n${'='.repeat(60)}`);
-  // eslint-disable-next-line no-console
-  console.log(`  Release gate: ${gateCode === 0 ? 'PASS' : 'FAIL'}`);
-  // eslint-disable-next-line no-console
-  console.log(`  Checkpoint:   ${checkpointCode === 0 ? 'PASS' : 'FAIL'}`);
-  // eslint-disable-next-line no-console
-  console.log(`  Calibrate:    ${calibrateCode === 0 ? 'PASS' : 'FAIL'}`);
-  // eslint-disable-next-line no-console
-  console.log(`  Promote:      ${latestGateDir ? (promoteCode === 0 ? 'PASS' : 'FAIL') : 'SKIP'}`);
-  // eslint-disable-next-line no-console
-  console.log(`  Tuner:        ${tunerCode === 0 ? 'PASS' : 'FAIL'}`);
+  log(`\n${'='.repeat(60)}\n[Summary]\n${'='.repeat(60)}`);
+  log(`  Release gate: ${gateCode === 0 ? 'PASS' : 'FAIL'}`);
+  log(`  Checkpoint:   ${checkpointCode === 0 ? 'PASS' : 'FAIL'}`);
+  log(`  Calibrate:    ${calibrateCode === 0 ? 'PASS' : 'FAIL'}`);
+  log(`  Promote:      ${latestGateDir ? (promoteCode === 0 ? 'PASS' : 'FAIL') : 'SKIP'}`);
+  log(`  Tuner:        ${tunerCode === 0 ? 'PASS' : 'FAIL'}`);
 
   if (fs.existsSync(path.join(opts.root, 'tuning_decision_latest.json'))) {
     try {
       const decision = JSON.parse(fs.readFileSync(path.join(opts.root, 'tuning_decision_latest.json'), 'utf8'));
-      // eslint-disable-next-line no-console
-      console.log(`  Tuner action: ${decision.action} (checkpoint: ${decision.latestCheckpointId || 'n/a'})`);
+      log(`  Tuner action: ${decision.action} (checkpoint: ${decision.latestCheckpointId || 'n/a'})`);
     } catch { /* ignore */ }
   }
 
-  // eslint-disable-next-line no-console
-  console.log(`  Stability:    ${releaseGateDirs.length >= 2 ? (stabilityCode === 0 ? 'PASS' : 'FAIL') : 'SKIP'}`);
-  // eslint-disable-next-line no-console
-  console.log(`  Cleanup:      ${cleanupCode === 0 ? 'PASS' : 'FAIL'}`);
-  // eslint-disable-next-line no-console
-  console.log('');
+  log(`  Stability:    ${releaseGateDirs.length >= 2 ? (stabilityCode === 0 ? 'PASS' : 'FAIL') : 'SKIP'}`);
+  log(`  Cleanup:      ${cleanupCode === 0 ? 'PASS' : 'FAIL'}`);
+  log('');
+
+  return {
+    gateCode,
+    checkpointCode,
+    calibrateCode,
+    promoteCode,
+    tunerCode,
+    stabilityCode,
+    cleanupCode,
+    latestGateDir,
+    promoteReportPath,
+    releaseGateDirs
+  };
+}
+
+async function main() {
+  const opts = parseNightlyFullArgs(process.argv.slice(2));
+  await runNightlyFull(opts);
 }
 
 if (require.main === module) {
