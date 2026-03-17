@@ -28,6 +28,23 @@ type ReleaseGateOptions = {
   scenarioThresholdRules: string[];
 };
 
+type ReleaseGateRunResult = {
+  baselineDir: string;
+  candidateDir: string;
+  batchCode: number;
+  compareCode?: number;
+  baselinePointerUpdated: boolean;
+};
+
+type ReleaseGateRuntimeDeps = {
+  repoRoot?: string;
+  tsNodePath?: string;
+  runNodeCommand?: (args: string[], cwd: string) => Promise<number>;
+  log?: (message: string) => void;
+  setExitCode?: (code: number) => void;
+  now?: () => number;
+};
+
 const DEFAULT_RELEASE_GATE_SCENARIOS = [
   'ts-todo-oracle',
   'node-api-oracle',
@@ -270,13 +287,23 @@ async function runNodeCommand(args: string[], cwd: string): Promise<number> {
   });
 }
 
-async function main() {
-  const opts = parseArgs(process.argv.slice(2));
-  const repoRoot = path.resolve(__dirname, '..');
+export async function runReleaseGate(
+  opts: ReleaseGateOptions,
+  deps: ReleaseGateRuntimeDeps = {}
+): Promise<ReleaseGateRunResult> {
+  const repoRoot = path.resolve(deps.repoRoot || path.resolve(__dirname, '..'));
   const baselinePointerPath = path.resolve(
     opts.baselinePointerPath || path.join(repoRoot, 'projects', 'bot_eval_run', 'release_baseline.txt')
   );
-  const tsNodePath = path.join(repoRoot, 'node_modules', 'ts-node', 'dist', 'bin.js');
+  const tsNodePath = path.resolve(
+    deps.tsNodePath || path.join(repoRoot, 'node_modules', 'ts-node', 'dist', 'bin.js')
+  );
+  const execNodeCommand = deps.runNodeCommand || runNodeCommand;
+  const log = deps.log || (message => console.log(message));
+  const setExitCode = deps.setExitCode || (code => {
+    process.exitCode = code;
+  });
+  const now = deps.now || (() => Date.now());
   if (!fs.existsSync(tsNodePath)) {
     throw new Error(`ts-node not found at ${tsNodePath}`);
   }
@@ -291,7 +318,7 @@ async function main() {
   }
 
   const candidateDir = path.resolve(
-    opts.outDir || path.join(repoRoot, 'projects', 'bot_eval_run', `release_gate_${Date.now()}`)
+    opts.outDir || path.join(repoRoot, 'projects', 'bot_eval_run', `release_gate_${now()}`)
   );
   await fs.promises.mkdir(candidateDir, { recursive: true });
 
@@ -311,12 +338,16 @@ async function main() {
   if (opts.reviewerModel) batchArgs.push('--reviewerModel', opts.reviewerModel);
   if (opts.jsonRepairModel) batchArgs.push('--jsonRepairModel', opts.jsonRepairModel);
 
-  // eslint-disable-next-line no-console
-  console.log(`Running release benchmark batch -> ${candidateDir}`);
-  const batchCode = await runNodeCommand(batchArgs, repoRoot);
+  log(`Running release benchmark batch -> ${candidateDir}`);
+  const batchCode = await execNodeCommand(batchArgs, repoRoot);
   if (batchCode !== 0) {
-    process.exitCode = batchCode;
-    return;
+    setExitCode(batchCode);
+    return {
+      baselineDir,
+      candidateDir,
+      batchCode,
+      baselinePointerUpdated: false
+    };
   }
 
   const compareArgs: string[] = [
@@ -346,23 +377,40 @@ async function main() {
     compareArgs.push('--scenarioThreshold', rule);
   }
 
-  // eslint-disable-next-line no-console
-  console.log(`Running release compare gate against baseline -> ${baselineDir}`);
-  const compareCode = await runNodeCommand(compareArgs, repoRoot);
+  log(`Running release compare gate against baseline -> ${baselineDir}`);
+  const compareCode = await execNodeCommand(compareArgs, repoRoot);
   if (compareCode !== 0) {
-    process.exitCode = compareCode;
-    return;
+    setExitCode(compareCode);
+    return {
+      baselineDir,
+      candidateDir,
+      batchCode,
+      compareCode,
+      baselinePointerUpdated: false
+    };
   }
 
+  let baselinePointerUpdated = false;
   if (opts.lockBaseline) {
     await fs.promises.mkdir(path.dirname(baselinePointerPath), { recursive: true });
     await fs.promises.writeFile(baselinePointerPath, candidateDir + '\n', 'utf8');
-    // eslint-disable-next-line no-console
-    console.log(`Baseline pointer updated: ${baselinePointerPath} -> ${candidateDir}`);
+    baselinePointerUpdated = true;
+    log(`Baseline pointer updated: ${baselinePointerPath} -> ${candidateDir}`);
   }
 
-  // eslint-disable-next-line no-console
-  console.log(`Release gate PASS. Candidate batch: ${candidateDir}`);
+  log(`Release gate PASS. Candidate batch: ${candidateDir}`);
+  return {
+    baselineDir,
+    candidateDir,
+    batchCode,
+    compareCode,
+    baselinePointerUpdated
+  };
+}
+
+async function main() {
+  const opts = parseArgs(process.argv.slice(2));
+  await runReleaseGate(opts);
 }
 
 if (require.main === module) {
