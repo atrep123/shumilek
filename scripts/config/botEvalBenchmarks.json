@@ -22,6 +22,13 @@
       "blocking": true,
       "notes": "Cross-language regression benchmark without external dependencies."
     },
+    "ts-csv-oracle": {
+      "splits": ["validation", "regression"],
+      "domains": ["typescript", "csv", "cli"],
+      "capabilities": ["editing", "contracts", "oracle-tests"],
+      "blocking": true,
+      "notes": "TypeScript CSV oracle benchmark for raw-pass contract stability without deterministic fallback dependence."
+    },
     "node-project-api-large": {
       "splits": ["validation", "holdout"],
       "domains": ["node", "project-structure", "integration"],
