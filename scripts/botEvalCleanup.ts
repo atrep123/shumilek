@@ -13,6 +13,27 @@ type CleanupOptions = {
   outPath?: string;
 };
 
+type CleanupReportEntry = {
+  prefix: string;
+  keep: number;
+  matched: number;
+  kept: string[];
+  deleted: string[];
+};
+
+type CleanupReport = {
+  generatedAt: string;
+  root: string;
+  dryRun: boolean;
+  policies: CleanupPolicy[];
+  results: CleanupReportEntry[];
+};
+
+type CleanupDeps = {
+  now?: () => string;
+  log?: (message: string) => void;
+};
+
 function parseArgs(argv: string[]): CleanupOptions {
   const opts: CleanupOptions = {
     root: path.resolve('projects/bot_eval_run'),
@@ -68,6 +89,10 @@ function parseArgs(argv: string[]): CleanupOptions {
   return opts;
 }
 
+export function parseCleanupArgs(argv: string[]): CleanupOptions {
+  return parseArgs(argv);
+}
+
 function printUsageAndExit(code: number): never {
   // eslint-disable-next-line no-console
   console.log([
@@ -83,20 +108,23 @@ function printUsageAndExit(code: number): never {
   process.exit(code);
 }
 
-async function main() {
-  const opts = parseArgs(process.argv.slice(2));
-  const report: any = {
-    generatedAt: new Date().toISOString(),
+export async function runCleanup(
+  opts: CleanupOptions,
+  deps: CleanupDeps = {}
+): Promise<CleanupReport | null> {
+  const now = deps.now || (() => new Date().toISOString());
+  const log = deps.log || (message => console.log(message));
+  const report: CleanupReport = {
+    generatedAt: now(),
     root: opts.root,
     dryRun: opts.dryRun,
     policies: opts.policies,
-    results: [] as any[]
+    results: []
   };
 
   if (!fs.existsSync(opts.root)) {
-    // eslint-disable-next-line no-console
-    console.log(`Cleanup root does not exist: ${opts.root}`);
-    return;
+    log(`Cleanup root does not exist: ${opts.root}`);
+    return null;
   }
 
   const allDirs = fs.readdirSync(opts.root, { withFileTypes: true })
@@ -134,12 +162,16 @@ async function main() {
     await fs.promises.writeFile(opts.outPath, JSON.stringify(report, null, 2), 'utf8');
   }
 
-  // eslint-disable-next-line no-console
-  console.log(`Cleanup completed for ${opts.root}`);
+  log(`Cleanup completed for ${opts.root}`);
   for (const r of report.results) {
-    // eslint-disable-next-line no-console
-    console.log(`${r.prefix} matched=${r.matched} kept=${r.kept.length} deleted=${r.deleted.length}`);
+    log(`${r.prefix} matched=${r.matched} kept=${r.kept.length} deleted=${r.deleted.length}`);
   }
+  return report;
+}
+
+async function main() {
+  const opts = parseArgs(process.argv.slice(2));
+  await runCleanup(opts);
 }
 
 if (require.main === module) {
