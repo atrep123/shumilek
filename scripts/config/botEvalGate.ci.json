@@ -19,11 +19,13 @@
   "scenarioOverrides": {
     "ts-todo-oracle": {
       "maxFallbackDependencyRunRate": 0.2,
-      "maxFallbackDependencyRunRateDelta": 0.2
+      "maxFallbackDependencyRunRateDelta": 0.2,
+      "maxLatencyMultiplier": 1.26
     },
     "node-api-oracle": {
       "maxFallbackDependencyRunRate": 0.2,
-      "maxFallbackDependencyRunRateDelta": 0.2
+      "maxFallbackDependencyRunRateDelta": 0.2,
+      "maxLatencyMultiplier": 1.25
     },
     "ts-csv-oracle": {
       "maxFallbackDependencyRunRate": 0.2,
@@ -32,7 +34,8 @@
     },
     "python-ai-stdlib-oracle": {
       "maxFallbackDependencyRunRate": 0.2,
-      "maxFallbackDependencyRunRateDelta": 0.2
+      "maxFallbackDependencyRunRateDelta": 0.2,
+      "maxLatencyMultiplier": 1.26
     },
     "node-project-api-large": {
       "maxFallbackDependencyRunRate": 0.2,
