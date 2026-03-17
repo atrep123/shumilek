@@ -1,0 +1,182 @@
+const mock = require('mock-require');
+const { strict: assert } = require('assert');
+
+const { vscodeMock } = require('./helpers/vscodeMockShared');
+
+mock('vscode', vscodeMock);
+
+const { generateWithTools } = require('../src/toolGeneration');
+
+function toolCall(name: string, argumentsValue?: Record<string, unknown>) {
+  return `<tool_call>${JSON.stringify({ name, arguments: argumentsValue })}</tool_call>`;
+}
+
+function createPanel(messages: any[]) {
+  return {
+    visible: true,
+    webview: {
+      postMessage: async (message: unknown) => {
+        messages.push(message);
+        return true;
+      }
+    }
+  } as any;
+}
+
+function createDeps(overrides?: Partial<any>) {
+  return {
+    log: () => undefined,
+    postToAllWebviews: () => undefined,
+    getMutationHandlerDeps: () => ({}) as any,
+    ...overrides
+  };
+}
+
+describe('toolGeneration integration', () => {
+  it('self-corrects after diagnostics and returns corrected mutation message', async () => {
+    const panelMessages: any[] = [];
+    const modelResponses = [
+      toolCall('write_file', { path: 'src/a.ts', text: 'bad' }),
+      toolCall('replace_lines', { path: 'src/a.ts', startLine: 1, endLine: 1, newLines: ['good'] })
+    ];
+    const diagRuns = [
+      [{ path: 'src/a.ts', line: 1, message: 'Syntax error', severity: 'error' }],
+      []
+    ];
+    const session: any = {
+      hadMutations: false,
+      lastWritePath: 'src/a.ts',
+      toolCallRecords: []
+    };
+    const logs: string[] = [];
+
+    const result = await generateWithTools(
+      createPanel(panelMessages),
+      'http://example.test',
+      'primary-model',
+      'system',
+      [{ role: 'user', content: 'fix file' }],
+      1000,
+      6,
+      false,
+      createDeps({
+        log: (message: string) => logs.push(message),
+        executeModelCallWithMessagesFn: async () => modelResponses.shift() || '',
+        runToolCallFn: async (_panel: any, call: any) => ({
+          ok: true,
+          tool: call.name,
+          message: 'ok'
+        }),
+        collectPostWriteDiagnosticsFn: async () => diagRuns.shift() || []
+      }),
+      { requireToolCall: true, requireMutation: true },
+      undefined,
+      undefined,
+      session
+    );
+
+    assert.equal(result, 'Hotovo: zmena souboru provedena (src/a.ts). (auto-corrected 1x)');
+    assert.ok(logs.some(message => message.includes('[SelfCorrect] Attempt 1/3')));
+    assert.ok(panelMessages.some(message => (message as any).type === 'pipelineStatus'));
+    assert.equal(session.toolCallRecords.length, 2);
+  });
+
+  it('stops retrying after maxSelfCorrections and returns the capped correction note', async () => {
+    const modelResponses = new Array(4).fill(
+      toolCall('write_file', { path: 'src/a.ts', text: 'still bad' })
+    );
+    const session: any = {
+      hadMutations: true,
+      lastWritePath: 'src/a.ts',
+      toolCallRecords: []
+    };
+    let diagCalls = 0;
+
+    const result = await generateWithTools(
+      createPanel([]),
+      'http://example.test',
+      'primary-model',
+      'system',
+      [{ role: 'user', content: 'fix file' }],
+      1000,
+      6,
+      false,
+      createDeps({
+        executeModelCallWithMessagesFn: async () => modelResponses.shift() || '',
+        runToolCallFn: async (_panel: any, call: any) => ({ ok: true, tool: call.name, message: 'ok' }),
+        collectPostWriteDiagnosticsFn: async () => {
+          diagCalls++;
+          return [{ path: 'src/a.ts', line: 1, message: 'Still broken', severity: 'error' }];
+        }
+      }),
+      { requireToolCall: true, requireMutation: true },
+      undefined,
+      undefined,
+      session
+    );
+
+    assert.equal(result, 'Hotovo: zmena souboru provedena (src/a.ts). (auto-corrected 3x)');
+    assert.equal(diagCalls, 3);
+    assert.equal(session.toolCallRecords.length, 4);
+  });
+
+  it('rejects fabricated mutation when all write operations fail', async () => {
+    const session: any = {
+      hadMutations: false,
+      lastWritePath: 'src/a.ts',
+      toolCallRecords: []
+    };
+    const logs: string[] = [];
+
+    const result = await generateWithTools(
+      createPanel([]),
+      'http://example.test',
+      'primary-model',
+      'system',
+      [{ role: 'user', content: 'fix file' }],
+      1000,
+      2,
+      false,
+      createDeps({
+        log: (message: string) => logs.push(message),
+        executeModelCallWithMessagesFn: async () => toolCall('write_file', { path: 'src/a.ts', text: 'bad' }),
+        runToolCallFn: async (_panel: any, call: any) => ({ ok: false, tool: call.name, message: 'permission denied' })
+      }),
+      { requireToolCall: true, requireMutation: false },
+      undefined,
+      undefined,
+      session
+    );
+
+    assert.equal(result, 'Chyba: vsechny zapisy selhaly. Soubory nebyly zmeneny.');
+    assert.ok(logs.some(message => message.includes('WARNING: All write operations failed')));
+  });
+
+  it('returns mutation-required error when only non-mutating tools succeed', async () => {
+    const session: any = {
+      hadMutations: false,
+      toolCallRecords: []
+    };
+
+    const result = await generateWithTools(
+      createPanel([]),
+      'http://example.test',
+      'primary-model',
+      'system',
+      [{ role: 'user', content: 'inspect file' }],
+      1000,
+      1,
+      false,
+      createDeps({
+        executeModelCallWithMessagesFn: async () => toolCall('read_file', { path: 'src/a.ts' }),
+        runToolCallFn: async (_panel: any, call: any) => ({ ok: true, tool: call.name, message: 'ok' })
+      }),
+      { requireToolCall: true, requireMutation: true },
+      undefined,
+      undefined,
+      session
+    );
+
+    assert.equal(result, 'Chyba: nebyla provedena zadna zmena souboru. Pouzij write_file nebo replace_lines.');
+  });
+});

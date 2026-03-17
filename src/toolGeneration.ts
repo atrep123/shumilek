@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { executeModelCallWithMessages } from './modelCall';
-import { parseToolCalls } from './toolingProtocol';
+import { parseToolCalls, ParseToolCallsResult } from './toolingProtocol';
 import { runToolCall, RunToolCallDeps } from './toolExecution';
 import { clampNumber, ToolRequirements } from './configResolver';
 import { ToolCallOptions } from './toolUtils';
@@ -14,7 +14,12 @@ interface DiagnosticEntry {
   severity: string;
 }
 
-export interface GenerateWithToolsDeps extends RunToolCallDeps {}
+export interface GenerateWithToolsDeps extends RunToolCallDeps {
+  executeModelCallWithMessagesFn?: typeof executeModelCallWithMessages;
+  parseToolCallsFn?: (text: string) => ParseToolCallsResult;
+  runToolCallFn?: typeof runToolCall;
+  collectPostWriteDiagnosticsFn?: () => Promise<DiagnosticEntry[]>;
+}
 
 async function collectPostWriteDiagnostics(): Promise<DiagnosticEntry[]> {
   await new Promise(resolve => setTimeout(resolve, 800));
@@ -68,6 +73,10 @@ export async function generateWithTools(
   const requireToolCall = requirements?.requireToolCall ?? false;
   const requireMutation = requirements?.requireMutation ?? false;
   const startHadMutations = session?.hadMutations ?? false;
+  const executeModelCall = deps.executeModelCallWithMessagesFn || executeModelCallWithMessages;
+  const parseToolCallsImpl = deps.parseToolCallsFn || parseToolCalls;
+  const runToolCallImpl = deps.runToolCallFn || runToolCall;
+  const collectDiagnostics = deps.collectPostWriteDiagnosticsFn || collectPostWriteDiagnostics;
   let sawToolCall = false;
   let localMutation = false;
   let selfCorrectionCount = 0;
@@ -105,7 +114,7 @@ export async function generateWithTools(
 
     let response: string;
     try {
-      response = await executeModelCallWithMessages(
+      response = await executeModelCall(
         baseUrl,
         currentModel,
         systemPromptOverride,
@@ -125,7 +134,7 @@ export async function generateWithTools(
       throw err;
     }
 
-    const { calls, remainingText, errors } = parseToolCalls(response);
+    const { calls, remainingText, errors } = parseToolCallsImpl(response);
     if (calls.length === 0) {
       if (errors.length > 0) {
         if (requireToolCall) {
@@ -183,7 +192,7 @@ export async function generateWithTools(
     }
 
     for (const call of calls) {
-      const result = await runToolCall(panel, call, confirmEdits, session, autoApprovePolicy, deps);
+      const result = await runToolCallImpl(panel, call, confirmEdits, session, autoApprovePolicy, deps);
       if (session) {
         if (!session.toolCallRecords) session.toolCallRecords = [];
         session.toolCallRecords.push({
@@ -223,7 +232,23 @@ export async function generateWithTools(
       }
     }
 
-    const mutated = session?.hadMutations ?? localMutation;
+    if (session?.toolCallRecords && session.toolCallRecords.length > 0) {
+      const writes = session.toolCallRecords.filter(record => ['write_file', 'replace_lines'].includes(record.tool));
+      const failedWrites = writes.filter(record => !record.ok);
+      const successfulWrites = writes.filter(record => record.ok);
+      deps.log?.(`[ToolTrack] Total calls: ${session.toolCallRecords.length}, writes: ${writes.length}, failed writes: ${failedWrites.length}`);
+      if (failedWrites.length > 0) {
+        for (const failedWrite of failedWrites) {
+          deps.log?.(`[ToolTrack] Failed write: ${failedWrite.tool} -> ${failedWrite.message ?? 'unknown'}`);
+        }
+      }
+      if (writes.length > 0 && successfulWrites.length === 0) {
+        deps.log?.('[ToolTrack] WARNING: All write operations failed — possible fabricated edit');
+        return 'Chyba: vsechny zapisy selhaly. Soubory nebyly zmeneny.';
+      }
+    }
+
+    const mutated = Boolean(session?.hadMutations || localMutation);
     if (requireMutation && !mutated) {
       if (index >= iterations - 1) {
         return 'Chyba: nebyla provedena zadna zmena souboru. Pouzij write_file nebo replace_lines.';
@@ -234,7 +259,7 @@ export async function generateWithTools(
       });
     } else if (mutated) {
       if (selfCorrectionCount < maxSelfCorrections && index < iterations - 1) {
-        const diagErrors = await collectPostWriteDiagnostics();
+        const diagErrors = await collectDiagnostics();
         if (diagErrors.length > 0) {
           selfCorrectionCount++;
           deps.log?.(`[SelfCorrect] Attempt ${selfCorrectionCount}/${maxSelfCorrections}: ${diagErrors.length} error(s) detected`);
@@ -267,22 +292,6 @@ export async function generateWithTools(
         ? ` (auto-corrected ${selfCorrectionCount}x)`
         : '';
 
-      if (session?.toolCallRecords && session.toolCallRecords.length > 0) {
-        const writes = session.toolCallRecords.filter(record => ['write_file', 'replace_lines'].includes(record.tool));
-        const failedWrites = writes.filter(record => !record.ok);
-        const successfulWrites = writes.filter(record => record.ok);
-        deps.log?.(`[ToolTrack] Total calls: ${session.toolCallRecords.length}, writes: ${writes.length}, failed writes: ${failedWrites.length}`);
-        if (failedWrites.length > 0) {
-          for (const failedWrite of failedWrites) {
-            deps.log?.(`[ToolTrack] Failed write: ${failedWrite.tool} -> ${failedWrite.message ?? 'unknown'}`);
-          }
-        }
-        if (writes.length > 0 && successfulWrites.length === 0) {
-          deps.log?.('[ToolTrack] WARNING: All write operations failed — possible fabricated edit');
-          return 'Chyba: vsechny zapisy selhaly. Soubory nebyly zmeneny.';
-        }
-      }
-
       return writePath
         ? `Hotovo: zmena souboru provedena (${writePath}).${correctionNote}`
         : `Hotovo: zmena souboru provedena.${correctionNote}`;
@@ -294,7 +303,7 @@ export async function generateWithTools(
   if (requireToolCall && !sawToolCall) {
     return 'Chyba: model nepouzil nastroje. Pouzij tool_call a proved pozadovanou akci.';
   }
-  if (requireMutation && !(session?.hadMutations ?? localMutation) && !startHadMutations) {
+  if (requireMutation && !(session?.hadMutations || localMutation) && !startHadMutations) {
     return 'Chyba: nebyla provedena zadna zmena souboru. Pouzij write_file nebo replace_lines.';
   }
 
