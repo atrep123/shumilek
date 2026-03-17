@@ -362,14 +362,29 @@ describe('botEval compare and failure clustering helpers', () => {
     const rootDir = path.resolve(__dirname, '..');
     const ciConfig = JSON.parse(
       fs.readFileSync(path.join(rootDir, 'scripts', 'config', 'botEvalGate.ci.json'), 'utf8')
-    ) as { scenarioOverrides?: Record<string, unknown> };
+    ) as {
+      scenarioOverrides?: Record<string, { maxLatencyMultiplier?: number } | undefined>;
+    };
     const nightlyConfig = JSON.parse(
       fs.readFileSync(path.join(rootDir, 'scripts', 'config', 'botEvalGate.nightly.json'), 'utf8')
-    ) as { scenarioOverrides?: Record<string, unknown> };
+    ) as {
+      scenarioOverrides?: Record<string, { maxLatencyMultiplier?: number } | undefined>;
+    };
 
     const ciScenarioIds = Object.keys(ciConfig.scenarioOverrides || {}).sort();
     const nightlyScenarioIds = Object.keys(nightlyConfig.scenarioOverrides || {}).sort();
 
     assert.deepEqual(ciScenarioIds, nightlyScenarioIds);
+
+    const nightlyLatencyOverrides = Object.entries(nightlyConfig.scenarioOverrides || {})
+      .filter(([, thresholds]) => thresholds?.maxLatencyMultiplier !== undefined)
+      .map(([scenarioId, thresholds]) => [scenarioId, thresholds?.maxLatencyMultiplier] as const)
+      .sort(([left], [right]) => left.localeCompare(right));
+    const ciLatencyOverrides = nightlyLatencyOverrides.map(([scenarioId]) => [
+      scenarioId,
+      ciConfig.scenarioOverrides?.[scenarioId]?.maxLatencyMultiplier
+    ] as const);
+
+    assert.deepEqual(ciLatencyOverrides, nightlyLatencyOverrides);
   });
 });
