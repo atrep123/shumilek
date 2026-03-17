@@ -63,7 +63,19 @@ type AggregateReport = {
   scenarios: AggregateScenario[];
 };
 
-function parseArgs(argv: string[]): { inputs: string[]; outJson: string; outMd: string } {
+type AggregateOptions = {
+  inputs: string[];
+  outJson: string;
+  outMd: string;
+};
+
+type StabilityAggregateDeps = {
+  now?: () => string;
+  warn?: (message: string) => void;
+  log?: (message: string) => void;
+};
+
+function parseArgs(argv: string[]): AggregateOptions {
   const inputs: string[] = [];
   let outJson = path.resolve('projects/bot_eval_run/long_stability_aggregate_latest.json');
   let outMd = path.resolve('projects/bot_eval_run/long_stability_aggregate_latest.md');
@@ -113,6 +125,10 @@ function parseArgs(argv: string[]): { inputs: string[]; outJson: string; outMd: 
   }
 
   return { inputs, outJson, outMd };
+}
+
+export function parseStabilityAggregateArgs(argv: string[]): AggregateOptions {
+  return parseArgs(argv);
 }
 
 function printUsageAndExit(code: number): never {
@@ -201,8 +217,13 @@ function buildMarkdown(report: AggregateReport): string {
   return lines.join('\n');
 }
 
-async function main() {
-  const opts = parseArgs(process.argv.slice(2));
+export async function runStabilityAggregate(
+  opts: AggregateOptions,
+  deps: StabilityAggregateDeps = {}
+): Promise<AggregateReport> {
+  const warn = deps.warn || (message => console.warn(message));
+  const log = deps.log || (message => console.log(message));
+  const now = deps.now || (() => new Date().toISOString());
   const scenarioAcc = new Map<string, {
     passRate: number[];
     rawRunPassRate: number[];
@@ -234,8 +255,7 @@ async function main() {
 
     if (!baselineDir) baselineDir = compare.baselineDir || '';
     if (baselineDir && compare.baselineDir && baselineDir !== compare.baselineDir) {
-      // eslint-disable-next-line no-console
-      console.warn(`Baseline mismatch (skipping ${input}): ${baselineDir} vs ${compare.baselineDir}`);
+      warn(`Baseline mismatch (skipping ${input}): ${baselineDir} vs ${compare.baselineDir}`);
       continue;
     }
 
@@ -310,7 +330,7 @@ async function main() {
     }));
 
   const report: AggregateReport = {
-    generatedAt: new Date().toISOString(),
+    generatedAt: now(),
     inputs: opts.inputs,
     baselineDir,
     allGatePassed,
@@ -322,10 +342,14 @@ async function main() {
   await fs.promises.writeFile(opts.outJson, JSON.stringify(report, null, 2), 'utf8');
   await fs.promises.writeFile(opts.outMd, buildMarkdown(report), 'utf8');
 
-  // eslint-disable-next-line no-console
-  console.log(`Aggregate JSON: ${opts.outJson}`);
-  // eslint-disable-next-line no-console
-  console.log(`Aggregate MD:   ${opts.outMd}`);
+  log(`Aggregate JSON: ${opts.outJson}`);
+  log(`Aggregate MD:   ${opts.outMd}`);
+  return report;
+}
+
+async function main() {
+  const opts = parseArgs(process.argv.slice(2));
+  await runStabilityAggregate(opts);
 }
 
 if (require.main === module) {
