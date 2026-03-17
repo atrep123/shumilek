@@ -80,27 +80,27 @@ export async function runToolCall(
 
   try {
     switch (name) {
-      case 'list_files': return handleListFilesTool(name, args, mutationHandlerDeps);
-      case 'read_file': return handleReadFileTool(name, args, mutationHandlerDeps);
-      case 'get_active_file': return handleGetActiveFileTool(name, args, mutationHandlerDeps);
-      case 'search_in_files': return handleSearchInFilesTool(name, args, mutationHandlerDeps);
-      case 'apply_patch': return handleApplyPatchTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      case 'get_symbols': return handleGetSymbolsTool(name, args, mutationHandlerDeps);
-      case 'get_workspace_symbols': return handleGetWorkspaceSymbolsTool(name, args, mutationHandlerDeps);
-      case 'get_definition': return handleGetDefinitionTool(name, args, mutationHandlerDeps);
-      case 'get_references': return handleGetReferencesTool(name, args, mutationHandlerDeps);
-      case 'get_type_info': return handleGetTypeInfoTool(name, args, mutationHandlerDeps);
-      case 'get_diagnostics': return handleGetDiagnosticsTool(name, args, mutationHandlerDeps);
-      case 'route_file': return handleRouteFileTool(name, args, mutationHandlerDeps);
-      case 'pick_save_path': return handlePickSavePathTool(name, args, mutationHandlerDeps);
-      case 'replace_lines': return handleReplaceLinesTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      case 'write_file': return handleWriteFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      case 'rename_file': return handleRenameFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      case 'delete_file': return handleDeleteFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      case 'run_terminal_command': return handleRunTerminalCommandTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps);
-      case 'fetch_webpage': return handleFetchWebpageTool(name, args, mutationHandlerDeps);
-      case 'browser_fetch_page': return handleFetchWebpageTool(name, args, mutationHandlerDeps);
-      case 'browser_open_page': return handleBrowserOpenPageTool(name, args, mutationHandlerDeps);
+      case 'list_files': return await handleListFilesTool(name, args, mutationHandlerDeps);
+      case 'read_file': return await handleReadFileTool(name, args, mutationHandlerDeps);
+      case 'get_active_file': return await handleGetActiveFileTool(name, args, mutationHandlerDeps);
+      case 'search_in_files': return await handleSearchInFilesTool(name, args, mutationHandlerDeps);
+      case 'apply_patch': return await handleApplyPatchTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
+      case 'get_symbols': return await handleGetSymbolsTool(name, args, mutationHandlerDeps);
+      case 'get_workspace_symbols': return await handleGetWorkspaceSymbolsTool(name, args, mutationHandlerDeps);
+      case 'get_definition': return await handleGetDefinitionTool(name, args, mutationHandlerDeps);
+      case 'get_references': return await handleGetReferencesTool(name, args, mutationHandlerDeps);
+      case 'get_type_info': return await handleGetTypeInfoTool(name, args, mutationHandlerDeps);
+      case 'get_diagnostics': return await handleGetDiagnosticsTool(name, args, mutationHandlerDeps);
+      case 'route_file': return await handleRouteFileTool(name, args, mutationHandlerDeps);
+      case 'pick_save_path': return await handlePickSavePathTool(name, args, mutationHandlerDeps);
+      case 'replace_lines': return await handleReplaceLinesTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
+      case 'write_file': return await handleWriteFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
+      case 'rename_file': return await handleRenameFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
+      case 'delete_file': return await handleDeleteFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
+      case 'run_terminal_command': return await handleRunTerminalCommandTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps);
+      case 'fetch_webpage': return await handleFetchWebpageTool(name, args, mutationHandlerDeps);
+      case 'browser_fetch_page': return await handleFetchWebpageTool(name, args, mutationHandlerDeps);
+      case 'browser_open_page': return await handleBrowserOpenPageTool(name, args, mutationHandlerDeps);
       default:
         return { ok: false, tool: name, message: 'neznamy nastroj' };
     }
