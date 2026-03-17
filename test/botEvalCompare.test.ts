@@ -1,4 +1,6 @@
 import { strict as assert } from 'assert';
+import * as fs from 'fs';
+import * as path from 'path';
 
 import {
   classifyFailureCluster,
@@ -291,5 +293,20 @@ describe('botEval compare and failure clustering helpers', () => {
     assert.equal(gate.passed, false);
     assert.ok(gate.violations.some(v => v.scenario === 'node-api-oracle' && v.metric === 'latencyMultiplier'));
     assert.ok(!gate.violations.some(v => v.scenario === 'ts-todo-oracle' && v.metric === 'latencyMultiplier'));
+  });
+
+  it('keeps CI gate scenario overrides aligned with nightly overrides', () => {
+    const rootDir = path.resolve(__dirname, '..');
+    const ciConfig = JSON.parse(
+      fs.readFileSync(path.join(rootDir, 'scripts', 'config', 'botEvalGate.ci.json'), 'utf8')
+    ) as { scenarioOverrides?: Record<string, unknown> };
+    const nightlyConfig = JSON.parse(
+      fs.readFileSync(path.join(rootDir, 'scripts', 'config', 'botEvalGate.nightly.json'), 'utf8')
+    ) as { scenarioOverrides?: Record<string, unknown> };
+
+    const ciScenarioIds = Object.keys(ciConfig.scenarioOverrides || {}).sort();
+    const nightlyScenarioIds = Object.keys(nightlyConfig.scenarioOverrides || {}).sort();
+
+    assert.deepEqual(ciScenarioIds, nightlyScenarioIds);
   });
 });
