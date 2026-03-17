@@ -138,6 +138,8 @@ Baseline resolution in CI:
 1. `BOT_EVAL_BASELINE_DIR` repository variable (recommended)
 2. fallback to `projects/bot_eval_run/release_baseline.txt`
 
+After a successful nightly baseline promotion, the nightly pipeline updates `release_baseline.txt` to point at `projects/bot_eval_run/release_gate_stable_nightly`, not the transient candidate run directory.
+
 If baseline is missing or does not contain `results.json`, workflow fails with a clear error.
 
 Useful optional repository variables:
