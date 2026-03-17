@@ -1,6 +1,6 @@
 {
-  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773655684522\\node-api-oracle_run_01",
-  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773655684522\\node-api-oracle_run_01\\workspace",
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773735512330\\node-api-oracle_run_01",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773735512330\\node-api-oracle_run_01\\workspace",
   "deterministicFallback": {
     "mode": "on-fail",
     "tsTodo": {
@@ -22,6 +22,17 @@
       "canonicalActivations": 0,
       "canonicalRecoveries": 0,
       "rawPasses": 1,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "tsCsv": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
       "rawFailures": 0,
       "recoveredByFallback": 0
     },
@@ -56,12 +67,12 @@
   "commands": [
     {
       "command": "node --test tests/oracle.test.js",
-      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773655684522\\node-api-oracle_run_01\\workspace",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773735512330\\node-api-oracle_run_01\\workspace",
       "ok": true,
       "exitCode": 0,
       "timedOut": false,
-      "durationMs": 200,
-      "stdout": "✔ GET /health + GET /openapi.json (45.7924ms)\n✔ Todo CRUD + persistence (24.0075ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 136.1754\n",
+      "durationMs": 258,
+      "stdout": "✔ GET /health + GET /openapi.json (70.4754ms)\n✔ Todo CRUD + persistence (54.951ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 185.2856\n",
       "stderr": ""
     }
   ]

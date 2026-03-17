@@ -1,0 +1,12 @@
+{
+  "name": "csv-processor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A simple CSV parser and filter with a CLI interface.",
+  "main": "dist/cli.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "author": "Your Name",
+  "license": "MIT"
+}

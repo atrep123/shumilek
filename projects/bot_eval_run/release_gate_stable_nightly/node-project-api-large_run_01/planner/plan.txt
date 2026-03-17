@@ -1,12 +1,12 @@
-- Create modular Express project under src/modules/ with projects, tasks, members, comments domains.
-- Create src/app.js exporting Express app (NO listen) and src/server.js starting the server.
-- Create src/lib/errors.js with AppError class and src/lib/id.js using crypto.randomUUID().
-- Each module has routes.js (relative paths from mount point) and service.js (in-memory store).
-- Mount routes: /projects, /projects/:projectId/members, /projects/:projectId/tasks, /projects/:projectId/tasks/:taskId/comments.
-- GET /health returns { ok: true }. All errors return { error: { code, message } } JSON.
-- Implement full CRUD: create/list/get projects, add/list members, create/list/filter/patch tasks, create/list comments.
-- Validate inputs: missing name/title/message/userId/role -> 400, not found -> 404, duplicate -> 409.
-- Task status filter via ?status=todo|done query param. PATCH status only allows todo|done.
-- Include supertest in package.json dependencies. Minimum 12 source files under src/.
-- Use mergeParams: true on sub-routers to access parent route params.
-- Verify with npm install and oracle tests.
+- We'll use Express for the framework.
+- We'll have a modular structure under `src/modules/` for each domain: projects, tasks, members, comments.
+- We'll have `src/app.js` for the app export and `src/server.js` for the server setup (without calling `listen` on import).
+- We'll use `node:crypto.randomUUID()` for generating IDs.
+- We'll define a consistent error format and handle errors appropriately.
+- README.md
+- package.json
+- src/app.js
+- src/server.js
+- src/modules/projects/routes.js
+- src/modules/projects/service.js
+- src/modules/tasks/routes.js

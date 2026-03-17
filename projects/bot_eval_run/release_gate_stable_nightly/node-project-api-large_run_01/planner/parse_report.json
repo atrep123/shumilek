@@ -3,17 +3,12 @@
     {
       "stage": "initial",
       "model": "deepseek-r1:8b",
-      "ok": false,
-      "error": "Planner output must contain non-empty \"plan\" string",
-      "errorKind": "other"
-    },
-    {
-      "stage": "repair_schema",
-      "model": "deterministic-fallback",
-      "ok": true
+      "ok": true,
+      "transport": "chat",
+      "formatKind": "schema",
+      "schemaUsed": true,
+      "fallbackUsed": false
     }
   ],
-  "finalOk": true,
-  "primaryError": "Planner output must contain non-empty \"plan\" string",
-  "primaryErrorKind": "other"
+  "finalOk": true
 }

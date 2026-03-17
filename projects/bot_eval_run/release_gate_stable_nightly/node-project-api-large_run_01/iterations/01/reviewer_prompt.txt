@@ -125,8 +125,7 @@ function expectErrorPayload(res, expectedStatus) {
 
 
 CHYBY:
-- Task status contract mismatch: use `todo` / `done` statuses (not `open` or `pending`)
-- Task status contract mismatch: PATCH status must allow only "todo" or "done" (pending/open are not allowed).
+- package.json should include "supertest" (dependencies or devDependencies) for oracle execution
 - Skipped oracle command checks because structural contract did not pass.
 
 NODE PROJECT CONTRACT FIX MAP (AUTO-GENERATED)
@@ -138,14 +137,28 @@ SOUBORY (zkraceno):
 - src/app.js
 - src/lib/errors.js
 - src/lib/id.js
-- src/lib/utils.js
-- src/lib/validation.js
 - src/modules/comments/routes.js
 - src/modules/comments/service.js
 - src/modules/members/routes.js
 - src/modules/members/service.js
+- src/modules/projects/repository.js
 - src/modules/projects/routes.js
 - src/modules/projects/service.js
 - src/modules/tasks/routes.js
 - src/modules/tasks/service.js
 - src/server.js
+
+KONTEXT SOUBORU (zkraceno):
+--- FILE: package.json ---
+{
+  "name": "project-management-api",
+  "version": "1.0.0",
+  "description": "A Node.js monolithic application for managing projects, tasks, members, and comments.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}

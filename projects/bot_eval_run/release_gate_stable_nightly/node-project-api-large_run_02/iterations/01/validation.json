@@ -1,8 +1,0 @@
-{
-  "ok": false,
-  "diagnostics": [
-    "package.json should include \"supertest\" (dependencies or devDependencies) for oracle execution",
-    "Skipped oracle command checks because structural contract did not pass."
-  ],
-  "commands": []
-}

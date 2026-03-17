@@ -1,29 +1,27 @@
 # Project Management API
 This is a Node.js monolithic application for managing projects, tasks, members, and comments. It uses in-memory repositories and follows a modular structure under `src/modules/`.
 
-## Dependencies
-- express
-- zod
-- supertest (for testing)
+## Features
+- In-memory data storage
+- Modular architecture with separate modules for projects, tasks, members, and comments
+- RESTful API endpoints for CRUD operations
+- Error handling with consistent payload shape `{ error: { code, message } }`
 
-## Running the Application
-To run the application, you can use the following commands:
+## Getting Started
+1. Clone the repository.
+2. Install dependencies using `npm install`.
+3. Run the application using `node src/server.js`.
 
-```bash
-npm install
-node src/server.js
-```
-
-## API Endpoints
-- **GET /health**: Returns `{ ok: true }`.
-- **POST /projects**: Creates a new project.
-- **GET /projects**: Lists all projects.
-- **GET /projects/:projectId**: Retrieves a specific project by ID.
-- **POST /projects/:projectId/members**: Adds a member to a project.
-- **GET /projects/:projectId/members**: Lists all members of a project.
-- **POST /projects/:projectId/tasks**: Creates a new task for a project.
-- **GET /projects/:projectId/tasks**: Lists all tasks of a project.
-- **GET /projects/:projectId/tasks?status=done**: Filters tasks by status 'done'.
-- **PATCH /projects/:projectId/tasks/:taskId**: Updates the status of a task.
-- **POST /projects/:projectId/tasks/:taskId/comments**: Adds a comment to a task.
-- **GET /projects/:projectId/tasks/:taskId/comments**: Lists all comments of a task.
+## Endpoints
+- **GET /health**: Check the health of the API.
+- **POST /projects**: Create a new project.
+- **GET /projects**: List all projects.
+- **GET /projects/:projectId**: Get a specific project by ID.
+- **POST /projects/:projectId/members**: Add a member to a project.
+- **GET /projects/:projectId/members**: List all members of a project.
+- **POST /projects/:projectId/tasks**: Create a new task for a project.
+- **GET /projects/:projectId/tasks**: List all tasks of a project.
+- **GET /projects/:projectId/tasks?status=done**: Filter tasks by status (e.g., done).
+- **PATCH /projects/:projectId/tasks/:taskId**: Update the status of a task.
+- **POST /projects/:projectId/tasks/:taskId/comments**: Add a comment to a task.
+- **GET /projects/:projectId/tasks/:taskId/comments**: List all comments of a task.

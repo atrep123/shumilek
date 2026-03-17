@@ -1,12 +1,12 @@
 {
   "version": 1,
   "requiredConsecutive": 2,
-  "streak": 2,
-  "lastCandidateDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773655684522",
-  "lastQualifiedAt": "2026-03-16T10:35:31.894Z",
+  "streak": 3,
+  "lastCandidateDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773735512330",
+  "lastQualifiedAt": "2026-03-17T09:05:04.036Z",
   "lastPromotion": {
-    "at": "2026-03-16T10:35:31.894Z",
-    "candidateDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773655684522",
+    "at": "2026-03-17T09:05:04.036Z",
+    "candidateDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773735512330",
     "stableDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_stable_nightly"
   },
   "history": [
@@ -25,6 +25,14 @@
       "promoted": true,
       "streakAfter": 2,
       "reason": "promoted after streak 2/2"
+    },
+    {
+      "at": "2026-03-17T09:05:04.036Z",
+      "candidateDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\release_gate_1773735512330",
+      "qualified": true,
+      "promoted": true,
+      "streakAfter": 3,
+      "reason": "promoted after streak 3/2"
     }
   ]
 }
