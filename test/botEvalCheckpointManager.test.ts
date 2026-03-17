@@ -174,6 +174,77 @@ describe('botEvalCheckpointManager', () => {
     }
   });
 
+  it('ignores probe and smoke runs when selecting comparable checkpoint inputs', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-checkpoint-filter-'));
+    try {
+      const manifestPath = path.join(tmp, 'botEvalBenchmarks.json');
+      writeJson(manifestPath, {
+        version: 1,
+        scenarios: {
+          'node-api-oracle': {
+            splits: ['validation', 'test'],
+            domains: ['node'],
+            capabilities: ['integration'],
+            blocking: true
+          }
+        },
+        checkpointPolicy: {
+          minRunsInWindow: 2,
+          gateRequired: true,
+          requiredSplits: ['validation', 'test'],
+          minPassRate: 1,
+          minRawRunPassRate: 1,
+          maxFallbackDependencyRunRate: 0.2
+        }
+      });
+
+      createComparableRun({
+        root: tmp,
+        dirName: 'release_gate_2002',
+        gatePassed: true,
+        summary: [
+          { scenario: 'node-api-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 1000 }
+        ]
+      });
+      const latestEligibleRun = createComparableRun({
+        root: tmp,
+        dirName: 'release_gate_2003',
+        gatePassed: true,
+        summary: [
+          { scenario: 'node-api-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 900 }
+        ]
+      });
+      createComparableRun({
+        root: tmp,
+        dirName: 'release_gate_checkpoint_probe_2004',
+        gatePassed: false,
+        summary: [
+          { scenario: 'node-api-oracle', passRate: 0, rawRunPassRate: 0, fallbackDependencyRunRate: 0, avgMs: 5000 }
+        ]
+      });
+      createComparableRun({
+        root: tmp,
+        dirName: 'release_gate_pointer_smoke_2005',
+        gatePassed: false,
+        summary: [
+          { scenario: 'node-api-oracle', passRate: 0, rawRunPassRate: 0, fallbackDependencyRunRate: 0, avgMs: 6000 }
+        ]
+      });
+
+      const report = buildCheckpointReport({
+        rootDir: tmp,
+        manifestPath,
+        window: 2
+      });
+
+      assert.deepEqual(report.inputs.map(input => path.basename(input)), ['release_gate_2003', 'release_gate_2002']);
+      assert.equal(report.checkpoint.latestRunDir, latestEligibleRun);
+      assert.equal(report.checkpoint.qualified, true);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
   it('records and activates a qualified checkpoint in the registry', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-checkpoint-registry-'));
     try {

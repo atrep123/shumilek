@@ -132,6 +132,12 @@ type CheckpointRegistry = {
 
 const BENCHMARK_SPLITS: BenchmarkSplit[] = ['train', 'validation', 'test', 'regression', 'holdout'];
 
+const CHECKPOINT_ELIGIBLE_RUN_PATTERNS = [
+  /^release_gate_\d+$/,
+  /^release_gate_ci_nightly_\d+_\d+$/,
+  /^release_gate_stable_nightly$/
+];
+
 function parseArgs(argv: string[]): CheckpointManagerOptions {
   const opts: CheckpointManagerOptions = {
     rootDir: path.resolve('projects/bot_eval_run'),
@@ -315,6 +321,12 @@ function buildMetricStats(values: number[]): MetricStats {
   };
 }
 
+function isCheckpointEligibleRunDirName(dirName: string): boolean {
+  const normalized = String(dirName || '').trim();
+  if (!normalized) return false;
+  return CHECKPOINT_ELIGIBLE_RUN_PATTERNS.some(pattern => pattern.test(normalized));
+}
+
 function listComparableRunDirs(rootDir: string): RunArtifacts[] {
   if (!fs.existsSync(rootDir)) {
     throw new Error(`Eval run root directory does not exist: ${rootDir}`);
@@ -322,6 +334,7 @@ function listComparableRunDirs(rootDir: string): RunArtifacts[] {
 
   return fs.readdirSync(rootDir, { withFileTypes: true })
     .filter(entry => entry.isDirectory())
+    .filter(entry => isCheckpointEligibleRunDirName(entry.name))
     .map(entry => {
       const dirPath = path.join(rootDir, entry.name);
       const summaryPath = path.join(dirPath, 'summary.json');
