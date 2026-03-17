@@ -1,0 +1,206 @@
+import { strict as assert } from 'assert';
+
+import { streamPlainOllamaChat } from '../src/responseStreaming';
+
+function createPanel(messages: any[]) {
+  return {
+    visible: true,
+    webview: {
+      postMessage: async (message: unknown) => {
+        messages.push(message);
+        return true;
+      }
+    }
+  } as any;
+}
+
+function createStream(chunks: string[]) {
+  return {
+    async *[Symbol.asyncIterator]() {
+      for (const chunk of chunks) {
+        yield Buffer.from(chunk, 'utf8');
+      }
+    }
+  };
+}
+
+describe('responseStreaming', () => {
+  it('streams response chunks and returns concatenated output', async () => {
+    const webviewMessages: any[] = [];
+    const logs: string[] = [];
+    const abortCtrl = new AbortController();
+
+    const result = await streamPlainOllamaChat({
+      url: 'http://example.test',
+      model: 'test-model',
+      apiMessages: [{ role: 'user', content: 'hello' }],
+      timeout: 1000,
+      panel: createPanel(webviewMessages),
+      abortCtrl,
+      guardianEnabled: false,
+      log: message => logs.push(message),
+      fetchWithTimeoutFn: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: createStream([
+          '{"message":{"content":"Ahoj"}}\n',
+          '{"message":{"content":" světe"}}\n'
+        ])
+      }) as any
+    });
+
+    assert.equal(result, 'Ahoj světe');
+    assert.deepEqual(logs, []);
+    assert.deepEqual(
+      webviewMessages.filter(message => message.type === 'responseChunk').map(message => message.text),
+      ['Ahoj', ' světe']
+    );
+  });
+
+  it('throws on non-ok HTTP response', async () => {
+    const abortCtrl = new AbortController();
+
+    await assert.rejects(
+      () => streamPlainOllamaChat({
+        url: 'http://example.test',
+        model: 'test-model',
+        apiMessages: [{ role: 'user', content: 'hello' }],
+        timeout: 1000,
+        panel: createPanel([]),
+        abortCtrl,
+        guardianEnabled: false,
+        fetchWithTimeoutFn: async () => ({
+          ok: false,
+          status: 503,
+          statusText: 'Service Unavailable',
+          body: null
+        }) as any
+      }),
+      /HTTP 503: Service Unavailable/
+    );
+  });
+
+  it('ignores malformed JSON lines and continues streaming valid deltas', async () => {
+    const webviewMessages: any[] = [];
+    const abortCtrl = new AbortController();
+
+    const result = await streamPlainOllamaChat({
+      url: 'http://example.test',
+      model: 'test-model',
+      apiMessages: [{ role: 'user', content: 'hello' }],
+      timeout: 1000,
+      panel: createPanel(webviewMessages),
+      abortCtrl,
+      guardianEnabled: false,
+      fetchWithTimeoutFn: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: createStream([
+          'not-json\n',
+          '{"message":{"content":"valid"}}\n'
+        ])
+      }) as any
+    });
+
+    assert.equal(result, 'valid');
+    assert.deepEqual(
+      webviewMessages.filter(message => message.type === 'responseChunk').map(message => message.text),
+      ['valid']
+    );
+  });
+
+  it('stops on stall after partial output and logs guardian warning', async () => {
+    const webviewMessages: any[] = [];
+    const logs: string[] = [];
+    const abortCtrl = new AbortController();
+    const times = [0, 1000, 13050];
+
+    const result = await streamPlainOllamaChat({
+      url: 'http://example.test',
+      model: 'test-model',
+      apiMessages: [{ role: 'user', content: 'hello' }],
+      timeout: 1000,
+      panel: createPanel(webviewMessages),
+      abortCtrl,
+      guardianEnabled: false,
+      log: message => logs.push(message),
+      now: () => times.shift() ?? 13050,
+      fetchWithTimeoutFn: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: createStream([
+          `{"message":{"content":"${'a'.repeat(120)}"}}\n`,
+          '{"message":{"content":"tail"}}\n'
+        ])
+      }) as any
+    });
+
+    assert.equal(result, 'a'.repeat(120));
+    assert.ok(logs.some(message => message.includes('Stall detected')));
+    assert.deepEqual(
+      webviewMessages.filter(message => message.type === 'responseChunk').map(message => message.text),
+      ['a'.repeat(120)]
+    );
+  });
+
+  it('aborts on buffer overflow before parsing oversized buffered content', async () => {
+    const logs: string[] = [];
+    const abortCtrl = new AbortController();
+
+    const result = await streamPlainOllamaChat({
+      url: 'http://example.test',
+      model: 'test-model',
+      apiMessages: [{ role: 'user', content: 'hello' }],
+      timeout: 1000,
+      panel: createPanel([]),
+      abortCtrl,
+      guardianEnabled: false,
+      log: message => logs.push(message),
+      fetchWithTimeoutFn: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: createStream(['x'.repeat(100001)])
+      }) as any
+    });
+
+    assert.equal(result, '');
+    assert.equal(abortCtrl.signal.aborted, true);
+    assert.ok(logs.some(message => message.includes('Buffer overflow detected')));
+  });
+
+  it('detects real-time looping, posts guardian alert, and aborts generation', async () => {
+    const webviewMessages: any[] = [];
+    const logs: string[] = [];
+    const abortCtrl = new AbortController();
+    const repeated = 'abcdef'.repeat(10);
+
+    const result = await streamPlainOllamaChat({
+      url: 'http://example.test',
+      model: 'test-model',
+      apiMessages: [{ role: 'user', content: 'hello' }],
+      timeout: 1000,
+      panel: createPanel(webviewMessages),
+      abortCtrl,
+      guardianEnabled: true,
+      log: message => logs.push(message),
+      fetchWithTimeoutFn: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: createStream([
+          `{"message":{"content":"${repeated}"}}\n`,
+          `{"message":{"content":"${repeated}"}}\n`
+        ])
+      }) as any
+    });
+
+    assert.equal(result, repeated.repeat(2));
+    assert.equal(abortCtrl.signal.aborted, true);
+    assert.ok(logs.some(message => message.includes('Real-time loop detected')));
+    assert.ok(webviewMessages.some(message => message.type === 'guardianAlert'));
+  });
+});

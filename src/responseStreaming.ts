@@ -11,9 +11,13 @@ export async function streamPlainOllamaChat(opts: {
   abortCtrl: AbortController;
   guardianEnabled: boolean;
   log?: (msg: string) => void;
+  fetchWithTimeoutFn?: typeof fetchWithTimeout;
+  now?: () => number;
 }): Promise<string> {
   const { url, model, apiMessages, timeout, panel, abortCtrl, guardianEnabled, log } = opts;
-  const res = await fetchWithTimeout(url, {
+  const fetchImpl = opts.fetchWithTimeoutFn || fetchWithTimeout;
+  const now = opts.now || (() => Date.now());
+  const res = await fetchImpl(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -37,7 +41,7 @@ export async function streamPlainOllamaChat(opts: {
   const decoder = new TextDecoder();
   let buffer = '';
   let fullResponse = '';
-  let lastChunkTime = Date.now();
+  let lastChunkTime = now();
   const STALL_TIMEOUT = 10000;
 
   let recentChunks: string[] = [];
@@ -49,12 +53,12 @@ export async function streamPlainOllamaChat(opts: {
 
   for await (const chunk of res.body as any) {
     if (!chunk) continue;
-    const now = Date.now();
-    if (now - lastChunkTime > STALL_TIMEOUT && fullResponse.length > 100) {
+    const currentTime = now();
+    if (currentTime - lastChunkTime > STALL_TIMEOUT && fullResponse.length > 100) {
       log?.('[Guardian] Stall detected, stopping generation');
       break;
     }
-    lastChunkTime = now;
+    lastChunkTime = currentTime;
 
     buffer += decoder.decode(chunk, { stream: true });
 
