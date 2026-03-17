@@ -189,8 +189,8 @@ export async function runNightlyFull(opts: FullOptions, deps: NightlyFullDeps = 
         const report = JSON.parse(fs.readFileSync(promoteReportPath, 'utf8'));
         if (report.promoted) {
           const baselinePointerPath = path.join(opts.root, 'release_baseline.txt');
-          fs.writeFileSync(baselinePointerPath, latestGateDir, 'utf8');
-          log(`Baseline pointer updated to ${latestGateDir}`);
+          fs.writeFileSync(baselinePointerPath, promoteStableDir + '\n', 'utf8');
+          log(`Baseline pointer updated to ${promoteStableDir}`);
         }
       } catch { /* ignore parse errors */ }
     }

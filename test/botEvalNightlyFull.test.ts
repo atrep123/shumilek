@@ -37,7 +37,7 @@ describe('botEvalNightlyFull', () => {
     assert.deepEqual(opts.extraArgs, ['--foo', 'bar']);
   });
 
-  it('passes promotion report to tuner, updates baseline pointer, and limits stability inputs to latest three release gates', async () => {
+  it('passes promotion report to tuner, updates baseline pointer to stable nightly, and limits stability inputs to latest three release gates', async () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-nightly-full-'));
     try {
       const repoRoot = createRepoRoot(tmp);
@@ -107,8 +107,8 @@ describe('botEvalNightlyFull', () => {
       );
 
       const pointerPath = path.join(runRoot, 'release_baseline.txt');
-      assert.equal(fs.readFileSync(pointerPath, 'utf8'), latestGateDir);
-      assert.ok(logs.some(message => message.includes('Baseline pointer updated to')));
+      assert.equal(fs.readFileSync(pointerPath, 'utf8'), path.join(runRoot, 'release_gate_stable_nightly') + '\n');
+      assert.ok(logs.some(message => message.includes(`Baseline pointer updated to ${path.join(runRoot, 'release_gate_stable_nightly')}`)));
       assert.ok(logs.some(message => message.includes('Tuner action: accept')));
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
