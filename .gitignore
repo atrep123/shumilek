@@ -3,6 +3,9 @@ out
 .github-runner/
 _r/
 projects/bot_eval_run/run_*/
+projects/bot_eval_run/release_gate_[0-9]*/
+projects/bot_eval_run/release_gate_checkpoint_probe_*/
+projects/bot_eval_run/release_gate_pointer_smoke_*/
 projects/bot_eval_run/release_gate_ci_*/
 projects/bot_eval_run/large_nightly_canary_*/
 projects/bot_eval_run/checkpoint_report_latest.json
