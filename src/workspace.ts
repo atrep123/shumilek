@@ -183,7 +183,10 @@ export class WorkspaceIndexer {
   /**
    * Scan a folder recursively
    */
-  private async scanFolder(folderUri: vscode.Uri, rootUri: vscode.Uri): Promise<FileInfo[]> {
+  private static readonly MAX_SCAN_DEPTH = 30;
+
+  private async scanFolder(folderUri: vscode.Uri, rootUri: vscode.Uri, depth: number = 0): Promise<FileInfo[]> {
+    if (depth >= WorkspaceIndexer.MAX_SCAN_DEPTH) return [];
     const files: FileInfo[] = [];
     
     try {
@@ -198,7 +201,7 @@ export class WorkspaceIndexer {
 
         if (type === vscode.FileType.Directory) {
           // Recurse into subdirectories
-          const subFiles = await this.scanFolder(entryUri, rootUri);
+          const subFiles = await this.scanFolder(entryUri, rootUri, depth + 1);
           files.push(...subFiles);
         } else if (type === vscode.FileType.File) {
           try {

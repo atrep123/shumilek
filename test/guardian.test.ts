@@ -134,6 +134,24 @@ describe('ResponseGuardian', () => {
     expect(res.issues.some((i: string) => i.includes('příliš dlouhá'))).to.be.true;
   });
 
+  it('should not split surrogate pairs when truncating long responses', () => {
+    const g = new ResponseGuardian();
+    // Build a long response with emoji (surrogate pairs) near the truncation boundary
+    const emoji = '\uD83D\uDE00'; // 😀 — a surrogate pair
+    const longText = 'a'.repeat(29999) + emoji + 'b'.repeat(1000);
+    const res = g.analyze(longText, 'prompt');
+    // The cleaned response should not contain a lone high surrogate (0xD800-0xDBFF)
+    for (let i = 0; i < res.cleanedResponse.length; i++) {
+      const code = res.cleanedResponse.charCodeAt(i);
+      if (code >= 0xD800 && code <= 0xDBFF) {
+        // Must be followed by a low surrogate
+        const next = res.cleanedResponse.charCodeAt(i + 1);
+        expect(next).to.be.at.least(0xDC00);
+        expect(next).to.be.at.most(0xDFFF);
+      }
+    }
+  });
+
   it('should reset history', () => {
     const g = new ResponseGuardian();
     g.analyze('First response', 'prompt1');

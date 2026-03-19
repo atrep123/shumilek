@@ -146,4 +146,13 @@ describe('WorkspaceIndexer', () => {
       // Both should match, but api.test.ts should score higher (name match)
     });
   });
+
+  describe('scan depth limit', () => {
+    it('should expose MAX_SCAN_DEPTH as a reasonable positive number', () => {
+      const depth = (WorkspaceIndexer as any).MAX_SCAN_DEPTH;
+      expect(depth).to.be.a('number');
+      expect(depth).to.be.greaterThan(0);
+      expect(depth).to.be.at.most(100);
+    });
+  });
 });

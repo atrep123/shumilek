@@ -24,7 +24,12 @@ function toCharBudget(tokenBudget: number): number {
 
 function truncateText(text: string, limit: number): string {
   if (text.length <= limit) return text;
-  return `${text.slice(0, Math.max(0, limit - 40))}\n...<snip>...\n`;
+  let end = Math.max(0, limit - 40);
+  // Avoid splitting a UTF-16 surrogate pair at the boundary
+  if (end > 0 && end < text.length && text.charCodeAt(end - 1) >= 0xD800 && text.charCodeAt(end - 1) <= 0xDBFF) {
+    end--;
+  }
+  return `${text.slice(0, end)}\n...<snip>...\n`;
 }
 
 async function workspaceProvider(ctx: ProviderContext): Promise<ProviderResult | null> {

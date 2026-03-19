@@ -62,7 +62,12 @@ export class ResponseGuardian {
     // 2. Check for too long response
     if (response.length > this.MAX_RESPONSE_LENGTH) {
       issues.push('Odpověď je příliš dlouhá - možné nekonečné generování');
-      cleanedResponse = response.slice(0, this.MAX_RESPONSE_LENGTH) + '\n\n[Odpověď zkrácena]';
+      let cutPoint = this.MAX_RESPONSE_LENGTH;
+      // Avoid splitting a UTF-16 surrogate pair
+      if (cutPoint > 0 && cutPoint < response.length && response.charCodeAt(cutPoint - 1) >= 0xD800 && response.charCodeAt(cutPoint - 1) <= 0xDBFF) {
+        cutPoint--;
+      }
+      cleanedResponse = response.slice(0, cutPoint) + '\n\n[Odpověď zkrácena]';
     }
 
     // 3. Detect loops
@@ -325,7 +330,12 @@ export class ResponseGuardian {
       return text;
     }
     if (text.length > 1000000) {
-      return text.slice(0, this.MAX_ANALYSIS_CHARS);
+      let end = this.MAX_ANALYSIS_CHARS;
+      // Avoid splitting a UTF-16 surrogate pair
+      if (end > 0 && end < text.length && text.charCodeAt(end - 1) >= 0xD800 && text.charCodeAt(end - 1) <= 0xDBFF) {
+        end--;
+      }
+      return text.slice(0, end);
     }
     return [...text].slice(0, this.MAX_ANALYSIS_CHARS).join('');
   }
