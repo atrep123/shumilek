@@ -135,56 +135,56 @@ describe('isTransientError', () => {
 });
 
 describe('isSafeUrl', () => {
-  it('should allow normal public URLs', () => {
-    expect(isSafeUrl('https://example.com')).to.deep.equal({ safe: true });
-    expect(isSafeUrl('http://github.com/repo')).to.deep.equal({ safe: true });
-    expect(isSafeUrl('https://docs.python.org/3/library.html')).to.deep.equal({ safe: true });
+  it('should allow normal public URLs', async () => {
+    expect(await isSafeUrl('https://example.com')).to.deep.include({ safe: true });
+    expect(await isSafeUrl('http://github.com/repo')).to.deep.include({ safe: true });
+    expect(await isSafeUrl('https://docs.python.org/3/library.html')).to.deep.include({ safe: true });
   });
 
-  it('should block localhost', () => {
-    const r = isSafeUrl('http://localhost:11434/api/tags');
+  it('should block localhost', async () => {
+    const r = await isSafeUrl('http://localhost:11434/api/tags');
     expect(r.safe).to.be.false;
     expect(r.reason).to.include('localhost');
   });
 
-  it('should block 127.x.x.x', () => {
-    expect(isSafeUrl('http://127.0.0.1:8080').safe).to.be.false;
-    expect(isSafeUrl('http://127.0.0.1').safe).to.be.false;
+  it('should block 127.x.x.x', async () => {
+    expect((await isSafeUrl('http://127.0.0.1:8080')).safe).to.be.false;
+    expect((await isSafeUrl('http://127.0.0.1')).safe).to.be.false;
   });
 
-  it('should block 10.x private range', () => {
-    expect(isSafeUrl('http://10.0.0.1').safe).to.be.false;
-    expect(isSafeUrl('http://10.255.255.255').safe).to.be.false;
+  it('should block 10.x private range', async () => {
+    expect((await isSafeUrl('http://10.0.0.1')).safe).to.be.false;
+    expect((await isSafeUrl('http://10.255.255.255')).safe).to.be.false;
   });
 
-  it('should block 192.168.x private range', () => {
-    expect(isSafeUrl('http://192.168.1.1').safe).to.be.false;
+  it('should block 192.168.x private range', async () => {
+    expect((await isSafeUrl('http://192.168.1.1')).safe).to.be.false;
   });
 
-  it('should block 172.16-31 private range', () => {
-    expect(isSafeUrl('http://172.16.0.1').safe).to.be.false;
-    expect(isSafeUrl('http://172.31.255.255').safe).to.be.false;
+  it('should block 172.16-31 private range', async () => {
+    expect((await isSafeUrl('http://172.16.0.1')).safe).to.be.false;
+    expect((await isSafeUrl('http://172.31.255.255')).safe).to.be.false;
   });
 
-  it('should block cloud metadata endpoint', () => {
-    expect(isSafeUrl('http://169.254.169.254/latest/meta-data').safe).to.be.false;
-    expect(isSafeUrl('http://metadata.google.internal/computeMetadata').safe).to.be.false;
+  it('should block cloud metadata endpoint', async () => {
+    expect((await isSafeUrl('http://169.254.169.254/latest/meta-data')).safe).to.be.false;
+    expect((await isSafeUrl('http://metadata.google.internal/computeMetadata')).safe).to.be.false;
   });
 
-  it('should block non-http protocols', () => {
-    const r = isSafeUrl('file:///etc/passwd');
+  it('should block non-http protocols', async () => {
+    const r = await isSafeUrl('file:///etc/passwd');
     expect(r.safe).to.be.false;
     expect(r.reason).to.include('protokol');
-    expect(isSafeUrl('ftp://internal.host/data').safe).to.be.false;
+    expect((await isSafeUrl('ftp://internal.host/data')).safe).to.be.false;
   });
 
-  it('should reject invalid URLs', () => {
-    expect(isSafeUrl('not-a-url').safe).to.be.false;
-    expect(isSafeUrl('').safe).to.be.false;
+  it('should reject invalid URLs', async () => {
+    expect((await isSafeUrl('not-a-url')).safe).to.be.false;
+    expect((await isSafeUrl('')).safe).to.be.false;
   });
 
-  it('should block IPv6 loopback', () => {
-    expect(isSafeUrl('http://[::1]:8080').safe).to.be.false;
+  it('should block IPv6 loopback', async () => {
+    expect((await isSafeUrl('http://[::1]:8080')).safe).to.be.false;
   });
 });
 

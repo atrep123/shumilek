@@ -2,6 +2,7 @@
 
 import { URL } from 'url';
 import * as crypto from 'crypto';
+import * as dns from 'dns';
 
 const PRIVATE_IP_RANGES = [
   /^127\./,
@@ -18,9 +19,10 @@ const PRIVATE_IP_RANGES = [
 
 /**
  * Validate a URL for safe external fetching.
- * Blocks private/reserved IPs, non-http(s) schemes, and cloud metadata endpoints.
+ * Blocks private/reserved IPs, non-http(s) schemes, cloud metadata endpoints,
+ * and DNS rebinding (hostname resolving to private IP).
  */
-export function isSafeUrl(raw: string): { safe: boolean; reason?: string } {
+export async function isSafeUrl(raw: string): Promise<{ safe: boolean; reason?: string }> {
   let parsed: URL;
   try {
     parsed = new URL(raw);
@@ -42,6 +44,20 @@ export function isSafeUrl(raw: string): { safe: boolean; reason?: string } {
   // Block cloud metadata endpoints
   if (hostname === '169.254.169.254' || hostname === 'metadata.google.internal') {
     return { safe: false, reason: 'Přístup ke cloud metadata je zakázán' };
+  }
+  // DNS rebinding check: resolve hostname and validate resolved IP
+  try {
+    const { address } = await dns.promises.lookup(hostname);
+    for (const re of PRIVATE_IP_RANGES) {
+      if (re.test(address)) {
+        return { safe: false, reason: 'DNS resolves to private IP — possible rebinding attack' };
+      }
+    }
+    if (address === '169.254.169.254') {
+      return { safe: false, reason: 'DNS resolves to cloud metadata endpoint' };
+    }
+  } catch {
+    // DNS lookup failure — allow through (may be offline or internal DNS issue)
   }
   return { safe: true };
 }

@@ -104,7 +104,7 @@ export interface MutationHandlerDeps {
   tokenizeRouteText: (input: string) => string[];
   buildAutoFileName: (options: { title?: string; suggestedName?: string; extension?: string; content?: string }) => string;
   resolveAutoSaveTargetUri: (fileName: string) => Promise<{ uri?: vscode.Uri; error?: string }>;
-  isSafeUrl: (raw: string) => { safe: boolean; reason?: string };
+  isSafeUrl: (raw: string) => Promise<{ safe: boolean; reason?: string }> | { safe: boolean; reason?: string };
   openExternalUrl: (url: string) => Promise<boolean>;
 }
 
@@ -116,7 +116,7 @@ export async function handleBrowserOpenPageTool(
   const url = deps.asString(args.url);
   if (!url) return { ok: false, tool: name, message: 'url je povinne' };
 
-  const urlCheck = deps.isSafeUrl(url);
+  const urlCheck = await deps.isSafeUrl(url);
   if (!urlCheck.safe) {
     return { ok: false, tool: name, message: `URL blokována: ${urlCheck.reason}` };
   }
@@ -538,7 +538,7 @@ export async function handleFetchWebpageTool(
   const url = deps.asString(args.url) ?? deps.asString(args.href);
   if (!url) return { ok: false, tool: name, message: 'url je povinne' };
 
-  const urlCheck = deps.isSafeUrl(url);
+  const urlCheck = await deps.isSafeUrl(url);
   if (!urlCheck.safe) {
     return { ok: false, tool: name, message: `URL blokována: ${urlCheck.reason}` };
   }
@@ -553,7 +553,7 @@ export async function handleFetchWebpageTool(
       const location = response.headers.get('location');
       if (!location) break;
       const resolved = new URL(location, url).toString();
-      const redirectCheck = deps.isSafeUrl(resolved);
+      const redirectCheck = await deps.isSafeUrl(resolved);
       if (!redirectCheck.safe) {
         return { ok: false, tool: name, message: `Redirect blokován: ${redirectCheck.reason}` };
       }

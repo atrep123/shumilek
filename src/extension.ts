@@ -1405,6 +1405,10 @@ export function deactivate() {
     abortController.abort();
     abortController = undefined;
   }
+  if (projectMapUpdateTimer) {
+    clearTimeout(projectMapUpdateTimer);
+    projectMapUpdateTimer = undefined;
+  }
   const server = pixelLabBridgeServer;
   pixelLabBridgeServer = undefined;
   void server?.dispose();
@@ -1736,6 +1740,18 @@ async function handleChatInternal(
     messages.push({ role: 'user', content: trimmedPrompt, timestamp: Date.now() });
   }
 
+  // Create AbortController early so both step-by-step and single-call paths have it
+  const localAbortController = new AbortController();
+  abortController = localAbortController;
+
+  /** Release guard + clear abort on any exit after tryAcquire */
+  const releaseGuardAndAbort = () => {
+    chatRequestGuard.release(retryCount);
+    if (abortController === localAbortController) {
+      abortController = undefined;
+    }
+  };
+
   if (useAirLLM) {
     const ready = await ensureAirLLMRunning(context, baseUrl, airllmAutoStart, airllmWaitForHealthy, panel);
     if (!ready) {
@@ -1743,7 +1759,7 @@ async function handleChatInternal(
         type: 'responseError',
         text: 'AirLLM server is not ready. Start it and retry.'
       });
-      chatRequestGuard.release(retryCount);
+      releaseGuardAndAbort();
       return;
     }
   }
@@ -2084,6 +2100,7 @@ PŘÍSTUP K PRÁCI:
       });
       if (!vResult) {
         postToAllWebviews({ type: 'responseDone' });
+        releaseGuardAndAbort();
         return; // blocked by fail-closed verification
       }
 
@@ -2107,6 +2124,7 @@ PŘÍSTUP K PRÁCI:
           text: `Publish blocked: ${failClosedBlock.reason}`
         });
         postToAllWebviews({ type: 'responseDone' });
+        releaseGuardAndAbort();
         return;
       }
 
@@ -2133,6 +2151,7 @@ PŘÍSTUP K PRÁCI:
 
       postToAllWebviews({ type: 'responseDone' });
 
+      releaseGuardAndAbort();
       return; // Exit early - we handled everything in step-by-step mode
     } else {
       outputChannel?.appendLine(`[Rozum] ⏭️ Plánování přeskočeno (jednoduchý dotaz nebo žádné kroky)`);
@@ -2168,8 +2187,6 @@ PŘÍSTUP K PRÁCI:
   }
 
   const url = `${baseUrl}/api/chat`;
-  const localAbortController = new AbortController();
-  abortController = localAbortController;
 
   let fullResponse = '';
   let streamedToUi = false;
@@ -2400,12 +2417,8 @@ PŘÍSTUP K PRÁCI:
       postToAllWebviews({ type: 'responseError', text: errorMsg });
     }
   } finally {
-    chatRequestGuard.release(retryCount);
+    releaseGuardAndAbort();
     outputChannel?.appendLine(`[Orchestrator] State: ${orchestrator.getCurrent()} | checkpoints=${orchestrator.getCheckpoints().length}`);
-    // Only clear global if it's still our controller (prevents race with concurrent requests)
-    if (abortController === localAbortController) {
-      abortController = undefined;
-    }
   }
 }
 
