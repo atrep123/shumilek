@@ -137,7 +137,10 @@ async function listModels(baseUrl: string, timeoutMs: number): Promise<OllamaMod
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     const res = await fetch(`${baseUrl}/api/tags`, { signal: controller.signal });
     clearTimeout(timer);
-    if (!res.ok) return [];
+    if (!res.ok) {
+      await res.text().catch(() => {});
+      return [];
+    }
     const data = await res.json() as { models?: OllamaModel[] };
     return data?.models ?? [];
   } catch {
@@ -159,6 +162,7 @@ async function checkGeneration(baseUrl: string, model: string, timeoutMs: number
     clearTimeout(timer);
     const elapsed = Date.now() - start;
     if (!res.ok) {
+      await res.text().catch(() => {});
       return { name: 'Generování', status: 'fail', detail: `${model} — HTTP ${res.status}` };
     }
     const json = await res.json() as { response?: string };

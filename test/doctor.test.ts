@@ -88,6 +88,80 @@ describe('doctor', () => {
       expect(report.checks.filter((check: any) => check.name.startsWith('Model:'))).to.have.length(3);
     });
 
+    it('drains response body when listModels gets non-ok response', async () => {
+      let textDrained = false;
+      let tagCallCount = 0;
+      const { runDoctorChecks } = loadDoctor(async (url: string) => {
+        if (url.endsWith('/api/tags')) {
+          tagCallCount++;
+          if (tagCallCount === 1) return { ok: true, status: 200 };
+          return {
+            ok: false,
+            status: 500,
+            text: async () => { textDrained = true; return 'error body'; },
+            json: async () => { throw new Error('should not be called'); }
+          };
+        }
+        // generation endpoint — won't be reached because models will be empty
+        return { ok: true, status: 200, json: async () => ({ response: 'OK' }) };
+      });
+
+      const report = await runDoctorChecks({
+        baseUrl: 'http://localhost:11434',
+        mainModel: 'main',
+        writerModel: 'writer',
+        rozumModel: 'main',
+        svedomiModel: 'svedomi',
+        timeoutMs: 100
+      });
+
+      expect(textDrained).to.equal(true);
+      // With no models found, all model checks should fail
+      const modelChecks = report.checks.filter((c: any) => c.name.startsWith('Model:'));
+      for (const mc of modelChecks) {
+        expect(mc.status).to.equal('fail');
+      }
+    });
+
+    it('drains response body when checkGeneration gets non-ok response', async () => {
+      let genTextDrained = false;
+      let tagCallCount = 0;
+      const { runDoctorChecks } = loadDoctor(async (url: string) => {
+        if (url.endsWith('/api/tags')) {
+          tagCallCount++;
+          if (tagCallCount === 1) return { ok: true, status: 200 };
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ models: [{ name: 'main', size: 1 }] })
+          };
+        }
+        if (url.endsWith('/api/generate')) {
+          return {
+            ok: false,
+            status: 503,
+            text: async () => { genTextDrained = true; return 'service unavailable'; },
+            json: async () => { throw new Error('should not be called on error'); }
+          };
+        }
+        throw new Error(`unexpected url ${url}`);
+      });
+
+      const report = await runDoctorChecks({
+        baseUrl: 'http://localhost:11434',
+        mainModel: 'main',
+        writerModel: 'main',
+        rozumModel: 'main',
+        svedomiModel: 'main',
+        timeoutMs: 100
+      });
+
+      expect(genTextDrained).to.equal(true);
+      const genCheck = report.checks.find((c: any) => c.name === 'Generování');
+      expect(genCheck.status).to.equal('fail');
+      expect(genCheck.detail).to.include('503');
+    });
+
     it('adds remote backend warning without failing an otherwise healthy report', async () => {
       let tagCallCount = 0;
       const { runDoctorChecks } = loadDoctor(async (url: string) => {

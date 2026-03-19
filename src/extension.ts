@@ -239,6 +239,27 @@ let lastClearedAt: number | undefined;
 let responseHistory: ResponseHistoryEntry[] = [];
 const MAX_HISTORY_SIZE = 20;
 const lastReadHashes = new Map<string, { hash: string; updatedAt: number }>();
+const LAST_READ_HASHES_MAX = 1000;
+const LAST_READ_HASHES_TTL = 600000; // 10 minutes
+
+function evictStaleHashes(): void {
+  if (lastReadHashes.size <= LAST_READ_HASHES_MAX) return;
+  const now = Date.now();
+  for (const [k, v] of lastReadHashes) {
+    if (now - v.updatedAt >= LAST_READ_HASHES_TTL) {
+      lastReadHashes.delete(k);
+    }
+  }
+  if (lastReadHashes.size > LAST_READ_HASHES_MAX) {
+    const excess = lastReadHashes.size - LAST_READ_HASHES_MAX;
+    const iter = lastReadHashes.keys();
+    for (let i = 0; i < excess; i++) {
+      const next = iter.next();
+      if (next.done) break;
+      lastReadHashes.delete(next.value);
+    }
+  }
+}
 
 function loadChatMessages(context: vscode.ExtensionContext): ChatMessage[] {
   try {
@@ -701,7 +722,11 @@ class ShumilekViewProvider implements vscode.WebviewViewProvider {
 
     // Handle messages from webview
     webviewView.webview.onDidReceiveMessage(async (msg: WebviewMessage) => {
-      await this.handleMessage(msg);
+      try {
+        await this.handleMessage(msg);
+      } catch (e) {
+        outputChannel?.appendLine(`[Sidebar] Message handler error: ${String(e)}`);
+      }
     });
 
     // Update global reference
@@ -887,7 +912,11 @@ export function activate(context: vscode.ExtensionContext) {
     // Store message handler to prevent duplicates
     const messageHandler = async (msg: WebviewMessage) => {
       if (!currentPanel) return;
-      await handleWebviewMessage(wrapPanel(currentPanel), context, msg, chatMessages);
+      try {
+        await handleWebviewMessage(wrapPanel(currentPanel), context, msg, chatMessages);
+      } catch (e) {
+        outputChannel?.appendLine(`[Panel] Message handler error: ${String(e)}`);
+      }
     };
 
     // Subscribe to message handler
@@ -1418,6 +1447,7 @@ export function deactivate() {
     clearTimeout(projectMapUpdateTimer);
     projectMapUpdateTimer = undefined;
   }
+  lastReadHashes.clear();
   const server = pixelLabBridgeServer;
   pixelLabBridgeServer = undefined;
   void server?.dispose();
@@ -3080,6 +3110,7 @@ async function applyFileContent(uri: vscode.Uri, newText: string): Promise<boole
 }
 
 function getMutationHandlerDeps(): MutationHandlerDeps {
+  evictStaleHashes();
   return {
     DEFAULT_MAX_LSP_RESULTS,
     DEFAULT_MAX_READ_BYTES,
