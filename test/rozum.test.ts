@@ -469,4 +469,47 @@ DÉLKA: short`;
       expect(results[0]).to.include('Svedomi opakovaně vracelo stejnou námitku');
     });
   });
+
+  describe('reviewStepResult error handling', () => {
+    let savedFetch: any;
+    let savedHeaders: any;
+    beforeEach(() => {
+      savedFetch = (globalThis as any).fetch;
+      savedHeaders = (globalThis as any).Headers;
+      (globalThis as any).Headers = class { constructor() {} };
+    });
+    afterEach(() => {
+      (globalThis as any).fetch = savedFetch;
+      (globalThis as any).Headers = savedHeaders;
+    });
+
+    const step = {
+      id: 1, type: 'code' as const, title: 'Test', instruction: 'Do it', status: 'pending' as const
+    };
+
+    it('should reject step on HTTP 500', async () => {
+      const rozum = new Rozum();
+      (globalThis as any).fetch = async () => ({ ok: false, status: 500 });
+      const res = await rozum.reviewStepResult(step, 'result', 'prompt');
+      expect(res.approved).to.be.false;
+      expect(res.shouldRetry).to.be.true;
+      expect(res.feedback).to.include('500');
+    });
+
+    it('should reject step on network error', async () => {
+      const rozum = new Rozum();
+      (globalThis as any).fetch = async () => { throw new Error('ECONNREFUSED'); };
+      const res = await rozum.reviewStepResult(step, 'result', 'prompt');
+      expect(res.approved).to.be.false;
+      expect(res.shouldRetry).to.be.true;
+    });
+
+    it('should reject step on timeout/abort', async () => {
+      const rozum = new Rozum();
+      (globalThis as any).fetch = async () => { const e = new Error('aborted'); e.name = 'AbortError'; throw e; };
+      const res = await rozum.reviewStepResult(step, 'result', 'prompt');
+      expect(res.approved).to.be.false;
+      expect(res.shouldRetry).to.be.true;
+    });
+  });
 });

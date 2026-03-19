@@ -226,7 +226,7 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
       clearTimeout(timeoutId);
 
       if (!res.ok) {
-        return { approved: true, feedback: 'Review nedostupnĂ˝', shouldRetry: false };
+        return { approved: false, feedback: 'Review nedostupný (HTTP ' + res.status + ')', shouldRetry: true };
       }
 
       const data = await res.json() as { response?: string };
@@ -260,7 +260,7 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
 
     } catch (err: unknown) {
       logChannel?.appendLine(`[Rozum Review] âťŚ Error: ${String(err)}`);
-      return { approved: true, feedback: 'Review timeout', shouldRetry: false };
+      return { approved: false, feedback: 'Review timeout/error', shouldRetry: true };
     }
   }
 

@@ -70,7 +70,7 @@ export class HallucinationDetector {
 
   private hasFollowupIntent(userPrompt: string): boolean {
     const prompt = userPrompt.toLowerCase();
-    return /(?:pokracuj|pokračuj|navaz|navaž|doplň|dopln|rozved|rozveď|zopakuj|shrň|sumarizuj|co\s+jsi\s+(?:psal|uvedl|zminil|zmínil)|jak\s+jsi\s+(?:psal|uvedl|zminil|zmínil))/i.test(prompt);
+    return /(?:pokracuj|pokračuj|navaz|navaž|doplň|dopln|rozved|rozveď|zopakuj|shrň|sumarizuj|co\s+jsi\s+(?:psal|uvedl|zminil|zmínil)|jak\s+jsi\s+(?:psal|uvedl|zminil|zmínil)|continue|go\s+on|elaborate|expand|carry\s+on|keep\s+going|what\s+(?:you|did\s+you)\s+(?:said|mentioned|wrote))/i.test(prompt);
   }
 
   private hasUncertaintyHedge(text: string): boolean {
@@ -120,7 +120,7 @@ export class HallucinationDetector {
     }
 
     // Check for invented URLs or file paths
-    const urlPattern = /https?:\/\/[^\s]+\.(com|org|cz|io|dev)[^\s]*/gi;
+    const urlPattern = /https?:\/\/[^\s]+\.(?:com|org|cz|io|dev|ai|app|cloud|co|uk|net|me|tv|sk|de|eu|info|xyz|pl|ru|fr|es|it|nl|se|no|fi|at|ch|hu|hr|si|rs|bg|ro|ua|lt|lv|ee|be|dk|pt|ie|is|lu|gr|cy|mt|li|mc|ad|sm|va|ws|su)[^\s]*/gi;
     const urls = textToAnalyze.match(urlPattern);
     if (urls && urls.length > 0) {
       for (const url of urls) {

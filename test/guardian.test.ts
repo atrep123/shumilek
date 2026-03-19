@@ -118,6 +118,14 @@ describe('ResponseGuardian', () => {
     expect(res.issues.some((i: string) => i.includes('Nadměrný výskyt NaN'))).to.be.true;
   });
 
+  it('should not flag null/NaN inside code blocks as excessive', () => {
+    const g = new ResponseGuardian();
+    const text = 'Pokud chcete zkontrolovat null a NaN:\n```javascript\nif (val === null) { return null; }\nif (Number.isNaN(val)) { console.log("NaN detected"); }\nconst result = val ?? null;\n```\nTakhle to funguje.';
+    const res = g.analyze(text, 'Jak zkontrolovat null?');
+    expect(res.issues.some((i: string) => i.includes('null hodnot'))).to.be.false;
+    expect(res.issues.some((i: string) => i.includes('NaN hodnot'))).to.be.false;
+  });
+
   it('should truncate very long responses', () => {
     const g = new ResponseGuardian();
     const longText = 'a '.repeat(30000);
@@ -434,5 +442,56 @@ describe('HallucinationDetector', () => {
     const summary = detector.getSummary(result);
     expect(summary).to.include('🚨');
     expect(summary).to.include('contextual');
+  });
+
+  it('should detect suspicious URL with .ai TLD', () => {
+    const detector = new HallucinationDetector();
+    const res = detector.analyze(
+      'Podívejte se na https://fake-api.ai/docs/v3/admin/config/endpoint pro více informací.',
+      'Jak volat API?',
+      []
+    );
+    expect(res.confidence).to.be.greaterThan(0);
+  });
+
+  it('should detect suspicious URL with .app TLD', () => {
+    const detector = new HallucinationDetector();
+    const res = detector.analyze(
+      'Stáhněte nástroj z https://super-tool.app/download/latest/v2/bin/setup prosím.',
+      'Jaký nástroj použít?',
+      []
+    );
+    expect(res.confidence).to.be.greaterThan(0);
+  });
+
+  it('should detect suspicious URL with .cloud TLD', () => {
+    const detector = new HallucinationDetector();
+    const res = detector.analyze(
+      'Dashboard je na https://my-service.cloud/admin/panel/settings/users/overview pro správu.',
+      'Kde je dashboard?',
+      []
+    );
+    expect(res.confidence).to.be.greaterThan(0);
+  });
+
+  it('should not flag contextual ref when English followup intent is present', () => {
+    const detector = new HallucinationDetector();
+    const res = detector.analyze(
+      'Jak jsem již zmínil, funkce se volá takto.',
+      'continue please',
+      []
+    );
+    expect(res.reasons.some((r: string) => r.includes('vyžádána promptem'))).to.be.true;
+    expect(res.reasons.some((r: string) => r.includes('neexistující'))).to.be.false;
+  });
+
+  it('should not flag contextual ref when "elaborate" is used', () => {
+    const detector = new HallucinationDetector();
+    const res = detector.analyze(
+      'Jak jsem již zmínil, tohle je důležité.',
+      'elaborate on this',
+      []
+    );
+    expect(res.reasons.some((r: string) => r.includes('vyžádána promptem'))).to.be.true;
   });
 });

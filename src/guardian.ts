@@ -360,9 +360,11 @@ export class ResponseGuardian {
     }
 
     // Detect suspicious dump-like overuse of null/NaN while allowing normal explanations.
-    const nullCount = (safeText.match(/\bnull\b/gi) || []).length;
-    const nanCount = (safeText.match(/\bNaN\b/g) || []).length;
-    const tokenCount = Math.max(words.filter(w => w.length > 0).length, 1);
+    // Use proseText so that null/NaN inside code examples are not counted.
+    const proseWords = proseText.split(/\s+/);
+    const nullCount = (proseText.match(/\bnull\b/gi) || []).length;
+    const nanCount = (proseText.match(/\bNaN\b/g) || []).length;
+    const tokenCount = Math.max(proseWords.filter(w => w.length > 0).length, 1);
     const nullDensity = nullCount / tokenCount;
     const nanDensity = nanCount / tokenCount;
     if (nullCount >= 3 && nullDensity > 0.05) {
