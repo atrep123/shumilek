@@ -134,5 +134,19 @@ export async function streamPlainOllamaChat(opts: {
   const flushed = decoder.decode(new Uint8Array(0), { stream: false });
   if (flushed) buffer += flushed;
 
+  // Parse any remaining buffered JSON line (stream ended without trailing newline)
+  const residual = buffer.trim();
+  if (residual) {
+    try {
+      const json = JSON.parse(residual);
+      if (json?.message?.content) {
+        fullResponse += json.message.content;
+        panel.webview.postMessage({ type: 'responseChunk', text: json.message.content });
+      }
+    } catch {
+      log?.(`[Stream] Residual buffer not valid JSON: ${residual.slice(0, 120)}`);
+    }
+  }
+
   return fullResponse;
 }

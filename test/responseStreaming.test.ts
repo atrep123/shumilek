@@ -261,4 +261,64 @@ describe('responseStreaming', () => {
     assert.equal(result, '');
     assert.equal(abortCtrl.signal.aborted, true);
   });
+
+  it('parses residual buffer when stream ends without trailing newline', async () => {
+    const webviewMessages: any[] = [];
+    const logs: string[] = [];
+    const abortCtrl = new AbortController();
+
+    // Stream ends with a valid JSON line that has no trailing newline
+    const result = await streamPlainOllamaChat({
+      url: 'http://example.test',
+      model: 'test-model',
+      apiMessages: [{ role: 'user', content: 'hello' }],
+      timeout: 1000,
+      panel: createPanel(webviewMessages),
+      abortCtrl,
+      guardianEnabled: false,
+      log: message => logs.push(message),
+      fetchWithTimeoutFn: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: createStream([
+          '{"message":{"content":"first"}}\n',
+          '{"message":{"content":" second"}}'  // No trailing newline
+        ])
+      }) as any
+    });
+
+    assert.equal(result, 'first second');
+    const chunks = webviewMessages.filter(m => m.type === 'responseChunk').map(m => m.text);
+    assert.deepEqual(chunks, ['first', ' second']);
+  });
+
+  it('logs residual buffer that is not valid JSON', async () => {
+    const webviewMessages: any[] = [];
+    const logs: string[] = [];
+    const abortCtrl = new AbortController();
+
+    const result = await streamPlainOllamaChat({
+      url: 'http://example.test',
+      model: 'test-model',
+      apiMessages: [{ role: 'user', content: 'hello' }],
+      timeout: 1000,
+      panel: createPanel(webviewMessages),
+      abortCtrl,
+      guardianEnabled: false,
+      log: message => logs.push(message),
+      fetchWithTimeoutFn: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: createStream([
+          '{"message":{"content":"ok"}}\n',
+          '{"message":{"content":"trunc'  // Truncated JSON
+        ])
+      }) as any
+    });
+
+    assert.equal(result, 'ok');
+    assert.ok(logs.some(l => l.includes('Residual buffer not valid JSON')));
+  });
 });

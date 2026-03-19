@@ -265,15 +265,21 @@ async function saveChatMessages(context: vscode.ExtensionContext, messages: Chat
 }
 
 function postToAllWebviews(message: unknown): void {
-  try {
-    currentPanel?.webview.postMessage(message as WebviewMessage);
-  } catch {
-    // ignore
+  if (currentPanel?.webview) {
+    try {
+      currentPanel.webview.postMessage(message as WebviewMessage);
+    } catch (e) {
+      outputChannel?.appendLine(`[WebviewMessage] Panel delivery failed: ${e instanceof Error ? e.message : String(e)}`);
+      currentPanel = undefined;
+    }
   }
-  try {
-    sidebarView?.webview.postMessage(message as WebviewMessage);
-  } catch {
-    // ignore
+  if (sidebarView?.webview) {
+    try {
+      sidebarView.webview.postMessage(message as WebviewMessage);
+    } catch (e) {
+      outputChannel?.appendLine(`[WebviewMessage] Sidebar delivery failed: ${e instanceof Error ? e.message : String(e)}`);
+      sidebarView = undefined;
+    }
   }
 }
 

@@ -155,6 +155,23 @@ describe('SvedomiValidator', () => {
       const cached = validator.getCachedResult('prompt', 'response');
       expect(cached).to.be.null;
     });
+
+    it('should not collide on similar but different inputs', () => {
+      const validator = new SvedomiValidator();
+      const resultA = { isValid: true, score: 9, reason: 'Good', shouldRetry: false };
+      const resultB = { isValid: false, score: 2, reason: 'Bad', shouldRetry: true };
+
+      validator.cacheResult('prompt alpha', 'response alpha', resultA);
+      validator.cacheResult('prompt beta', 'response beta', resultB);
+
+      const cachedA = validator.getCachedResult('prompt alpha', 'response alpha');
+      const cachedB = validator.getCachedResult('prompt beta', 'response beta');
+
+      expect(cachedA).to.not.be.null;
+      expect(cachedA!.score).to.equal(9);
+      expect(cachedB).to.not.be.null;
+      expect(cachedB!.score).to.equal(2);
+    });
   });
 
   describe('buildValidationPrompt', () => {

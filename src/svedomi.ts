@@ -3,6 +3,7 @@
 
 import type { MiniModelResult, Task } from './types';
 import fetch, { Headers } from 'node-fetch';
+import * as crypto from 'crypto';
 
 type OutputChannel = { appendLine: (msg: string) => void } | undefined;
 type GuardianStatsRef = { miniModelValidations: number; miniModelRejections: number };
@@ -58,13 +59,8 @@ export class SvedomiValidator {
   }
 
   private getCacheKey(prompt: string, response: string): string {
-    const combined = (prompt.slice(0, 100) + response.slice(0, 200)).toLowerCase();
-    let hash = 0;
-    for (let i = 0; i < combined.length; i++) {
-      hash = ((hash << 5) - hash) + combined.charCodeAt(i);
-      hash = hash & hash;
-    }
-    return hash.toString(36);
+    const combined = prompt.slice(0, 200) + '|' + response.slice(0, 500);
+    return crypto.createHash('sha256').update(combined).digest('hex').slice(0, 16);
   }
 
   private checkCache(key: string): MiniModelResult | null {
