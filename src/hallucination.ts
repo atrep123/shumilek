@@ -36,8 +36,8 @@ export class HallucinationDetector {
   ];
 
   private readonly SAFE_PATTERNS: RegExp[] = [
-    /```[\s\S]*?```/g,
-    /\b(?:function|class|const|let|var|import|export)\b/gi,
+    /```[\s\S]*?```/g,  // fenced code blocks
+    /`[^`\n]+`/g,       // inline code spans
   ];
 
   private isSuspiciousUrl(url: string, userPrompt: string): boolean {

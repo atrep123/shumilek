@@ -494,4 +494,25 @@ describe('HallucinationDetector', () => {
     );
     expect(res.reasons.some((r: string) => r.includes('vyžádána promptem'))).to.be.true;
   });
+
+  it('should detect suspicious URL containing export/import path segments', () => {
+    const detector = new HallucinationDetector();
+    const res = detector.analyze(
+      'API je na https://mytool.com/api/v2/data/export/csv/download pro export dat.',
+      'Jak exportovat data?',
+      []
+    );
+    expect(res.confidence).to.be.greaterThan(0);
+    expect(res.reasons.some((r: string) => r.includes('URL'))).to.be.true;
+  });
+
+  it('should not strip inline code from URL analysis', () => {
+    const detector = new HallucinationDetector();
+    const res = detector.analyze(
+      'Použijte `export default` v kódu. Víc na https://fake-docs.dev/api/export/settings/users/admin.',
+      'Jak exportovat modul?',
+      []
+    );
+    expect(res.confidence).to.be.greaterThan(0);
+  });
 });

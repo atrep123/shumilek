@@ -190,6 +190,84 @@ describe('SvedomiValidator', () => {
       expect(prompt.length).to.be.lessThan(longPrompt.length + longResponse.length);
     });
   });
-});
 
+  describe('validate network error handling', () => {
+    let savedFetch;
+    let savedHeaders;
+    beforeEach(() => {
+      savedFetch = globalThis.fetch;
+      savedHeaders = globalThis.Headers;
+      globalThis.Headers = class { constructor() {} };
+    });
+    afterEach(() => {
+      globalThis.fetch = savedFetch;
+      globalThis.Headers = savedHeaders;
+    });
+
+    it('should return shouldRetry=true on HTTP 500', async () => {
+      const v = new SvedomiValidator();
+      globalThis.fetch = async () => ({ ok: false, status: 500, statusText: 'Internal Server Error' });
+      const res = await v.validate('prompt', 'response');
+      expect(res.isValid).to.be.false;
+      expect(res.shouldRetry).to.be.true;
+      expect(res.unavailable).to.be.true;
+      expect(res.errorCode).to.equal('http_500');
+    });
+
+    it('should return shouldRetry=true on HTTP 503', async () => {
+      const v = new SvedomiValidator();
+      globalThis.fetch = async () => ({ ok: false, status: 503, statusText: 'Service Unavailable' });
+      const res = await v.validate('prompt', 'response');
+      expect(res.shouldRetry).to.be.true;
+      expect(res.errorCode).to.equal('http_503');
+    });
+
+    it('should return shouldRetry=true on HTTP 429 (rate limit)', async () => {
+      const v = new SvedomiValidator();
+      globalThis.fetch = async () => ({ ok: false, status: 429, statusText: 'Too Many Requests' });
+      const res = await v.validate('prompt', 'response');
+      expect(res.shouldRetry).to.be.true;
+      expect(res.errorCode).to.equal('http_429');
+    });
+
+    it('should return shouldRetry=false on HTTP 400 (client error)', async () => {
+      const v = new SvedomiValidator();
+      globalThis.fetch = async () => ({ ok: false, status: 400, statusText: 'Bad Request' });
+      const res = await v.validate('prompt', 'response');
+      expect(res.shouldRetry).to.be.false;
+      expect(res.errorCode).to.equal('http_400');
+    });
+
+    it('should return shouldRetry=true on connection error', async () => {
+      const v = new SvedomiValidator();
+      globalThis.fetch = async () => { throw new Error('ECONNREFUSED'); };
+      const res = await v.validate('prompt', 'response');
+      expect(res.isValid).to.be.false;
+      expect(res.shouldRetry).to.be.true;
+      expect(res.unavailable).to.be.true;
+      expect(res.errorCode).to.equal('exception');
+    });
+
+    it('should return shouldRetry=true on timeout', async () => {
+      const v = new SvedomiValidator();
+      globalThis.fetch = async () => { const e = new Error('aborted'); e.name = 'AbortError'; throw e; };
+      const res = await v.validate('prompt', 'response');
+      expect(res.shouldRetry).to.be.true;
+      expect(res.errorCode).to.equal('timeout');
+      expect(res.reason).to.include('timeout');
+    });
+
+    it('should return valid result on successful API call', async () => {
+      const v = new SvedomiValidator();
+      globalThis.fetch = async () => ({
+        ok: true,
+        json: async () => ({ response: 'SKORE: 8\nVALIDNI: ANO\nDUVOD: Vse v poradku' })
+      });
+      const res = await v.validate('prompt', 'response');
+      expect(res.isValid).to.be.true;
+      expect(res.score).to.equal(8);
+      expect(res.shouldRetry).to.be.false;
+    });
+  });
+});
 

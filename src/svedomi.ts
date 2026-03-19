@@ -32,6 +32,16 @@ export class SvedomiValidator {
   private validationCache: Map<string, { result: MiniModelResult; timestamp: number }> = new Map();
   private readonly CACHE_TTL = 60000;
 
+  /** Prefer a globally injected fetch (for tests) and fallback to node-fetch */
+  private getFetch(): typeof fetch {
+    return (globalThis as any).fetch ?? fetch;
+  }
+
+  /** Prefer globally injected Headers (for tests) and fallback to node-fetch */
+  private getHeaders(): typeof Headers {
+    return (globalThis as any).Headers ?? Headers;
+  }
+
   configure(baseUrl: string, model: string, enabled: boolean): void {
     this.baseUrl = baseUrl;
     this.model = model;
@@ -143,12 +153,14 @@ export class SvedomiValidator {
     // 5. Call API
     try {
       onStatus?.('Svedomi analyzuje odpoved...');
+      const fetchFn = this.getFetch();
+      const HeadersCtor = this.getHeaders();
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
-      const res = await fetch(`${this.baseUrl}/api/generate`, {
+      const res = await fetchFn(`${this.baseUrl}/api/generate`, {
         method: 'POST',
-        headers: new Headers({ 'Content-Type': 'application/json' }),
+        headers: new HeadersCtor({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           model: this.model,
           prompt: validationPrompt,
@@ -166,11 +178,12 @@ export class SvedomiValidator {
 
       if (!res.ok) {
         logChannel?.appendLine(`[Svedomi] Error: ${res.status} ${res.statusText}`);
+        const isTransient = res.status >= 500 || res.status === 429;
         return {
           isValid: false,
           score: 0,
-          reason: 'Validation API failed',
-          shouldRetry: false,
+          reason: `Validation API failed (HTTP ${res.status})`,
+          shouldRetry: isTransient,
           unavailable: true,
           errorCode: `http_${res.status}`
         };
@@ -199,8 +212,8 @@ export class SvedomiValidator {
       return {
         isValid: false,
         score: 0,
-        reason: 'Validation exception',
-        shouldRetry: false,
+        reason: error.name === 'AbortError' ? 'Validation timeout' : 'Validation exception',
+        shouldRetry: true,
         unavailable: true,
         errorCode: error.name === 'AbortError' ? 'timeout' : 'exception'
       };
