@@ -322,9 +322,19 @@ export class ResponseGuardian {
     return [...text].slice(0, this.MAX_ANALYSIS_CHARS).join('');
   }
 
+  /**
+   * Strip fenced code blocks (```…```) so that patterns common in code
+   * examples (TODO, example.com, [object Object] …) are not false-positived.
+   */
+  private stripCodeBlocks(text: string): string {
+    return text.replace(/```[\s\S]*?```/g, '');
+  }
+
   private detectErrorPatterns(text: string): string[] {
     const issues: string[] = [];
     const safeText = text.length > 10000 ? text.slice(0, 10000) : text;
+    // Text without code blocks – used for patterns prone to false positives
+    const proseText = this.stripCodeBlocks(safeText);
 
     // Detect glued text without spaces
     const gluedTextMatch = safeText.match(/[a-záčďéěíňóřšťúůýž]{45,}/gi);
@@ -364,13 +374,13 @@ export class ResponseGuardian {
       logFn?.(`[ResponseGuardian] ⚠️ Nadměrný výskyt NaN: ${nanCount}x (${(nanDensity * 100).toFixed(1)}%)`);
     }
 
-    const placeholderUrlMatches = safeText.match(/\b(?:https?:\/\/)?(?:www\.)?(?:example\.com|foo\.bar)(?:\/\S*)?/gi) || [];
+    const placeholderUrlMatches = proseText.match(/\b(?:https?:\/\/)?(?:www\.)?(?:example\.com|foo\.bar)(?:\/\S*)?/gi) || [];
     if (placeholderUrlMatches.length >= 2) {
       issues.push(`Placeholder URL/domény (${placeholderUrlMatches.length}x)`);
       logFn?.(`[ResponseGuardian] ⚠️ Placeholder URL/domény: ${placeholderUrlMatches.length}x`);
     }
 
-    const stuckPatterns: Array<{ pattern: RegExp; msg: string }> = [
+    const stuckPatterns: Array<{ pattern: RegExp; msg: string; proseOnly?: boolean }> = [
       { pattern: /\[END\].*\[END\]/gi, msg: 'Opakující se [END] značky' },
       { pattern: /<\|.*\|>.*<\|.*\|>/gi, msg: 'Opakující se speciální tokeny' },
       { pattern: /\n{10,}/g, msg: 'Příliš mnoho prázdných řádků' },
@@ -380,15 +390,15 @@ export class ResponseGuardian {
       { pattern: /={20,}/g, msg: 'Opakující se rovnítka' },
       { pattern: /\*{15,}/g, msg: 'Opakující se hvězdičky' },
       { pattern: /#####.*#####/g, msg: 'Opakující se nadpisy' },
-      { pattern: /\(undefined\)/gi, msg: 'Undefined hodnoty v textu' },
-      { pattern: /\[object Object\]/gi, msg: 'Nevypsaný objekt v textu' },
-      { pattern: /TODO:|FIXME:|XXX:/gi, msg: 'Neodstraněné TODO/FIXME značky' },
-      { pattern: /lorem ipsum/gi, msg: 'Placeholder text (Lorem Ipsum)' },
+      { pattern: /\(undefined\)/gi, msg: 'Undefined hodnoty v textu', proseOnly: true },
+      { pattern: /\[object Object\]/gi, msg: 'Nevypsaný objekt v textu', proseOnly: true },
+      { pattern: /TODO:|FIXME:|XXX:/gi, msg: 'Neodstraněné TODO/FIXME značky', proseOnly: true },
+      { pattern: /lorem ipsum/gi, msg: 'Placeholder text (Lorem Ipsum)', proseOnly: true },
       { pattern: /(\w)\1{8,}/g, msg: 'Opakující se znaky (halucinace)' },
     ];
 
-    for (const { pattern, msg } of stuckPatterns) {
-      if (pattern.test(safeText)) {
+    for (const { pattern, msg, proseOnly } of stuckPatterns) {
+      if (pattern.test(proseOnly ? proseText : safeText)) {
         issues.push(msg);
         logFn?.(`[ResponseGuardian] ⚠️ Error pattern: ${msg}`);
       }

@@ -162,6 +162,50 @@ describe('ResponseGuardian', () => {
     expect(res.shouldRetry).to.be.false;
   });
 
+  // ── Code-block false-positive prevention ────────────────────────
+
+  it('should not flag TODO inside a code block', () => {
+    const g = new ResponseGuardian();
+    const text = 'Zde je priklad:\n```typescript\n// TODO: implement validation\nfunction validate() {}\n```\nTo je vse.';
+    const res = g.analyze(text, 'Dej mi priklad funkce');
+    expect(res.issues.some((i: string) => i.includes('TODO/FIXME'))).to.be.false;
+  });
+
+  it('should still flag TODO outside code blocks', () => {
+    const g = new ResponseGuardian();
+    const text = 'Tohle je hotove. TODO: doplnit dokumentaci.';
+    const res = g.analyze(text, 'prompt');
+    expect(res.issues.some((i: string) => i.includes('TODO/FIXME'))).to.be.true;
+  });
+
+  it('should not flag [object Object] inside a code block', () => {
+    const g = new ResponseGuardian();
+    const text = 'Pozor na tuto chybu:\n```javascript\nconsole.log(obj); // [object Object]\n```\nPouzijte JSON.stringify.';
+    const res = g.analyze(text, 'Proc vidim [object Object]?');
+    expect(res.issues.some((i: string) => i.includes('Nevypsaný objekt'))).to.be.false;
+  });
+
+  it('should not flag placeholder URLs inside code blocks', () => {
+    const g = new ResponseGuardian();
+    const text = 'Priklad fetch volani:\n```javascript\nfetch("https://example.com/api")\n  .then(r => r.json());\nfetch("https://example.com/users");\n```\nTakhle se to dela.';
+    const res = g.analyze(text, 'Jak pouzit fetch?');
+    expect(res.issues.some((i: string) => i.includes('Placeholder URL'))).to.be.false;
+  });
+
+  it('should not flag lorem ipsum inside a code block', () => {
+    const g = new ResponseGuardian();
+    const text = 'Priklad sablony:\n```html\n<p>Lorem ipsum dolor sit amet</p>\n```\nNahradte svym textem.';
+    const res = g.analyze(text, 'Dej mi HTML sablonu');
+    expect(res.issues.some((i: string) => i.includes('Lorem Ipsum'))).to.be.false;
+  });
+
+  it('should not flag (undefined) inside a code block', () => {
+    const g = new ResponseGuardian();
+    const text = 'Vystup z konzole:\n```\nValue: (undefined)\n```\nTo znamena ze promenna nebyla nastavena.';
+    const res = g.analyze(text, 'prompt');
+    expect(res.issues.some((i: string) => i.includes('Undefined hodnoty'))).to.be.false;
+  });
+
   // ── Truncation detection & auto-repair ──────────────────────────
 
   it('should auto-close unclosed code fence', () => {
