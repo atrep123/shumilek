@@ -236,6 +236,16 @@ export async function handleReplaceLinesTool(
     return { ok: true, tool: name, approved: false, message: 'zmena zamitnuta uzivatelem' };
   }
 
+  // Re-verify file hash before write to close TOCTOU race window
+  const preWriteRead = await deps.readFileForTool(uri, deps.DEFAULT_MAX_READ_BYTES);
+  if (preWriteRead.hash && readResult.hash && preWriteRead.hash !== readResult.hash) {
+    return {
+      ok: false,
+      tool: name,
+      message: 'soubor se zmenil behem schvalovani; nacti ho znovu (read_file) a opakuj replace_lines'
+    };
+  }
+
   const applied = await deps.applyFileContent(uri, newText);
   if (applied) {
     const relativePath = deps.getRelativePathForWorkspace(uri);

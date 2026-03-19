@@ -172,6 +172,34 @@ describe('SvedomiValidator', () => {
       expect(cachedB).to.not.be.null;
       expect(cachedB!.score).to.equal(2);
     });
+
+    it('should evict expired entries on cache insert', () => {
+      const validator = new SvedomiValidator() as any;
+      // Insert an entry with timestamp in the past (expired)
+      const oldResult = { isValid: true, score: 5, reason: 'Old', shouldRetry: false };
+      validator.validationCache.set('oldkey', { result: oldResult, timestamp: Date.now() - 120000 });
+      expect(validator.validationCache.size).to.equal(1);
+
+      // Insert a new entry — should trigger eviction of expired
+      validator.cacheResult('new prompt', 'new response', { isValid: true, score: 8, reason: 'New', shouldRetry: false });
+
+      // Expired entry should be gone
+      expect(validator.validationCache.has('oldkey')).to.be.false;
+      // New entry should be present
+      expect(validator.validationCache.size).to.equal(1);
+    });
+
+    it('should delete expired entry on cache miss', () => {
+      const validator = new SvedomiValidator() as any;
+      const expiredResult = { isValid: true, score: 7, reason: 'Expired', shouldRetry: false };
+      const cacheKey = validator.getCacheKey('prompt x', 'response x');
+      validator.validationCache.set(cacheKey, { result: expiredResult, timestamp: Date.now() - 120000 });
+
+      // checkCache should delete expired entry and return null
+      const hit = validator.getCachedResult('prompt x', 'response x');
+      expect(hit).to.be.null;
+      expect(validator.validationCache.has(cacheKey)).to.be.false;
+    });
   });
 
   describe('buildValidationPrompt', () => {

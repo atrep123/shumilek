@@ -15,6 +15,7 @@ const {
   handleGetReferencesTool,
   handleGetTypeInfoTool,
   handleRunTerminalCommandTool,
+  handleReplaceLinesTool,
   isCommandBlocked
 } = require('../src/toolHandlers');
 
@@ -471,5 +472,54 @@ describe('handleRunTerminalCommandTool', () => {
   it('blocks shutdown and reboot commands', () => {
     expect(isCommandBlocked('shutdown -h now')).to.be.true;
     expect(isCommandBlocked('reboot')).to.be.true;
+  });
+});
+
+// ====================================================================
+// handleReplaceLinesTool — TOCTOU re-verify
+// ====================================================================
+describe('handleReplaceLinesTool — TOCTOU guard', () => {
+  it('rejects write when file changed between approval and write', async () => {
+    let readCount = 0;
+    const deps = makeDeps({
+      resolveWorkspaceUri: async (fp: string) => ({ uri: { fsPath: 'C:/repo/' + fp } }),
+      readFileForTool: async () => {
+        readCount++;
+        // First read returns hash 'h1', second read returns 'h_changed'
+        return { text: 'line1\nline2\nline3', size: 17, hash: readCount === 1 ? 'h1' : 'h_changed' };
+      },
+      showDiffAndConfirm: async () => true,
+      applyFileContent: async () => true
+    });
+    deps.lastReadHashes.set('C:/repo/test.txt', { hash: 'h1', updatedAt: Date.now() });
+
+    const result = await handleReplaceLinesTool(
+      'replace_lines',
+      { path: 'test.txt', startLine: 1, endLine: 1, text: 'replaced' },
+      true, // confirmEdits
+      { edit: false },
+      deps
+    );
+    expect(result.ok).to.be.false;
+    expect(result.message).to.include('zmenil behem schvalovani');
+  });
+
+  it('allows write when file unchanged between reads', async () => {
+    const deps = makeDeps({
+      resolveWorkspaceUri: async (fp: string) => ({ uri: { fsPath: 'C:/repo/' + fp } }),
+      readFileForTool: async () => ({ text: 'line1\nline2\nline3', size: 17, hash: 'h1' }),
+      showDiffAndConfirm: async () => true,
+      applyFileContent: async () => true
+    });
+    deps.lastReadHashes.set('C:/repo/test.txt', { hash: 'h1', updatedAt: Date.now() });
+
+    const result = await handleReplaceLinesTool(
+      'replace_lines',
+      { path: 'test.txt', startLine: 1, endLine: 1, text: 'replaced' },
+      true,
+      { edit: false },
+      deps
+    );
+    expect(result.ok).to.be.true;
   });
 });

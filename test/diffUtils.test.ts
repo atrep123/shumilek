@@ -188,5 +188,33 @@ describe('diffUtils', () => {
       const result = applyUnifiedDiffToText('', hunks);
       expect(result.text).to.equal('new_line');
     });
+
+    it('should return bounds error when context line index exceeds file length', () => {
+      const original = 'line1\nline2';
+      const hunks = [{
+        oldStart: 2,
+        oldLines: 2,
+        newStart: 2,
+        newLines: 2,
+        lines: [' line2', ' nonexistent']
+      }];
+
+      const result = applyUnifiedDiffToText(original, hunks);
+      expect(result.error).to.include('beyond file length');
+    });
+
+    it('should return bounds error when delete line index exceeds file length', () => {
+      const original = 'line1';
+      const hunks = [{
+        oldStart: 1,
+        oldLines: 2,
+        newStart: 1,
+        newLines: 1,
+        lines: ['-line1', '-phantom']
+      }];
+
+      const result = applyUnifiedDiffToText(original, hunks);
+      expect(result.error).to.include('beyond file length');
+    });
   });
 });

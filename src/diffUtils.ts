@@ -107,12 +107,18 @@ export function applyUnifiedDiffToText(
       if (prefix === '\\') continue;
       const content = line.slice(1);
       if (prefix === ' ') {
+        if (index >= originalLines.length) {
+          return { error: `context line at index ${index} is beyond file length (${originalLines.length})`, appliedHunks, totalHunks };
+        }
         if (originalLines[index] !== content) {
           return { error: 'context mismatch', appliedHunks, totalHunks };
         }
         result.push(content);
         index++;
       } else if (prefix === '-') {
+        if (index >= originalLines.length) {
+          return { error: `delete line at index ${index} is beyond file length (${originalLines.length})`, appliedHunks, totalHunks };
+        }
         if (originalLines[index] !== content) {
           return { error: 'delete mismatch', appliedHunks, totalHunks };
         }

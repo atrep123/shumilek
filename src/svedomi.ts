@@ -32,6 +32,7 @@ export class SvedomiValidator {
   
   private validationCache: Map<string, { result: MiniModelResult; timestamp: number }> = new Map();
   private readonly CACHE_TTL = 60000;
+  private readonly CACHE_MAX_SIZE = 500;
 
   /** Prefer a globally injected fetch (for tests) and fallback to node-fetch */
   private getFetch(): typeof fetch {
@@ -69,7 +70,28 @@ export class SvedomiValidator {
       logChannel?.appendLine(`[Svedomi] Cache hit - score: ${cached.result.score}/10`);
       return cached.result;
     }
+    if (cached) {
+      this.validationCache.delete(key);
+    }
     return null;
+  }
+
+  private evictStaleEntries(): void {
+    const now = Date.now();
+    for (const [k, v] of this.validationCache) {
+      if (now - v.timestamp >= this.CACHE_TTL) {
+        this.validationCache.delete(k);
+      }
+    }
+    if (this.validationCache.size > this.CACHE_MAX_SIZE) {
+      const excess = this.validationCache.size - this.CACHE_MAX_SIZE;
+      const iter = this.validationCache.keys();
+      for (let i = 0; i < excess; i++) {
+        const next = iter.next();
+        if (next.done) break;
+        this.validationCache.delete(next.value);
+      }
+    }
   }
 
   clearCache(): void {
@@ -251,6 +273,7 @@ export class SvedomiValidator {
   cacheResult(userPrompt: string, response: string, result: MiniModelResult): void {
     const cacheKey = this.getCacheKey(userPrompt, response);
     this.validationCache.set(cacheKey, { result, timestamp: Date.now() });
+    this.evictStaleEntries();
   }
 
   /**
