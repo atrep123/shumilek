@@ -1535,12 +1535,12 @@ async function handleWebviewMessage(
         try {
           await saveChatMessages(context, messages);
           postToAllWebviews({ type: 'historyRestored', messages });
+          lastClearedMessages = undefined;
+          lastClearedAt = undefined;
         } catch (err) {
           outputChannel?.appendLine(`[Error] Failed to restore history: ${String(err)}`);
           postToAllWebviews({ type: 'historyRestoreFailed' });
         }
-        lastClearedMessages = undefined;
-        lastClearedAt = undefined;
       } else {
         postToAllWebviews({ type: 'historyRestoreFailed' });
       }

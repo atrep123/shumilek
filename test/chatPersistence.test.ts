@@ -106,6 +106,52 @@ describe('chatPersistence', () => {
       const result = sanitizeChatMessages({ messages });
       expect(result).to.have.lengthOf(200);
     });
+
+    it('keeps last 200 messages when truncating (preserves newest)', () => {
+      const messages = Array.from({ length: 210 }, (_, i) => ({
+        role: 'user',
+        content: `msg ${i}`
+      }));
+      const result = sanitizeChatMessages({ messages });
+      expect(result).to.have.lengthOf(200);
+      // Should keep messages 10-209 (the newest 200)
+      expect(result[0].content).to.equal('msg 10');
+      expect(result[199].content).to.equal('msg 209');
+    });
+
+    it('logs warning when truncating history', () => {
+      const origWarn = console.warn;
+      const warnings: string[] = [];
+      console.warn = (msg: string) => warnings.push(msg);
+      try {
+        const messages = Array.from({ length: 205 }, (_, i) => ({
+          role: 'user',
+          content: `msg ${i}`
+        }));
+        sanitizeChatMessages({ messages });
+        expect(warnings).to.have.lengthOf(1);
+        expect(warnings[0]).to.include('205');
+        expect(warnings[0]).to.include('200');
+      } finally {
+        console.warn = origWarn;
+      }
+    });
+
+    it('does not log warning when history fits within 200', () => {
+      const origWarn = console.warn;
+      const warnings: string[] = [];
+      console.warn = (msg: string) => warnings.push(msg);
+      try {
+        const messages = Array.from({ length: 50 }, (_, i) => ({
+          role: 'user',
+          content: `msg ${i}`
+        }));
+        sanitizeChatMessages({ messages });
+        expect(warnings).to.have.lengthOf(0);
+      } finally {
+        console.warn = origWarn;
+      }
+    });
   });
 
   // ---- formatQualityReport ----

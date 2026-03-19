@@ -41,6 +41,9 @@ export function sanitizeChatMessages(raw: unknown): ChatMessage[] {
   }));
 
   // Prevent UI/perf issues on very large histories.
+  if (sanitized.length > 200) {
+    console.warn(`[ChatState] History truncated from ${sanitized.length} to 200 messages`);
+  }
   return sanitized.slice(-200);
 }
 
