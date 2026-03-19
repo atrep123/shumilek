@@ -420,6 +420,25 @@ export async function handleWriteFileTool(
   };
 }
 
+// Blocked shell patterns that indicate dangerous operations.
+// The approval gate already requires user confirmation, but these
+// provide defense-in-depth against prompt-injection generated commands.
+const BLOCKED_COMMAND_PATTERNS = [
+  /\brm\s+(-[a-z]*f|-[a-z]*r|--force|--recursive)\b/i,
+  /\brm\s+-rf\b/i,
+  /\brmdir\s+\/s\b/i,
+  /\b(curl|wget|invoke-webrequest)\b.*\|\s*(sh|bash|powershell|cmd)/i,
+  /\b(mkfs|dd\s+if=|format\s+[a-z]:)/i,
+  /\b(\.[\/\\]|sh|bash|cmd|powershell)\s+<\s*\(/i,
+  /\bchmod\s+[0-7]*777\b/i,
+  /\b(shutdown|reboot|halt|init\s+[06])\b/i,
+  /:\(\)\s*\{[^}]*:\s*\|\s*:.*&\s*\}\s*;/,   // fork bomb
+];
+
+export function isCommandBlocked(command: string): boolean {
+  return BLOCKED_COMMAND_PATTERNS.some(p => p.test(command));
+}
+
 export async function handleRunTerminalCommandTool(
   name: string,
   args: Record<string, unknown>,
@@ -429,6 +448,10 @@ export async function handleRunTerminalCommandTool(
   // No per-handler approval check needed.
   const command = deps.asString(args.command);
   if (!command) return { ok: false, tool: name, message: 'command je povinny' };
+
+  if (isCommandBlocked(command)) {
+    return { ok: false, tool: name, message: 'prikaz blokovan bezpecnostni politikou' };
+  }
 
   const timeoutMs = deps.clampNumber(args.timeoutMs, 30000, 1000, 120000);
   const cwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;

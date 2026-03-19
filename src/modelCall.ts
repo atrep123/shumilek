@@ -66,6 +66,13 @@ export async function executeModelCallWithMessages(
     }
     lastChunkAt = now;
     buffer += decoder.decode(chunk, { stream: true });
+
+    if (buffer.length > 1_000_000) {
+      log?.('[executeModelCallWithMessages] Buffer overflow, aborting');
+      fullResponse += '\n\n[Odpověď zkrácena – buffer overflow]';
+      break;
+    }
+
     let newlineIndex;
     while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
       const line = buffer.slice(0, newlineIndex).trim();

@@ -224,4 +224,32 @@ describe('modelCall', () => {
       Date.now = originalNow;
     }
   });
+
+  it('aborts on buffer overflow when no newlines in stream', async () => {
+    const logs: string[] = [];
+    // 1.1MB chunk without newlines → exceeds 1MB buffer limit
+    const bigChunk = '{"message":{"content":"' + 'X'.repeat(1_100_000) + '"}}';
+    const { executeModelCallWithMessages } = loadModelCall({
+      fetchWithTimeout: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: createStream([bigChunk])
+      })
+    });
+
+    const result = await executeModelCallWithMessages(
+      'http://example.test',
+      'test-model',
+      'system prompt',
+      [{ role: 'user', content: 'hello' }],
+      5000,
+      undefined,
+      false,
+      (message: string) => logs.push(message)
+    );
+
+    assert.ok(result.includes('[Odpověď zkrácena'), 'should contain buffer overflow marker');
+    assert.ok(logs.some(l => l.includes('Buffer overflow')));
+  });
 });
