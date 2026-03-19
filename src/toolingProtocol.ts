@@ -99,9 +99,12 @@ export function parseToolCalls(text: string): ParseToolCallsResult {
         const name = (item as { name?: unknown }).name;
         if (typeof name !== 'string') continue;
         const args = (item as { arguments?: unknown }).arguments;
+        // Require both name AND arguments fields to avoid false-positive tool calls
+        // from arbitrary JSON (e.g. package.json snippets with a "name" field)
+        if (!args || typeof args !== 'object') continue;
         calls.push({
           name,
-          arguments: args && typeof args === 'object' ? (args as Record<string, unknown>) : undefined
+          arguments: args as Record<string, unknown>
         });
       }
     };

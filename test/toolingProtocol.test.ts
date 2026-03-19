@@ -83,7 +83,7 @@ describe('toolingProtocol', () => {
     });
 
     it('parses array JSON fallback responses', () => {
-      const input = '[{"name":"read_file","arguments":{"path":"README.md"}},{"name":"list_files"}]';
+      const input = '[{"name":"read_file","arguments":{"path":"README.md"}},{"name":"list_files","arguments":{}}]';
       const parsed = parseToolCalls(input);
       assert.equal(parsed.calls.length, 2);
       assert.equal(parsed.calls[0].name, 'read_file');
@@ -108,11 +108,25 @@ describe('toolingProtocol', () => {
     });
 
     it('skips fallback items missing required name', () => {
-      const input = '[{"arguments":{"path":"README.md"}},{"name":"read_file"}]';
+      const input = '[{"arguments":{"path":"README.md"}},{"name":"read_file","arguments":{}}]';
       const parsed = parseToolCalls(input);
       assert.equal(parsed.calls.length, 1);
       assert.equal(parsed.calls[0].name, 'read_file');
       assert.equal(parsed.remainingText, '');
+    });
+
+    it('does not treat arbitrary JSON with name field as tool call in fallback mode', () => {
+      const input = '{"name": "my-project", "version": "1.0.0"}';
+      const parsed = parseToolCalls(input);
+      assert.equal(parsed.calls.length, 0);
+      assert.equal(parsed.remainingText, input);
+    });
+
+    it('does not discard text when JSON lacks arguments in fallback mode', () => {
+      const input = 'Here is the package.json:\n```json\n{"name": "my-app", "version": "2.0"}\n```\nDone.';
+      const parsed = parseToolCalls(input);
+      assert.equal(parsed.calls.length, 0);
+      assert.equal(parsed.remainingText, input);
     });
   });
 });

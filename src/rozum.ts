@@ -116,24 +116,27 @@ export class Rozum {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
-      const res = await fetchFn(`${this.baseUrl}/api/generate`, {
-        method: 'POST',
-        headers: new HeadersCtor({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({
-          model: this.model,
-          prompt: planningPrompt,
-          stream: false,
-          options: {
-            temperature: 0.3, // Slight creativity for better decomposition
-            num_predict: 4096, // Enough tokens for 15+ detailed steps
-            top_p: 0.95,
-            repeat_penalty: 1.1 // Discourage repetitive step descriptions
-          }
-        }),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
+      let res;
+      try {
+        res = await fetchFn(`${this.baseUrl}/api/generate`, {
+          method: 'POST',
+          headers: new HeadersCtor({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            model: this.model,
+            prompt: planningPrompt,
+            stream: false,
+            options: {
+              temperature: 0.3, // Slight creativity for better decomposition
+              num_predict: 4096, // Enough tokens for 15+ detailed steps
+              top_p: 0.95,
+              repeat_penalty: 1.1 // Discourage repetitive step descriptions
+            }
+          }),
+          signal: controller.signal
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (!res.ok) {
         logChannel?.appendLine(`[Rozum] âťŚ Error ${res.status}`);
@@ -207,23 +210,26 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-      const res = await fetchFn(`${this.baseUrl}/api/generate`, {
-        method: 'POST',
-        headers: new HeadersCtor({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({
-          model: this.model,
-          prompt: reviewPrompt,
-          stream: false,
-          options: {
-            temperature: 0.15,
-            num_predict: 400,
-            top_p: 0.9
-          }
-        }),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
+      let res;
+      try {
+        res = await fetchFn(`${this.baseUrl}/api/generate`, {
+          method: 'POST',
+          headers: new HeadersCtor({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            model: this.model,
+            prompt: reviewPrompt,
+            stream: false,
+            options: {
+              temperature: 0.15,
+              num_predict: 400,
+              top_p: 0.9
+            }
+          }),
+          signal: controller.signal
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (!res.ok) {
         return { approved: false, feedback: 'Review nedostupný (HTTP ' + res.status + ')', shouldRetry: true };
@@ -260,7 +266,8 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
 
     } catch (err: unknown) {
       logChannel?.appendLine(`[Rozum Review] âťŚ Error: ${String(err)}`);
-      return { approved: false, feedback: 'Review timeout/error', shouldRetry: true };
+      // Fail-open on review network errors: the step itself succeeded, only review is down
+      return { approved: true, feedback: 'Review nedostupný – krok přijat', shouldRetry: false };
     }
   }
 

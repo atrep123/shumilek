@@ -496,20 +496,47 @@ DÉLKA: short`;
       expect(res.feedback).to.include('500');
     });
 
-    it('should reject step on network error', async () => {
+    it('should fail-open on network error (step already succeeded)', async () => {
       const rozum = new Rozum();
       (globalThis as any).fetch = async () => { throw new Error('ECONNREFUSED'); };
       const res = await rozum.reviewStepResult(step, 'result', 'prompt');
-      expect(res.approved).to.be.false;
-      expect(res.shouldRetry).to.be.true;
+      expect(res.approved).to.be.true;
+      expect(res.shouldRetry).to.be.false;
     });
 
-    it('should reject step on timeout/abort', async () => {
+    it('should fail-open on timeout/abort (step already succeeded)', async () => {
       const rozum = new Rozum();
       (globalThis as any).fetch = async () => { const e = new Error('aborted'); e.name = 'AbortError'; throw e; };
       const res = await rozum.reviewStepResult(step, 'result', 'prompt');
-      expect(res.approved).to.be.false;
-      expect(res.shouldRetry).to.be.true;
+      expect(res.approved).to.be.true;
+      expect(res.shouldRetry).to.be.false;
+    });
+
+    it('clearTimeout fires even when fetch throws in plan()', async () => {
+      const rozum = new Rozum();
+      rozum.configure('http://localhost:11434', 'test-model', true, true);
+      let timerCleared = false;
+      const origSetTimeout = globalThis.setTimeout;
+      const origClearTimeout = globalThis.clearTimeout;
+      (globalThis as any).fetch = async () => { throw new Error('boom'); };
+      // Patch clearTimeout to detect if it's called
+      const timers: any[] = [];
+      (globalThis as any).setTimeout = (...args: any[]) => {
+        const id = origSetTimeout(...args as Parameters<typeof origSetTimeout>);
+        timers.push(id);
+        return id;
+      };
+      (globalThis as any).clearTimeout = (id: any) => {
+        if (timers.includes(id)) { timerCleared = true; }
+        return origClearTimeout(id);
+      };
+      try {
+        await rozum.plan('A long enough prompt for planning to trigger', []);
+        expect(timerCleared).to.be.true;
+      } finally {
+        globalThis.setTimeout = origSetTimeout;
+        globalThis.clearTimeout = origClearTimeout;
+      }
     });
   });
 });
