@@ -159,6 +159,34 @@ describe('modelCall', () => {
     assert.equal(result, 'Hello!');
   });
 
+  it('logs malformed JSON lines via the log callback', async () => {
+    const logs: string[] = [];
+    const { executeModelCallWithMessages } = loadModelCall({
+      fetchWithTimeout: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: createStream([
+          'BAD_LINE\n{"message":{"content":"ok"}}\n'
+        ])
+      })
+    });
+
+    const result = await executeModelCallWithMessages(
+      'http://example.test',
+      'test-model',
+      'system prompt',
+      [{ role: 'user', content: 'hello' }],
+      5000,
+      undefined,
+      false,
+      (message: string) => logs.push(message)
+    );
+
+    assert.equal(result, 'ok');
+    assert.ok(logs.some((l: string) => l.includes('Malformed JSON') && l.includes('BAD_LINE')));
+  });
+
   it('stops on stalled stream after partial output and logs the stall', async () => {
     const logs: string[] = [];
     const originalNow = Date.now;

@@ -138,11 +138,16 @@ export class ContextProviderRegistry {
       if (remainingChars <= 120) break;
       const provider = this.providers.get(name);
       if (!provider) continue;
-      const result = await provider({
-        prompt: params.prompt,
-        maxChars: Math.max(200, Math.floor(remainingChars / Math.max(1, enabled.length))),
-        workspaceIndexEnabled: params.workspaceIndexEnabled
-      });
+      let result: ProviderResult | null;
+      try {
+        result = await provider({
+          prompt: params.prompt,
+          maxChars: Math.max(200, Math.floor(remainingChars / Math.max(1, enabled.length))),
+          workspaceIndexEnabled: params.workspaceIndexEnabled
+        });
+      } catch {
+        continue;
+      }
       if (!result || !result.content.trim()) continue;
       const block = `[CONTEXT:${result.name}]\n${result.content.trim()}`;
       if (block.length > remainingChars) {

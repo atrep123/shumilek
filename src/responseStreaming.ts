@@ -64,9 +64,7 @@ export async function streamPlainOllamaChat(opts: {
 
     if (buffer.length > 100000) {
       log?.('[Error] Buffer overflow detected, stopping stream');
-      if (!abortCtrl.signal.aborted) {
-        abortCtrl.abort();
-      }
+      abortCtrl.abort();
       break;
     }
 
@@ -97,9 +95,7 @@ export async function streamPlainOllamaChat(opts: {
           if (fullResponse.length > 500000) {
             log?.('[Warning] Response too long, truncating');
             fullResponse = fullResponse.slice(0, 500000) + '\n\n[Odpověď zkrácena - příliš dlouhá]';
-            if (!abortCtrl.signal.aborted) {
-              abortCtrl.abort();
-            }
+            abortCtrl.abort();
             break;
           }
 
@@ -120,9 +116,7 @@ export async function streamPlainOllamaChat(opts: {
                   type: 'guardianAlert',
                   message: '🛡️ Smyčka detekována, zastavuji generování'
                 });
-                if (!abortCtrl.signal.aborted) {
-                  abortCtrl.abort();
-                }
+                abortCtrl.abort();
                 break;
               }
             }
@@ -131,10 +125,14 @@ export async function streamPlainOllamaChat(opts: {
           panel.webview.postMessage({ type: 'responseChunk', text: delta });
         }
       } catch {
-        // Ignore malformed JSON
+        log?.(`[Stream] Malformed JSON: ${line.slice(0, 120)}`);
       }
     }
   }
+
+  // Flush remaining multi-byte characters from decoder
+  const flushed = decoder.decode(new Uint8Array(0), { stream: false });
+  if (flushed) buffer += flushed;
 
   return fullResponse;
 }

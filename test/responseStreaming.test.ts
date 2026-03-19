@@ -203,4 +203,62 @@ describe('responseStreaming', () => {
     assert.ok(logs.some(message => message.includes('Real-time loop detected')));
     assert.ok(webviewMessages.some(message => message.type === 'guardianAlert'));
   });
+
+  it('logs malformed JSON lines instead of silently ignoring them', async () => {
+    const webviewMessages: any[] = [];
+    const logs: string[] = [];
+    const abortCtrl = new AbortController();
+
+    await streamPlainOllamaChat({
+      url: 'http://example.test',
+      model: 'test-model',
+      apiMessages: [{ role: 'user', content: 'hello' }],
+      timeout: 1000,
+      panel: createPanel(webviewMessages),
+      abortCtrl,
+      guardianEnabled: false,
+      log: message => logs.push(message),
+      fetchWithTimeoutFn: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: createStream([
+          'CORRUPT_DATA\n',
+          '{"message":{"content":"ok"}}\n'
+        ])
+      }) as any
+    });
+
+    assert.ok(logs.some(l => l.includes('Malformed JSON') && l.includes('CORRUPT')));
+  });
+
+  it('calls abort() idempotently without checking signal.aborted first', async () => {
+    const webviewMessages: any[] = [];
+    const logs: string[] = [];
+    const abortCtrl = new AbortController();
+    // Pre-abort the controller
+    abortCtrl.abort();
+
+    // Buffer overflow path should still call abort() without throwing
+    const bigChunk = 'X'.repeat(110000) + '\n';
+    const result = await streamPlainOllamaChat({
+      url: 'http://example.test',
+      model: 'test-model',
+      apiMessages: [{ role: 'user', content: 'hello' }],
+      timeout: 1000,
+      panel: createPanel(webviewMessages),
+      abortCtrl,
+      guardianEnabled: false,
+      log: message => logs.push(message),
+      fetchWithTimeoutFn: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: createStream([bigChunk])
+      }) as any
+    });
+
+    assert.equal(result, '');
+    assert.equal(abortCtrl.signal.aborted, true);
+  });
 });

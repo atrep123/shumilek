@@ -134,6 +134,34 @@ describe('contextProviders', () => {
       // code should be dropped or heavily truncated
       expect(result).to.include('[CONTEXT:workspace]');
     });
+
+    it('skips a provider that throws and continues to next', async () => {
+      const reg = new ContextProviderRegistry();
+      reg.register('workspace', async () => { throw new Error('provider crash'); });
+      reg.register('file', async () => ({ name: 'file', content: 'OK_CONTENT' }));
+      const result = await reg.collect({
+        prompt: 'test',
+        enabled: ['workspace', 'file'],
+        tokenBudget: 1024,
+        workspaceIndexEnabled: true
+      });
+      expect(result).not.to.include('[CONTEXT:workspace]');
+      expect(result).to.include('[CONTEXT:file]');
+      expect(result).to.include('OK_CONTENT');
+    });
+
+    it('returns empty when all providers throw', async () => {
+      const reg = new ContextProviderRegistry();
+      reg.register('workspace', async () => { throw new Error('crash1'); });
+      reg.register('file', async () => { throw new Error('crash2'); });
+      const result = await reg.collect({
+        prompt: 'test',
+        enabled: ['workspace', 'file'],
+        tokenBudget: 1024,
+        workspaceIndexEnabled: true
+      });
+      expect(result).to.equal('');
+    });
   });
 
   // ── ContextProviderRegistry.register ───────────────────────

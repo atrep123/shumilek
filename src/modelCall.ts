@@ -76,10 +76,14 @@ export async function executeModelCallWithMessages(
           fullResponse += parsed.message.content;
         }
       } catch {
-        // Ignore malformed JSON
+        log?.(`[ModelCall] Malformed JSON: ${line.slice(0, 120)}`);
       }
     }
   }
+
+  // Flush remaining multi-byte characters from decoder
+  const flushed = decoder.decode(new Uint8Array(0), { stream: false });
+  if (flushed) buffer += flushed;
 
   return fullResponse;
 }
