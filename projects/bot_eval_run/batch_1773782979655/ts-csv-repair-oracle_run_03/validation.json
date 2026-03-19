@@ -1,0 +1,99 @@
+{
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1773782979655\\ts-csv-repair-oracle_run_03",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1773782979655\\ts-csv-repair-oracle_run_03\\workspace",
+  "deterministicFallback": {
+    "mode": "on-fail",
+    "tsTodo": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "nodeApi": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "tsCsv": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 1,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "totalActivations": 0,
+    "totalRecoveries": 0,
+    "totalTargetedActivations": 0,
+    "totalTargetedRecoveries": 0,
+    "totalCanonicalActivations": 0,
+    "totalCanonicalRecoveries": 0,
+    "totalRawPasses": 1,
+    "totalRawFailures": 0,
+    "totalRecoveredByFallback": 0,
+    "fallbackDependencyRate": 0
+  },
+  "reliability": {
+    "rawPasses": 1,
+    "rawFailures": 0,
+    "recoveredByFallback": 0,
+    "fallbackDependencyRate": 0
+  },
+  "parseStats": {
+    "plannerFailures": 0,
+    "schemaFailures": 0,
+    "jsonRepairFailures": 0,
+    "parseFailures": 0,
+    "jsonParseFailures": 0,
+    "placeholderFailures": 0,
+    "otherFailures": 0
+  },
+  "ok": true,
+  "diagnostics": [],
+  "commands": [
+    {
+      "command": "node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1773782979655\\ts-csv-repair-oracle_run_03\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 370,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1773782979655\\ts-csv-repair-oracle_run_03\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 287,
+      "stdout": "✔ CsvParser: parse simple CSV (1.6314ms)\n✔ CsvParser: parse CSV with quoted fields (0.1654ms)\n✔ CsvParser: parse empty CSV returns empty array (0.0816ms)\n✔ CsvParser: parse single header line returns empty array (0.6587ms)\n✔ CsvParser: stringify rows to CSV (0.2266ms)\n✔ CsvParser: stringify quotes fields with commas (0.1142ms)\n✔ CsvParser: custom delimiter (0.075ms)\n✔ CsvFilter: filter rows by predicate (0.0979ms)\n✔ CsvFilter: select specific columns (0.5207ms)\n✔ CsvFilter: sort rows (0.1778ms)\n✔ CsvFilter: count rows (0.0947ms)\n✔ CLI: --help exits with code 0 (49.662ms)\n✔ CLI: parse command reads file and outputs JSON (48.8452ms)\n✔ CLI: stats command (48.0471ms)\n✔ README.md exists (0.5945ms)\nℹ tests 15\nℹ suites 0\nℹ pass 15\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 216.0048\n",
+      "stderr": ""
+    },
+    {
+      "command": "node dist/cli.js --help",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1773782979655\\ts-csv-repair-oracle_run_03\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 70,
+      "stdout": "Commands:\nparse --input <file>\nstats --input <file>\n--help\n",
+      "stderr": ""
+    }
+  ]
+}

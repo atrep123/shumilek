@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "diagnostics": [],
+  "commands": [
+    {
+      "command": "node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1773782979655\\ts-csv-repair-oracle_run_01\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 366,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1773782979655\\ts-csv-repair-oracle_run_01\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 306,
+      "stdout": "✔ CsvParser: parse simple CSV (1.7046ms)\n✔ CsvParser: parse CSV with quoted fields (0.1814ms)\n✔ CsvParser: parse empty CSV returns empty array (0.0892ms)\n✔ CsvParser: parse single header line returns empty array (0.808ms)\n✔ CsvParser: stringify rows to CSV (0.2585ms)\n✔ CsvParser: stringify quotes fields with commas (0.1144ms)\n✔ CsvParser: custom delimiter (0.0762ms)\n✔ CsvFilter: filter rows by predicate (0.098ms)\n✔ CsvFilter: select specific columns (0.5397ms)\n✔ CsvFilter: sort rows (0.1809ms)\n✔ CsvFilter: count rows (0.0988ms)\n✔ CLI: --help exits with code 0 (48.4849ms)\n✔ CLI: parse command reads file and outputs JSON (49.4451ms)\n✔ CLI: stats command (49.5846ms)\n✔ README.md exists (0.5368ms)\nℹ tests 15\nℹ suites 0\nℹ pass 15\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 225.2725\n",
+      "stderr": ""
+    },
+    {
+      "command": "node dist/cli.js --help",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1773782979655\\ts-csv-repair-oracle_run_01\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 68,
+      "stdout": "Commands:\nparse --input <file>\nstats --input <file>\n--help\n",
+      "stderr": ""
+    }
+  ]
+}

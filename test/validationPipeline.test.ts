@@ -6,7 +6,7 @@ import {
   ToolSessionState,
   VerificationSummary
 } from '../src/validationPipeline';
-import type { HallucinationResult, GuardianResult, MiniModelResult, QualityCheckResult } from '../src/types';
+import type { HallucinationResult, GuardianResult } from '../src/types';
 
 function noopDeps(overrides: Partial<ValidationPipelineDeps> = {}): ValidationPipelineDeps {
   const logs: string[] = [];
@@ -19,9 +19,8 @@ function noopDeps(overrides: Partial<ValidationPipelineDeps> = {}): ValidationPi
       analyze: (): HallucinationResult => ({
         isHallucination: false,
         confidence: 0.1,
-        category: 'none',
-        details: [],
-        metrics: { factualScore: 0.9, relevanceScore: 0.9, consistencyScore: 0.9, codeScore: 0.9 }
+        reasons: [],
+        category: 'none'
       }),
       getSummary: () => 'No hallucination'
     },
@@ -39,7 +38,7 @@ function noopDeps(overrides: Partial<ValidationPipelineDeps> = {}): ValidationPi
       checkSimilarity: () => ({ isSimilar: false, similarity: 0 })
     },
     svedomi: {
-      validate: async () => ({ score: 8, reason: 'Good', accepted: true, unavailable: false })
+      validate: async () => ({ isValid: true, score: 8, reason: 'Good', shouldRetry: false, unavailable: false })
     },
     generateWithTools: async () => 'fixed',
     runPostEditVerification: async (): Promise<VerificationSummary> => ({ ok: true, ran: [], failed: [] }),
@@ -71,7 +70,7 @@ function baseCfg(overrides: Partial<ValidationPipelineConfig> = {}): ValidationP
     toolsFallbackModel: '',
     toolsConfirmEdits: false,
     stepTimeout: 5000,
-    autoApprovePolicy: { edits: 'confirm', commands: 'confirm', dangerous: 'deny' },
+    autoApprovePolicy: { read: true, edit: false, commands: false, browser: false, mcp: false },
     guardianEnabled: true,
     miniModelEnabled: false,
     validationPolicy: 'fail-soft',
@@ -139,7 +138,7 @@ describe('validationPipeline', () => {
         svedomi: {
           validate: async () => {
             validated = true;
-            return { score: 7, reason: 'OK', accepted: true, unavailable: false };
+            return { isValid: true, score: 7, reason: 'OK', shouldRetry: false, unavailable: false };
           }
         }
       });
@@ -217,9 +216,8 @@ describe('validationPipeline', () => {
           analyze: (): HallucinationResult => ({
             isHallucination: true,
             confidence: 0.9,
-            category: 'fabrication',
-            details: ['made up'],
-            metrics: { factualScore: 0.1, relevanceScore: 0.5, consistencyScore: 0.3, codeScore: 0.5 }
+            category: 'factual',
+            reasons: ['made up']
           }),
           getSummary: () => 'Fabricated content'
         }
@@ -233,7 +231,7 @@ describe('validationPipeline', () => {
     it('detects guardian issues and cleans response', async () => {
       const deps = noopDeps({
         guardian: {
-          analyze: (response: string): GuardianResult => ({
+          analyze: (_response: string): GuardianResult => ({
             isOk: false,
             cleanedResponse: 'cleaned',
             issues: ['loop detected'],

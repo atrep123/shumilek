@@ -1,0 +1,27 @@
+{
+  "batchId": 1773779868860,
+  "startedAt": "2026-03-17T20:37:48.861Z",
+  "scenarios": [
+    "ts-csv-repair-oracle",
+    "node-api-repair-oracle"
+  ],
+  "runs": 1,
+  "model": "qwen2.5-coder:14b",
+  "plannerModel": "deepseek-r1:8b",
+  "reviewerModel": "qwen2.5:3b",
+  "jsonRepairModel": "qwen2.5:7b",
+  "deterministicFallbackMode": "on-fail",
+  "timeoutSec": 1200,
+  "maxIterations": 6,
+  "hardTimeoutSec": 1200,
+  "stopOnInfraFailure": true,
+  "autoRestartOnInfraFailure": false,
+  "maxInfraRestarts": 2,
+  "infraRestartTimeoutSec": 30,
+  "infraRestartCooldownSec": 5,
+  "infraRestartCommand": null,
+  "ollamaBaseUrl": "http://localhost:11434",
+  "infraRecoveryTimeoutSec": 90,
+  "infraRecoveryPollSec": 5,
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1773779868860"
+}

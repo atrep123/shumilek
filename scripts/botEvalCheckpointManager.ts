@@ -507,7 +507,44 @@ function formatMs(value: number): string {
   return `${Math.round(value)}ms`;
 }
 
-function buildMarkdown(report: CheckpointReport): string {
+type NonBlockingScenarioSummary = {
+  scenario: string;
+  splits: BenchmarkSplit[];
+  samples: number;
+  passRateMean: number;
+  rawRunPassRateMean: number;
+  fallbackDependencyRunRateMean: number;
+  avgMsMean: number;
+};
+
+function collectNonBlockingScenarioSummaries(report: CheckpointReport): NonBlockingScenarioSummary[] {
+  const byScenario = new Map<string, NonBlockingScenarioSummary>();
+  for (const split of report.splitRollups) {
+    for (const scenario of split.scenarioRollups) {
+      if (scenario.blocking) continue;
+      const existing = byScenario.get(scenario.scenario);
+      if (existing) {
+        if (!existing.splits.includes(split.split)) existing.splits.push(split.split);
+        continue;
+      }
+      byScenario.set(scenario.scenario, {
+        scenario: scenario.scenario,
+        splits: [split.split],
+        samples: scenario.samples,
+        passRateMean: scenario.passRate.mean,
+        rawRunPassRateMean: scenario.rawRunPassRate.mean,
+        fallbackDependencyRunRateMean: scenario.fallbackDependencyRunRate.mean,
+        avgMsMean: scenario.avgMs.mean
+      });
+    }
+  }
+
+  return [...byScenario.values()]
+    .map(item => ({ ...item, splits: [...item.splits].sort() }))
+    .sort((left, right) => left.scenario.localeCompare(right.scenario));
+}
+
+export function buildCheckpointMarkdown(report: CheckpointReport): string {
   const lines: string[] = [];
   lines.push('# BotEval Checkpoint Report');
   lines.push('');
@@ -549,6 +586,26 @@ function buildMarkdown(report: CheckpointReport): string {
       }
       lines.push('');
     }
+  }
+
+  const nonBlockingScenarios = collectNonBlockingScenarioSummaries(report);
+  if (nonBlockingScenarios.length > 0) {
+    lines.push('## Non-blocking Benchmarks');
+    lines.push('');
+    lines.push('These scenarios are tracked for trend visibility but do not gate checkpoint qualification.');
+    lines.push('');
+    lines.push('| Scenario | Splits | Samples | passRate mean | rawRunPassRate mean | fallback mean | latency mean |');
+    lines.push('|---|---|---:|---:|---:|---:|---:|');
+    for (const scenario of nonBlockingScenarios) {
+      lines.push(
+        `| ${scenario.scenario} | ${scenario.splits.join(', ')} | ${scenario.samples} | ` +
+        `${formatPct(scenario.passRateMean)} | ` +
+        `${formatPct(scenario.rawRunPassRateMean)} | ` +
+        `${formatPct(scenario.fallbackDependencyRunRateMean)} | ` +
+        `${formatMs(scenario.avgMsMean)} |`
+      );
+    }
+    lines.push('');
   }
 
   lines.push('## Inputs');
@@ -608,7 +665,7 @@ export async function runCheckpointManager(options: CheckpointManagerOptions): P
 
   await fs.promises.mkdir(path.dirname(options.outJson), { recursive: true });
   await fs.promises.writeFile(options.outJson, JSON.stringify(report, null, 2), 'utf8');
-  await fs.promises.writeFile(options.outMd, buildMarkdown(report), 'utf8');
+  await fs.promises.writeFile(options.outMd, buildCheckpointMarkdown(report), 'utf8');
   updateCheckpointRegistry(options.registryPath, report, options.promoteQualifiedLatest);
   return report;
 }

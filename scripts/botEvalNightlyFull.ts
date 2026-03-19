@@ -56,7 +56,7 @@ function printUsageAndExit(code: number): never {
   console.log([
     'Usage: npm run bot:eval:nightly:full -- [options]',
     '',
-    'Chains: release-gate → checkpoint → calibrate → promote → tuner → stability → cleanup',
+    'Chains: release-gate → checkpoint → calibrate → promote → tuner → stability → repair-canary → cleanup',
     '',
     'Options:',
     '  --runs <n>           Release gate runs per scenario (default: 5)',
@@ -84,6 +84,7 @@ export async function runNightlyFull(opts: FullOptions, deps: NightlyFullDeps = 
   promoteCode: number;
   tunerCode: number;
   stabilityCode: number;
+  repairCanaryCode: number;
   cleanupCode: number;
   latestGateDir: string;
   promoteReportPath: string;
@@ -123,6 +124,7 @@ export async function runNightlyFull(opts: FullOptions, deps: NightlyFullDeps = 
       promoteCode: 0,
       tunerCode: 1,
       stabilityCode: 0,
+      repairCanaryCode: 0,
       cleanupCode: 0,
       latestGateDir: '',
       promoteReportPath: '',
@@ -237,7 +239,28 @@ export async function runNightlyFull(opts: FullOptions, deps: NightlyFullDeps = 
     log(`\nSkipping stability aggregate (need ≥2 release_gate dirs, found ${releaseGateDirs.length})`);
   }
 
-  // Step 7: Cleanup old run/batch dirs (keep last 10 per prefix)
+  // Step 7: Non-blocking repair canary batch
+  const repairCanaryDir = path.join(opts.root, 'repair_nightly_canary_latest');
+  const repairCanaryArgs = [
+    tsNode,
+    path.join(repoRoot, 'scripts', 'botEvalBatch.ts'),
+    '--runs', '3',
+    '--scenarios', 'ts-csv-repair-oracle,node-api-repair-oracle',
+    '--model', 'qwen2.5-coder:14b',
+    '--plannerModel', 'deepseek-r1:8b',
+    '--reviewerModel', 'qwen2.5:3b',
+    '--jsonRepairModel', 'qwen2.5:7b',
+    '--maxIterations', '6',
+    '--timeoutSec', '1200',
+    '--hardTimeoutSec', '1200',
+    '--outDir', repairCanaryDir
+  ];
+  const repairCanaryCode = await executeStep('Repair Canary', repairCanaryArgs, repoRoot);
+  if (repairCanaryCode !== 0) {
+    error(`Repair canary failed with code ${repairCanaryCode} (non-blocking)`);
+  }
+
+  // Step 8: Cleanup old run/batch dirs (keep last 10 per prefix)
   const cleanupArgs = [
     tsNode,
     path.join(repoRoot, 'scripts', 'botEvalCleanup.ts'),
@@ -265,6 +288,7 @@ export async function runNightlyFull(opts: FullOptions, deps: NightlyFullDeps = 
   }
 
   log(`  Stability:    ${releaseGateDirs.length >= 2 ? (stabilityCode === 0 ? 'PASS' : 'FAIL') : 'SKIP'}`);
+  log(`  Repair canary:${repairCanaryCode === 0 ? ' PASS' : ' FAIL (non-blocking)'}`);
   log(`  Cleanup:      ${cleanupCode === 0 ? 'PASS' : 'FAIL'}`);
   log('');
 
@@ -275,6 +299,7 @@ export async function runNightlyFull(opts: FullOptions, deps: NightlyFullDeps = 
     promoteCode,
     tunerCode,
     stabilityCode,
+    repairCanaryCode,
     cleanupCode,
     latestGateDir,
     promoteReportPath,

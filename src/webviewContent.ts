@@ -424,7 +424,7 @@ export function getWebviewContent(_webview: vscode.Webview, _initialMessages: Ch
   // Markdown parser - simplified but safe
   html += 'function parseMarkdown(text) {';
   html += '  if (!text || typeof text !== "string") return "";';
-  html += '  if (text.length > 100000) text = text.slice(0, 100000) + "\\n\\n[Obsah zkr?cen]";';
+  html += '  if (text.length > 100000) text = text.slice(0, 100000) + "\\n\\n[Obsah zkrácen]";';
   html += '  var html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");';
   html += '  var tick = String.fromCharCode(96);';
   html += '  var cbRe = new RegExp(tick + tick + tick + "(\\\\w*)?\\\\n([\\\\s\\\\S]*?)" + tick + tick + tick, "g");';
@@ -442,12 +442,12 @@ export function getWebviewContent(_webview: vscode.Webview, _initialMessages: Ch
   html += '    if (pre.querySelector(".copy-btn")) return;';
   html += '    var btn = document.createElement("button");';
   html += '    btn.className = "copy-btn";';
-  html += '    btn.textContent = "Kop?rovat";';
+  html += '    btn.textContent = "Kopírovat";';
   html += '    btn.onclick = function() {';
   html += '      var code = pre.querySelector("code");';
   html += '      navigator.clipboard.writeText(code ? code.textContent : "").then(function() {';
   html += '        btn.textContent = "OK!";';
-  html += '        setTimeout(function() { btn.textContent = "Kop?rovat"; }, 2000);';
+  html += '        setTimeout(function() { btn.textContent = "Kopírovat"; }, 2000);';
   html += '      });';
   html += '    };';
   html += '    pre.appendChild(btn);';
@@ -480,8 +480,8 @@ export function getWebviewContent(_webview: vscode.Webview, _initialMessages: Ch
   html += '    addCopyButtons(contentEl);';
   html += '    var copyBtn = document.createElement("button");';
   html += '    copyBtn.className = "copy-message-btn";';
-  html += '    copyBtn.textContent = "Kop?rovat";';
-  html += '    copyBtn.onclick = function() { navigator.clipboard.writeText(contentEl.textContent || ""); copyBtn.textContent = "OK!"; setTimeout(function() { copyBtn.textContent = "Kop?rovat"; }, 1500); };';
+  html += '    copyBtn.textContent = "Kopírovat";';
+  html += '    copyBtn.onclick = function() { navigator.clipboard.writeText(contentEl.textContent || ""); copyBtn.textContent = "OK!"; setTimeout(function() { copyBtn.textContent = "Kopírovat"; }, 1500); };';
   html += '    meta.appendChild(copyBtn);';
   html += '  } else {';
   html += '    var escaped = content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");';
@@ -571,7 +571,7 @@ export function getWebviewContent(_webview: vscode.Webview, _initialMessages: Ch
   
   // Send / stop functions
   html += 'function send() {';
-  html += '  if (busy) { addPipelineStatus("⏳", "Je?t? generuji. Chv?li po?kej.", "validation", null, false); return; }';
+  html += '  if (busy) { addPipelineStatus("⏳", "Ještě generuji. Chvíli počkej.", "validation", null, false); return; }';
   html += '  var text = prompt.value.trim();';
   html += '  if (!text) return;';
   html += '  prompt.value = "";';
@@ -592,12 +592,12 @@ export function getWebviewContent(_webview: vscode.Webview, _initialMessages: Ch
   html += '}';
   
   html += 'function clearHistory() {';
-  html += '  if (confirm("Opravdu chces vymazat celou historii?")) vscode.postMessage({ type: "clearHistory" });';
+  html += '  if (confirm("Opravdu chceš vymazat celou historii?")) vscode.postMessage({ type: "clearHistory" });';
   html += '}';
   
   html += 'function regenerateLast() {';
   html += '  if (busy) return;';
-  html += '  if (!messages || messages.length === 0) { showGuardianAlert("??dn? p?edchoz? dotaz", 3000); return; }';
+  html += '  if (!messages || messages.length === 0) { showGuardianAlert("Žádný předchozí dotaz", 3000); return; }';
   html += '  for (var i = messages.length - 1; i >= 0; i--) {';
   html += '    if (messages[i] && messages[i].role === "user") {';
   html += '      var promptText = messages[i].content;';
@@ -609,15 +609,15 @@ export function getWebviewContent(_webview: vscode.Webview, _initialMessages: Ch
   html += '      return;';
   html += '    }';
   html += '  }';
-  html += '  showGuardianAlert("??dn? p?edchoz? dotaz", 3000);';
+  html += '  showGuardianAlert("Žádný předchozí dotaz", 3000);';
   html += '}';
   
   html += 'function copyAllAssistantMessages() {';
   html += '  var nodes = document.querySelectorAll(".message.assistant .message-content");';
   html += '  var texts = [];';
   html += '  nodes.forEach(function(n) { if (n.textContent) texts.push(n.textContent); });';
-  html += '  if (texts.length === 0) { showGuardianAlert("??dn? odpov?di", 2500); return; }';
-  html += '  navigator.clipboard.writeText(texts.join("\\n\\n")).then(function() { showGuardianAlert("Zkop?rov?no!", 2000); });';
+  html += '  if (texts.length === 0) { showGuardianAlert("Žádné odpovědi", 2500); return; }';
+  html += '  navigator.clipboard.writeText(texts.join("\\n\\n")).then(function() { showGuardianAlert("Zkopírováno!", 2000); });';
   html += '}';
   
   html += 'function showGuardianStatsModal(stats) {';
@@ -628,10 +628,10 @@ export function getWebviewContent(_webview: vscode.Webview, _initialMessages: Ch
   html += '  modal.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000;";';
   html += '  modal.innerHTML = \'<div style="background:var(--bg-secondary);border-radius:12px;padding:24px;max-width:400px;width:90%;border:1px solid var(--border);">\' +';
   html += '    \'<h3 style="margin:0 0 16px 0;color:var(--guardian);">Guardian Statistiky</h3>\' +';
-  html += '    \'<div style="font-size:14px;">Kontrol: \' + stats.totalChecks + \'<br>Smy?ky: \' + stats.loopsDetected + \'<br>Opakov?n?: \' + stats.repetitionsFixed + \'<br>Retries: \' + stats.retriesTriggered + \'</div>\' +';
+  html += '    \'<div style="font-size:14px;">Kontrol: \' + stats.totalChecks + \'<br>Smyčky: \' + stats.loopsDetected + \'<br>Opakování: \' + stats.repetitionsFixed + \'<br>Retries: \' + stats.retriesTriggered + \'</div>\' +';
   html += '    \'<h4 style="margin:16px 0 8px 0;color:var(--accent);">Svedomi</h4>\' +';
   html += '    \'<div style="font-size:14px;">Validace: \' + stats.miniModelValidations + \'<br>Zamitnuti: \' + stats.miniModelRejections + \'</div>\' +';
-  html += '    \'<button id="close-stats-modal" style="margin-top:16px;width:100%;padding:10px;background:var(--accent);border:none;border-radius:8px;color:white;cursor:pointer;">Zav??t</button>\' +';
+  html += '    \'<button id="close-stats-modal" style="margin-top:16px;width:100%;padding:10px;background:var(--accent);border:none;border-radius:8px;color:white;cursor:pointer;">Zavřít</button>\' +';
   html += '    \'</div>\';';
   html += '  document.body.appendChild(modal);';
   html += '  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };';
@@ -691,12 +691,12 @@ export function getWebviewContent(_webview: vscode.Webview, _initialMessages: Ch
   html += '        prompt.value = prompt.value + (prompt.value ? "\\n\\n" : "") + "Soubor " + fileName + ":\\n" + tick + tick + tick + "\\n" + fileText + "\\n" + tick + tick + tick;';
   html += '        prompt.dispatchEvent(new Event("input"));';
   html += '        prompt.focus();';
-  html += '      } else { alert("??dn? aktivn? soubor"); }';
+  html += '      } else { alert("Žádný aktivní soubor"); }';
   html += '      break;';
   html += '    case "historyCleared":';
   html += '      messages = [];';
   html += '      renderMessages();';
-  html += '      showUndoSnackbar("Historie vymazana - chces ji vratit?", 8000);';
+  html += '      showUndoSnackbar("Historie vymazána – chceš ji vrátit?", 8000);';
   html += '      break;';
   html += '    case "historyRestored":';
   html += '      messages = msg.messages || [];';
@@ -728,7 +728,7 @@ export function getWebviewContent(_webview: vscode.Webview, _initialMessages: Ch
   html += '    case "stepReview":';
   html += '      if (msg.step) {';
   html += '        var reviewIcon = msg.approved ? "✅" : "🔄";';
-  html += '        var reviewText = msg.approved ? "Rozum schv?lil" : "Rozum: " + (msg.feedback || "opakuji");';
+  html += '        var reviewText = msg.approved ? "Rozum schválil" : "Rozum: " + (msg.feedback || "opakuji");';
   html += '        addPipelineStatus(reviewIcon, reviewText, msg.approved ? "approved" : "review", null, false);';
   html += '      }';
   html += '      break;';
@@ -747,7 +747,7 @@ export function getWebviewContent(_webview: vscode.Webview, _initialMessages: Ch
   html += '      clearPipelineMessages();';
   html += '      clearSendWatchdog();';
   html += '      setBusy(false);';
-  html += '      addPipelineStatus("✅", "Odpov?? schv?lena!", "approved", null, false);';
+  html += '      addPipelineStatus("✅", "Odpověď schválena!", "approved", null, false);';
   html += '      break;';
   html += '    case "guardianAlert":';
   html += '      addPipelineStatus("🛡️", msg.message, "validation", null, false);';
@@ -764,7 +764,7 @@ export function getWebviewContent(_webview: vscode.Webview, _initialMessages: Ch
   html += '      }';
   html += '      break;';
   html += '    case "miniModelResult":';
-  html += '      if (msg.result) addPipelineStatus("📊", "Sk?re: " + msg.result.score + "/10 - " + msg.result.reason, msg.result.score >= 5 ? "approved" : "rejected", null, false);';
+  html += '      if (msg.result) addPipelineStatus("📊", "Skóre: " + msg.result.score + "/10 - " + msg.result.reason, msg.result.score >= 5 ? "approved" : "rejected", null, false);';
   html += '      break;';
   html += '    case "guardianStats":';
   html += '      showGuardianStatsModal(msg.stats);';

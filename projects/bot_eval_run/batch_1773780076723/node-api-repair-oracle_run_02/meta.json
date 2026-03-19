@@ -1,0 +1,19 @@
+{
+  "runId": 1773780326176,
+  "scenario": "node-api-repair-oracle",
+  "model": "qwen2.5-coder:14b",
+  "plannerModel": "deepseek-r1:8b",
+  "plannerStrategy": "on-fail",
+  "reviewerModel": "qwen2.5:3b",
+  "jsonRepairModel": "qwen2.5:7b",
+  "timeoutFallbackModel": null,
+  "deterministicFallbackMode": "on-fail",
+  "baseUrl": "http://localhost:11434",
+  "ollamaOptions": {
+    "temperature": 0.05,
+    "num_predict": 4800,
+    "seed": 42
+  },
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1773780076723\\node-api-repair-oracle_run_02\\workspace",
+  "startedAt": "2026-03-17T20:45:26.179Z"
+}

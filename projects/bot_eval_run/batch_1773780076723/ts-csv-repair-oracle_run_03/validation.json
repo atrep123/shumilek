@@ -1,0 +1,101 @@
+{
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1773780076723\\ts-csv-repair-oracle_run_03",
+  "workspaceDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1773780076723\\ts-csv-repair-oracle_run_03\\workspace",
+  "deterministicFallback": {
+    "mode": "on-fail",
+    "tsTodo": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "nodeApi": {
+      "activations": 0,
+      "recoveries": 0,
+      "targetedActivations": 0,
+      "targetedRecoveries": 0,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 0,
+      "recoveredByFallback": 0
+    },
+    "tsCsv": {
+      "activations": 1,
+      "recoveries": 1,
+      "targetedActivations": 1,
+      "targetedRecoveries": 1,
+      "canonicalActivations": 0,
+      "canonicalRecoveries": 0,
+      "rawPasses": 0,
+      "rawFailures": 1,
+      "recoveredByFallback": 1
+    },
+    "totalActivations": 1,
+    "totalRecoveries": 1,
+    "totalTargetedActivations": 1,
+    "totalTargetedRecoveries": 1,
+    "totalCanonicalActivations": 0,
+    "totalCanonicalRecoveries": 0,
+    "totalRawPasses": 0,
+    "totalRawFailures": 1,
+    "totalRecoveredByFallback": 1,
+    "fallbackDependencyRate": 1
+  },
+  "reliability": {
+    "rawPasses": 0,
+    "rawFailures": 1,
+    "recoveredByFallback": 1,
+    "fallbackDependencyRate": 1
+  },
+  "parseStats": {
+    "plannerFailures": 0,
+    "schemaFailures": 0,
+    "jsonRepairFailures": 0,
+    "parseFailures": 0,
+    "jsonParseFailures": 0,
+    "placeholderFailures": 0,
+    "otherFailures": 0
+  },
+  "ok": true,
+  "diagnostics": [
+    "Deterministic fallback activated (ts-csv-repair-oracle, mode=on-fail, tier=targeted) and recovered validation."
+  ],
+  "commands": [
+    {
+      "command": "node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1773780076723\\ts-csv-repair-oracle_run_03\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 395,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1773780076723\\ts-csv-repair-oracle_run_03\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 297,
+      "stdout": "✔ CsvParser: parse simple CSV (1.6892ms)\n✔ CsvParser: parse CSV with quoted fields (0.1853ms)\n✔ CsvParser: parse empty CSV returns empty array (0.0886ms)\n✔ CsvParser: parse single header line returns empty array (1.051ms)\n✔ CsvParser: stringify rows to CSV (0.314ms)\n✔ CsvParser: stringify quotes fields with commas (0.1317ms)\n✔ CsvParser: custom delimiter (0.0844ms)\n✔ CsvFilter: filter rows by predicate (0.1288ms)\n✔ CsvFilter: select specific columns (0.8141ms)\n✔ CsvFilter: sort rows (0.2112ms)\n✔ CsvFilter: count rows (0.1002ms)\n✔ CLI: --help exits with code 0 (48.8125ms)\n✔ CLI: parse command reads file and outputs JSON (52.9061ms)\n✔ CLI: stats command (52.5587ms)\n✔ README.md exists (0.4165ms)\nℹ tests 15\nℹ suites 0\nℹ pass 15\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 226.7353\n",
+      "stderr": ""
+    },
+    {
+      "command": "node dist/cli.js --help",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1773780076723\\ts-csv-repair-oracle_run_03\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 71,
+      "stdout": "Usage:\n  parse --input <file>   Parse CSV and output JSON\n  stats --input <file>   Show CSV statistics\n  --help                 Show this help\n",
+      "stderr": ""
+    }
+  ]
+}

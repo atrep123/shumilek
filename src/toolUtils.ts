@@ -197,7 +197,34 @@ export function parseEditorPlanResponse(text: string): { plan?: EditorPlan; erro
 
 export function getToolRequirements(prompt: string): { requireToolCall: boolean; requireMutation: boolean } {
   const normalized = prompt.toLowerCase();
-  const requireMutation = /(vytvo[rř]|ulo[zž]|zapi[sš]|napi[sš]|uprav|upravit|přepi[sš]|prepis|přidej|pridej|sma[zž]|smaz|smazat|prejmenuj|přejmenuj|rename|delete|write|edit|modify|create|replace|patch|apply_patch|write_file|replace_lines|run_terminal_command|spust|spustit|prikaz|přikaz|terminal)/.test(normalized);
+  const requireMutation = /(vytvo[rř]|ulo[zž]|zapi[sš]|napi[sš]|uprav|upravit|oprav|oprava|fix|přepi[sš]|prepis|přidej|pridej|sma[zž]|smaz|smazat|prejmenuj|přejmenuj|rename|delete|write|edit|modify|create|replace|patch|apply_patch|write_file|replace_lines|run_terminal_command|spust|spustit|prikaz|přikaz|terminal)/.test(normalized);
   const requireToolCall = requireMutation || /(přečti|precti|zobraz|otevri|otevř|najdi|hledej|search|list_files|read_file|get_active_file|symboly|symbol|definice|definition|reference|references|diagnostik|diagnostics|lsp|get_symbols|get_workspace_symbols|get_definition|get_references|get_type_info|get_diagnostics|run_terminal_command|fetch|web|stahni|stáhni|url)/.test(normalized);
   return { requireToolCall, requireMutation };
+}
+
+export function getStepToolRequirements(stepType: string, instruction: string): { requireToolCall: boolean; requireMutation: boolean } {
+  const base = getToolRequirements(instruction);
+  const normalizedType = stepType.toLowerCase();
+
+  switch (normalizedType) {
+    case 'analyze':
+    case 'compile':
+    case 'test':
+    case 'explain':
+    case 'review':
+    case 'document':
+      return { requireToolCall: true, requireMutation: false };
+    case 'install':
+      return { requireToolCall: true, requireMutation: false };
+    case 'code':
+    case 'refactor':
+      return { requireToolCall: true, requireMutation: true };
+    case 'debug':
+      return {
+        requireToolCall: true,
+        requireMutation: base.requireMutation
+      };
+    default:
+      return base;
+  }
 }

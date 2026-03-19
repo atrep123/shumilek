@@ -1,0 +1,25 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# CSV tool\n\nSmall CSV utility. It probably works for simple files.\n\n## Commands\n\n- `parse --input <file>`: Reads a CSV file and outputs JSON array of rows.\n- `stats --input <file>`: Reads a CSV file and outputs row count and column names."
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"csv-tool-broken\",\n  \"version\": \"1.0.0\",\n  \"private\": true\n}"
+    },
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"outDir\": \"dist\",\n    \"module\": \"commonjs\",\n    \"target\": \"es2020\",\n    \"strict\": true,\n    \"esModuleInterop\": true\n  },\n  \"include\": [\n    \"src\"\n  ]\n}"
+    },
+    {
+      "path": "src/csv.ts",
+      "content": "export class CsvParser {\n  private delimiter: string;\n\n  constructor(options?: { delimiter?: string }) {\n    this.delimiter = options?.delimiter || \",\";\n  }\n\n  parse(text: string): Record<string, string>[] {\n    const lines = text.trim().split(/\r?\n/);\n    if (lines.length === 0) return [];\n\n    const headers = lines[0].split(this.delimiter);\n    return lines.slice(1).filter(Boolean).map(line => {\n      const values = line.split(new RegExp(`\\s*${this.delimiter}\\s*|(?<=\")\\s*,\\s*(?=\")`)).map(value => value.replace(/^\"|\"$/g, '').replace(/\"\"/g, '\"'));\n      const row: Record<string, string> = {};\n      headers.forEach((header, index) => {\n        row[header] = values[index];\n      });\n      return row;\n    });\n  }\n\n  stringify(rows: Record<string, string>[]): string {\n    if (rows.length === 0) return \"[]\";\n\n    const headers = Object.keys(rows[0]);\n    const lines = [headers.join(this.delimiter)];\n    rows.forEach(row => {\n      const values = headers.map(header => row[header].replace(/\"/g, '\"\"').replace(/,/g, ', '));\n      lines.push(`\"${values.join('\",\"')}\"`);\n    });\n\n    return lines.join('\\n');\n  }\n}\n\nexport class CsvFilter {\n  private rows: Record<string, string>[];\n\n  constructor(rows: Record<string, string>[]) {\n    this.rows = rows;\n  }\n\n  where(predicate: (row: Record<string, string>) => boolean): Record<string, string>[] {\n    return this.rows.filter(predicate);\n  }\n\n  select(columns: string[]): Record<string, string>[] {\n    return this.rows.map(row => {\n      const newRow: Record<string, string> = {};\n      columns.forEach(column => {\n        if (row.hasOwnProperty(column)) {\n          newRow[column] = row[column];\n        }\n      });\n      return newRow;\n    });\n  }\n\n  sortBy(column: string): Record<string, string>[] {\n    return this.rows.slice().sort((a, b) => {\n      if (a[column] < b[column]) return -1;\n      if (a[column] > b[column]) return 1;\n      return 0;\n    });\n  }\n\n  count(): number {\n    return this.rows.length;\n  }\n}"
+    },
+    {
+      "path": "src/cli.ts",
+      "content": "declare const require: any;\ndeclare const process: any;\nconst fs = require(\"node:fs\");\n\nconst args = process.argv.slice(2);\n\nif (args[0] === \"--help\") {\n  console.log(`Usage:\n  parse --input <file>\n  stats --input <file>`);\n  process.exit(0);\n}\n\nif (args.length !== 3 || args[1] !== \"--input\" || !fs.existsSync(args[2])) {\n  console.error(\"Invalid arguments or file not found\");\n  process.exit(1);\n}\n\nconst csvContent = fs.readFileSync(args[2], \"utf8\");\nconst parser = new CsvParser();\nconst rows = parser.parse(csvContent);\n\nif (args[0] === \"parse\") {\n  console.log(JSON.stringify(rows, null, 2));\n} else if (args[0] === \"stats\") {\n  const filter = new CsvFilter(rows);\n  console.log(`Rows: ${filter.count()}\nColumns: ${Object.keys(rows[0]).join(\", \")}`);\n}"
+    }
+  ],
+  "notes": "This is the first iteration of the CSV tool. It includes a basic implementation of the CsvParser and CsvFilter classes, as well as a CLI that handles the 'parse' and 'stats' commands."
+}

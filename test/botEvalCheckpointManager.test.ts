@@ -4,6 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 
 import {
+  buildCheckpointMarkdown,
   buildCheckpointReport,
   computeConfidenceInterval95,
   parseBenchmarkManifest,
@@ -169,6 +170,84 @@ describe('botEvalCheckpointManager', () => {
       assert.ok(regressionSplit);
       assert.deepEqual(regressionSplit?.scenariosSeen, ['python-ai-stdlib-oracle', 'ts-csv-oracle']);
       assert.equal(regressionSplit?.missingScenarios.length, 0);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('reports non-blocking repair scenarios without letting them gate checkpoint qualification', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-checkpoint-repair-'));
+    try {
+      const manifestPath = path.join(tmp, 'botEvalBenchmarks.json');
+      writeJson(manifestPath, {
+        version: 1,
+        scenarios: {
+          'node-api-oracle': {
+            splits: ['validation', 'test'],
+            domains: ['node'],
+            capabilities: ['integration'],
+            blocking: true
+          },
+          'ts-csv-repair-oracle': {
+            splits: ['validation', 'regression'],
+            domains: ['typescript', 'repair'],
+            capabilities: ['existing-workspace'],
+            blocking: false
+          }
+        },
+        checkpointPolicy: {
+          minRunsInWindow: 2,
+          gateRequired: true,
+          requiredSplits: ['validation', 'test', 'regression'],
+          minPassRate: 1,
+          minRawRunPassRate: 1,
+          maxFallbackDependencyRunRate: 0.2
+        }
+      });
+
+      createComparableRun({
+        root: tmp,
+        dirName: 'release_gate_ci_nightly_3001_1',
+        gatePassed: true,
+        summary: [
+          { scenario: 'node-api-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 1200 },
+          { scenario: 'ts-csv-repair-oracle', passRate: 1, rawRunPassRate: 0, fallbackDependencyRunRate: 1, avgMs: 900 }
+        ]
+      });
+      createComparableRun({
+        root: tmp,
+        dirName: 'release_gate_ci_nightly_3002_1',
+        gatePassed: true,
+        summary: [
+          { scenario: 'node-api-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 1100 },
+          { scenario: 'ts-csv-repair-oracle', passRate: 1, rawRunPassRate: 0, fallbackDependencyRunRate: 1, avgMs: 880 }
+        ]
+      });
+
+      const report = buildCheckpointReport({
+        rootDir: tmp,
+        manifestPath,
+        window: 2
+      });
+
+      assert.equal(report.checkpoint.qualified, true);
+      assert.deepEqual(report.checkpoint.latestQualifiedScenarioIds, ['node-api-oracle']);
+
+      const validationSplit = report.splitRollups.find(split => split.split === 'validation');
+      assert.ok(validationSplit);
+      assert.ok(validationSplit?.scenariosSeen.includes('ts-csv-repair-oracle'));
+
+      const repairRollup = validationSplit?.scenarioRollups.find(row => row.scenario === 'ts-csv-repair-oracle');
+      assert.ok(repairRollup);
+      assert.equal(repairRollup?.blocking, false);
+      assert.equal(repairRollup?.rawRunPassRate.mean, 0);
+      assert.equal(repairRollup?.fallbackDependencyRunRate.mean, 1);
+
+      const markdown = buildCheckpointMarkdown(report);
+      assert.ok(markdown.includes('## Non-blocking Benchmarks'));
+      assert.ok(markdown.includes('ts-csv-repair-oracle'));
+      assert.ok(markdown.includes('validation'));
+      assert.ok(markdown.includes('regression'));
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }

@@ -23,6 +23,10 @@ Tenhle repozitář obsahuje jednoduchý eval harness, který:
   `npm run bot:eval -- --scenario ts-todo-oracle --model qwen2.5-coder:32b --maxIterations 6 --timeoutSec 1800`
 - Komplexní Node REST API (integrace + oracle testy):  
   `npm run bot:eval -- --scenario node-api-oracle --model qwen2.5-coder:32b --maxIterations 6 --timeoutSec 1800`
+- Repair/improve benchmark nad existujícími soubory:  
+  `npm run bot:eval -- --scenario ts-csv-repair-oracle --model qwen2.5-coder:32b --maxIterations 6 --timeoutSec 1800`
+- Vícesouborový repair/improve benchmark nad existujícím Node API:  
+  `npm run bot:eval -- --scenario node-api-repair-oracle --model qwen2.5-coder:32b --maxIterations 6 --timeoutSec 1800`
 - Scénář kde si model píše vlastní testy (méně stabilní):  
   `npm run bot:eval -- --scenario python-ai-stdlib --model deepseek-coder-v2:16b --maxIterations 6 --timeoutSec 1800`
 
@@ -59,6 +63,7 @@ Tenhle repozitář obsahuje jednoduchý eval harness, který:
 - Doporučené skripty:
   - Jednotlivý run: `npm run bot:eval:recommended`
   - Batch (3× všechny scénáře): `npm run bot:eval:recommended:batch`
+  - Repair batch (3× oba repair benchmarky): `npm run bot:eval:repair:batch`
 
 ## CI release gate
 
@@ -94,6 +99,7 @@ Nightly safeguards:
   - `splits`: `train`, `validation`, `test`, `regression`, `holdout`
   - `domains` and `capabilities` for task labeling
   - `blocking` to distinguish release-driving sets from non-blocking canaries
+- Repair benchmarky jsou v manifestu vedené jako `blocking: false`, takže se objeví v checkpoint reportech a trend analýze, ale samy o sobě nezablokují checkpoint qualification.
 - Checkpoint evaluation is intentionally separate from baseline promotion:
   - baseline promotion answers: "is this candidate better than baseline?"
   - checkpoint evaluation answers: "is the latest rolling window stable enough to lock as an accepted config state?"
@@ -111,6 +117,7 @@ Nightly safeguards:
   - calibration recommendation
   - checkpoint report
   - tuner decision
+  - repair benchmark canary batch
   - guarded baseline promotion
 - Nightly run history is kept in `BOT_EVAL_RUN_ROOT` (default `C:\actions-runner\bot_eval_run`) so calibration can evaluate consecutive runs.
 - Baseline promotion state for nightly node-api guard is stored in `C:\actions-runner\release_gate_promotion_state_node_api.json`.
@@ -118,6 +125,9 @@ Nightly safeguards:
   - command: `npm run bot:eval:nightly:large:node-project -- --label large_nightly_canary_<run>_<attempt> --outDir <BOT_EVAL_RUN_ROOT>\large_nightly_canary_<run>_<attempt>`
   - artifact: `bot-eval-large-nightly-<run_id>-<run_attempt>`
   - scope: benchmark-only, does not influence release-gate pass/fail or baseline promotion
+- Local/full nightly orchestration also runs a non-blocking repair canary batch over `ts-csv-repair-oracle,node-api-repair-oracle` and writes artifacts to `repair_nightly_canary_latest` under `BOT_EVAL_RUN_ROOT`.
+- CI nightly workflow also runs a non-blocking repair canary batch and uploads a separate artifact `bot-eval-repair-canary-nightly-<run_id>-<run_attempt>` with `summary.json` and `results.json` from `repair_nightly_canary_<run>_<attempt>`.
+- The nightly GitHub Actions job summary now includes a compact `Nightly Gate` section with scenario deltas plus a `Repair Canary` table with `passRate`, `rawRunPassRate`, `fallbackDependencyRunRate`, and average latency, so both blocking and non-blocking regressions are visible without opening artifacts.
 
 PR gate hardening process (manual approval only):
 
@@ -170,3 +180,17 @@ Useful optional repository variables:
 - Scope in this iteration:
   - blocking gate: not included in PR gate and not included in blocking nightly release-gate decision
   - nightly canary: included as non-blocking benchmark artifact only
+
+## Repair benchmark
+
+- Scenario id: `ts-csv-repair-oracle`
+- Purpose: simuluje realne zadani "tady jsou existujici soubory, oprav je a vylepsi", ne greenfield generovani projektu.
+- Input style: prompt obsahuje seednuty broken workspace (`README.md`, `package.json`, `tsconfig.json`, `src/csv.ts`, `src/cli.ts`) a model ma vratit kompletni opraveny workspace.
+- Validation: pouziva stejne oracle testy jako `ts-csv-oracle`, aby bylo mozne porovnat raw repair schopnost proti standardnimu kontraktu.
+- Scope: non-blocking benchmark scenario; je zahrnuty do benchmark manifestu a checkpoint reportingu, ale neni soucasti blocking release gate.
+
+- Scenario id: `node-api-repair-oracle`
+- Purpose: simuluje realne zadani "tady je existujici REST API, oprav kontrakt a vylepsi implementaci".
+- Input style: prompt obsahuje seednuty broken workspace (`README.md`, `package.json`, `openapi.json`, `src/server.js`) s chybami jako `uuid`, spatny `/health` payload, auto-`listen()` a rozbity response contract.
+- Validation: pouziva stejne oracle testy jako `node-api-oracle`, aby bylo mozne porovnat repair schopnost proti standardnimu API kontraktu.
+- Scope: non-blocking benchmark scenario; je zahrnuty do benchmark manifestu a checkpoint reportingu, ale neni soucasti blocking release gate.

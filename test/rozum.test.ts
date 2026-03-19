@@ -312,6 +312,15 @@ DÉLKA: short`;
       
       expect(result.length).to.be.lessThan(longPrompt.length + 1000);
     });
+
+    it('should not coerce excessive step counts', () => {
+      const rozum = new Rozum();
+      const prompt = rozum.buildPlanningPrompt('Oprav chybu v extension.ts', []);
+
+      expect(prompt).to.include('Use the minimum number of steps needed to finish safely');
+      expect(prompt).to.not.include('10-20 krok');
+      expect(prompt).to.not.include('pomalinku');
+    });
   });
 
   describe('executePlan - instruction mutation fix', () => {
@@ -415,6 +424,49 @@ DÉLKA: short`;
       const lastInstruction = capturedInstructions[capturedInstructions.length - 1];
       expect((lastInstruction.match(/OPRAVA OD ROZUMU/g) || []).length).to.be.at.most(1);
       expect((lastInstruction.match(/RETRY ATTEMPT/g) || []).length).to.be.at.most(1);
+    });
+
+    it('should stop retrying when Svedomi repeats the same rejection for the same result', async () => {
+      const rozum = new Rozum();
+      rozum.configure('http://localhost:11434', 'test-model', false, false);
+
+      const plan = {
+        shouldPlan: true,
+        complexity: 'simple' as const,
+        steps: [{
+          id: 1,
+          type: 'code' as const,
+          title: 'Write code',
+          instruction: 'Original instruction',
+          status: 'pending' as const,
+        }],
+        warnings: [],
+        suggestedApproach: 'test',
+        estimatedLength: 'short' as const,
+        totalSteps: 1,
+      };
+
+      let callCount = 0;
+      const executeStep = async () => {
+        callCount++;
+        return 'Same result';
+      };
+
+      rozum.reviewStepResult = async () => ({ approved: true, shouldRetry: false, feedback: 'OK' });
+
+      const results = await rozum.executeStepByStep(
+        plan,
+        'test prompt',
+        executeStep,
+        undefined,
+        undefined,
+        undefined,
+        async () => ({ approved: false, reason: 'Odpověď nesplňuje kritéria' })
+      );
+
+      expect(callCount).to.equal(2);
+      expect(results).to.have.length(1);
+      expect(results[0]).to.include('Svedomi opakovaně vracelo stejnou námitku');
     });
   });
 });

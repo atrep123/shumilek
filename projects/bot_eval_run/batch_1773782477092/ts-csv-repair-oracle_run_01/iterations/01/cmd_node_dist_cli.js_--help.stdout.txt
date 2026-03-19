@@ -1,0 +1,4 @@
+Commands:
+parse --input <file>
+stats --input <file>
+--help

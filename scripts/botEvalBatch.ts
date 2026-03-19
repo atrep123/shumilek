@@ -198,7 +198,13 @@ const DEFAULT_BATCH_SCENARIOS = [
 
 function supportsExplicitRawMetricsForScenario(scenario: string): boolean {
   const value = String(scenario || '').trim().toLowerCase();
-  return value === 'ts-todo-oracle' || value === 'node-api-oracle' || value === 'ts-csv-oracle';
+  return (
+    value === 'ts-todo-oracle' ||
+    value === 'node-api-oracle' ||
+    value === 'node-api-repair-oracle' ||
+    value === 'ts-csv-oracle' ||
+    value === 'ts-csv-repair-oracle'
+  );
 }
 
 function deriveRawOutcomeForRun(run: RunResult): {

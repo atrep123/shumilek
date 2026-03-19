@@ -84,6 +84,7 @@ describe('botEvalNightlyFull', () => {
         'Baseline Promote',
         'Tuner',
         'Stability Aggregate',
+        'Repair Canary',
         'Cleanup'
       ]);
 
@@ -110,6 +111,13 @@ describe('botEvalNightlyFull', () => {
       assert.equal(fs.readFileSync(pointerPath, 'utf8'), path.join(runRoot, 'release_gate_stable_nightly') + '\n');
       assert.ok(logs.some(message => message.includes(`Baseline pointer updated to ${path.join(runRoot, 'release_gate_stable_nightly')}`)));
       assert.ok(logs.some(message => message.includes('Tuner action: accept')));
+
+      const repairCanaryStep = steps.find(step => step.label === 'Repair Canary');
+      assert.ok(repairCanaryStep);
+      assert.ok(repairCanaryStep?.args.includes('--scenarios'));
+      assert.ok(repairCanaryStep?.args.includes('ts-csv-repair-oracle,node-api-repair-oracle'));
+      assert.ok(repairCanaryStep?.args.includes('--outDir'));
+      assert.ok(repairCanaryStep?.args.includes(path.join(runRoot, 'repair_nightly_canary_latest')));
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
@@ -152,6 +160,7 @@ describe('botEvalNightlyFull', () => {
         'Checkpoint',
         'Calibrate',
         'Tuner',
+        'Repair Canary',
         'Cleanup'
       ]);
       assert.ok(!steps.some(step => step.label === 'Baseline Promote'));
@@ -167,6 +176,48 @@ describe('botEvalNightlyFull', () => {
       assert.ok(logs.some(message => message.includes('Skipping baseline promotion')));
       assert.ok(logs.some(message => message.includes('Skipping stability aggregate')));
       assert.ok(!fs.existsSync(path.join(runRoot, 'release_baseline.txt')));
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps repair canary non-blocking when the repair batch fails', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-nightly-full-repair-canary-'));
+    try {
+      const repoRoot = createRepoRoot(tmp);
+      const runRoot = path.join(tmp, 'runs');
+      fs.mkdirSync(runRoot, { recursive: true });
+      createReleaseGateDir(runRoot, 'release_gate_4001');
+      createReleaseGateDir(runRoot, 'release_gate_4002');
+
+      const steps: Array<{ label: string; args: string[] }> = [];
+      const logs: string[] = [];
+      const result = await runNightlyFull({
+        runs: 5,
+        gateConfig: path.join(repoRoot, 'scripts', 'config', 'botEvalGate.nightly.json'),
+        window: 10,
+        root: runRoot,
+        continueOnInfraFailure: true,
+        infraRecoveryTimeoutSec: 90,
+        infraRecoveryPollSec: 5,
+        autoRestartOnInfraFailure: true,
+        maxInfraRestarts: 2,
+        extraArgs: []
+      }, {
+        repoRoot,
+        runStep: async (label, args) => {
+          steps.push({ label, args });
+          return label === 'Repair Canary' ? 2 : 0;
+        },
+        log: (message) => logs.push(message),
+        error: (message) => logs.push(`ERR:${message}`)
+      });
+
+      assert.equal(result.gateCode, 0);
+      assert.equal(result.repairCanaryCode, 2);
+      assert.equal(result.cleanupCode, 0);
+      assert.ok(steps.some(step => step.label === 'Cleanup'));
+      assert.ok(logs.some(message => message.includes('Repair canary failed with code 2 (non-blocking)')));
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }

@@ -1,0 +1,38 @@
+{
+  "ok": true,
+  "diagnostics": [
+    "Deterministic fallback activated (ts-csv-repair-oracle, mode=on-fail, tier=targeted) and recovered validation."
+  ],
+  "commands": [
+    {
+      "command": "node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1773780076723\\ts-csv-repair-oracle_run_01\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 378,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1773780076723\\ts-csv-repair-oracle_run_01\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 281,
+      "stdout": "✔ CsvParser: parse simple CSV (1.5148ms)\n✔ CsvParser: parse CSV with quoted fields (0.1642ms)\n✔ CsvParser: parse empty CSV returns empty array (0.08ms)\n✔ CsvParser: parse single header line returns empty array (0.8371ms)\n✔ CsvParser: stringify rows to CSV (0.2644ms)\n✔ CsvParser: stringify quotes fields with commas (0.1115ms)\n✔ CsvParser: custom delimiter (0.079ms)\n✔ CsvFilter: filter rows by predicate (0.0992ms)\n✔ CsvFilter: select specific columns (0.5391ms)\n✔ CsvFilter: sort rows (0.1815ms)\n✔ CsvFilter: count rows (0.1054ms)\n✔ CLI: --help exits with code 0 (44.8867ms)\n✔ CLI: parse command reads file and outputs JSON (47.5391ms)\n✔ CLI: stats command (47.9068ms)\n✔ README.md exists (0.7401ms)\nℹ tests 15\nℹ suites 0\nℹ pass 15\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 214.3636\n",
+      "stderr": ""
+    },
+    {
+      "command": "node dist/cli.js --help",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\batch_1773780076723\\ts-csv-repair-oracle_run_01\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 69,
+      "stdout": "Usage:\n  parse --input <file>   Parse CSV and output JSON\n  stats --input <file>   Show CSV statistics\n  --help                 Show this help\n",
+      "stderr": ""
+    }
+  ]
+}

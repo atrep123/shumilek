@@ -7,7 +7,8 @@ import {
   extractJsonPayload,
   coerceEditorAction,
   parseEditorPlanResponse,
-  getToolRequirements
+  getToolRequirements,
+  getStepToolRequirements
 } from '../src/toolUtils';
 
 describe('toolUtils', () => {
@@ -253,6 +254,30 @@ describe('toolUtils', () => {
       const result = getToolRequirements('smaž soubor');
       expect(result.requireToolCall).to.be.true;
       expect(result.requireMutation).to.be.true;
+    });
+  });
+
+  describe('getStepToolRequirements', () => {
+    it('does not force mutation for analyze steps even when original task implied edits', () => {
+      const result = getStepToolRequirements('analyze', 'Analyzovat požadavky a strukturu projektu');
+      expect(result.requireToolCall).to.be.true;
+      expect(result.requireMutation).to.be.false;
+    });
+
+    it('forces mutation for code steps even with neutral instruction wording', () => {
+      const result = getStepToolRequirements('code', 'Navrh hlavniho souboru');
+      expect(result.requireToolCall).to.be.true;
+      expect(result.requireMutation).to.be.true;
+    });
+
+    it('keeps debug steps flexible based on instruction content', () => {
+      const inspectOnly = getStepToolRequirements('debug', 'Zjisti proc pada validace');
+      expect(inspectOnly.requireToolCall).to.be.true;
+      expect(inspectOnly.requireMutation).to.be.false;
+
+      const withFix = getStepToolRequirements('debug', 'Oprav chybu v parseru');
+      expect(withFix.requireToolCall).to.be.true;
+      expect(withFix.requireMutation).to.be.true;
     });
   });
 });

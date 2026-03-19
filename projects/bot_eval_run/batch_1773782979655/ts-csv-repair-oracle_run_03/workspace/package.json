@@ -1,0 +1,12 @@
+{
+  "name": "csv-tool",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A simple CSV utility tool",
+  "main": "dist/cli.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "Your Name",
+  "license": "MIT"
+}

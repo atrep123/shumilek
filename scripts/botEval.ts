@@ -226,6 +226,183 @@ try {
   ORACLE_TS_CSV_TESTS_SNIPPET = '// (oracle tests missing on disk)';
 }
 
+const TS_CSV_REPAIR_WORKSPACE_SNIPPET = [
+  '--- BEGIN EXISTING WORKSPACE FILES ---',
+  'FILE: README.md',
+  '# CSV tool',
+  '',
+  'Small CSV utility. It probably works for simple files.',
+  '',
+  'FILE: package.json',
+  JSON.stringify({
+    name: 'csv-tool-broken',
+    version: '1.0.0',
+    private: true,
+    type: 'module',
+    dependencies: {
+      commander: '^12.0.0',
+      'csv-parse': '^5.5.6'
+    }
+  }, null, 2),
+  '',
+  'FILE: tsconfig.json',
+  JSON.stringify({
+    compilerOptions: {
+      target: 'ES2022',
+      module: 'esnext',
+      moduleResolution: 'bundler',
+      rootDir: '.',
+      outDir: 'build',
+      strict: false
+    },
+    include: ['src/**/*.ts', 'tests/**/*.ts']
+  }, null, 2),
+  '',
+  'FILE: src/csv.ts',
+  [
+    'export class CsvParser {',
+    '  parse(text: string): Record<string, string>[] {',
+    '    const lines = text.trim().split(/\\r?\\n/);',
+    '    const headers = (lines.shift() || "").split(",");',
+    '    return lines.filter(Boolean).map(line => {',
+    '      const values = line.split(",");',
+    '      const row: Record<string, string> = {};',
+    '      headers.forEach((header, index) => row[header] = values[index] || "");',
+    '      return row;',
+    '    });',
+    '  }',
+    '',
+    '  stringify(rows: Record<string, string>[]): string {',
+    '    if (!rows.length) return "";',
+    '    const headers = Object.keys(rows[0]);',
+    '    return [headers.join(","), ...rows.map(row => headers.map(header => row[header] || "").join(","))].join("\\n");',
+    '  }',
+    '}',
+    '',
+    'export class CsvFilter {',
+    '  constructor(private rows: Record<string, string>[]) {}',
+    '  where(predicate: (row: Record<string, string>) => boolean): CsvFilter {',
+    '    return new CsvFilter(this.rows.filter(predicate));',
+    '  }',
+    '  select(columns: string[]): CsvFilter {',
+    '    return new CsvFilter(this.rows.map(row => Object.fromEntries(columns.map(col => [col, row[col] || ""]))));',
+    '  }',
+    '  sortBy(column: string): CsvFilter {',
+    '    return new CsvFilter([...this.rows].sort((a, b) => String(a[column] || "").localeCompare(String(b[column] || ""))));',
+    '  }',
+    '  count(): number {',
+    '    return this.rows.length;',
+    '  }',
+    '}',
+    ''
+  ].join('\n'),
+  '',
+  'FILE: src/cli.ts',
+  [
+    'import { Command } from "commander";',
+    'import { readFileSync } from "node:fs";',
+    'import { CsvParser } from "./csv";',
+    '',
+    'const program = new Command();',
+    'program',
+    '  .name("csv-tool")',
+    '  .command("parse")',
+    '  .requiredOption("--input <path>")',
+    '  .action((opts) => {',
+    '    const parser = new CsvParser();',
+    '    const text = readFileSync(opts.input, "utf8");',
+    '    console.log(JSON.stringify(parser.parse(text), null, 2));',
+    '  });',
+    '',
+    'program.parse();',
+    ''
+  ].join('\n'),
+  '--- END EXISTING WORKSPACE FILES ---'
+].join('\n');
+
+const NODE_API_REPAIR_WORKSPACE_SNIPPET = [
+  '--- BEGIN EXISTING WORKSPACE FILES ---',
+  'FILE: README.md',
+  '# TODO API',
+  '',
+  'Simple REST API for todos.',
+  '',
+  'FILE: package.json',
+  JSON.stringify({
+    name: 'todo-api-broken',
+    version: '1.0.0',
+    private: true,
+    type: 'module',
+    dependencies: {
+      uuid: '^10.0.0'
+    }
+  }, null, 2),
+  '',
+  'FILE: openapi.json',
+  JSON.stringify({
+    openapi: '3.0.0',
+    info: { title: 'Todo API', version: '1.0.0' },
+    paths: {
+      '/health': { get: { responses: { '200': { description: 'ok' } } } }
+    }
+  }, null, 2),
+  '',
+  'FILE: src/server.js',
+  [
+    'const http = require("node:http");',
+    'const { v4: uuidv4 } = require("uuid");',
+    '',
+    'const todos = [];',
+    '',
+    'function createServer() {',
+    '  return http.createServer((req, res) => {',
+    '    if (req.url === "/health") {',
+    '      res.writeHead(200, { "content-type": "application/json" });',
+    '      res.end(JSON.stringify({ status: "ok" }));',
+    '      return;',
+    '    }',
+    '',
+    '    if (req.url === "/todos" && req.method === "GET") {',
+    '      res.writeHead(200, { "content-type": "application/json" });',
+    '      res.end(JSON.stringify(todos));',
+    '      return;',
+    '    }',
+    '',
+    '    if (req.url === "/todos" && req.method === "POST") {',
+    '      let body = "";',
+    '      req.on("data", chunk => body += chunk);',
+    '      req.on("end", () => {',
+    '        const parsed = JSON.parse(body || "{}");',
+    '        const todo = { id: uuidv4(), title: parsed.title, done: false };',
+    '        todos.push(todo);',
+    '        res.writeHead(200, { "content-type": "application/json" });',
+    '        res.end(JSON.stringify(todo));',
+    '      });',
+    '      return;',
+    '    }',
+    '',
+    '    res.writeHead(404);',
+    '    res.end("not found");',
+    '  });',
+    '}',
+    '',
+    'const server = createServer();',
+    'server.listen(3000);',
+    '',
+    'module.exports = { createServer };',
+    ''
+  ].join('\n'),
+  '--- END EXISTING WORKSPACE FILES ---'
+].join('\n');
+
+function isTsCsvFamilyScenario(scenarioId: string): boolean {
+  return scenarioId === 'ts-csv-oracle' || scenarioId === 'ts-csv-repair-oracle';
+}
+
+function isNodeApiFamilyScenario(scenarioId: string): boolean {
+  return scenarioId === 'node-api-oracle' || scenarioId === 'node-api-repair-oracle';
+}
+
 const SCENARIOS: Scenario[] = [
   {
     id: 'python-ai-stdlib',
@@ -434,6 +611,57 @@ const SCENARIOS: Scenario[] = [
     validate: async (workspaceDir: string, context: EvalRunContext) => validateNodeApiOracle(workspaceDir, context),
   },
   {
+    id: 'node-api-repair-oracle',
+    title: 'Node.js REST API repair + improve benchmark over existing files',
+    prompt: [
+      'Dostanes existujici, ale rozbity Node.js workspace. Tvuj ukol neni API navrhnout od nuly, ale opravit a vylepsit existujici soubory.',
+      '',
+      'CIL:',
+      '- oprav kontrakt API a jeho vystupy',
+      '- odstran nevalidni zavislosti a zjednodus implementaci na Node builtin moduly',
+      '- dopln chybejici endpointy a persistence kontrakt',
+      '- zachovej zamer projektu: TODO REST API + OpenAPI + file persistence',
+      '',
+      'POZADAVKY / KONTRAKT:',
+      '- Zadne externi npm balicky. Pouze Node.js builtin moduly.',
+      '- Kód bude v `src/` a bude CommonJS (require/module.exports).',
+      '- Soubor `src/server.js` musi exportovat funkci `createServer({ dataPath })`.',
+      '- Server nesmi automaticky volat `listen()` pri importu.',
+      '- Endpointy: GET /health, GET /openapi.json, GET/POST /todos, GET/PATCH/DELETE /todos/:id.',
+      '- Odpovedi musi mit kontrakt scenare `node-api-oracle`: `{ ok: true, ... }` nebo `{ ok: false, error }`.',
+      '- Persistuj do souboru `dataPath` jako JSON `{ "todos": [...] }` po kazde mutaci.',
+      '- `package.json` musi byt CommonJS a bez dependencies/devDependencies.',
+      '',
+      'TADY JE EXISTUJICI WORKSPACE, KTERY MAS OPRAVIT A VYLEPSIT:',
+      NODE_API_REPAIR_WORKSPACE_SNIPPET,
+      '',
+      'Poznamka: testy budeme pouzivat tyto (musis projit):',
+      '--- BEGIN ORACLE TESTS (tests/oracle.test.js) ---',
+      ORACLE_NODE_API_TESTS_SNIPPET.trimEnd(),
+      '--- END ORACLE TESTS ---',
+      '',
+      'VYSTUPNI FORMAT (STRICT): vrat JEN JSON objekt tohoto tvaru:',
+      '{',
+      '  "mode": "full",',
+      '  "files": [',
+      '    {"path": "README.md", "content": "...\\n"},',
+      '    {"path": "package.json", "content": "...\\n"},',
+      '    {"path": "openapi.json", "content": "...\\n"},',
+      '    {"path": "src/server.js", "content": "...\\n"}',
+      '  ],',
+      '  "notes": "optional"',
+      '}',
+      '',
+      'Pravidla:',
+      '- Zadny markdown, zadne ``` bloky, zadny text mimo JSON.',
+      '- Cesty jsou relativni, pouzij `/`, bez `..` a bez absolutnich cest.',
+      '- Nezahrnuj vlastni `tests/` (pouziji se oracle testy).',
+      '- `content` je vzdy kompletni obsah souboru (ne diff/snippet).',
+      '- I kdyz vstup obsahuje rozbite soubory, vystup vrat jako kompletni opraveny workspace.',
+    ].join('\n'),
+    validate: async (workspaceDir: string, context: EvalRunContext) => validateNodeApiOracle(workspaceDir, context, 'node-api-repair-oracle'),
+  },
+  {
     id: 'node-project-api-large',
     title: 'Node Project Management API (Large)',
     prompt: [
@@ -600,7 +828,73 @@ const SCENARIOS: Scenario[] = [
     ].join('\n'),
     validate: async (workspaceDir: string, context: EvalRunContext) => validateTsCsvOracle(workspaceDir, context),
   },
+  {
+    id: 'ts-csv-repair-oracle',
+    title: 'TypeScript CSV repair + improve benchmark over existing files',
+    prompt: [
+      'Dostanes existujici, ale rozbity TypeScript workspace. Tvuj ukol neni projekt vymyslet od nuly, ale opravovat a vylepsovat konkretni soubory.',
+      '',
+      'CIL:',
+      '- oprav chyby v existujicich souborech',
+      '- odstran zavislost na externich baliccich',
+      '- dopln chybejici chovani a zlepsi robustnost implementace',
+      '- zachovej zamer projektu: CSV parser + filtrovaci utilita + CLI',
+      '',
+      'POZADAVKY / KONTRAKT:',
+      '- Zadne externi npm balicky. Pouze Node.js builtin moduly.',
+      '- README.md je povinny a ma kratce popsat parse/stats prikazy.',
+      '- Nevytvarej `dist/` ve vystupu (generuje ho `tsc`).',
+      '- `package.json` nesmi mit `"type": "module"` a nesmi obsahovat dependencies/devDependencies.',
+      '- Musi existovat `tsconfig.json` a kompilace do `dist/` (CommonJS) pres `tsc -p tsconfig.json`.',
+      '- `src/csv.ts` musi exportovat `CsvParser` a `CsvFilter` se stejnym kontraktem jako scenar `ts-csv-oracle`.',
+      '- `CsvFilter.where/select/sortBy` MUSI vracet pole radku, nikdy dalsi `CsvFilter` instanci.',
+      '- `CsvParser.parse()` musi korektne zpracovat quoted fields a escaped `""` uvnitr hodnot.',
+      '- `src/cli.ts` musi po kompilaci vytvorit `dist/cli.js` a podporovat `parse`, `stats`, `--help` bez externich knihoven.',
+      '- V `src/cli.ts` nepouzivej ESM importy; pouzij `const { CsvParser } = require("./csv")` a builtin moduly pres `require(...)`.',
+      '- Argument parser pro CLI musi podporovat PRESNE syntaxi `parse --input <file>` a `stats --input <file>`, ne jen `--input=<file>`.',
+      '- `stats` nesmi spadnout na prazdnem CSV; kdyz nejsou zadne radky, vypis prazdny seznam sloupcu.',
+      '- CLI musi mit explicitni vetve pro `parse`, `stats`, `--help` a neznamy prikaz musi skoncit chybou (exit code 1).',
+      '- Dulezite: zadne neuzavrene stringy nebo template literaly v `src/cli.ts`.',
+      '',
+      'TADY JE EXISTUJICI WORKSPACE, KTERY MAS OPRAVIT A VYLEPSIT:',
+      TS_CSV_REPAIR_WORKSPACE_SNIPPET,
+      '',
+      'Poznamka: testy budeme pouzivat tyto (musis projit):',
+      '--- BEGIN ORACLE TESTS (tests/oracle.test.js) ---',
+      ORACLE_TS_CSV_TESTS_SNIPPET.trimEnd(),
+      '--- END ORACLE TESTS ---',
+      '',
+      'VYSTUPNI FORMAT (STRICT): vrat JEN JSON objekt tohoto tvaru:',
+      '{',
+      '  "mode": "full",',
+      '  "files": [',
+      '    {"path": "README.md", "content": "...\\n"},',
+      '    {"path": "package.json", "content": "...\\n"},',
+      '    {"path": "tsconfig.json", "content": "...\\n"},',
+      '    {"path": "src/csv.ts", "content": "...\\n"},',
+      '    {"path": "src/cli.ts", "content": "...\\n"}',
+      '  ],',
+      '  "notes": "optional"',
+      '}',
+      '',
+      'Pravidla:',
+      '- Zadny markdown, zadne ``` bloky, zadny text mimo JSON.',
+      '- Cesty jsou relativni, pouzij `/`, bez `..` a bez absolutnich cest.',
+      '- Nezahrnuj vlastni `tests/` (pouziji se oracle testy).',
+      '- `content` je vzdy kompletni obsah souboru (ne diff/snippet).',
+      '- I kdyz vstup obsahuje rozbite soubory, vystup vrat jako kompletni opraveny workspace.',
+    ].join('\n'),
+    validate: async (workspaceDir: string, context: EvalRunContext) => validateTsCsvOracle(workspaceDir, context, 'ts-csv-repair-oracle'),
+  },
 ];
+
+export function listScenarioIds(): string[] {
+  return SCENARIOS.map(s => s.id);
+}
+
+export function getScenarioPrompt(scenarioId: string): string | undefined {
+  return SCENARIOS.find(s => s.id === scenarioId)?.prompt;
+}
 
 export function normalizeDeterministicFallbackMode(raw?: string): DeterministicFallbackMode {
   const value = String(raw || '').trim().toLowerCase();
@@ -1716,25 +2010,25 @@ export function normalizeScenarioFileContentBeforeWrite(scenarioId: string, relP
   if (scenarioId === 'ts-todo-oracle' && relPath === 'tsconfig.json') {
     return normalizeTsTodoTsconfig(content);
   }
-  if (scenarioId === 'node-api-oracle' && relPath === 'src/server.js') {
+  if (isNodeApiFamilyScenario(scenarioId) && relPath === 'src/server.js') {
     return normalizeNodeApiServerContract(content);
   }
-  if (scenarioId === 'ts-csv-oracle' && relPath === 'src/csv.ts') {
+  if (isTsCsvFamilyScenario(scenarioId) && relPath === 'src/csv.ts') {
     if (shouldUseCanonicalTsCsvForOracle(content)) {
       return normalizeTsTodoCliRuntimeGlobals(buildTsCsvFallbackCsvTemplate());
     }
     return content;
   }
-  if (scenarioId === 'ts-csv-oracle' && relPath === 'src/cli.ts') {
+  if (isTsCsvFamilyScenario(scenarioId) && relPath === 'src/cli.ts') {
     if (shouldUseCanonicalTsCsvCliForOracle(content)) {
       return normalizeTsTodoCliRuntimeGlobals(buildTsCsvFallbackCliTemplate());
     }
     return normalizeTsTodoCliRuntimeGlobals(content);
   }
-  if (scenarioId === 'ts-csv-oracle' && relPath === 'tsconfig.json') {
+  if (isTsCsvFamilyScenario(scenarioId) && relPath === 'tsconfig.json') {
     return normalizeTsCsvTsconfig(content);
   }
-  if (scenarioId === 'ts-csv-oracle' && relPath === 'package.json') {
+  if (isTsCsvFamilyScenario(scenarioId) && relPath === 'package.json') {
     return normalizeTsCsvPackageManifest(content);
   }
   if (scenarioId === 'node-project-api-large' && /^src\/server\.(?:js|ts|mjs|cjs)$/i.test(relPath)) {
@@ -3531,8 +3825,12 @@ async function validateNodeApiOracleOnce(
   return { ok: diagnostics.length === 0, diagnostics, commands };
 }
 
-async function validateNodeApiOracle(workspaceDir: string, context: EvalRunContext): Promise<ValidationResult> {
-  const mode = isDeterministicFallbackEnabled('node-api-oracle') ? context.deterministicFallbackMode : 'off';
+async function validateNodeApiOracle(
+  workspaceDir: string,
+  context: EvalRunContext,
+  scenarioId = 'node-api-oracle'
+): Promise<ValidationResult> {
+  const mode = isDeterministicFallbackEnabled(scenarioId) ? context.deterministicFallbackMode : 'off';
   const raw = await validateNodeApiOracleOnce(workspaceDir, false, { fastFailOnFatal: mode !== 'off' });
   recordDeterministicRawOutcome(context, 'nodeApi', raw.ok);
 
@@ -3547,8 +3845,8 @@ async function validateNodeApiOracle(workspaceDir: string, context: EvalRunConte
     if (targeted.ok && !raw.ok) recordDeterministicRecoveredByFallback(context, 'nodeApi');
     markers.push(
       targeted.ok
-        ? `Deterministic fallback activated (node-api-oracle, mode=${mode}, tier=targeted) and recovered validation.`
-        : `Deterministic fallback activated (node-api-oracle, mode=${mode}, tier=targeted) but validation still failed.`
+        ? `Deterministic fallback activated (${scenarioId}, mode=${mode}, tier=targeted) and recovered validation.`
+        : `Deterministic fallback activated (${scenarioId}, mode=${mode}, tier=targeted) but validation still failed.`
     );
     if (targeted.ok) {
       return {
@@ -3565,8 +3863,8 @@ async function validateNodeApiOracle(workspaceDir: string, context: EvalRunConte
   if (canonical.ok && !raw.ok) recordDeterministicRecoveredByFallback(context, 'nodeApi');
   markers.push(
     canonical.ok
-      ? `Deterministic fallback activated (node-api-oracle, mode=${mode}, tier=canonical) and recovered validation.`
-      : `Deterministic fallback activated (node-api-oracle, mode=${mode}, tier=canonical) but validation still failed.`
+      ? `Deterministic fallback activated (${scenarioId}, mode=${mode}, tier=canonical) and recovered validation.`
+      : `Deterministic fallback activated (${scenarioId}, mode=${mode}, tier=canonical) but validation still failed.`
   );
   return {
     ...canonical,
@@ -7192,8 +7490,12 @@ export async function validateTsCsvOracleOnce(
   return { ok: diagnostics.length === 0, diagnostics, commands };
 }
 
-async function validateTsCsvOracle(workspaceDir: string, context: EvalRunContext): Promise<ValidationResult> {
-  const mode = isDeterministicFallbackEnabled('ts-csv-oracle') ? context.deterministicFallbackMode : 'off';
+async function validateTsCsvOracle(
+  workspaceDir: string,
+  context: EvalRunContext,
+  scenarioId = 'ts-csv-oracle'
+): Promise<ValidationResult> {
+  const mode = isDeterministicFallbackEnabled(scenarioId) ? context.deterministicFallbackMode : 'off';
   const raw = await validateTsCsvOracleOnce(workspaceDir, false);
   recordDeterministicRawOutcome(context, 'tsCsv', raw.ok);
 
@@ -7208,8 +7510,8 @@ async function validateTsCsvOracle(workspaceDir: string, context: EvalRunContext
     if (targeted.ok && !raw.ok) recordDeterministicRecoveredByFallback(context, 'tsCsv');
     markers.push(
       targeted.ok
-        ? `Deterministic fallback activated (ts-csv-oracle, mode=${mode}, tier=targeted) and recovered validation.`
-        : `Deterministic fallback activated (ts-csv-oracle, mode=${mode}, tier=targeted) but validation still failed.`
+        ? `Deterministic fallback activated (${scenarioId}, mode=${mode}, tier=targeted) and recovered validation.`
+        : `Deterministic fallback activated (${scenarioId}, mode=${mode}, tier=targeted) but validation still failed.`
     );
     if (targeted.ok) {
       return { ...targeted, diagnostics: [...markers, ...targeted.diagnostics] };
@@ -7220,8 +7522,8 @@ async function validateTsCsvOracle(workspaceDir: string, context: EvalRunContext
     if (canonical.ok && !raw.ok) recordDeterministicRecoveredByFallback(context, 'tsCsv');
     markers.push(
       canonical.ok
-        ? `Deterministic fallback activated (ts-csv-oracle, mode=${mode}, tier=canonical) and recovered validation.`
-        : `Deterministic fallback activated (ts-csv-oracle, mode=${mode}, tier=canonical) but validation still failed.`
+        ? `Deterministic fallback activated (${scenarioId}, mode=${mode}, tier=canonical) and recovered validation.`
+        : `Deterministic fallback activated (${scenarioId}, mode=${mode}, tier=canonical) but validation still failed.`
     );
     return {
       ...canonical,
@@ -7237,8 +7539,8 @@ async function validateTsCsvOracle(workspaceDir: string, context: EvalRunContext
   if (canonical.ok && !raw.ok) recordDeterministicRecoveredByFallback(context, 'tsCsv');
   markers.push(
     canonical.ok
-      ? `Deterministic fallback activated (ts-csv-oracle, mode=${mode}, tier=canonical) and recovered validation.`
-      : `Deterministic fallback activated (ts-csv-oracle, mode=${mode}, tier=canonical) but validation still failed.`
+      ? `Deterministic fallback activated (${scenarioId}, mode=${mode}, tier=canonical) and recovered validation.`
+      : `Deterministic fallback activated (${scenarioId}, mode=${mode}, tier=canonical) but validation still failed.`
   );
   return { ...canonical, diagnostics: [...markers, ...canonical.diagnostics] };
 }
@@ -7859,7 +8161,7 @@ function buildDeterministicPlannerFallback(scenarioId: string): string {
       '- Verify with tsc build, oracle tests, and cli --help.'
     ].join('\n');
   }
-  if (scenarioId === 'node-api-oracle') {
+  if (isNodeApiFamilyScenario(scenarioId)) {
     return [
       '- Create full files: README.md, package.json, openapi.json, src/server.js.',
       '- Export createServer via module.exports = { createServer } and never call listen() inside.',
@@ -7895,7 +8197,7 @@ function buildDeterministicPlannerFallback(scenarioId: string): string {
       '- Verify with npm install and oracle tests.'
     ].join('\n');
   }
-  if (scenarioId === 'ts-csv-oracle') {
+  if (isTsCsvFamilyScenario(scenarioId)) {
     return [
       '- Create full files: README.md, package.json, tsconfig.json, src/csv.ts, src/cli.ts.',
       '- BOTH CsvParser AND CsvFilter MUST be in src/csv.ts. Export both as named classes.',
@@ -7961,6 +8263,7 @@ function getScenarioCoreRequiredFiles(scenarioId: string): string[] {
     case 'ts-todo-oracle':
       return ['README.md', 'package.json', 'tsconfig.json', 'src/store.ts', 'src/cli.ts'];
     case 'node-api-oracle':
+    case 'node-api-repair-oracle':
       return ['README.md', 'package.json', 'openapi.json', 'src/server.js'];
     case 'python-ai-stdlib-oracle':
       return ['README.md', 'mini_ai/__init__.py', 'mini_ai/markov.py', 'mini_ai/cli.py'];
@@ -7982,6 +8285,7 @@ function getScenarioCoreRequiredFiles(scenarioId: string): string[] {
         'src/lib/id.js'
       ];
     case 'ts-csv-oracle':
+    case 'ts-csv-repair-oracle':
       return ['README.md', 'package.json', 'tsconfig.json', 'src/csv.ts', 'src/cli.ts'];
     default:
       return [];
@@ -8000,7 +8304,7 @@ function buildFirstIterationContractHint(scenarioId: string): string {
       '- No external dependencies in package.json.'
     ].join('\n');
   }
-  if (scenarioId === 'node-api-oracle') {
+  if (isNodeApiFamilyScenario(scenarioId)) {
     return [
       '- This is iteration 1: mode MUST be "full". Do not return "patch".',
       '- files[] MUST contain exactly: README.md, package.json, openapi.json, src/server.js.',
@@ -8041,7 +8345,7 @@ function buildFirstIterationContractHint(scenarioId: string): string {
       '- Avoid uncaught throw in routes/services; ensure failures always return JSON { error: { code, message } } and never HTML error page.'
     ].join('\n');
   }
-  if (scenarioId === 'ts-csv-oracle') {
+  if (isTsCsvFamilyScenario(scenarioId)) {
     return [
       '- This is iteration 1: mode MUST be "full". Do not return "patch".',
       '- files[] MUST contain exactly: README.md, package.json, tsconfig.json, src/csv.ts, src/cli.ts.',
@@ -8051,7 +8355,12 @@ function buildFirstIterationContractHint(scenarioId: string): string {
       '- CsvFilter: constructor(rows: Record<string, string>[]), where(predicate), select(columns), sortBy(column), count().',
       '- Both classes MUST be exported: export class CsvParser { ... } and export class CsvFilter { ... }.',
       '- src/cli.ts: read process.argv, handle "parse --input <file>" (prints JSON array of rows), "stats --input <file>" (prints row count and column names), "--help" exits 0.',
-      '- CLI must use: declare const require: any; declare const process: any; const fs = require("node:fs");',
+      '- CLI must use: declare const require: any; declare const process: any; const fs = require("node:fs"); const { CsvParser } = require("./csv");',
+      '- Do NOT use `import { CsvParser } from "./csv"` in src/cli.ts.',
+      '- Parse args with `const args = process.argv.slice(2)` and `const inputIdx = args.indexOf("--input")`; do NOT rely on `--input=<file>`.',
+      '- For stats on empty CSV, print Rows: 0 and Columns: without crashing on rows[0].',
+      '- Unknown command must print an error and exit code 1.',
+      '- `--help` output should list parse, stats and --help on separate lines.',
       '- CRITICAL: Every string literal and template literal MUST be properly closed. Do not leave unterminated strings.',
       '- tsconfig.json: { "compilerOptions": { "outDir": "dist", "module": "commonjs", "target": "es2020", "strict": true, "esModuleInterop": true }, "include": ["src"] }.',
       '- package.json: no dependencies, no devDependencies, do NOT set "type": "module".',

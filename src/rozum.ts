@@ -108,46 +108,7 @@ export class Rozum {
     logChannel?.appendLine('[Rozum] đź§  Zahajuji analĂ˝zu a plĂˇnovĂˇnĂ­...');
     onStatus?.('đź§  Rozum analyzuje dotaz...');
 
-    const planningPrompt = `<think>
-Jsi "Rozum" - pokroÄŤilĂ˝ plĂˇnovacĂ­ agent. TvĂ˝m Ăşkolem je vytvoĹ™it EXTRĂ‰MNÄš DETAILNĂŤ a PROMYĹ LENĂť plĂˇn.
-UĹľivatel chce, abys postupoval "pomalinku", "zkoumal mnoho souborĹŻ" a vĹˇe "dĹŻkladnÄ› opravil".
-
-DOTAZ:
-${userPrompt.slice(0, 4000)}
-
-KONTEXT:
-${conversationHistory.slice(-5).map(m => `${m.role}: ${m.content.slice(0, 1000)}...`).join('\n')}
-
-TYPY KROKĹ®:
-- ANALYZE: Prozkoumat soubory nebo problĂ©m (dĹŻkladnÄ›)
-- INSTALL: Instalace balĂ­ÄŤkĹŻ
-- CODE: PsanĂ­ kĂłdu (po ÄŤĂˇstech)
-- COMPILE: OvÄ›Ĺ™enĂ­ kompilace
-- TEST: TestovĂˇnĂ­
-- EXPLAIN: VysvÄ›tlenĂ­
-- REFACTOR: ÄŚiĹˇtÄ›nĂ­ kĂłdu
-- DEBUG: HledĂˇnĂ­ chyb
-- DOCUMENT: Dokumentace
-- REVIEW: FinĂˇlnĂ­ kontrola
-
-POKYNY K PLĂNOVĂNĂŤ:
-1. RozdÄ›l Ăşkol na co nejmenĹˇĂ­, atomickĂ© kroky.
-2. Pokud jde o "mnoho souborĹŻ", vytvoĹ™ krok "ANALYZE" pro kaĹľdou skupinu souborĹŻ zvlĂˇĹˇĹĄ.
-3. Neboj se vytvoĹ™it 10-20 krokĹŻ. UĹľivatel chce dĹŻkladnost, ne rychlost.
-4. KaĹľdĂ˝ krok musĂ­ bĂ˝t ovÄ›Ĺ™itelnĂ˝.
-
-ODPOVÄšZ V TOMTO FORMĂTU:
-SLOĹ˝ITOST: [complex]
-
-KROK 1:
-TYP: [typ]
-NĂZEV: [nĂˇzev]
-INSTRUKCE: [detailnĂ­ instrukce]
-
-VAROVĂNĂŤ: [varovĂˇnĂ­]
-PĹĂŤSTUP: [pĹ™Ă­stup]
-DĂ‰LKA: [long]
-</think>`;
+    const planningPrompt = this.buildPlanningPrompt(userPrompt, conversationHistory);
 
     try {
       const fetchFn = this.getFetch();
@@ -327,6 +288,27 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
       let stepRetries = 0;
       let stepResult = '';
       let stepApproved = false;
+      let lastRejectionSignature: string | null = null;
+      let repeatedRejectionCount = 0;
+
+      const isRepeatedRejection = (source: 'rozum' | 'svedomi', reason: string, result: string): boolean => {
+        const signature = `${source}::${reason.trim()}::${result.trim()}`;
+        if (signature === lastRejectionSignature) {
+          repeatedRejectionCount++;
+        } else {
+          lastRejectionSignature = signature;
+          repeatedRejectionCount = 1;
+        }
+        return repeatedRejectionCount >= 2;
+      };
+
+      const acceptStepWithNote = (note: string): void => {
+        stepApproved = true;
+        step.status = 'done';
+        step.result = `${stepResult}\n\n*[⚠️ ${note}]*`;
+        results.push(step.result);
+        onStepComplete?.(step, step.result);
+      };
 
       while (!stepApproved && stepRetries <= MAX_STEP_RETRIES) {
         step.status = 'running';
@@ -379,23 +361,27 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
               logChannel?.appendLine(`[Pipeline] âś… Krok ${step.id} kompletnÄ› schvĂˇlen (Rozum + Svedomi)`);
             } else {
               logChannel?.appendLine(`[Pipeline] âš ď¸Ź Svedomi zamĂ­tlo krok ${step.id}: ${svedomiReason}`);
-              if (stepRetries < MAX_STEP_RETRIES) {
+              if (isRepeatedRejection('svedomi', svedomiReason, stepResult)) {
+                acceptStepWithNote(`Tento krok byl přijat, protože Svedomi opakovaně vracelo stejnou námitku bez nové informace: ${svedomiReason}`);
+                logChannel?.appendLine(`[Pipeline] âš ď¸Ź UkonÄŤuji opakovĂˇnĂ­ kroku ${step.id}: opakovanĂˇ stejnĂˇ nĂˇmitka od Svedomi`);
+              } else if (stepRetries < MAX_STEP_RETRIES) {
                 step.instruction = `${originalInstruction}\n\n[OPRAVA OD SVÄšDOMĂŤ - AUTOKOREKCE]: ${svedomiReason}`;
                 stepRetries++;
                 onStatus?.(`âš ď¸Ź Svedomi zamĂ­tlo: ${svedomiReason.slice(0, 50)}..., opravuji`);
               } else {
                 // Accept anyway after max retries
-                stepApproved = true;
-                step.status = 'done';
-                step.result = stepResult + `\n\n*[âš ď¸Ź Tento krok byl pĹ™ijat po maximĂˇlnĂ­m poÄŤtu pokusĹŻ, i pĹ™es nĂˇmitky Svedomi: ${svedomiReason}]*`;
-                results.push(step.result);
-                onStepComplete?.(step, step.result);
+                acceptStepWithNote(`Tento krok byl přijat po maximálním počtu pokusů, i přes námitky Svedomi: ${svedomiReason}`);
               }
             }
           } else if (review.shouldRetry && stepRetries < MAX_STEP_RETRIES) {
             // Rozum wants retry - modify instruction based on feedback
-            step.instruction = `${originalInstruction}\n\n[OPRAVA OD ROZUMU]: ${review.feedback}`;
-            stepRetries++;
+            if (isRepeatedRejection('rozum', review.feedback, stepResult)) {
+              acceptStepWithNote(`Tento krok byl přijat, protože Rozum opakovaně vracel stejnou námitku bez nové informace: ${review.feedback}`);
+              logChannel?.appendLine(`[Rozum] âš ď¸Ź UkonÄŤuji opakovĂˇnĂ­ kroku ${step.id}: opakovanĂˇ stejnĂˇ nĂˇmitka od Rozumu`);
+            } else {
+              step.instruction = `${originalInstruction}\n\n[OPRAVA OD ROZUMU]: ${review.feedback}`;
+              stepRetries++;
+            }
           } else {
             // No retry available or not worth retrying
             stepApproved = true;
@@ -705,7 +691,7 @@ ${step.instruction}
 You are "Rozum" — a planning agent for software engineering. Analyze the request and create a precise, actionable plan.
 
 TASK:
-${userPrompt.slice(0, 6000)}
+${userPrompt.slice(0, 2500)}
 
 CONTEXT:
 ${conversationHistory.slice(-5).map(m => `[${m.role}]: ${m.content.slice(0, 1500)}`).join('\n---\n')}
@@ -727,6 +713,9 @@ RULES:
 2. After CODE, always verify with COMPILE or TEST.
 3. End with REVIEW.
 4. Each step: WHAT to do, WHERE (files), HOW to verify.
+5. Use the minimum number of steps needed to finish safely. Usually 3-7 steps.
+6. Only create 8+ steps when the request explicitly requires broad multi-file work, migrations, or staged validation.
+7. Do not invent unrelated domains, files, or technologies. Stay grounded in the actual task and context.
 
 FORMAT:
 SLOZITOST: [simple|medium|complex]

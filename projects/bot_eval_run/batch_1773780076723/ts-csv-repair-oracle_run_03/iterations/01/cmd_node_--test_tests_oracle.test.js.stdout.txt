@@ -1,0 +1,23 @@
+✔ CsvParser: parse simple CSV (1.6892ms)
+✔ CsvParser: parse CSV with quoted fields (0.1853ms)
+✔ CsvParser: parse empty CSV returns empty array (0.0886ms)
+✔ CsvParser: parse single header line returns empty array (1.051ms)
+✔ CsvParser: stringify rows to CSV (0.314ms)
+✔ CsvParser: stringify quotes fields with commas (0.1317ms)
+✔ CsvParser: custom delimiter (0.0844ms)
+✔ CsvFilter: filter rows by predicate (0.1288ms)
+✔ CsvFilter: select specific columns (0.8141ms)
+✔ CsvFilter: sort rows (0.2112ms)
+✔ CsvFilter: count rows (0.1002ms)
+✔ CLI: --help exits with code 0 (48.8125ms)
+✔ CLI: parse command reads file and outputs JSON (52.9061ms)
+✔ CLI: stats command (52.5587ms)
+✔ README.md exists (0.4165ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 226.7353

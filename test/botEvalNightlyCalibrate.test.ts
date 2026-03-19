@@ -317,6 +317,56 @@ describe('botEvalNightlyCalibrate', () => {
     }
   });
 
+  it('tolerates partial stability aggregate schema by marking readiness not ready', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-nightly-calibrate-'));
+    try {
+      for (const runId of [5101, 5102, 5103]) {
+        const runDir = path.join(tmp, `release_gate_ci_nightly_${runId}_1`);
+        fs.mkdirSync(runDir, { recursive: true });
+        writeJson(path.join(runDir, 'summary.json'), [
+          { scenario: 'ts-todo-oracle', passRate: 1, rawRunPassRate: 1, fallbackDependencyRunRate: 0, avgMs: 1020 }
+        ]);
+        writeJson(path.join(runDir, 'compare.json'), {
+          baselineDir: 'projects/bot_eval_run/stable_baseline',
+          gate: { passed: true },
+          scenarios: [
+            { scenario: 'ts-todo-oracle', baseline: { avgMs: 1000 }, candidate: { avgMs: 1020 } }
+          ]
+        });
+        writeJson(path.join(runDir, 'stability_aggregate.json'), {
+          allGatePassed: true
+        });
+        writeJson(path.join(runDir, 'latency_guard.json'), { passed: true, violations: [] });
+        writeJson(path.join(runDir, 'trend_guard.json'), { passed: true, violations: [] });
+        if (runId !== 5103) {
+          writeJson(path.join(runDir, 'calibration_recommendation.json'), {
+            readiness: {
+              ready_to_tighten_pr: false,
+              reason_if_not_ready: '',
+              last3NightlyRunIds: []
+            }
+          });
+          writeJson(path.join(runDir, 'baseline_promotion.json'), {
+            qualified: true,
+            promoted: true,
+            streakBefore: 1,
+            streakAfter: 2,
+            promotionMessage: 'promoted after streak 2/2'
+          });
+        }
+      }
+
+      const report = buildCalibrationRecommendation({ rootDir: tmp, window: 10 });
+      const scenario = report.scenarios.find((s: any) => s.scenario === 'ts-todo-oracle');
+      assert.ok(scenario, 'latency calibration should still be computed from compare.json');
+      assert.equal(scenario!.samples, 3);
+      assert.equal(report.readiness.ready_to_tighten_pr, false);
+      assert.match(report.readiness.reason_if_not_ready, /stability_aggregate\.json is incomplete/i);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
   it('discovers local release_gate_<timestamp> dirs when includeLocalRuns is true', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bot-eval-nightly-calibrate-'));
     try {

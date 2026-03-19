@@ -48,6 +48,7 @@ type NightlyRun = {
   summary: any[];
   compare: CompareReport;
   stabilityAggregate: StabilityAggregateReport | null;
+  readinessIssues: string[];
 };
 
 type CalibrationScenario = {
@@ -266,11 +267,20 @@ function loadNightlyRun(dir: RunDirInfo): NightlyRun {
   if (!Array.isArray(compare?.scenarios)) throw new Error(`Invalid compare.json: expected scenarios[] in ${comparePath}`);
 
   let stabilityAggregate: StabilityAggregateReport | null = null;
+  const readinessIssues: string[] = [];
   if (fs.existsSync(stabilityPath)) {
-    stabilityAggregate = readJsonFile<StabilityAggregateReport>(stabilityPath);
-    if (!Array.isArray(stabilityAggregate?.scenarios)) {
-      throw new Error(`Invalid stability_aggregate.json: expected scenarios[] in ${stabilityPath}`);
+    const parsed = readJsonFile<any>(stabilityPath);
+    const hasScenarioArray = Array.isArray(parsed?.scenarios);
+    const hasAllGatePassed = typeof parsed?.allGatePassed === 'boolean';
+    if (!hasScenarioArray || !hasAllGatePassed) {
+      readinessIssues.push(
+        `stability_aggregate.json is incomplete in ${dir.dirName}`
+      );
     }
+    stabilityAggregate = {
+      allGatePassed: hasAllGatePassed ? parsed.allGatePassed : false,
+      scenarios: hasScenarioArray ? parsed.scenarios : []
+    };
   }
 
   return {
@@ -278,7 +288,8 @@ function loadNightlyRun(dir: RunDirInfo): NightlyRun {
     dirPath: dir.dirPath,
     summary,
     compare,
-    stabilityAggregate
+    stabilityAggregate,
+    readinessIssues
   };
 }
 
@@ -304,6 +315,9 @@ function evaluateReadiness(allNightlyDirsNewestFirst: RunDirInfo[], runsNewestFi
     if (!run) {
       violations.push(`${dir.dirName}: nightly run could not be loaded for readiness evaluation`);
       continue;
+    }
+    for (const issue of run.readinessIssues) {
+      violations.push(`${run.dirName}: ${issue}`);
     }
     if (!run.compare?.gate?.passed) {
       violations.push(`${run.dirName}: gate.passed is false`);

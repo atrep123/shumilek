@@ -8,9 +8,11 @@ import { streamPlainOllamaChat } from './responseStreaming';
 import { executeModelCallWithMessages } from './modelCall';
 import { runPostEditVerification } from './postEditVerification';
 import {
-  buildAirLLMStartCommand as buildAirLLMStartCommandPure,
-  readAirLLMConfig
-} from './airllm';
+  AirLLMStartupState,
+  buildAirLLMStartCommandForExtension,
+  ensureAirLLMRunning as ensureAirLLMRunningPure,
+  startAirLLMServer as startAirLLMServerPure
+} from './airllmRuntime';
 import { 
   workspaceIndexer, 
   setWorkspaceLogger,
@@ -82,6 +84,7 @@ import { getWebviewContent } from './webviewContent';
 import { computeRetryDecision, buildRetryFeedbackMessage } from './retryDecision';
 import { runToolCall } from './toolExecution';
 import { generateWithTools } from './toolGeneration';
+import { PixelLabLocalBridgeServer } from './pixellabBridge';
 import {
   parseServerUrl,
   resolveExecutionMode,
@@ -144,7 +147,8 @@ import {
   sanitizeEditorAnswer,
   buildEditorStateMessage,
   parseEditorPlanResponse,
-  getToolRequirements
+  getToolRequirements,
+  getStepToolRequirements
 } from './toolUtils';
 // (Types imported from ./types)
 
@@ -172,9 +176,8 @@ let confirmStatusBarItem: vscode.StatusBarItem | undefined;
 let projectMapUpdateTimer: NodeJS.Timeout | undefined;
 let lastToolWritePath: string | undefined;
 let lastToolWriteAction: 'created' | 'updated' | undefined;
-let airllmStartInProgress: Promise<boolean> | undefined;
-let airllmTerminal: vscode.Terminal | undefined;
-let lastAirLLMStartAt: number | undefined;
+let pixelLabBridgeServer: PixelLabLocalBridgeServer | undefined;
+const airllmStartupState: AirLLMStartupState = {};
 
 function toAsciiLog(value: string): string {
   const input = String(value);
@@ -183,39 +186,13 @@ function toAsciiLog(value: string): string {
   return asciiOnly;
 }
 
-function buildAirLLMStartCommand(
-  context: vscode.ExtensionContext,
-  config: vscode.WorkspaceConfiguration
-): { command: string; baseUrl: string } {
-  const scriptPath = path.join(context.extensionUri.fsPath, 'scripts', 'airllm_server.py');
-  return buildAirLLMStartCommandPure(scriptPath, readAirLLMConfig(config));
-}
-
 async function startAirLLMServer(context: vscode.ExtensionContext): Promise<void> {
   const config = vscode.workspace.getConfiguration('shumilek');
-  const { command } = buildAirLLMStartCommand(context, config);
-  if (!airllmTerminal) {
-    airllmTerminal = vscode.window.createTerminal({ name: 'Shumilek AirLLM' });
-  }
-  airllmTerminal.show(false);
-  airllmTerminal.sendText(command, true);
-  lastAirLLMStartAt = Date.now();
-  outputChannel?.appendLine(`[AirLLM] Start command: ${command}`);
-}
-
-async function isAirLLMHealthy(baseUrl: string, timeoutMs: number): Promise<boolean> {
-  try {
-    const res = await fetchWithTimeout(`${baseUrl}/health`, { method: 'GET' }, timeoutMs);
-    if (!res.ok) return false;
-    const json = await res.json();
-    return json?.status === 'ok';
-  } catch {
-    return false;
-  }
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  await startAirLLMServerPure(context.extensionUri.fsPath, config, airllmStartupState, {
+    createTerminal: () => vscode.window.createTerminal({ name: 'Shumilek AirLLM' }),
+    now: () => Date.now(),
+    log: message => outputChannel?.appendLine(message)
+  });
 }
 
 async function ensureAirLLMRunning(
@@ -225,48 +202,17 @@ async function ensureAirLLMRunning(
   waitForHealthySeconds: number,
   panel?: WebviewWrapper
 ): Promise<boolean> {
-  const initialHealthy = await isAirLLMHealthy(baseUrl, 1500);
-  if (initialHealthy) return true;
-  if (!autoStart) return false;
-
-  if (airllmStartInProgress) {
-    return airllmStartInProgress;
-  }
-
-  airllmStartInProgress = (async () => {
-    const rawWait = typeof waitForHealthySeconds === 'number' && !Number.isNaN(waitForHealthySeconds)
-      ? waitForHealthySeconds
-      : 30;
-    const waitSeconds = Math.min(Math.max(rawWait, 5), 300);
-    if (panel && panel.visible) {
-      panel.webview.postMessage({
-        type: 'pipelineStatus',
-        icon: '🚀',
-        text: 'Starting AirLLM server...',
-        statusType: 'planning',
-        loading: true
-      });
-    }
-
-    if (!lastAirLLMStartAt || Date.now() - lastAirLLMStartAt > 3000) {
-      await startAirLLMServer(context);
-    }
-
-    const deadline = Date.now() + waitSeconds * 1000;
-    while (Date.now() < deadline) {
-      if (await isAirLLMHealthy(baseUrl, 2000)) {
-        return true;
-      }
-      await sleep(1000);
-    }
-    return false;
-  })();
-
-  try {
-    return await airllmStartInProgress;
-  } finally {
-    airllmStartInProgress = undefined;
-  }
+  return ensureAirLLMRunningPure({
+    baseUrl,
+    autoStart,
+    waitForHealthySeconds,
+    panel,
+    startServer: () => startAirLLMServer(context)
+  }, airllmStartupState, {
+    fetchFn: fetchWithTimeout,
+    sleep: ms => new Promise(resolve => setTimeout(resolve, ms)),
+    now: () => Date.now()
+  });
 }
 // Keep messages in module scope so we can safely refresh the webview HTML even
 // when the panel already exists (retainContextWhenHidden=true), without breaking
@@ -838,6 +784,21 @@ export function activate(context: vscode.ExtensionContext) {
   setSvedomiStats(guardianStats);
   setWorkspaceInstructionsLogger((msg: string) => outputChannel?.appendLine(msg));
 
+  pixelLabBridgeServer = new PixelLabLocalBridgeServer(
+    () => (vscode.workspace.workspaceFolders ?? []).map(folder => folder.uri.fsPath),
+    { log: message => outputChannel?.appendLine(message) }
+  );
+  void pixelLabBridgeServer.start().catch(error => {
+    outputChannel?.appendLine(`[PixelLab] Bridge start failed: ${String(error)}`);
+  });
+  context.subscriptions.push({
+    dispose: () => {
+      const server = pixelLabBridgeServer;
+      pixelLabBridgeServer = undefined;
+      void server?.dispose();
+    }
+  });
+
   // Load persisted history (sanitize to prevent corrupted state from breaking the webview)
   chatMessages.length = 0;
   chatMessages.push(...loadChatMessages(context));
@@ -865,8 +826,8 @@ export function activate(context: vscode.ExtensionContext) {
   outputChannel.appendLine('[Init] Sidebar provider registered');
 
   context.subscriptions.push(vscode.window.onDidCloseTerminal(terminal => {
-    if (terminal === airllmTerminal) {
-      airllmTerminal = undefined;
+    if (terminal === airllmStartupState.terminal) {
+      airllmStartupState.terminal = undefined;
     }
   }));
 
@@ -1444,6 +1405,9 @@ export function deactivate() {
     abortController.abort();
     abortController = undefined;
   }
+  const server = pixelLabBridgeServer;
+  pixelLabBridgeServer = undefined;
+  void server?.dispose();
   if (outputChannel) {
     outputChannel.dispose();
   }
@@ -1960,9 +1924,9 @@ PŘÍSTUP K PRÁCI:
         rozumPlan,
         trimmedPrompt,
         // Execute step function
-        async (stepPrompt: string, _stepInfo: ActionStep): Promise<string> => {
+        async (stepPrompt: string, stepInfo: ActionStep): Promise<string> => {
           if (toolCallsEnabled) {
-            const stepRequirements = getToolRequirements(stepPrompt);
+            const stepRequirements = getStepToolRequirements(stepInfo.type, stepInfo.instruction);
             const stepToolOnlyPrompt = stepRequirements.requireToolCall
               ? buildToolOnlyPrompt(stepRequirements.requireMutation)
               : toolSystemPrompt;

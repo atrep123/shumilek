@@ -1,0 +1,14 @@
+{
+  "count": 5,
+  "files": [
+    "README.md",
+    "package.json",
+    "tsconfig.json",
+    "src/csv.ts",
+    "src/cli.ts"
+  ],
+  "appliedAsPatch": false,
+  "forcePatchFromIncompleteFull": false,
+  "appliedFixes": [],
+  "skippedFixes": []
+}

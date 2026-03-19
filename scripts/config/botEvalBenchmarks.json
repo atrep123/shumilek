@@ -29,6 +29,20 @@
       "blocking": true,
       "notes": "TypeScript CSV oracle benchmark for raw-pass contract stability without deterministic fallback dependence."
     },
+    "ts-csv-repair-oracle": {
+      "splits": ["validation", "regression"],
+      "domains": ["typescript", "csv", "cli", "repair"],
+      "capabilities": ["editing", "repair", "oracle-tests", "existing-workspace"],
+      "blocking": false,
+      "notes": "Non-blocking repair benchmark over an existing TypeScript CSV workspace; tracked in checkpoint reporting without influencing checkpoint qualification."
+    },
+    "node-api-repair-oracle": {
+      "splits": ["validation", "test"],
+      "domains": ["node", "http", "integration", "repair"],
+      "capabilities": ["api-design", "repair", "contracts", "existing-workspace"],
+      "blocking": false,
+      "notes": "Non-blocking repair benchmark over an existing Node API workspace; tracked for trend visibility without influencing blocking checkpoint decisions."
+    },
     "node-project-api-large": {
       "splits": ["validation", "holdout"],
       "domains": ["node", "project-structure", "integration"],

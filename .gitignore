@@ -18,3 +18,5 @@ projects/bot_eval_run/calibration_recommendation_latest.json
 projects/bot_eval_run/calibration_recommendation_latest.md
 projects/bot_eval_run/baseline_promotion.json
 projects/bot_eval_run/last_run.txt
+.vscode/mcp.json
+projects/shumilek_ui/.pixellab-bridge.json

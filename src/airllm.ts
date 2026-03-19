@@ -127,7 +127,11 @@ export async function isAirLLMHealthy(
     const res = await fetchFn(`${baseUrl}/health`, { method: 'GET' }, timeoutMs);
     if (!res.ok) return false;
     const json = await res.json();
-    return json?.status === 'ok';
+    if (json?.status !== 'ok') return false;
+    if (typeof json?.loaded === 'boolean') {
+      return json.loaded;
+    }
+    return true;
   } catch {
     return false;
   }

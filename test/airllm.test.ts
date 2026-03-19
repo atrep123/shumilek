@@ -231,6 +231,16 @@ describe('airllm', () => {
       expect(await isAirLLMHealthy('http://localhost:11435', 1000, fetchFn)).to.be.true;
     });
 
+    it('returns false when health endpoint reports ok but model is not loaded yet', async () => {
+      const fetchFn = async () => ({ ok: true, json: async () => ({ status: 'ok', loaded: false }) });
+      expect(await isAirLLMHealthy('http://localhost:11435', 1000, fetchFn)).to.be.false;
+    });
+
+    it('returns true when health endpoint reports ok and model is loaded', async () => {
+      const fetchFn = async () => ({ ok: true, json: async () => ({ status: 'ok', loaded: true }) });
+      expect(await isAirLLMHealthy('http://localhost:11435', 1000, fetchFn)).to.be.true;
+    });
+
     it('returns false when health status is not ok', async () => {
       const fetchFn = async () => ({ ok: true, json: async () => ({ status: 'loading' }) });
       expect(await isAirLLMHealthy('http://localhost:11435', 1000, fetchFn)).to.be.false;
