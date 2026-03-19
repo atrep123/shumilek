@@ -28,6 +28,49 @@ import { ToolSessionState } from './validationPipeline';
 import { ToolCall, ToolResult } from './toolUtils';
 import { AutoApprovePolicy, WebviewWrapper } from './types';
 
+/** Context passed to each tool dispatch function. */
+export interface ToolDispatchContext {
+  name: string;
+  args: Record<string, unknown>;
+  confirmEdits: boolean;
+  autoApprove: AutoApprovePolicy;
+  deps: MutationHandlerDeps;
+  session: ToolSessionState | undefined;
+}
+
+export type ToolDispatchFn = (ctx: ToolDispatchContext) => Promise<ToolResult>;
+
+/**
+ * Registry mapping tool names to their dispatch functions.
+ * Adding a new tool = adding one entry here.
+ */
+export const TOOL_REGISTRY: Record<string, ToolDispatchFn> = {
+  // --- read-only tools ---
+  list_files:            (ctx) => handleListFilesTool(ctx.name, ctx.args, ctx.deps),
+  read_file:             (ctx) => handleReadFileTool(ctx.name, ctx.args, ctx.deps),
+  get_active_file:       (ctx) => handleGetActiveFileTool(ctx.name, ctx.args, ctx.deps),
+  search_in_files:       (ctx) => handleSearchInFilesTool(ctx.name, ctx.args, ctx.deps),
+  get_symbols:           (ctx) => handleGetSymbolsTool(ctx.name, ctx.args, ctx.deps),
+  get_workspace_symbols: (ctx) => handleGetWorkspaceSymbolsTool(ctx.name, ctx.args, ctx.deps),
+  get_definition:        (ctx) => handleGetDefinitionTool(ctx.name, ctx.args, ctx.deps),
+  get_references:        (ctx) => handleGetReferencesTool(ctx.name, ctx.args, ctx.deps),
+  get_type_info:         (ctx) => handleGetTypeInfoTool(ctx.name, ctx.args, ctx.deps),
+  get_diagnostics:       (ctx) => handleGetDiagnosticsTool(ctx.name, ctx.args, ctx.deps),
+  route_file:            (ctx) => handleRouteFileTool(ctx.name, ctx.args, ctx.deps),
+  pick_save_path:        (ctx) => handlePickSavePathTool(ctx.name, ctx.args, ctx.deps),
+  // --- command / browser tools ---
+  run_terminal_command:  (ctx) => handleRunTerminalCommandTool(ctx.name, ctx.args, ctx.deps),
+  fetch_webpage:         (ctx) => handleFetchWebpageTool(ctx.name, ctx.args, ctx.deps),
+  browser_fetch_page:    (ctx) => handleFetchWebpageTool(ctx.name, ctx.args, ctx.deps),
+  browser_open_page:     (ctx) => handleBrowserOpenPageTool(ctx.name, ctx.args, ctx.deps),
+  // --- mutation tools (pass confirmEdits, autoApprove, session) ---
+  apply_patch:           (ctx) => handleApplyPatchTool(ctx.name, ctx.args, ctx.confirmEdits, ctx.autoApprove, ctx.deps, ctx.session),
+  replace_lines:         (ctx) => handleReplaceLinesTool(ctx.name, ctx.args, ctx.confirmEdits, ctx.autoApprove, ctx.deps, ctx.session),
+  write_file:            (ctx) => handleWriteFileTool(ctx.name, ctx.args, ctx.confirmEdits, ctx.autoApprove, ctx.deps, ctx.session),
+  rename_file:           (ctx) => handleRenameFileTool(ctx.name, ctx.args, ctx.confirmEdits, ctx.autoApprove, ctx.deps, ctx.session),
+  delete_file:           (ctx) => handleDeleteFileTool(ctx.name, ctx.args, ctx.confirmEdits, ctx.autoApprove, ctx.deps, ctx.session),
+};
+
 export interface RunToolCallDeps {
   log?: (message: string) => void;
   postToAllWebviews: (message: unknown) => void;
@@ -55,7 +98,11 @@ export async function runToolCall(
   deps.log?.(`[Tools] ${name}`);
   deps.postToAllWebviews({ type: 'toolEvent', name });
   const permissionScope = resolveToolPermissionScope(name);
-  if (confirmEdits && permissionScope !== 'edit' && !autoApprove[permissionScope]) {
+  // Edit tools handle their own approval internally (via confirmEdits + autoApprove.edit).
+  // Non-edit scopes use their scope-specific autoApprove flag directly,
+  // independent of confirmEdits, so that autoApprove.commands / .browser / .mcp
+  // cannot be bypassed when confirmEdits is disabled.
+  if (permissionScope !== 'edit' && !autoApprove[permissionScope]) {
     const choice = await vscode.window.showInformationMessage(
       `Povolit akci "${name}" (scope: ${permissionScope})?`,
       { modal: true },
@@ -76,34 +123,14 @@ export async function runToolCall(
     });
   }
 
-  const mutationHandlerDeps = deps.getMutationHandlerDeps();
+  const dispatch = TOOL_REGISTRY[name];
+  if (!dispatch) {
+    return { ok: false, tool: name, message: 'neznamy nastroj' };
+  }
 
+  const mutationHandlerDeps = deps.getMutationHandlerDeps();
   try {
-    switch (name) {
-      case 'list_files': return await handleListFilesTool(name, args, mutationHandlerDeps);
-      case 'read_file': return await handleReadFileTool(name, args, mutationHandlerDeps);
-      case 'get_active_file': return await handleGetActiveFileTool(name, args, mutationHandlerDeps);
-      case 'search_in_files': return await handleSearchInFilesTool(name, args, mutationHandlerDeps);
-      case 'apply_patch': return await handleApplyPatchTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      case 'get_symbols': return await handleGetSymbolsTool(name, args, mutationHandlerDeps);
-      case 'get_workspace_symbols': return await handleGetWorkspaceSymbolsTool(name, args, mutationHandlerDeps);
-      case 'get_definition': return await handleGetDefinitionTool(name, args, mutationHandlerDeps);
-      case 'get_references': return await handleGetReferencesTool(name, args, mutationHandlerDeps);
-      case 'get_type_info': return await handleGetTypeInfoTool(name, args, mutationHandlerDeps);
-      case 'get_diagnostics': return await handleGetDiagnosticsTool(name, args, mutationHandlerDeps);
-      case 'route_file': return await handleRouteFileTool(name, args, mutationHandlerDeps);
-      case 'pick_save_path': return await handlePickSavePathTool(name, args, mutationHandlerDeps);
-      case 'replace_lines': return await handleReplaceLinesTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      case 'write_file': return await handleWriteFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      case 'rename_file': return await handleRenameFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      case 'delete_file': return await handleDeleteFileTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps, session);
-      case 'run_terminal_command': return await handleRunTerminalCommandTool(name, args, confirmEdits, autoApprove, mutationHandlerDeps);
-      case 'fetch_webpage': return await handleFetchWebpageTool(name, args, mutationHandlerDeps);
-      case 'browser_fetch_page': return await handleFetchWebpageTool(name, args, mutationHandlerDeps);
-      case 'browser_open_page': return await handleBrowserOpenPageTool(name, args, mutationHandlerDeps);
-      default:
-        return { ok: false, tool: name, message: 'neznamy nastroj' };
-    }
+    return await dispatch({ name, args, confirmEdits, autoApprove, deps: mutationHandlerDeps, session });
   } catch (err) {
     return { ok: false, tool: name, message: `chyba: ${String(err)}` };
   }

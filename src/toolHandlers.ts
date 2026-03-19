@@ -419,27 +419,14 @@ export async function handleWriteFileTool(
 export async function handleRunTerminalCommandTool(
   name: string,
   args: Record<string, unknown>,
-  confirmEdits: boolean,
-  autoApprove: AutoApproveLike,
   deps: MutationHandlerDeps
 ): Promise<ToolResultLike> {
+  // Approval is handled by the outer gate in runToolCall (scope: 'commands').
+  // No per-handler approval check needed.
   const command = deps.asString(args.command);
   if (!command) return { ok: false, tool: name, message: 'command je povinny' };
 
   const timeoutMs = deps.clampNumber(args.timeoutMs, 30000, 1000, 120000);
-
-  let approved = true;
-  if (confirmEdits && !autoApprove.commands) {
-    const choice = await vscode.window.showInformationMessage(
-      `Spustit příkaz v terminálu?\n\n${command}`,
-      { modal: true },
-      'Spustit',
-      'Zamítnout'
-    );
-    approved = choice === 'Spustit';
-  }
-  if (!approved) return { ok: true, tool: name, approved: false, message: 'spusteni zamitnuto uzivatelem' };
-
   const cwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 
   return await new Promise((resolve) => {
