@@ -179,4 +179,73 @@ describe('toolGeneration integration', () => {
 
     assert.equal(result, 'Chyba: nebyla provedena zadna zmena souboru. Pouzij write_file nebo replace_lines.');
   });
+
+  it('respects pre-aborted abortSignal and throws AbortError', async () => {
+    const ac = new AbortController();
+    ac.abort();
+    let modelCalled = false;
+
+    await assert.rejects(
+      () => generateWithTools(
+        createPanel([]),
+        'http://example.test',
+        'primary-model',
+        'system',
+        [{ role: 'user', content: 'do work' }],
+        1000,
+        6,
+        false,
+        createDeps({
+          executeModelCallWithMessagesFn: async () => { modelCalled = true; return 'hello'; }
+        }),
+        undefined,
+        undefined,
+        ac.signal,
+        undefined,
+        undefined
+      ),
+      (err: any) => {
+        assert.equal(err.name, 'AbortError');
+        return true;
+      }
+    );
+    assert.equal(modelCalled, false, 'model should not be called when signal is already aborted');
+  });
+
+  it('respects abortSignal aborted mid-iteration', async () => {
+    const ac = new AbortController();
+    let callCount = 0;
+
+    await assert.rejects(
+      () => generateWithTools(
+        createPanel([]),
+        'http://example.test',
+        'primary-model',
+        'system',
+        [{ role: 'user', content: 'do work' }],
+        1000,
+        6,
+        false,
+        createDeps({
+          executeModelCallWithMessagesFn: async () => {
+            callCount++;
+            // Abort after first iteration — model returns a tool call to trigger loop
+            ac.abort();
+            return toolCall('read_file', { path: 'src/a.ts' });
+          },
+          runToolCallFn: async () => ({ ok: true, tool: 'read_file', message: 'content' })
+        }),
+        undefined,
+        undefined,
+        ac.signal,
+        undefined,
+        undefined
+      ),
+      (err: any) => {
+        assert.equal(err.name, 'AbortError');
+        return true;
+      }
+    );
+    assert.equal(callCount, 1, 'should stop after first iteration when aborted');
+  });
 });

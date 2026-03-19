@@ -326,15 +326,18 @@ async function callExternalValidator(
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: new Headers({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify(payload),
-      signal: controller.signal
-    });
-    clearTimeout(timeout);
-
-    const text = await res.text();
+    let text: string;
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: new Headers({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      text = await res.text();
+    } finally {
+      clearTimeout(timeout);
+    }
     let score: number | undefined;
     let rawScore: number | undefined;
     let ok: boolean | undefined;
@@ -1967,7 +1970,7 @@ PŘÍSTUP K PRÁCI:
                 primaryModel: toolPrimaryModel,
                 fallbackModel: toolsFallbackModel
               },
-              undefined,
+              abortController?.signal,
               toolSession,
               autoApprovePolicy
             );
@@ -1982,7 +1985,8 @@ PŘÍSTUP K PRÁCI:
             stepTimeout,
             guardianEnabled,
             true,
-            stepTimeout
+            stepTimeout,
+            abortController?.signal
           );
         },
         // On step start
@@ -3131,10 +3135,16 @@ async function executeModelCall(
   timeout: number,
   guardianEnabled: boolean,
   _silentMode = true,
-  stepTimeoutMs?: number
+  stepTimeoutMs?: number,
+  abortSignal?: AbortSignal
 ): Promise<string> {
   const url = `${baseUrl}/api/chat`;
   const controller = new AbortController();
+  // Wire external abort signal to our internal controller
+  if (abortSignal) {
+    if (abortSignal.aborted) { controller.abort(); }
+    else { abortSignal.addEventListener('abort', () => controller.abort(), { once: true }); }
+  }
   const actualTimeout = typeof stepTimeoutMs === 'number' && stepTimeoutMs > 0
     ? stepTimeoutMs
     : timeout;
@@ -3201,6 +3211,19 @@ async function executeModelCall(
         } catch {
           // Ignore JSON parse errors
         }
+      }
+    }
+    // Flush TextDecoder for any remaining multi-byte characters
+    buffer += decoder.decode(new Uint8Array(), { stream: false });
+    // Process any remaining content in buffer
+    if (buffer.trim()) {
+      try {
+        const parsed = JSON.parse(buffer.trim());
+        if (parsed.message?.content) {
+          fullResponse += parsed.message.content;
+        }
+      } catch {
+        // Ignore JSON parse errors in trailing buffer
       }
     }
     clearTimeout(timeoutId);
