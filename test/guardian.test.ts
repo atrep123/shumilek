@@ -276,6 +276,33 @@ describe('ResponseGuardian', () => {
     const stats = g.getStats();
     expect(stats.truncationsRepaired).to.be.greaterThan(0);
   });
+
+  it('should skip expensive loop detection for text > 50KB but still detect char repeats', () => {
+    const g = new ResponseGuardian();
+    // 60KB text with embedded char repeat
+    const largeText = 'Lore ipsum dolor sit amet. '.repeat(2400) + 'x'.repeat(25);
+    const startMs = Date.now();
+    const res = g.analyze(largeText, 'prompt');
+    const elapsedMs = Date.now() - startMs;
+    expect(elapsedMs).to.be.lessThan(200, 'large text should be fast (< 200ms)');
+    expect(res.loopDetected).to.be.true;
+  });
+
+  it('should handle large text without char repeats quickly', () => {
+    const g = new ResponseGuardian();
+    // Large varied text — each line is completely unique (no repeating pattern)
+    const lines: string[] = [];
+    for (let i = 0; i < 2000; i++) {
+      lines.push(`Unique line number ${i} with random-style data ${i * 37 % 997} end.`);
+    }
+    const largeText = lines.join('\n');
+    const startMs = Date.now();
+    const res = g.analyze(largeText, 'prompt');
+    const elapsedMs = Date.now() - startMs;
+    expect(elapsedMs).to.be.lessThan(200, 'large varied text should be fast (< 200ms)');
+    // The text has diverse lines so loop detection should not trigger
+    // (though guardian may truncate analysis to 5000 chars, the varied content prevents matches)
+  });
 });
 
 describe('HallucinationDetector', () => {

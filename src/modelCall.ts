@@ -61,6 +61,7 @@ export async function executeModelCallWithMessages(
     const now = Date.now();
     if (now - lastChunkAt > STREAM_STALL_MS && fullResponse.length > 50) {
       log?.('[executeModelCallWithMessages] Stream stall detected, aborting');
+      fullResponse += '\n\n[Odpověď zkrácena – stream stall]';
       break;
     }
     lastChunkAt = now;

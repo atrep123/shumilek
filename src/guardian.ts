@@ -138,6 +138,14 @@ export class ResponseGuardian {
   }
 
   private detectLoop(text: string): { detected: boolean; pattern?: string; severity: 'low' | 'medium' | 'high' } {
+    // Skip expensive O(n²) pattern search for very large texts — use only char-repeat regex
+    if (text.length > 50000) {
+      const charRepeatMatch = text.match(/(.)\1{20,}/us);
+      if (charRepeatMatch) {
+        return { detected: true, pattern: charRepeatMatch[0], severity: 'high' };
+      }
+      return { detected: false, severity: 'low' };
+    }
     const codePoints = [...text];
     const maxPatternLen = Math.min(200, Math.floor(codePoints.length / 3));
     const startTime = Date.now();

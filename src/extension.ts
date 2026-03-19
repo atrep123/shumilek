@@ -3190,6 +3190,7 @@ async function executeModelCall(
       const now = Date.now();
       if (now - lastChunkAt > STREAM_STALL_MS && fullResponse.length > 50) {
         outputChannel?.appendLine('[executeModelCall] Stream stall detected, aborting');
+        fullResponse += '\n\n[Odpověď zkrácena – stream stall]';
         controller.abort();
         break;
       }

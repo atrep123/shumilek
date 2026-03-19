@@ -217,7 +217,8 @@ describe('modelCall', () => {
         message => logs.push(message)
       );
 
-      assert.equal(result, 'a'.repeat(60));
+      assert.ok(result.startsWith('a'.repeat(60)), 'should contain original content');
+      assert.ok(result.includes('[Odpověď zkrácena'), 'should contain truncation marker');
       assert.ok(logs.some(message => message.includes('Stream stall detected')));
     } finally {
       Date.now = originalNow;
