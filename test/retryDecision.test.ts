@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { computeRetryDecision, buildRetryFeedbackMessage, RetryDecisionInput, RetryDecision } from '../src/retryDecision';
+import { computeRetryDecision, buildRetryFeedbackMessage, checkFailClosedBlock, RetryDecisionInput, RetryDecision, FailClosedBlockInput } from '../src/retryDecision';
 import { HallucinationResult, GuardianResult, MiniModelResult, QualityCheckResult } from '../src/types';
 
 function makeHallucination(overrides?: Partial<HallucinationResult>): HallucinationResult {
@@ -183,5 +183,140 @@ describe('buildRetryFeedbackMessage', () => {
       ''
     );
     expect(msg).not.to.include('Guardian');
+  });
+});
+
+function makeFailClosedInput(overrides?: Partial<FailClosedBlockInput>): FailClosedBlockInput {
+  return {
+    hallucinationResult: makeHallucination(),
+    guardianResult: makeGuardian(),
+    miniResult: null,
+    validationPolicy: 'fail-closed',
+    rewardEnabled: false,
+    rewardResult: makeQuality({ name: 'reward' }),
+    hhemEnabled: false,
+    hhemResult: makeQuality({ name: 'hhem' }),
+    ragasEnabled: false,
+    ragasResult: makeQuality({ name: 'ragas' }),
+    ...overrides
+  };
+}
+
+describe('checkFailClosedBlock', () => {
+  it('does not block in fail-soft mode', () => {
+    const r = checkFailClosedBlock(makeFailClosedInput({ validationPolicy: 'fail-soft' }));
+    expect(r.blocked).to.be.false;
+  });
+
+  it('does not block when all validators pass', () => {
+    const r = checkFailClosedBlock(makeFailClosedInput());
+    expect(r.blocked).to.be.false;
+  });
+
+  it('blocks on hallucination with high confidence', () => {
+    const r = checkFailClosedBlock(makeFailClosedInput({
+      hallucinationResult: makeHallucination({ isHallucination: true, confidence: 0.85 })
+    }));
+    expect(r.blocked).to.be.true;
+    expect(r.reason).to.include('Halucinace');
+    expect(r.reason).to.include('85');
+  });
+
+  it('does not block on hallucination with low confidence', () => {
+    const r = checkFailClosedBlock(makeFailClosedInput({
+      hallucinationResult: makeHallucination({ isHallucination: true, confidence: 0.5 })
+    }));
+    expect(r.blocked).to.be.false;
+  });
+
+  it('blocks on guardian shouldRetry', () => {
+    const r = checkFailClosedBlock(makeFailClosedInput({
+      guardianResult: makeGuardian({ shouldRetry: true, issues: ['loop detected'] })
+    }));
+    expect(r.blocked).to.be.true;
+    expect(r.reason).to.include('Guardian');
+    expect(r.reason).to.include('loop detected');
+  });
+
+  it('blocks on mini-model low score', () => {
+    const r = checkFailClosedBlock(makeFailClosedInput({
+      miniResult: { isValid: false, score: 3, reason: 'špatná odpověď', shouldRetry: true }
+    }));
+    expect(r.blocked).to.be.true;
+    expect(r.reason).to.include('Svedomi');
+  });
+
+  it('blocks on mini-model unavailable', () => {
+    const r = checkFailClosedBlock(makeFailClosedInput({
+      miniResult: { isValid: false, score: 0, reason: 'unavailable', shouldRetry: false, unavailable: true }
+    }));
+    expect(r.blocked).to.be.true;
+    expect(r.reason).to.include('Svedomi');
+    expect(r.reason).to.include('fail-closed');
+  });
+
+  it('does not block on mini-model passing score', () => {
+    const r = checkFailClosedBlock(makeFailClosedInput({
+      miniResult: { isValid: true, score: 7, reason: 'ok', shouldRetry: false }
+    }));
+    expect(r.blocked).to.be.false;
+  });
+
+  it('blocks on unavailable reward when enabled', () => {
+    const r = checkFailClosedBlock(makeFailClosedInput({
+      rewardEnabled: true,
+      rewardResult: makeQuality({ name: 'reward', ok: false, unavailable: true })
+    }));
+    expect(r.blocked).to.be.true;
+    expect(r.reason).to.include('Reward');
+  });
+
+  it('blocks on unavailable HHEM when enabled', () => {
+    const r = checkFailClosedBlock(makeFailClosedInput({
+      hhemEnabled: true,
+      hhemResult: makeQuality({ name: 'hhem', ok: false, unavailable: true })
+    }));
+    expect(r.blocked).to.be.true;
+    expect(r.reason).to.include('HHEM');
+  });
+
+  it('blocks on unavailable RAGAS when enabled', () => {
+    const r = checkFailClosedBlock(makeFailClosedInput({
+      ragasEnabled: true,
+      ragasResult: makeQuality({ name: 'ragas', ok: false, unavailable: true })
+    }));
+    expect(r.blocked).to.be.true;
+    expect(r.reason).to.include('RAGAS');
+  });
+
+  it('blocks on failed reward when enabled', () => {
+    const r = checkFailClosedBlock(makeFailClosedInput({
+      rewardEnabled: true,
+      rewardResult: makeQuality({ name: 'reward', ok: false })
+    }));
+    expect(r.blocked).to.be.true;
+    expect(r.reason).to.include('Reward');
+  });
+
+  it('hallucination takes priority over other failures', () => {
+    const r = checkFailClosedBlock(makeFailClosedInput({
+      hallucinationResult: makeHallucination({ isHallucination: true, confidence: 0.9 }),
+      guardianResult: makeGuardian({ shouldRetry: true }),
+      miniResult: { isValid: false, score: 2, reason: 'bad', shouldRetry: true }
+    }));
+    expect(r.blocked).to.be.true;
+    expect(r.reason).to.include('Halucinace');
+  });
+
+  it('combines multiple unavailable external validators in reason', () => {
+    const r = checkFailClosedBlock(makeFailClosedInput({
+      rewardEnabled: true,
+      rewardResult: makeQuality({ name: 'reward', ok: false, unavailable: true }),
+      hhemEnabled: true,
+      hhemResult: makeQuality({ name: 'hhem', ok: false, unavailable: true })
+    }));
+    expect(r.blocked).to.be.true;
+    expect(r.reason).to.include('Reward');
+    expect(r.reason).to.include('HHEM');
   });
 });

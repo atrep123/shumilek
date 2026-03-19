@@ -81,7 +81,7 @@ import { compactMessages } from './sessionCompactor';
 import { loadWorkspaceInstructionBundle, setWorkspaceInstructionsLogger } from './workspaceInstructions';
 import { ChatRequestConcurrencyGuard } from './chatConcurrency';
 import { getWebviewContent } from './webviewContent';
-import { computeRetryDecision, buildRetryFeedbackMessage } from './retryDecision';
+import { computeRetryDecision, buildRetryFeedbackMessage, checkFailClosedBlock } from './retryDecision';
 import { runToolCall } from './toolExecution';
 import { generateWithTools } from './toolGeneration';
 import { PixelLabLocalBridgeServer } from './pixellabBridge';
@@ -2082,14 +2082,31 @@ PŘÍSTUP K PRÁCI:
         hhemEnabled, hhemEndpoint, hhemThreshold,
         ragasEnabled, ragasEndpoint, ragasThreshold,
       });
-      if (!vResult) return; // blocked by fail-closed verification
+      if (!vResult) {
+        postToAllWebviews({ type: 'responseDone' });
+        return; // blocked by fail-closed verification
+      }
 
-      // Step-mode: fail-closed svedomi check
-      if (validationPolicy === 'fail-closed' && !isMiniAccepted(vResult.miniResult, validationPolicy)) {
+      // Step-mode: unified fail-closed check (hallucination, guardian, svedomi, external validators)
+      const failClosedBlock = checkFailClosedBlock({
+        hallucinationResult: vResult.hallucinationResult,
+        guardianResult: vResult.guardianResult,
+        miniResult: vResult.miniResult,
+        validationPolicy,
+        rewardEnabled,
+        rewardResult: vResult.external.rewardResult,
+        hhemEnabled,
+        hhemResult: vResult.external.hhemResult,
+        ragasEnabled,
+        ragasResult: vResult.external.ragasResult,
+      });
+      if (failClosedBlock.blocked) {
+        outputChannel?.appendLine(`[FailClosed/StepMode] Blocking publish: ${failClosedBlock.reason}`);
         postToAllWebviews({
           type: 'responseError',
-          text: `Publish blocked by validation policy: ${vResult.miniResult?.reason ?? 'Validation failed'}`
+          text: `Publish blocked: ${failClosedBlock.reason}`
         });
+        postToAllWebviews({ type: 'responseDone' });
         return;
       }
 
@@ -2295,27 +2312,28 @@ PŘÍSTUP K PRÁCI:
       }
       if (retryDecision.blocked) {
         outputChannel?.appendLine(`[Retry] Skipping retry because ${retryDecision.blockedReason}`);
-        if (validationPolicy === 'fail-closed') {
-          postToAllWebviews({ type: 'responseError', text: 'Publish blocked: fail-closed validation policy.' });
+        const failBlock = checkFailClosedBlock({
+          hallucinationResult, guardianResult, miniResult, validationPolicy,
+          rewardEnabled, rewardResult, hhemEnabled, hhemResult, ragasEnabled, ragasResult,
+        });
+        if (failBlock.blocked) {
+          postToAllWebviews({ type: 'responseError', text: `Publish blocked: ${failBlock.reason}` });
           return;
         }
       }
 
-      // Fail-closed: block publish when external validators are unavailable
-      if (validationPolicy === 'fail-closed') {
-        const unavailableNames: string[] = [];
-        if (rewardEnabled && rewardResult.unavailable) unavailableNames.push('Reward');
-        if (hhemEnabled && hhemResult.unavailable) unavailableNames.push('HHEM');
-        if (ragasEnabled && ragasResult.unavailable) unavailableNames.push('RAGAS');
-        if (unavailableNames.length > 0) {
-          const label = unavailableNames.join(', ');
-          outputChannel?.appendLine(`[FailClosed] Blocking publish: ${label} unavailable in fail-closed mode`);
-          postToAllWebviews({
-            type: 'responseError',
-            text: `Publish blocked: validátor ${label} nedostupný (fail-closed režim).`
-          });
-          return;
-        }
+      // Fail-closed: unified block check for validators
+      const failClosedCheck = checkFailClosedBlock({
+        hallucinationResult, guardianResult, miniResult, validationPolicy,
+        rewardEnabled, rewardResult, hhemEnabled, hhemResult, ragasEnabled, ragasResult,
+      });
+      if (failClosedCheck.blocked) {
+        outputChannel?.appendLine(`[FailClosed] Blocking publish: ${failClosedCheck.reason}`);
+        postToAllWebviews({
+          type: 'responseError',
+          text: `Publish blocked: ${failClosedCheck.reason}`
+        });
+        return;
       }
 
       fullResponse = vResult.structuredOutput;

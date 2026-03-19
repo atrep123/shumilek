@@ -105,6 +105,74 @@ export function computeRetryDecision(input: RetryDecisionInput): RetryDecision {
   };
 }
 
+export interface FailClosedBlockInput {
+  hallucinationResult: HallucinationResult;
+  guardianResult: GuardianResult;
+  miniResult: MiniModelResult | null;
+  validationPolicy: ValidationPolicy;
+  rewardEnabled: boolean;
+  rewardResult: QualityCheckResult;
+  hhemEnabled: boolean;
+  hhemResult: QualityCheckResult;
+  ragasEnabled: boolean;
+  ragasResult: QualityCheckResult;
+}
+
+export interface FailClosedBlockResult {
+  blocked: boolean;
+  reason?: string;
+}
+
+/**
+ * Check whether fail-closed policy should block publishing.
+ * Used by both single-call and step-by-step modes.
+ */
+export function checkFailClosedBlock(input: FailClosedBlockInput): FailClosedBlockResult {
+  if (input.validationPolicy !== 'fail-closed') {
+    return { blocked: false };
+  }
+
+  // Hallucination with high confidence
+  if (input.hallucinationResult.isHallucination && input.hallucinationResult.confidence > 0.7) {
+    return { blocked: true, reason: `Halucinace detekována (${(input.hallucinationResult.confidence * 100).toFixed(0)}%)` };
+  }
+
+  // Guardian critical issues
+  if (input.guardianResult.shouldRetry) {
+    return { blocked: true, reason: `Guardian: ${input.guardianResult.issues.join(', ') || 'problém detekován'}` };
+  }
+
+  // Mini-model (svedomi)
+  if (input.miniResult && !input.miniResult.unavailable && input.miniResult.score < 5) {
+    return { blocked: true, reason: `Svedomi: ${input.miniResult.reason ?? 'Validation failed'}` };
+  }
+  if (input.miniResult?.unavailable) {
+    return { blocked: true, reason: 'Svedomi nedostupné (fail-closed)' };
+  }
+
+  // External validators unavailable
+  const unavailable: string[] = [];
+  if (input.rewardEnabled && input.rewardResult.unavailable) unavailable.push('Reward');
+  if (input.hhemEnabled && input.hhemResult.unavailable) unavailable.push('HHEM');
+  if (input.ragasEnabled && input.ragasResult.unavailable) unavailable.push('RAGAS');
+  if (unavailable.length > 0) {
+    return { blocked: true, reason: `Validátor ${unavailable.join(', ')} nedostupný (fail-closed)` };
+  }
+
+  // External validators failed
+  if (input.rewardEnabled && !input.rewardResult.ok && !input.rewardResult.unavailable) {
+    return { blocked: true, reason: 'Reward validace selhala' };
+  }
+  if (input.hhemEnabled && !input.hhemResult.ok && !input.hhemResult.unavailable) {
+    return { blocked: true, reason: 'HHEM validace selhala' };
+  }
+  if (input.ragasEnabled && !input.ragasResult.ok && !input.ragasResult.unavailable) {
+    return { blocked: true, reason: 'RAGAS validace selhala' };
+  }
+
+  return { blocked: false };
+}
+
 export function buildRetryFeedbackMessage(
   decision: RetryDecision,
   hallucinationResult: HallucinationResult,
