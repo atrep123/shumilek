@@ -1,10 +1,11 @@
-const mock = require('mock-require');
-const { vscodeMock } = require('./helpers/vscodeMockShared');
-mock('vscode', vscodeMock);
-mock('./workspace', { workspaceIndexer: { getIndex: () => null } });
+const { vscodeMock, registerMock, flushModuleCache } = require('./helpers/mockLoader');
+registerMock('workspace', { workspaceIndexer: { getIndex: () => null } }, 'contextProviders');
 
-import { expect } from 'chai';
-import { ContextProviderRegistry, DEFAULT_CONTEXT_PROVIDERS } from '../src/contextProviders';
+// Flush cache so contextProviders is freshly loaded through the mock hook
+flushModuleCache('../src/contextProviders');
+
+const { expect } = require('chai');
+const { ContextProviderRegistry, DEFAULT_CONTEXT_PROVIDERS } = require('../src/contextProviders');
 
 describe('contextProviders', () => {
 

@@ -1,8 +1,8 @@
 // Module._load patching — mock-require's getCallerFile() is broken on Node 24.
-// We set up mocks once at load time and mutate handler stubs per test.
-const Module = require('module');
+// We use the shared mockLoader hook and register toolHandlers as an extra mock
+// scoped to toolExecution.ts (so other test files get the real handlers).
 const { strict: assert } = require('assert');
-const { vscodeMock } = require('./helpers/vscodeMockShared');
+const { vscodeMock, registerMock, flushModuleCache } = require('./helpers/mockLoader');
 
 // Shared mutable mock object — toolExecution holds a reference to this and
 // accesses handlers via property lookup, so per-test mutations are visible.
@@ -36,15 +36,11 @@ function resetHandlers() {
 }
 resetHandlers();
 
-// Patch Module._load BEFORE any src/ module is required
-const originalLoad = Module._load;
-Module._load = function (request: string, parent: any, ...rest: any[]) {
-  if (request === 'vscode') return vscodeMock;
-  if (request === './toolHandlers' || request.endsWith('/toolHandlers')) return handlersMock;
-  return originalLoad.call(this, request, parent, ...rest);
-};
+// Register toolHandlers mock scoped to toolExecution.ts only
+registerMock('toolHandlers', handlersMock, 'toolExecution');
 
-// Now load toolExecution — it will get our mocks via the Module._load hook
+// Flush and reload toolExecution to pick up our mocks
+flushModuleCache('../src/toolExecution');
 const { runToolCall, TOOL_REGISTRY } = require('../src/toolExecution');
 
 function createPanel(messages: any[]) {

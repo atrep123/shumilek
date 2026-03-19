@@ -1,10 +1,8 @@
-import { expect } from 'chai';
-import { 
-  WorkspaceIndexer, 
-  FileInfo, 
-  SymbolInfo, 
-  WorkspaceIndex 
-} from '../src/workspace';
+const { flushModuleCache } = require('./helpers/mockLoader');
+const { expect } = require('chai');
+
+flushModuleCache('../src/workspace');
+const { WorkspaceIndexer } = require('../src/workspace');
 
 describe('WorkspaceIndexer', () => {
   describe('basic functionality', () => {

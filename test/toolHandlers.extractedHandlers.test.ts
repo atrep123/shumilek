@@ -1,10 +1,11 @@
-const mock = require('mock-require');
 const path = require('path');
 const { strict: assert } = require('assert');
 
-// Import the shared vscode mock — same object used by coreHandlers
-const { vscodeMock } = require('./helpers/vscodeMockShared');
-mock('vscode', vscodeMock);
+// Import the shared vscode mock via Module._load hook (Node 24 compatible)
+const { vscodeMock, flushModuleCache } = require('./helpers/mockLoader');
+
+// Flush cache so toolHandlers is freshly loaded through the mock hook
+flushModuleCache('../src/toolHandlers');
 
 const {
   handleApplyPatchTool,

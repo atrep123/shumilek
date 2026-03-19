@@ -1,9 +1,8 @@
-const mock = require('mock-require');
 const path = require('path');
 const { expect } = require('chai');
 
-// --- vscode mock --- Use shared singleton mock for all toolHandler test files
-const { vscodeMock } = require('./helpers/vscodeMockShared');
+// --- vscode mock --- Use shared Module._load hook (Node 24 compatible)
+const { vscodeMock, flushModuleCache } = require('./helpers/mockLoader');
 
 // Ensure extra properties needed by coreHandlers
 if (!vscodeMock.workspace.fs.rename) vscodeMock.workspace.fs.rename = async () => {};
@@ -11,7 +10,8 @@ if (!vscodeMock.workspace.fs.delete) vscodeMock.workspace.fs.delete = async () =
 if (!vscodeMock.workspace.workspaceFolders) vscodeMock.workspace.workspaceFolders = [{ uri: { fsPath: 'C:/repo' } }];
 if (!vscodeMock.languages) vscodeMock.languages = { getDiagnostics: () => [] };
 
-mock('vscode', vscodeMock);
+// Flush cache so toolHandlers is freshly loaded through the mock hook
+flushModuleCache('../src/toolHandlers');
 
 const {
   handleBrowserOpenPageTool,

@@ -1,9 +1,9 @@
-const mock = require('mock-require');
+const { registerMock, flushModuleCache } = require('./helpers/mockLoader');
 const path = require('path');
 
 const fakeFs: Record<string, { type: number; size: number; content: string }> = {};
 
-const vscodeMock: any = {
+const wiVscodeMock: any = {
   workspace: {
     workspaceFolders: [{ uri: { fsPath: '/workspace' } }],
     fs: {
@@ -27,16 +27,17 @@ const vscodeMock: any = {
   FileType: { File: 1, Directory: 2 }
 };
 
-mock('vscode', vscodeMock);
+registerMock('vscode', wiVscodeMock, 'workspaceInstructions');
+flushModuleCache('../src/workspaceInstructions');
 
-import { expect } from 'chai';
-import {
+const { expect } = require('chai');
+const {
   loadWorkspaceInstructionBundle,
   loadWorkspaceInstructions,
   getInstructionFilePath,
   getInstructionFilePaths,
   setWorkspaceInstructionsLogger
-} from '../src/workspaceInstructions';
+} = require('../src/workspaceInstructions');
 
 function resetFs() {
   for (const k of Object.keys(fakeFs)) delete fakeFs[k];
@@ -45,19 +46,19 @@ function resetFs() {
 describe('workspaceInstructions', () => {
   beforeEach(() => {
     resetFs();
-    vscodeMock.workspace.workspaceFolders = [{ uri: { fsPath: '/workspace' } }];
+    wiVscodeMock.workspace.workspaceFolders = [{ uri: { fsPath: '/workspace' } }];
   });
 
   // ---------- loadWorkspaceInstructions ----------
 
   describe('loadWorkspaceInstructions', () => {
     it('returns empty string when no workspace folders', async () => {
-      vscodeMock.workspace.workspaceFolders = undefined;
+      wiVscodeMock.workspace.workspaceFolders = undefined;
       expect(await loadWorkspaceInstructions()).to.equal('');
     });
 
     it('returns empty string when workspaceFolders is empty array', async () => {
-      vscodeMock.workspace.workspaceFolders = [];
+      wiVscodeMock.workspace.workspaceFolders = [];
       expect(await loadWorkspaceInstructions()).to.equal('');
     });
 
@@ -157,7 +158,7 @@ describe('workspaceInstructions', () => {
 
   describe('getInstructionFilePath', () => {
     it('returns null when no workspace folders', async () => {
-      vscodeMock.workspace.workspaceFolders = undefined;
+      wiVscodeMock.workspace.workspaceFolders = undefined;
       expect(await getInstructionFilePath()).to.be.null;
     });
 

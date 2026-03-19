@@ -65,7 +65,8 @@ const vscodeMock: any = {
     }
     return sk;
   })(),
-  DiagnosticSeverity: { Error: 0, Warning: 1, Information: 2, Hint: 3 }
+  DiagnosticSeverity: { Error: 0, Warning: 1, Information: 2, Hint: 3 },
+  FileType: { Unknown: 0, File: 1, Directory: 2, SymbolicLink: 64 }
 };
 
 module.exports = { vscodeMock };

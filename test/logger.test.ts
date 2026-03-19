@@ -1,9 +1,9 @@
-const mock = require('mock-require');
+const { registerMock, flushModuleCache } = require('./helpers/mockLoader');
 
 let appendedLines: string[] = [];
 let channelCreated = false;
 
-const vscodeMock: any = {
+const loggerVscodeMock: any = {
   window: {
     createOutputChannel: (name: string) => {
       channelCreated = true;
@@ -14,10 +14,11 @@ const vscodeMock: any = {
   }
 };
 
-mock('vscode', vscodeMock);
+registerMock('vscode', loggerVscodeMock, 'logger');
+flushModuleCache('../src/logger');
 
-import { expect } from 'chai';
-import { Logger } from '../src/logger';
+const { expect } = require('chai');
+const { Logger } = require('../src/logger');
 
 describe('Logger', () => {
   before(() => {

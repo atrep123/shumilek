@@ -1,12 +1,12 @@
-const mock = require('mock-require');
 const path = require('path');
 const { expect } = require('chai');
 
-const { vscodeMock } = require('./helpers/vscodeMockShared');
+const { vscodeMock, flushModuleCache } = require('./helpers/mockLoader');
 
 if (!vscodeMock.workspace.workspaceFolders) vscodeMock.workspace.workspaceFolders = [{ uri: { fsPath: 'C:/repo' } }];
 
-mock('vscode', vscodeMock);
+// Flush cache so toolHandlers is freshly loaded through the mock hook
+flushModuleCache('../src/toolHandlers');
 
 const {
   handleGetDefinitionTool,
@@ -385,7 +385,7 @@ describe('handleGetTypeInfoTool', () => {
 // ====================================================================
 describe('handleRunTerminalCommandTool', () => {
   it('returns error when command is missing', async () => {
-    const result = await handleRunTerminalCommandTool('run_terminal', {}, false, autoApproveAll, makeDeps());
+    const result = await handleRunTerminalCommandTool('run_terminal', {}, makeDeps());
     expect(result.ok).to.be.false;
     expect(result.message).to.include('command');
   });
@@ -395,8 +395,6 @@ describe('handleRunTerminalCommandTool', () => {
     const result = await handleRunTerminalCommandTool(
       'run_terminal',
       { command: 'echo hello' },
-      false,
-      autoApproveAll,
       makeDeps()
     );
     expect(result.ok).to.be.true;
@@ -407,8 +405,6 @@ describe('handleRunTerminalCommandTool', () => {
     const result = await handleRunTerminalCommandTool(
       'run_terminal',
       { command: 'nonexistent_command_xyz_12345' },
-      false,
-      autoApproveAll,
       makeDeps()
     );
     expect(result.ok).to.be.false;
@@ -416,16 +412,17 @@ describe('handleRunTerminalCommandTool', () => {
   });
 
   it('respects user denial when confirmEdits is true', async () => {
-    vscodeMock.window.showInformationMessage = async () => 'Zamítnout';
+    // Approval is now handled by the outer gate in runToolCall,
+    // not by the handler itself. This test verifies the handler
+    // no longer has internal approval logic.
+    vscodeMock.workspace.workspaceFolders = [{ uri: { fsPath: process.cwd() } }];
     const result = await handleRunTerminalCommandTool(
       'run_terminal',
       { command: 'echo hi' },
-      true,
-      { edit: true, commands: false },
       makeDeps()
     );
+    // Handler always executes when called — approval is upstream
     expect(result.ok).to.be.true;
-    expect(result.approved).to.be.false;
   });
 
   it('auto-approves when autoApprove.commands is true', async () => {
@@ -433,8 +430,6 @@ describe('handleRunTerminalCommandTool', () => {
     const result = await handleRunTerminalCommandTool(
       'run_terminal',
       { command: 'echo auto' },
-      true,
-      autoApproveAll,
       makeDeps()
     );
     expect(result.ok).to.be.true;
