@@ -182,40 +182,46 @@ export async function runValidationPipeline(
       if (errorOutput && cfg.toolCallsEnabled) {
         deps.log(`[SelfCorrect] Post-edit verification failed, attempting auto-fix for: ${detail}`);
         deps.postToAllWebviews({ type: 'pipelineStatus', icon: '🔧', text: `Auto-oprava: ${detail}`, statusType: 'step', loading: true });
-        const fixPrompt = [
-          'SELF-CORRECTION: The code changes you made caused build/test/lint errors.',
-          `FAILED COMMAND: ${firstFail?.command ?? 'unknown'}`,
-          'ERROR OUTPUT:',
-          errorOutput,
-          '',
-          'Fix ALL errors using write_file or replace_lines. Do not explain, just fix.'
-        ].join('\n');
-        const fixMessages: ChatMessage[] = [
-          ...cfg.chatMessages.slice(-3),
-          { role: 'system', content: fixPrompt }
-        ];
-        const fixResult = await deps.generateWithTools(
-          cfg.panel, cfg.baseUrl, cfg.writerModel, cfg.toolPromptForMain, fixMessages, cfg.stepTimeout,
-          3, cfg.toolsConfirmEdits, { requireToolCall: true, requireMutation: true },
-          { systemPromptOverride: cfg.toolPromptForMain, primaryModel: cfg.toolPrimaryModel, fallbackModel: cfg.toolsFallbackModel },
-          cfg.abortSignal, toolSession, cfg.autoApprovePolicy
-        );
-        deps.log(`[SelfCorrect] Fix result: ${fixResult.slice(0, 200)}`);
+        try {
+          const fixPrompt = [
+            'SELF-CORRECTION: The code changes you made caused build/test/lint errors.',
+            `FAILED COMMAND: ${firstFail?.command ?? 'unknown'}`,
+            'ERROR OUTPUT:',
+            errorOutput,
+            '',
+            'Fix ALL errors using write_file or replace_lines. Do not explain, just fix.'
+          ].join('\n');
+          const fixMessages: ChatMessage[] = [
+            ...cfg.chatMessages.slice(-3),
+            { role: 'system', content: fixPrompt }
+          ];
+          const fixResult = await deps.generateWithTools(
+            cfg.panel, cfg.baseUrl, cfg.writerModel, cfg.toolPromptForMain, fixMessages, cfg.stepTimeout,
+            3, cfg.toolsConfirmEdits, { requireToolCall: true, requireMutation: true },
+            { systemPromptOverride: cfg.toolPromptForMain, primaryModel: cfg.toolPrimaryModel, fallbackModel: cfg.toolsFallbackModel },
+            cfg.abortSignal, toolSession, cfg.autoApprovePolicy
+          );
+          deps.log(`[SelfCorrect] Fix result: ${fixResult.slice(0, 200)}`);
 
-        const reVerify = await deps.runPostEditVerification(cfg.stepTimeout);
-        if (reVerify.ok) {
-          deps.log('[SelfCorrect] Post-edit re-verification PASSED');
-          deps.postToAllWebviews({ type: 'pipelineStatus', icon: '✅', text: 'Auto-oprava uspesna!', statusType: 'step', loading: false });
-          fullResponse += `\n\n[Auto-corrected: ${detail}]`;
-          postEditVerification = reVerify;
-        } else {
-          deps.log('[SelfCorrect] Post-edit re-verification still FAILED');
-          if (cfg.validationPolicy === 'fail-closed') {
-            deps.postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
-            return null;
+          const reVerify = await deps.runPostEditVerification(cfg.stepTimeout);
+          if (reVerify.ok) {
+            deps.log('[SelfCorrect] Post-edit re-verification PASSED');
+            deps.postToAllWebviews({ type: 'pipelineStatus', icon: '✅', text: 'Auto-oprava uspesna!', statusType: 'step', loading: false });
+            fullResponse += `\n\n[Auto-corrected: ${detail}]`;
+            postEditVerification = reVerify;
+          } else {
+            deps.log('[SelfCorrect] Post-edit re-verification still FAILED');
+            if (cfg.validationPolicy === 'fail-closed') {
+              deps.postToAllWebviews({ type: 'responseError', text: `Publish blocked by verification: ${detail}` });
+              return null;
+            }
+            deps.postToAllWebviews({ type: 'guardianAlert', message: `Verify warning (auto-fix failed): ${detail}` });
+            fullResponse += `\n\n[Verify warning] ${detail} (auto-fix attempted but failed)`;
           }
-          deps.postToAllWebviews({ type: 'guardianAlert', message: `Verify warning (auto-fix failed): ${detail}` });
-          fullResponse += `\n\n[Verify warning] ${detail} (auto-fix attempted but failed)`;
+        } catch (autoFixErr: unknown) {
+          deps.log(`[SelfCorrect] Auto-fix crashed: ${(autoFixErr as Error).message || String(autoFixErr)}`);
+          deps.postToAllWebviews({ type: 'guardianAlert', message: `Auto-fix error: ${(autoFixErr as Error).message || String(autoFixErr)}` });
+          fullResponse += `\n\n[Verify warning] ${detail} (auto-fix error)`;
         }
       } else {
         if (cfg.validationPolicy === 'fail-closed') {
@@ -377,18 +383,25 @@ export async function runValidationPipeline(
   }
 
   // === EXTERNAL VALIDATORS ===
-  const external = await deps.runExternalValidators(cfg.panel, cfg.trimmedPrompt, fullResponse, {
-    rewardEnabled: cfg.rewardEnabled,
-    rewardEndpoint: cfg.rewardEndpoint,
-    rewardThreshold: cfg.rewardThreshold,
-    hhemEnabled: cfg.hhemEnabled,
-    hhemEndpoint: cfg.hhemEndpoint,
-    hhemThreshold: cfg.hhemThreshold,
-    ragasEnabled: cfg.ragasEnabled,
-    ragasEndpoint: cfg.ragasEndpoint,
-    ragasThreshold: cfg.ragasThreshold,
-    timeoutMs: cfg.timeout
-  }, cfg.validatorLogsEnabled);
+  let external: { rewardResult: QualityCheckResult; hhemResult: QualityCheckResult; ragasResult: QualityCheckResult; results: QualityCheckResult[] };
+  try {
+    external = await deps.runExternalValidators(cfg.panel, cfg.trimmedPrompt, fullResponse, {
+      rewardEnabled: cfg.rewardEnabled,
+      rewardEndpoint: cfg.rewardEndpoint,
+      rewardThreshold: cfg.rewardThreshold,
+      hhemEnabled: cfg.hhemEnabled,
+      hhemEndpoint: cfg.hhemEndpoint,
+      hhemThreshold: cfg.hhemThreshold,
+      ragasEnabled: cfg.ragasEnabled,
+      ragasEndpoint: cfg.ragasEndpoint,
+      ragasThreshold: cfg.ragasThreshold,
+      timeoutMs: cfg.timeout
+    }, cfg.validatorLogsEnabled);
+  } catch (extErr: unknown) {
+    deps.log(`[ExternalValidators] Crashed: ${(extErr as Error).message || String(extErr)}`);
+    const unavailable: QualityCheckResult = { name: 'external', ok: true, unavailable: true, details: 'Validator error' };
+    external = { rewardResult: unavailable, hhemResult: unavailable, ragasResult: unavailable, results: [] };
+  }
   qualityChecks.push(...external.results);
 
   // === SUMMARIZER + STRUCTURED OUTPUT ===

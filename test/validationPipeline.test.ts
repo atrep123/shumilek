@@ -300,5 +300,38 @@ describe('validationPipeline', () => {
       expect(fixAttempted).to.be.true;
       expect(result!.fullResponse).to.include('[Auto-corrected:');
     });
+
+    it('gracefully handles auto-fix crash without losing pipeline result', async () => {
+      const logs: string[] = [];
+      const deps = noopDeps({
+        log: (msg: string) => logs.push(msg),
+        runPostEditVerification: async (): Promise<VerificationSummary> => ({
+          ok: false,
+          ran: [{ command: 'npm test', ok: false, exitCode: 1, stdout: '', stderr: 'Error' }],
+          failed: [{ command: 'npm test', ok: false, exitCode: 1, stdout: '', stderr: 'Error' }]
+        }),
+        generateWithTools: async () => { throw new Error('LLM connection lost'); }
+      });
+      const session = baseSession({ hadMutations: true });
+      const result = await runValidationPipeline('resp', session, baseCfg({ toolCallsEnabled: true }), deps);
+      expect(result).to.not.be.null;
+      expect(result!.fullResponse).to.include('[Verify warning]');
+      expect(result!.fullResponse).to.include('auto-fix error');
+      expect(logs.some(l => l.includes('Auto-fix crashed'))).to.be.true;
+    });
+
+    it('gracefully handles external validator crash with fail-open defaults', async () => {
+      const logs: string[] = [];
+      const deps = noopDeps({
+        log: (msg: string) => logs.push(msg),
+        runExternalValidators: async () => { throw new Error('Network timeout'); }
+      });
+      const result = await runValidationPipeline('resp', baseSession(), baseCfg(), deps);
+      expect(result).to.not.be.null;
+      expect(result!.external.rewardResult.unavailable).to.be.true;
+      expect(result!.external.hhemResult.unavailable).to.be.true;
+      expect(result!.external.ragasResult.unavailable).to.be.true;
+      expect(logs.some(l => l.includes('Crashed'))).to.be.true;
+    });
   });
 });

@@ -390,8 +390,12 @@ export async function handleWriteFileTool(
   }
 
   const parent = vscode.Uri.file(path.dirname(uri.fsPath));
-  await vscode.workspace.fs.createDirectory(parent);
-  await vscode.workspace.fs.writeFile(uri, Buffer.from(text, 'utf8'));
+  try {
+    await vscode.workspace.fs.createDirectory(parent);
+    await vscode.workspace.fs.writeFile(uri, Buffer.from(text, 'utf8'));
+  } catch (ioErr: unknown) {
+    return { ok: false, tool: name, message: `chyba zapisu: ${(ioErr as Error).message || String(ioErr)}` };
+  }
   const shouldOpenCreated = autoOpenOnWrite || (autoOpenAutoSave && (autoSaveGenerated || deps.isInAutoSaveDir(uri)));
   if (shouldOpenCreated) {
     const opened = await vscode.workspace.openTextDocument(uri);
