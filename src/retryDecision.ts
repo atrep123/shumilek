@@ -81,21 +81,43 @@ export function computeRetryDecision(input: RetryDecisionInput): RetryDecision {
 
   const retrySource = shouldRetryHallucination
     ? 'Hallucination'
-    : (shouldRetryMini
+    : shouldRetryMini
       ? 'Mini-model'
-      : (shouldRetryReward
+      : shouldRetryReward
         ? 'Reward'
-        : (shouldRetryHhem ? 'HHEM' : (shouldRetryRagas ? 'RAGAS' : 'Guardian'))));
+        : shouldRetryHhem
+          ? 'HHEM'
+          : shouldRetryRagas
+            ? 'RAGAS'
+            : shouldRetryGuardian
+              ? 'Guardian'
+              : failClosedUnavailableReward
+                ? 'Reward (unavailable)'
+                : failClosedUnavailableHhem
+                  ? 'HHEM (unavailable)'
+                  : failClosedUnavailableRagas
+                    ? 'RAGAS (unavailable)'
+                    : 'Unknown';
 
   const retryDetail = shouldRetryHallucination
     ? `Halucinace ${(hallucinationResult.confidence * 100).toFixed(0)}%`
-    : (shouldRetryMini
-      ? `Skóre ${miniResult!.score}/10 - ${miniResult!.reason}`
-      : (shouldRetryReward
+    : (shouldRetryMini && miniResult)
+      ? `Skóre ${miniResult.score}/10 - ${miniResult.reason}`
+      : shouldRetryReward
         ? `Reward pod prahem ${rewardThreshold}`
-        : (shouldRetryHhem
+        : shouldRetryHhem
           ? `HHEM pod prahem ${hhemThreshold}`
-          : (shouldRetryRagas ? `RAGAS pod prahem ${ragasThreshold}` : `Problém detekován`))));
+          : shouldRetryRagas
+            ? `RAGAS pod prahem ${ragasThreshold}`
+            : shouldRetryGuardian
+              ? 'Problém detekován'
+              : failClosedUnavailableReward
+                ? 'Reward validátor nedostupný (fail-closed)'
+                : failClosedUnavailableHhem
+                  ? 'HHEM validátor nedostupný (fail-closed)'
+                  : failClosedUnavailableRagas
+                    ? 'RAGAS validátor nedostupný (fail-closed)'
+                    : 'Problém detekován';
 
   return {
     shouldRetry: true,

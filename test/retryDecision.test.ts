@@ -118,6 +118,36 @@ describe('computeRetryDecision', () => {
     expect(d.shouldRetry).to.be.true;
   });
 
+  it('sets retrySource to Reward (unavailable) on fail-closed unavailable reward only', () => {
+    const d = computeRetryDecision(makeInput({
+      validationPolicy: 'fail-closed',
+      rewardEnabled: true,
+      rewardResult: makeQuality({ name: 'reward', ok: false, unavailable: true })
+    }));
+    expect(d.retrySource).to.equal('Reward (unavailable)');
+    expect(d.retryDetail).to.include('fail-closed');
+  });
+
+  it('sets retrySource to HHEM (unavailable) on fail-closed unavailable HHEM only', () => {
+    const d = computeRetryDecision(makeInput({
+      validationPolicy: 'fail-closed',
+      hhemEnabled: true,
+      hhemResult: makeQuality({ name: 'hhem', ok: false, unavailable: true })
+    }));
+    expect(d.retrySource).to.equal('HHEM (unavailable)');
+    expect(d.retryDetail).to.include('fail-closed');
+  });
+
+  it('sets retrySource to RAGAS (unavailable) on fail-closed unavailable RAGAS only', () => {
+    const d = computeRetryDecision(makeInput({
+      validationPolicy: 'fail-closed',
+      ragasEnabled: true,
+      ragasResult: makeQuality({ name: 'ragas', ok: false, unavailable: true })
+    }));
+    expect(d.retrySource).to.equal('RAGAS (unavailable)');
+    expect(d.retryDetail).to.include('fail-closed');
+  });
+
   it('does not retry when retryCount >= maxRetries', () => {
     const d = computeRetryDecision(makeInput({
       guardianResult: makeGuardian({ shouldRetry: true }),

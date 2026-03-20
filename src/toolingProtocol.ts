@@ -65,7 +65,7 @@ export function parseToolCalls(text: string): ParseToolCallsResult {
         errors.push('Missing tool name');
         continue;
       }
-      const args = parsed.arguments && typeof parsed.arguments === 'object'
+      const args = parsed.arguments && typeof parsed.arguments === 'object' && !Array.isArray(parsed.arguments)
         ? parsed.arguments
         : undefined;
       calls.push({ name: parsed.name, arguments: args });

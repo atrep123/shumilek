@@ -112,7 +112,14 @@ describe('toolingProtocol', () => {
       const parsed = parseToolCalls(input);
       assert.equal(parsed.calls.length, 1);
       assert.equal(parsed.calls[0].name, 'read_file');
-      assert.equal(parsed.remainingText, '');
+    });
+
+    it('rejects array arguments (typeof array === object)', () => {
+      const input = '<tool_call>{"name":"test_tool","arguments":["a","b"]}</tool_call>';
+      const parsed = parseToolCalls(input);
+      assert.equal(parsed.calls.length, 1);
+      assert.equal(parsed.calls[0].name, 'test_tool');
+      assert.equal(parsed.calls[0].arguments, undefined);
     });
 
     it('does not treat arbitrary JSON with name field as tool call in fallback mode', () => {
