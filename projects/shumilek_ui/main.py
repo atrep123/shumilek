@@ -160,6 +160,7 @@ class PixelWorkspaceApp:
         self.runtime_session_text = tk.StringVar(value=self._format_runtime_session_text(self.runtime_session_id))
         self.external_log_path = self._build_session_log_path("shumilek_pixel_workspace", self.runtime_session_id)
         self.fault_log_path = self._build_session_log_path("shumilek_ui_fault", self.runtime_session_id)
+        self._log_write_lock = threading.Lock()
         self.runtime_log_paths_text = tk.StringVar(value=self._format_runtime_log_paths_text(self.external_log_path, self.fault_log_path))
         self.fault_log_handle = None
         removed_log_count = self._cleanup_stale_session_logs()
@@ -971,10 +972,17 @@ class PixelWorkspaceApp:
         log_path = getattr(self, "external_log_path", None)
         if not isinstance(log_path, Path):
             return
+        lock = getattr(self, "_log_write_lock", None)
         try:
             log_path.parent.mkdir(parents=True, exist_ok=True)
-            with log_path.open("a", encoding="utf-8") as handle:
-                handle.write(f"{line}\n")
+            if lock is not None:
+                lock.acquire()
+            try:
+                with log_path.open("a", encoding="utf-8") as handle:
+                    handle.write(f"{line}\n")
+            finally:
+                if lock is not None:
+                    lock.release()
         except OSError:
             return
 
@@ -1740,7 +1748,14 @@ class PixelWorkspaceApp:
         if self.tracked_job_id not in self.tracked_job_ids:
             self.tracked_job_id = self.tracked_job_ids[0]
 
-        selected_index = self.tracked_job_ids.index(self.tracked_job_id)
+        try:
+            selected_index = self.tracked_job_ids.index(self.tracked_job_id)
+        except ValueError:
+            selected_index = 0
+            self.tracked_job_id = self.tracked_job_ids[0] if self.tracked_job_ids else ""
+        if selected_index >= len(jobs):
+            self.updating_tracked_jobs = False
+            return
         selected_job = jobs[selected_index]
         self.tracked_job_detail_text.set(build_tracked_job_detail(selected_job))
         self.tracked_job_full_detail_text = build_tracked_job_detail(selected_job, compact=False)
@@ -1760,9 +1775,10 @@ class PixelWorkspaceApp:
         if not selection:
             return
         selected_index = selection[0]
-        if selected_index >= len(self.tracked_job_ids):
+        ids_snapshot = self.tracked_job_ids
+        if selected_index >= len(ids_snapshot):
             return
-        self.tracked_job_id = self.tracked_job_ids[selected_index]
+        self.tracked_job_id = ids_snapshot[selected_index]
         jobs = self.bridge.list_jobs()
         for job in jobs:
             if getattr(job, "job_id", "") != self.tracked_job_id:
@@ -1929,7 +1945,11 @@ class PixelWorkspaceApp:
         if self.asset_history_job_id not in self.asset_history_ids:
             self.asset_history_job_id = jobs[0].job_id
 
-        selected_index = self.asset_history_ids.index(self.asset_history_job_id)
+        try:
+            selected_index = self.asset_history_ids.index(self.asset_history_job_id)
+        except ValueError:
+            selected_index = 0
+            self.asset_history_job_id = self.asset_history_ids[0] if self.asset_history_ids else ""
         self.asset_history_listbox.selection_clear(0, tk.END)
         self.asset_history_listbox.selection_set(selected_index)
         self.asset_history_listbox.activate(selected_index)
@@ -1941,7 +1961,10 @@ class PixelWorkspaceApp:
         selection = self.asset_history_listbox.curselection()
         if not selection:
             return
-        next_job_id = self.asset_history_ids[selection[0]]
+        ids_snapshot = self.asset_history_ids
+        if selection[0] >= len(ids_snapshot):
+            return
+        next_job_id = ids_snapshot[selection[0]]
         if next_job_id == self.asset_history_job_id:
             return
         self.asset_history_user_selected = True

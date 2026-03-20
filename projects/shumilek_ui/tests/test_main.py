@@ -2448,6 +2448,82 @@ class PixelWorkspaceAppFlowTests(unittest.TestCase):
         self.assertEqual(app.status_text.get(), "Kvalita a validace")
         self.assertEqual(app.log_lines[-1], "15:07  Focus moved to Svetluskovy guardian")
 
+    def test_on_asset_history_select_bounds_check_prevents_index_error(self) -> None:
+        jobs = [
+            PixelLabJob(job_id="job-1", job_type="character", label="Char", prompt="knight", status="ready", source="mcp",
+                        preview_url="https://example.invalid/knight.png"),
+        ]
+        app = self._make_preview_app(jobs)
+        app._refresh_asset_preview()
+
+        app.asset_history_listbox.selection_set(0)
+        app.asset_history_ids = []
+
+        app._on_asset_history_select(None)
+
+        self.assertEqual(app.asset_history_job_id, "job-1")
+
+    def test_on_tracked_job_select_bounds_check_prevents_index_error(self) -> None:
+        jobs = [
+            PixelLabJob(job_id="job-1", job_type="character", label="Char queued", prompt="forest spirit", status="queued", source="mcp"),
+        ]
+        app = self._make_tracked_jobs_app(jobs)
+        app._refresh_tracked_jobs(jobs)
+        app.tracked_job_listbox.selection_set(0)
+
+        app.tracked_job_ids = []
+
+        app._on_tracked_job_select(None)
+
+        self.assertEqual(app.tracked_job_id, "job-1")
+
+    def test_refresh_tracked_jobs_survives_stale_job_id(self) -> None:
+        jobs = [
+            PixelLabJob(job_id="job-2", job_type="character", label="Char queued", prompt="forest spirit", status="queued", source="mcp"),
+        ]
+        app = self._make_tracked_jobs_app(jobs)
+        app.tracked_job_id = "job-gone"
+
+        app._refresh_tracked_jobs(jobs)
+
+        self.assertEqual(app.tracked_job_id, "job-2")
+        self.assertEqual(app.tracked_job_listbox.selected_index, 0)
+
+    def test_refresh_asset_history_survives_stale_job_id(self) -> None:
+        jobs = [
+            PixelLabJob(job_id="job-3", job_type="tileset", label="Tile ready", prompt="grid", status="ready", source="mcp",
+                        preview_url="https://example.invalid/tile.png"),
+        ]
+        app = self._make_preview_app(jobs)
+        app.asset_history_job_id = "job-gone"
+
+        app._refresh_asset_history(jobs)
+
+        self.assertEqual(app.asset_history_job_id, "job-3")
+        self.assertEqual(app.asset_history_listbox.selected_index, 0)
+
+    def test_write_external_log_line_serializes_concurrent_writes(self) -> None:
+        import threading
+
+        app = PixelWorkspaceApp.__new__(PixelWorkspaceApp)
+        with tempfile.TemporaryDirectory() as tmp:
+            app.external_log_path = Path(tmp) / "test_log.log"
+            app._log_write_lock = threading.Lock()
+
+            threads = []
+            for i in range(20):
+                t = threading.Thread(target=app._write_external_log_line, args=(f"line-{i}",))
+                threads.append(t)
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+
+            lines = app.external_log_path.read_text(encoding="utf-8").strip().splitlines()
+            self.assertEqual(len(lines), 20)
+            for line in lines:
+                self.assertTrue(line.startswith("line-"), f"Corrupted line: {line!r}")
+
 
 if __name__ == "__main__":
     unittest.main()
