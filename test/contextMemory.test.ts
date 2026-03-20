@@ -143,15 +143,26 @@ describe('contextMemory', () => {
       expect(result.wasCompressed).to.be.false;
     });
 
-    it('should preserve system messages in recent', () => {
+    it('should exclude system messages from recentMessages', () => {
       const msgs: ChatMessage[] = [
         ...makeMessages(30, 200),
         { role: 'system', content: 'TOOL MODE instruction' }
       ];
       const result = compressConversation(msgs, 2048);
-      if (result.wasCompressed) {
-        expect(result.recentMessages.some(m => m.role === 'system')).to.be.true;
-      }
+      // System messages should be filtered out — they are injected separately
+      expect(result.recentMessages.every(m => m.role !== 'system')).to.be.true;
+    });
+
+    it('should exclude system messages from non-compressed path too', () => {
+      const msgs: ChatMessage[] = [
+        { role: 'system', content: 'old system message' },
+        { role: 'user', content: 'hi' },
+        { role: 'assistant', content: 'hello' }
+      ];
+      const result = compressConversation(msgs, 8192);
+      expect(result.wasCompressed).to.be.false;
+      expect(result.recentMessages.every(m => m.role !== 'system')).to.be.true;
+      expect(result.recentMessages.length).to.equal(2);
     });
   });
 
@@ -182,6 +193,18 @@ describe('contextMemory', () => {
       const msgs = makeMessages(40, 200);
       const { apiMessages } = buildCompressedMessages(systemPrompt, msgs, 2048);
       expect(apiMessages[0].role).to.equal('system');
+    });
+
+    it('should not produce duplicate system messages when history contains system role', () => {
+      const msgs: ChatMessage[] = [
+        { role: 'system', content: 'old instruction from history' },
+        ...makeMessages(4, 50)
+      ];
+      const { apiMessages, compressed } = buildCompressedMessages(systemPrompt, msgs, 8192);
+      expect(compressed.wasCompressed).to.be.false;
+      const systemCount = apiMessages.filter(m => m.role === 'system').length;
+      expect(systemCount).to.equal(1, 'should have exactly one system message');
+      expect(apiMessages[0].content).to.equal(systemPrompt);
     });
   });
 });

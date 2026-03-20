@@ -51,6 +51,8 @@ export async function streamPlainOllamaChat(opts: {
     throw new Error('Response body is not readable stream');
   }
 
+  let globalLinesProcessed = 0;
+
   for await (const chunk of res.body as any) {
     if (!chunk) continue;
     const currentTime = now();
@@ -69,9 +71,8 @@ export async function streamPlainOllamaChat(opts: {
     }
 
     let newlineIndex;
-    let linesProcessed = 0;
     while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
-      if (++linesProcessed > 10000) {
+      if (++globalLinesProcessed > 10000) {
         log?.('[Warning] Stream processing limit reached');
         break;
       }
@@ -128,6 +129,7 @@ export async function streamPlainOllamaChat(opts: {
         log?.(`[Stream] Malformed JSON: ${line.slice(0, 120)}`);
       }
     }
+    if (globalLinesProcessed > 10000) break;
   }
 
   // Flush remaining multi-byte characters from decoder

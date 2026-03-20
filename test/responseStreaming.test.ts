@@ -321,4 +321,43 @@ describe('responseStreaming', () => {
     assert.equal(result, 'ok');
     assert.ok(logs.some(l => l.includes('Residual buffer not valid JSON')));
   });
+
+  it('enforces global line limit across multiple chunks', async () => {
+    const webviewMessages: any[] = [];
+    const logs: string[] = [];
+    const abortCtrl = new AbortController();
+
+    // Generate 20 chunks each with 600 lines → 12000 total, should hit 10000 limit
+    // Each chunk is ~16.8KB (well under 100KB buffer limit)
+    const makeBigChunk = (count: number) => {
+      let chunk = '';
+      for (let i = 0; i < count; i++) {
+        chunk += `{"message":{"content":"x"}}\n`;
+      }
+      return chunk;
+    };
+    const chunks: string[] = [];
+    for (let c = 0; c < 20; c++) chunks.push(makeBigChunk(600));
+
+    const result = await streamPlainOllamaChat({
+      url: 'http://example.test',
+      model: 'test-model',
+      apiMessages: [{ role: 'user', content: 'hello' }],
+      timeout: 1000,
+      panel: createPanel(webviewMessages),
+      abortCtrl,
+      guardianEnabled: false,
+      log: message => logs.push(message),
+      fetchWithTimeoutFn: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: createStream(chunks)
+      }) as any
+    });
+
+    // Should have processed exactly 10000 lines worth of content
+    assert.equal(result.length, 10000, 'should have exactly 10000 x chars');
+    assert.ok(logs.some(l => l.includes('Stream processing limit reached')));
+  });
 });

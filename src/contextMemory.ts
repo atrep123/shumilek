@@ -186,7 +186,7 @@ export function compressConversation(
   contextTokens: number,
   systemPromptChars: number = 2000
 ): CompressedHistory {
-  // Filter out system messages (they're injected separately)
+  // Filter out system messages (they're injected separately by buildCompressedMessages)
   const conversationMessages = messages.filter(m => m.role !== 'system');
 
   const totalEstimatedTokens = estimateTokens(conversationMessages) + Math.ceil(systemPromptChars / CHARS_PER_TOKEN);
@@ -196,12 +196,12 @@ export function compressConversation(
   if (totalEstimatedTokens <= tokenBudget || conversationMessages.length <= RECENT_PAIRS_FULL * 2) {
     return {
       contextBlock: '',
-      recentMessages: messages,
+      recentMessages: conversationMessages,
       wasCompressed: false,
       stats: {
         originalCount: messages.length,
         summarizedCount: 0,
-        recentCount: messages.length,
+        recentCount: conversationMessages.length,
         estimatedTokensSaved: 0
       }
     };
@@ -224,17 +224,14 @@ export function compressConversation(
   const contextBlockTokens = Math.ceil(contextBlock.length / CHARS_PER_TOKEN);
   const estimatedTokensSaved = Math.max(0, oldTokens - contextBlockTokens);
 
-  // Also include any system messages from original array in recent
-  const systemMessages = messages.filter(m => m.role === 'system');
-
   return {
     contextBlock,
-    recentMessages: [...systemMessages, ...recentMessages],
+    recentMessages,
     wasCompressed: true,
     stats: {
       originalCount: messages.length,
       summarizedCount: oldMessages.length,
-      recentCount: recentMessages.length + systemMessages.length,
+      recentCount: recentMessages.length,
       estimatedTokensSaved
     }
   };
@@ -260,7 +257,7 @@ export function buildCompressedMessages(
     return {
       apiMessages: [
         { role: 'system', content: systemPrompt },
-        ...messages
+        ...compressed.recentMessages
       ],
       compressed
     };
