@@ -81,7 +81,7 @@ export function normalizeExternalScore(
   score: number | undefined,
   threshold?: number
 ): { score?: number; rawScore?: number } {
-  if (typeof score !== 'number') return { score };
+  if (typeof score !== 'number' || Number.isNaN(score)) return { score: undefined };
   const rawScore = score;
   if (score > 1 && score <= 100 && (typeof threshold !== 'number' || threshold <= 1)) {
     return { score: score / 100, rawScore };

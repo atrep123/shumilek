@@ -242,5 +242,9 @@ describe('chatPersistence', () => {
       expect(result.score).to.equal(0.75);
       expect(result.rawScore).to.equal(75);
     });
+
+    it('returns undefined score for NaN input', () => {
+      expect(normalizeExternalScore(NaN)).to.deep.equal({ score: undefined });
+    });
   });
 });

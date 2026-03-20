@@ -2185,7 +2185,7 @@ PŘÍSTUP K PRÁCI:
 
       messages.push({ role: 'assistant', content: fullResponse, timestamp: Date.now() });
       await saveChatMessages(context, messages);
-      const finalScore = vResult.miniResult?.score || 7;
+      const finalScore = vResult.miniResult?.score ?? 7;
       responseHistoryManager.addResponse(vResult.fullResponse, trimmedPrompt, finalScore);
 
       postToAllWebviews({ type: 'responseDone' });
@@ -2397,7 +2397,7 @@ PŘÍSTUP K PRÁCI:
       orchestrator.transition('publish', { stepMode: false, checkpoints: orchestrator.getCheckpoints().length });
       postToAllWebviews({ type: 'pipelineApproved', message: '✅ Odpověď schválena' });
 
-      const finalScore = miniResult?.score || 7;
+      const finalScore = vResult.miniResult?.score ?? 7;
       responseHistoryManager.addResponse(vResult.fullResponse, trimmedPrompt, finalScore);
     }
 
