@@ -219,8 +219,9 @@ export async function runValidationPipeline(
             fullResponse += `\n\n[Verify warning] ${detail} (auto-fix attempted but failed)`;
           }
         } catch (autoFixErr: unknown) {
-          deps.log(`[SelfCorrect] Auto-fix crashed: ${(autoFixErr as Error).message || String(autoFixErr)}`);
-          deps.postToAllWebviews({ type: 'guardianAlert', message: `Auto-fix error: ${(autoFixErr as Error).message || String(autoFixErr)}` });
+          const autoFixMsg = ((autoFixErr as Error).message || String(autoFixErr)).slice(0, 500);
+          deps.log(`[SelfCorrect] Auto-fix crashed: ${autoFixMsg}`);
+          deps.postToAllWebviews({ type: 'guardianAlert', message: `Auto-fix error: ${autoFixMsg}` });
           fullResponse += `\n\n[Verify warning] ${detail} (auto-fix error)`;
         }
       } else {
@@ -403,7 +404,7 @@ export async function runValidationPipeline(
       timeoutMs: cfg.timeout
     }, cfg.validatorLogsEnabled);
   } catch (extErr: unknown) {
-    deps.log(`[ExternalValidators] Crashed: ${(extErr as Error).message || String(extErr)}`);
+    deps.log(`[ExternalValidators] Crashed: ${((extErr as Error).message || String(extErr)).slice(0, 500)}`);
     const unavailable: QualityCheckResult = { name: 'external', ok: true, unavailable: true, details: 'Validator error' };
     external = { rewardResult: unavailable, hhemResult: unavailable, ragasResult: unavailable, results: [] };
   }
@@ -415,7 +416,7 @@ export async function runValidationPipeline(
     try {
       summary = await deps.summarizeResponse(cfg.baseUrl, cfg.summarizerModel, cfg.trimmedPrompt, fullResponse, cfg.timeout);
     } catch (sumErr: unknown) {
-      deps.log(`[Summarizer] Error: ${(sumErr as Error).message || String(sumErr)}`);
+      deps.log(`[Summarizer] Error: ${((sumErr as Error).message || String(sumErr)).slice(0, 500)}`);
     }
   }
   const structuredOutput = deps.buildStructuredOutput(fullResponse, summary, qualityChecks, !cfg.stepMode);

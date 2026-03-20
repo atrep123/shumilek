@@ -362,5 +362,37 @@ describe('validationPipeline', () => {
       expect(result!.summary).to.be.null;
       expect(logs.some(l => l.includes('Summarizer') && l.includes('Model not loaded'))).to.be.true;
     });
+
+    it('truncates long error messages in auto-fix crash log', async () => {
+      const logs: string[] = [];
+      const longMessage = 'E'.repeat(2000);
+      const deps = noopDeps({
+        log: (msg: string) => logs.push(msg),
+        runPostEditVerification: async (): Promise<VerificationSummary> => ({
+          ok: false,
+          ran: [{ command: 'npm test', ok: false, exitCode: 1, stdout: '', stderr: 'err' }],
+          failed: [{ command: 'npm test', ok: false, exitCode: 1, stdout: '', stderr: 'err' }]
+        }),
+        generateWithTools: async () => { throw new Error(longMessage); }
+      });
+      const session = baseSession({ hadMutations: true });
+      const result = await runValidationPipeline('resp', session, baseCfg({ toolCallsEnabled: true }), deps);
+      expect(result).to.not.be.null;
+      const crashLog = logs.find(l => l.includes('Auto-fix crashed'))!;
+      expect(crashLog.length).to.be.lessThan(600);
+    });
+
+    it('truncates long error messages in external validator crash log', async () => {
+      const logs: string[] = [];
+      const longMessage = 'V'.repeat(2000);
+      const deps = noopDeps({
+        log: (msg: string) => logs.push(msg),
+        runExternalValidators: async () => { throw new Error(longMessage); }
+      });
+      const result = await runValidationPipeline('resp', baseSession(), baseCfg(), deps);
+      expect(result).to.not.be.null;
+      const crashLog = logs.find(l => l.includes('Crashed'))!;
+      expect(crashLog.length).to.be.lessThan(600);
+    });
   });
 });

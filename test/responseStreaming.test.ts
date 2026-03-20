@@ -535,4 +535,65 @@ describe('responseStreaming', () => {
 
     assert.strictEqual(result, 'valid end');
   });
+
+  it('skips residual buffer parsing after earlyBreak truncation', async () => {
+    const logs: string[] = [];
+    const abortCtrl = new AbortController();
+
+    // Use chunks small enough to pass buffer-overflow guard (<100KB each)
+    // but total > 500KB to trigger response truncation.
+    // Last chunk has NO trailing newline → creates a residual buffer entry.
+    const bigContent = 'X'.repeat(60_000);
+    const chunks: string[] = [];
+    for (let i = 0; i < 14; i++) {
+      chunks.push(`{"message":{"content":"${bigContent}"}}\n`);
+    }
+    // 15th chunk, no trailing newline → residual buffer after truncation
+    chunks.push(`{"message":{"content":"RESIDUAL_SHOULD_NOT_APPEAR"}}`);
+
+    const result = await streamPlainOllamaChat({
+      url: 'http://example.test',
+      model: 'test-model',
+      apiMessages: [{ role: 'user', content: 'hello' }],
+      timeout: 5000,
+      panel: createPanel([]),
+      abortCtrl,
+      guardianEnabled: false,
+      log: (msg: string) => logs.push(msg),
+      fetchWithTimeoutFn: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: createStream(chunks)
+      }) as any
+    });
+
+    assert.ok(!result.includes('RESIDUAL_SHOULD_NOT_APPEAR'), 'Residual buffer should be skipped after earlyBreak');
+    assert.ok(result.includes('Odpověď zkrácena'), 'Should include truncation note');
+  });
+
+  it('validates typeof string on residual buffer content', async () => {
+    // Single chunk with no trailing newline → becomes residual
+    const chunks = [
+      '{"message":{"content":9999}}'
+    ];
+
+    const result = await streamPlainOllamaChat({
+      url: 'http://example.test',
+      model: 'test-model',
+      apiMessages: [{ role: 'user', content: 'hello' }],
+      timeout: 5000,
+      panel: createPanel([]),
+      abortCtrl: new AbortController(),
+      guardianEnabled: false,
+      fetchWithTimeoutFn: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: createStream(chunks)
+      }) as any
+    });
+
+    assert.strictEqual(result, '');
+  });
 });

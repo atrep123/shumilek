@@ -301,7 +301,10 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
 
     for (let i = 0; i < plan.steps.length; i++) {
       const step = plan.steps[i];
-      const originalInstruction = step.instruction;
+      const MAX_INSTRUCTION_LEN = 50000;
+      const originalInstruction = step.instruction.length > MAX_INSTRUCTION_LEN
+        ? step.instruction.slice(0, MAX_INSTRUCTION_LEN) + '\n[...instrukce zkrácena]'
+        : step.instruction;
       let stepRetries = 0;
       let stepResult = '';
       let stepApproved = false;
@@ -671,7 +674,7 @@ ${contextFromPrevious}
 Type: ${step.type.toUpperCase()}
 
 Instruction:
-${step.instruction}
+${step.instruction.slice(0, 50000)}
 
 === EXECUTION GUIDELINES ===
 - ${guidance}

@@ -159,16 +159,20 @@ export async function streamPlainOllamaChat(opts: {
   if (flushed) buffer += flushed;
 
   // Parse any remaining buffered JSON line (stream ended without trailing newline)
-  const residual = buffer.trim();
-  if (residual) {
-    try {
-      const json = JSON.parse(residual);
-      if (json?.message?.content) {
-        fullResponse += json.message.content;
-        panel.webview.postMessage({ type: 'responseChunk', text: json.message.content });
+  // Skip residual parsing if we already truncated — appending would bypass the 500KB cap
+  if (!earlyBreak) {
+    const residual = buffer.trim();
+    if (residual) {
+      try {
+        const json = JSON.parse(residual);
+        const delta = typeof json?.message?.content === 'string' ? json.message.content : '';
+        if (delta) {
+          fullResponse += delta;
+          panel.webview.postMessage({ type: 'responseChunk', text: delta });
+        }
+      } catch {
+        log?.(`[Stream] Residual buffer not valid JSON: ${residual.slice(0, 120)}`);
       }
-    } catch {
-      log?.(`[Stream] Residual buffer not valid JSON: ${residual.slice(0, 120)}`);
     }
   }
 

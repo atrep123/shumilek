@@ -689,4 +689,23 @@ DÉLKA: short`;
       expect(res.shouldRetry).to.be.false;
     }).timeout(40000);
   });
+
+  describe('instruction length cap', () => {
+    it('generateStepPrompt caps step.instruction at 50000 chars', () => {
+      const rozum = new Rozum();
+      const longInstruction = 'Z'.repeat(80000);
+      const step = {
+        id: 1,
+        type: 'code' as const,
+        title: 'Big step',
+        instruction: longInstruction,
+        status: 'pending' as const
+      };
+
+      const prompt = rozum.generateStepPrompt(step, 'Short prompt', [], 1);
+      // The full 80000 chars should NOT appear in prompt
+      expect(prompt.length).to.be.lessThan(longInstruction.length);
+      expect(prompt).to.not.include(longInstruction);
+    });
+  });
 });
