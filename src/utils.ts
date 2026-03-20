@@ -47,13 +47,21 @@ export async function isSafeUrl(raw: string): Promise<{ safe: boolean; reason?: 
   }
   // DNS rebinding check: resolve hostname and validate resolved IP
   try {
-    const { address } = await dns.promises.lookup(hostname);
+    const address = await new Promise<string>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('DNS lookup timeout')), 5000);
+      dns.promises.lookup(hostname).then(
+        ({ address }) => { clearTimeout(timer); resolve(address); },
+        (err) => { clearTimeout(timer); reject(err); }
+      );
+    });
+    // Strip IPv4-mapped IPv6 prefix for consistent checking
+    const normalizedAddr = address.replace(/^::ffff:/i, '');
     for (const re of PRIVATE_IP_RANGES) {
-      if (re.test(address)) {
+      if (re.test(normalizedAddr)) {
         return { safe: false, reason: 'DNS resolves to private IP — possible rebinding attack' };
       }
     }
-    if (address === '169.254.169.254') {
+    if (normalizedAddr === '169.254.169.254') {
       return { safe: false, reason: 'DNS resolves to cloud metadata endpoint' };
     }
   } catch {

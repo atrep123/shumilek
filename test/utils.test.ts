@@ -199,6 +199,45 @@ describe('isSafeUrl', () => {
       dns.promises.lookup = original;
     }
   });
+
+  it('should fail-closed when DNS lookup hangs beyond timeout', async () => {
+    const dns = require('dns');
+    const original = dns.promises.lookup;
+    dns.promises.lookup = () => new Promise(() => {}); // never resolves
+    try {
+      const r = await isSafeUrl('http://slow-dns.example.com');
+      expect(r.safe).to.be.false;
+      expect(r.reason).to.include('DNS lookup failed');
+    } finally {
+      dns.promises.lookup = original;
+    }
+  }).timeout(10000);
+
+  it('should block IPv4-mapped IPv6 addresses resolving to private IPs', async () => {
+    const dns = require('dns');
+    const original = dns.promises.lookup;
+    dns.promises.lookup = () => Promise.resolve({ address: '::ffff:10.0.0.1', family: 6 });
+    try {
+      const r = await isSafeUrl('http://rebind.example.com');
+      expect(r.safe).to.be.false;
+      expect(r.reason).to.include('private IP');
+    } finally {
+      dns.promises.lookup = original;
+    }
+  });
+
+  it('should block IPv4-mapped IPv6 cloud metadata address', async () => {
+    const dns = require('dns');
+    const original = dns.promises.lookup;
+    dns.promises.lookup = () => Promise.resolve({ address: '::ffff:169.254.169.254', family: 6 });
+    try {
+      const r = await isSafeUrl('http://rebind-meta.example.com');
+      expect(r.safe).to.be.false;
+      expect(r.reason).to.include('private IP');
+    } finally {
+      dns.promises.lookup = original;
+    }
+  });
 });
 
 describe('getNonce', () => {
