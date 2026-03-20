@@ -2374,14 +2374,6 @@ PŘÍSTUP K PRÁCI:
       }
       if (retryDecision.blocked) {
         outputChannel?.appendLine(`[Retry] Skipping retry because ${retryDecision.blockedReason}`);
-        const failBlock = checkFailClosedBlock({
-          hallucinationResult, guardianResult, miniResult, validationPolicy,
-          rewardEnabled, rewardResult, hhemEnabled, hhemResult, ragasEnabled, ragasResult,
-        });
-        if (failBlock.blocked) {
-          postToAllWebviews({ type: 'responseError', text: `Publish blocked: ${failBlock.reason}` });
-          return;
-        }
       }
 
       // Fail-closed: unified block check for validators
@@ -2398,7 +2390,7 @@ PŘÍSTUP K PRÁCI:
         return;
       }
 
-      fullResponse = vResult.structuredOutput;
+      fullResponse = vResult.structuredOutput || vResult.fullResponse;
 
       orchestrator.transition('publish', { stepMode: false, checkpoints: orchestrator.getCheckpoints().length });
       postToAllWebviews({ type: 'pipelineApproved', message: '✅ Odpověď schválena' });

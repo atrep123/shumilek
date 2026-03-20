@@ -666,8 +666,6 @@ export function getWebviewContent(_webview: vscode.Webview, _initialMessages: Ch
   html += '    case "responseDone":';
   html += '      clearSendWatchdog();';
   html += '      clearPipelineMessages();';
-  html += '      clearSendWatchdog();';
-  html += '      setBusy(false);';
   html += '      setBusy(false);';
   html += '      break;';
   html += '    case "responseStopped":';

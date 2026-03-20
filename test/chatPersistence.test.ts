@@ -213,6 +213,16 @@ describe('chatPersistence', () => {
       expect(result).to.equal('Hello');
       expect(result).to.not.include('## Vysledek');
     });
+
+    it('returns header only when response is empty', () => {
+      const result = buildStructuredOutput('', null, []);
+      expect(result).to.equal('## Vysledek\n\n');
+    });
+
+    it('returns empty string when response is empty and includeResponse=false', () => {
+      const result = buildStructuredOutput('', null, [], false);
+      expect(result).to.equal('');
+    });
   });
 
   // ---- normalizeExternalScore ----
