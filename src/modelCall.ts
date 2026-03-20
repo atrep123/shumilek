@@ -84,13 +84,21 @@ export async function executeModelCallWithMessages(
         if (!line) continue;
         try {
           const parsed = JSON.parse(line);
-          if (parsed.message?.content) {
+          if (parsed.message?.content && typeof parsed.message.content === 'string') {
             fullResponse += parsed.message.content;
           }
         } catch {
           log?.(`[ModelCall] Malformed JSON: ${line.slice(0, 120)}`);
         }
+
+        if (fullResponse.length > 500_000) {
+          log?.('[executeModelCallWithMessages] Response too long, truncating');
+          fullResponse = fullResponse.slice(0, 500_000) + '\n\n[Odpověď zkrácena – příliš dlouhá]';
+          earlyBreak = true;
+          break;
+        }
       }
+      if (earlyBreak) break;
     }
   } finally {
     // Destroy the response body to release the socket (no-op if already ended)

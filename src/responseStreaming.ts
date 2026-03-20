@@ -93,7 +93,7 @@ export async function streamPlainOllamaChat(opts: {
           if (!json.message || typeof json.message !== 'object') {
             continue;
           }
-          const delta = json.message.content || '';
+          const delta = typeof json.message.content === 'string' ? json.message.content : '';
           if (delta) {
             fullResponse += delta;
 
@@ -135,7 +135,7 @@ export async function streamPlainOllamaChat(opts: {
           log?.(`[Stream] Malformed JSON: ${line.slice(0, 120)}`);
         }
       }
-      if (globalLinesProcessed > 10000) {
+      if (globalLinesProcessed > 10000 || earlyBreak) {
         earlyBreak = true;
         break;
       }

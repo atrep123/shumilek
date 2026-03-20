@@ -458,4 +458,81 @@ describe('responseStreaming', () => {
 
     assert.ok(destroyCalled, 'body.destroy() should be called even when stream throws');
   });
+
+  it('breaks outer for-await when earlyBreak is set by response truncation', async () => {
+    const logs: string[] = [];
+    const abortCtrl = new AbortController();
+
+    // Create a stream that emits many chunks with large content to exceed 500KB
+    // Each chunk must be <100KB to avoid buffer-overflow guard; total must exceed 500KB
+    const bigContent = 'A'.repeat(60_000);
+    const chunks: string[] = [];
+    for (let i = 0; i < 15; i++) {
+      chunks.push(`{"message":{"content":"${bigContent}"}}\n`);
+    }
+
+    let chunksConsumed = 0;
+    const stream = {
+      async *[Symbol.asyncIterator]() {
+        for (const chunk of chunks) {
+          chunksConsumed++;
+          yield Buffer.from(chunk, 'utf8');
+        }
+      },
+      destroy() {}
+    };
+
+    const result = await streamPlainOllamaChat({
+      url: 'http://example.test',
+      model: 'test-model',
+      apiMessages: [{ role: 'user', content: 'hello' }],
+      timeout: 5000,
+      panel: createPanel([]),
+      abortCtrl,
+      guardianEnabled: false,
+      log: (msg: string) => logs.push(msg),
+      fetchWithTimeoutFn: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: stream
+      }) as any
+    });
+
+    // Should stop before consuming all 10 chunks (500KB cap reached around chunk 5-6)
+    assert.ok(chunksConsumed < 15, `Should not consume all chunks; consumed ${chunksConsumed}`);
+    assert.ok(result.includes('Odpověď zkrácena'), 'Should include truncation note');
+    assert.ok(logs.some(l => l.includes('Response too long')));
+  });
+
+  it('skips non-string message content without appending garbage', async () => {
+    const webviewMessages: any[] = [];
+    const logs: string[] = [];
+
+    const chunks = [
+      '{"message":{"content":"valid "}}\n',
+      '{"message":{"content":12345}}\n',
+      '{"message":{"content":null}}\n',
+      '{"message":{"content":"end"}}\n'
+    ];
+
+    const result = await streamPlainOllamaChat({
+      url: 'http://example.test',
+      model: 'test-model',
+      apiMessages: [{ role: 'user', content: 'hello' }],
+      timeout: 5000,
+      panel: createPanel(webviewMessages),
+      abortCtrl: new AbortController(),
+      guardianEnabled: false,
+      log: (msg: string) => logs.push(msg),
+      fetchWithTimeoutFn: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: createStream(chunks)
+      }) as any
+    });
+
+    assert.strictEqual(result, 'valid end');
+  });
 });

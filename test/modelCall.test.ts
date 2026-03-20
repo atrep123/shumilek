@@ -410,4 +410,76 @@ describe('modelCall', () => {
 
     assert.ok(destroyCalled, 'body.destroy() should be called even when stream throws');
   });
+
+  it('truncates response at 500KB and breaks out of stream', async () => {
+    const logs: string[] = [];
+    const bigContent = 'B'.repeat(100_000);
+    const chunks: string[] = [];
+    for (let i = 0; i < 10; i++) {
+      chunks.push(`{"message":{"content":"${bigContent}"}}\n`);
+    }
+
+    let chunksConsumed = 0;
+    const stream = {
+      async *[Symbol.asyncIterator]() {
+        for (const chunk of chunks) {
+          chunksConsumed++;
+          yield Buffer.from(chunk, 'utf8');
+        }
+      },
+      destroy() {}
+    };
+
+    const { executeModelCallWithMessages } = loadModelCall({
+      fetchWithTimeout: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: stream
+      })
+    });
+
+    const result = await executeModelCallWithMessages(
+      'http://example.test',
+      'test-model',
+      'system prompt',
+      [{ role: 'user', content: 'hello' }],
+      5000,
+      undefined,
+      false,
+      (msg: string) => logs.push(msg)
+    );
+
+    assert.ok(chunksConsumed < 10, `Should stop early; consumed ${chunksConsumed}`);
+    assert.ok(result.includes('Odpověď zkrácena'), 'Should include truncation note');
+    assert.ok(logs.some(l => l.includes('Response too long')));
+  });
+
+  it('skips non-string message.content values', async () => {
+    const chunks = [
+      '{"message":{"content":"hello "}}\n',
+      '{"message":{"content":42}}\n',
+      '{"message":{"content":null}}\n',
+      '{"message":{"content":"world"}}\n'
+    ];
+
+    const { executeModelCallWithMessages } = loadModelCall({
+      fetchWithTimeout: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: createStream(chunks)
+      })
+    });
+
+    const result = await executeModelCallWithMessages(
+      'http://example.test',
+      'test-model',
+      'system prompt',
+      [{ role: 'user', content: 'hello' }],
+      5000
+    );
+
+    assert.strictEqual(result, 'hello world');
+  });
 });

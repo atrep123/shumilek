@@ -114,4 +114,23 @@ describe('postEditVerification', () => {
     assert.equal(summary.ok, true);
     assert.equal(summary.failed.length, 0);
   });
+
+  it('defaults exitCode to 1 when error.code is not a number', async () => {
+    const { runVerificationCommand } = loadPostEditVerification();
+    const result = await runVerificationCommand(
+      'npm run -s test',
+      'C:/repo',
+      1000,
+      ((command, _options, callback) => {
+        const error = new Error('signal death');
+        error.code = 'SIGKILL';
+        callback(error, '', 'killed');
+        return {};
+      })
+    );
+
+    assert.equal(result.ok, false);
+    assert.equal(result.exitCode, 1);
+    assert.equal(result.stderr, 'killed');
+  });
 });

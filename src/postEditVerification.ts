@@ -17,7 +17,7 @@ export async function runVerificationCommand(
 ): Promise<VerificationCommandResult> {
   return await new Promise(resolve => {
     execImpl(command, { cwd, windowsHide: true, timeout: timeoutMs, env: process.env, maxBuffer: 4 * 1024 * 1024 }, (err, stdout, stderr) => {
-      const exitCode = err ? (typeof (err as any).code === 'number' ? (err as any).code : null) : 0;
+      const exitCode = err ? (typeof (err as any).code === 'number' ? (err as any).code : 1) : 0;
       resolve({
         command,
         ok: !err,
