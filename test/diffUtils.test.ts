@@ -114,6 +114,20 @@ describe('diffUtils', () => {
     it('should return empty for empty input', () => {
       expect(parseUnifiedDiff('')).to.deep.equal([]);
     });
+
+    it('should skip hunks with oldStart or newStart of zero', () => {
+      const diff = [
+        '--- a/file.ts',
+        '+++ b/file.ts',
+        '@@ -0,1 +1,1 @@',
+        '-old',
+        '+new'
+      ].join('\n');
+
+      const files = parseUnifiedDiff(diff);
+      expect(files).to.have.length(1);
+      expect(files[0].hunks).to.have.length(0);
+    });
   });
 
   describe('applyUnifiedDiffToText', () => {

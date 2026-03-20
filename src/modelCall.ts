@@ -93,5 +93,18 @@ export async function executeModelCallWithMessages(
   const flushed = decoder.decode(new Uint8Array(0), { stream: false });
   if (flushed) buffer += flushed;
 
+  // Process any remaining buffer content (last line without trailing newline)
+  const remaining = buffer.trim();
+  if (remaining) {
+    try {
+      const parsed = JSON.parse(remaining);
+      if (parsed.message?.content) {
+        fullResponse += parsed.message.content;
+      }
+    } catch {
+      log?.(`[ModelCall] Malformed residual JSON: ${remaining.slice(0, 120)}`);
+    }
+  }
+
   return fullResponse;
 }

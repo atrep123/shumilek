@@ -70,6 +70,7 @@ export function parseUnifiedDiff(diffText: string): PatchFile[] {
       const oldLines = match[2] ? parseInt(match[2], 10) : 1;
       const newStart = parseInt(match[3], 10);
       const newLines = match[4] ? parseInt(match[4], 10) : 1;
+      if (oldStart < 1 || newStart < 1) continue; // skip malformed hunk headers
       currentHunk = { oldStart, oldLines, newStart, newLines, lines: [] };
       currentFile.hunks.push(currentHunk);
       continue;

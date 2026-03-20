@@ -467,6 +467,28 @@ describe('handleWriteFileTool', () => {
     expect(applied).to.equal('updated content');
     expect((result.data as any).action).to.equal('updated');
   });
+
+  it('rejects write when file changed during approval (TOCTOU)', async () => {
+    vscodeMock.workspace.fs.stat = async () => ({ type: 0 });
+    let readCount = 0;
+    const deps = makeDeps({
+      readFileForTool: async () => {
+        readCount++;
+        return {
+          text: 'content',
+          size: 7,
+          hash: readCount === 1 ? 'hash_before' : 'hash_after'
+        };
+      },
+      showDiffAndConfirm: async () => true,
+      applyFileContent: async () => { throw new Error('should not reach write'); }
+    });
+    const result = await handleWriteFileTool('write_file', {
+      path: 'existing.ts', text: 'new content'
+    }, true, autoApproveDeny, deps);
+    expect(result.ok).to.be.false;
+    expect(result.message).to.include('zmenil');
+  });
 });
 
 // ====================== handleRenameFileTool ======================

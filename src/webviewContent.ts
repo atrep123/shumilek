@@ -500,6 +500,8 @@ export function getWebviewContent(_webview: vscode.Webview, _initialMessages: Ch
   // Pipeline status in chat - Unified Log implementation
   html += 'var currentPipelineLog = null;';
   
+  html += 'function escHtml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }';
+  
   html += 'function getOrCreatePipelineLog() {';
   html += '    if (currentPipelineLog) return currentPipelineLog;';
   html += '    var msgEl = document.createElement("div");';
@@ -518,7 +520,7 @@ export function getWebviewContent(_webview: vscode.Webview, _initialMessages: Ch
   html += '    var log = getOrCreatePipelineLog();';
   html += '    var header = log.querySelector(".pipeline-header");';
   html += '    var spinnerHtml = isLoading ? \'<span class="pipeline-spinner"></span>\' : (icon ? \'<span class="pipeline-icon" style="margin-right:8px">\' + icon + \'</span>\' : \'\');';
-  html += '    header.innerHTML = spinnerHtml + \'<span class="pipeline-text">\' + text + \'</span>\';';
+  html += '    header.innerHTML = spinnerHtml + \'<span class="pipeline-text">\' + escHtml(text) + \'</span>\';';
   html += '}';
 
   html += 'function addPipelineItem(icon, text, type) {';
@@ -526,7 +528,7 @@ export function getWebviewContent(_webview: vscode.Webview, _initialMessages: Ch
   html += '    var items = log.querySelector(".pipeline-items");';
   html += '    var item = document.createElement("div");';
   html += '    item.className = "pipeline-item " + (type || "");';
-  html += '    item.innerHTML = \'<span class="item-icon">\' + icon + \'</span><span class="item-text">\' + text + \'</span>\';';
+  html += '    item.innerHTML = \'<span class="item-icon">\' + escHtml(icon) + \'</span><span class="item-text">\' + escHtml(text) + \'</span>\';';
   html += '    items.appendChild(item);';
   html += '    scrollToBottom();';
   html += '}';
@@ -541,7 +543,7 @@ export function getWebviewContent(_webview: vscode.Webview, _initialMessages: Ch
   html += '  var log = getOrCreatePipelineLog();';
   html += '  var items = log.querySelector(".pipeline-items");';
   html += '  if (items.lastChild) {';
-  html += '      items.lastChild.innerHTML = \'<span class="item-icon">\' + icon + \'</span><span class="item-text">\' + text + \'</span>\';';
+  html += '      items.lastChild.innerHTML = \'<span class="item-icon">\' + escHtml(icon) + \'</span><span class="item-text">\' + escHtml(text) + \'</span>\';';
   html += '      items.lastChild.className = "pipeline-item " + (type || "");';
   html += '  } else { addPipelineItem(icon, text, type); }';
   html += '}';

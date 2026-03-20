@@ -252,4 +252,57 @@ describe('modelCall', () => {
     assert.ok(result.includes('[Odpověď zkrácena'), 'should contain buffer overflow marker');
     assert.ok(logs.some(l => l.includes('Buffer overflow')));
   });
+
+  it('processes residual buffer content when last line has no trailing newline', async () => {
+    const { executeModelCallWithMessages } = loadModelCall({
+      fetchWithTimeout: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: createStream([
+          '{"message":{"content":"Hello"}}\n',
+          '{"message":{"content":" World"}}' // no trailing newline
+        ])
+      })
+    });
+
+    const result = await executeModelCallWithMessages(
+      'http://example.test',
+      'test-model',
+      'system prompt',
+      [{ role: 'user', content: 'hello' }],
+      5000
+    );
+
+    assert.equal(result, 'Hello World');
+  });
+
+  it('logs malformed residual buffer and does not crash', async () => {
+    const logs: string[] = [];
+    const { executeModelCallWithMessages } = loadModelCall({
+      fetchWithTimeout: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: createStream([
+          '{"message":{"content":"ok"}}\n',
+          'not-valid-json' // malformed residual
+        ])
+      })
+    });
+
+    const result = await executeModelCallWithMessages(
+      'http://example.test',
+      'test-model',
+      'system prompt',
+      [{ role: 'user', content: 'hello' }],
+      5000,
+      undefined,
+      false,
+      (message: string) => logs.push(message)
+    );
+
+    assert.equal(result, 'ok');
+    assert.ok(logs.some(l => l.includes('Malformed residual JSON')));
+  });
 });

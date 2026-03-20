@@ -344,6 +344,13 @@ export async function handleWriteFileTool(
     exists = false;
   }
 
+  // Capture pre-approval hash for TOCTOU detection on existing files
+  let preApprovalHash: string | undefined;
+  if (exists && confirmEdits && !autoApprove.edit) {
+    const preRead = await deps.readFileForTool(uri, deps.DEFAULT_MAX_WRITE_BYTES);
+    preApprovalHash = preRead.hash;
+  }
+
   let approved = true;
   if (confirmEdits && !autoApprove.edit) {
     if (exists) {
@@ -376,6 +383,14 @@ export async function handleWriteFileTool(
           sizeBytes: existing.size,
           binary: existing.binary ?? false
         }
+      };
+    }
+    // Re-verify file hash before write to close TOCTOU race window
+    if (preApprovalHash && existing.hash && preApprovalHash !== existing.hash) {
+      return {
+        ok: false,
+        tool: name,
+        message: 'soubor se zmenil behem schvalovani; nacti ho znovu (read_file) a opakuj write_file'
       };
     }
     const applied = await deps.applyFileContent(uri, text);
