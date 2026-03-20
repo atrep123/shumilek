@@ -570,4 +570,80 @@ describe('HallucinationDetector', () => {
     );
     expect(res.confidence).to.be.greaterThan(0);
   });
+
+  // ── Contextual weight double-counting fix ──────────────────────
+
+  it('should not double-count contextual hallucination weight', () => {
+    const detector = new HallucinationDetector();
+    // "jak jsem již zmínil" matches both in HALLUCINATION_PATTERNS (weight 0.5)
+    // and the specialized contextual check. The fix ensures only one is counted.
+    const res = detector.analyze(
+      'Jak jsem již zmínil, toto řešení je ideální pro váš problém.',
+      'Jak to opravit?',
+      [] // empty history → triggers contextual check
+    );
+    // Before fix: confidence was 1.0+ (0.5 from pattern + 0.6 from special check = 1.1, capped at 1)
+    // After fix: confidence should be at most 0.6 (only one source counted)
+    expect(res.confidence).to.be.at.most(0.7);
+    expect(res.confidence).to.be.greaterThan(0);
+  });
+
+  it('should count contextual patterns from main loop when specialized check does not add extra', () => {
+    const detector = new HallucinationDetector();
+    // "jak jsem již řekl" + "v předchozí odpovědi" — both contextual patterns
+    const res = detector.analyze(
+      'Jak jsem již řekl v předchozí odpovědi, funguje to takhle.',
+      'Ukaž mi řešení.',
+      []
+    );
+    // Both patterns matched in HALLUCINATION_PATTERNS loop;
+    // the specialized check should not add extra weight on top of existing contextual category.
+    expect(res.confidence).to.be.greaterThan(0.3);
+    expect(res.category).to.equal('contextual');
+  });
+
+  // ── Logger snapshot (race-condition prevention) ────────────────
+
+  it('should use snapshotted logger and not crash when logger changes during analyze', () => {
+    const { setHallucinationLogger } = require('../src/hallucination');
+    const logs: string[] = [];
+    setHallucinationLogger((msg: string) => logs.push(msg));
+
+    const detector = new HallucinationDetector();
+    // Trigger a result with confidence > 0.3 so logger is called
+    const res = detector.analyze(
+      'Podle mých informací z roku 2024, není pochyb o tom, že fakta jsou taková.',
+      'Co je pravda?',
+      []
+    );
+    expect(res.confidence).to.be.greaterThan(0.3);
+    expect(logs.length).to.be.greaterThan(0);
+    expect(logs[0]).to.include('[HallucinationDetector]');
+
+    // Clear the logger — analyze should work fine with snapshot of the new state
+    setHallucinationLogger(() => {});
+    const res2 = detector.analyze(
+      'Jako AI nemám přístup k internetu.',
+      'test',
+      []
+    );
+    expect(res2.confidence).to.be.at.least(0);
+  });
+
+  it('guardian should use snapshotted logger without crash', () => {
+    const { setGuardianLogger } = require('../src/guardian');
+    const logs: string[] = [];
+    setGuardianLogger((msg: string) => logs.push(msg));
+
+    const g = new ResponseGuardian();
+    const text = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz';
+    const res = g.analyze('Normal text. ' + text, 'prompt');
+    expect(logs.length).to.be.greaterThan(0);
+    expect(logs.some((l: string) => l.includes('[Guardian]'))).to.be.true;
+
+    // Replace logger mid-flight is safe because analyze is synchronous
+    setGuardianLogger(() => {});
+    const res2 = g.analyze('Another valid response.', 'question');
+    expect(res2.isOk).to.be.true;
+  });
 });

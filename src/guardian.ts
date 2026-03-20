@@ -41,9 +41,13 @@ export class ResponseGuardian {
   private previousPrompts: string[] = [];
 
   analyze(response: string, userPrompt: string): GuardianResult {
+    // Snapshot the logger to avoid races if setGuardianLogger() is
+    // called while this method is running.
+    const log = logFn;
+
     guardianStats.totalChecks++;
     
-    logFn?.(`[Guardian] Analyzing response (${response.length} chars) for prompt: "${userPrompt.slice(0, 50)}..."`);
+    log?.(`[Guardian] Analyzing response (${response.length} chars) for prompt: "${userPrompt.slice(0, 50)}..."`);
     
     const issues: string[] = [];
     let cleanedResponse = response;
@@ -115,7 +119,7 @@ export class ResponseGuardian {
         criticalPatterns.some(p => e.toLowerCase().includes(p.toLowerCase()))
       );
       if (hasCritical) {
-        logFn?.(`[Guardian] 🚨 KRITICKÁ CHYBA - vyžadován retry`);
+        log?.(`[Guardian] 🚨 KRITICKÁ CHYBA - vyžadován retry`);
         shouldRetry = true;
       }
     }
@@ -128,7 +132,7 @@ export class ResponseGuardian {
       cleanedResponse = truncationResult.text;
       issues.push(...truncationResult.issues);
       guardianStats.truncationsRepaired++;
-      logFn?.(`[Guardian] Truncation repaired: ${truncationResult.issues.join('; ')}`);
+      log?.(`[Guardian] Truncation repaired: ${truncationResult.issues.join('; ')}`);
     }
 
     if (shouldRetry) {
@@ -154,7 +158,15 @@ export class ResponseGuardian {
       }
       return { detected: false, severity: 'low' };
     }
-    const codePoints = [...text];
+
+    let codePoints: string[];
+    try {
+      codePoints = [...text];
+    } catch {
+      // RangeError on spread if text is extremely large or memory is low
+      return { detected: false, severity: 'low' };
+    }
+
     const maxPatternLen = Math.min(200, Math.floor(codePoints.length / 3));
     const startTime = Date.now();
     const MAX_CHECKS = 8000;

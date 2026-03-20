@@ -78,6 +78,10 @@ export class HallucinationDetector {
   }
 
   analyze(response: string, userPrompt: string, conversationHistory: ChatMessage[]): HallucinationResult {
+    // Snapshot the logger to avoid races if setHallucinationLogger() is
+    // called while this method is running.
+    const log = logFn;
+
     const result: HallucinationResult = {
       isHallucination: false,
       confidence: 0,
@@ -112,8 +116,13 @@ export class HallucinationDetector {
         if (this.hasFollowupIntent(userPrompt)) {
           result.reasons.push('Kontextová reference byla vyžádána promptem uživatele');
         } else {
-          totalWeight += 0.6;
-          categoryWeights['contextual'] = (categoryWeights['contextual'] || 0) + 0.6;
+          // Only add extra weight if the main pattern loop didn't already
+          // match contextual patterns (avoid double-counting).
+          const alreadyCounted = categoryWeights['contextual'] || 0;
+          if (alreadyCounted === 0) {
+            totalWeight += 0.6;
+            categoryWeights['contextual'] = 0.6;
+          }
           result.reasons.push('Reference na neexistující předchozí konverzaci');
         }
       }
@@ -158,9 +167,9 @@ export class HallucinationDetector {
 
     // Log to output
     if (result.isHallucination || result.confidence > 0.3) {
-      logFn?.(`[HallucinationDetector] ⚠️ Confidence: ${(result.confidence * 100).toFixed(1)}%`);
-      logFn?.(`[HallucinationDetector] Category: ${result.category}`);
-      result.reasons.forEach(r => logFn?.(`[HallucinationDetector]   - ${r}`));
+      log?.(`[HallucinationDetector] ⚠️ Confidence: ${(result.confidence * 100).toFixed(1)}%`);
+      log?.(`[HallucinationDetector] Category: ${result.category}`);
+      result.reasons.forEach(r => log?.(`[HallucinationDetector]   - ${r}`));
     }
 
     return result;
