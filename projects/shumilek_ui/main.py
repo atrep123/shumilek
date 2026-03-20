@@ -13,6 +13,7 @@ import webbrowser
 from pathlib import Path
 from tkinter import filedialog, ttk
 from urllib import error as urlerror
+from urllib.parse import urlparse
 from urllib import request as urlrequest
 
 try:
@@ -202,8 +203,14 @@ class PixelWorkspaceApp:
             return
         try:
             log_path.parent.mkdir(parents=True, exist_ok=True)
-            self.fault_log_handle = log_path.open("a", encoding="utf-8")
-            faulthandler.enable(self.fault_log_handle, all_threads=True)
+            handle = log_path.open("a", encoding="utf-8")
+            try:
+                faulthandler.enable(handle, all_threads=True)
+            except (RuntimeError, AttributeError):
+                handle.close()
+                self.fault_log_handle = None
+                return
+            self.fault_log_handle = handle
         except (AttributeError, OSError, RuntimeError):
             self.fault_log_handle = None
             return
@@ -309,7 +316,11 @@ class PixelWorkspaceApp:
         return self._pixellab_auth_cache or None
 
     def _auth_for_url(self, url: str) -> dict[str, str] | None:
-        if "api.pixellab.ai" in url:
+        try:
+            netloc = urlparse(url).netloc or ""
+        except (ValueError, AttributeError):
+            return None
+        if netloc == "api.pixellab.ai" or netloc.endswith(".pixellab.ai"):
             return self._get_pixellab_auth()
         return None
 
@@ -2018,11 +2029,12 @@ class PixelWorkspaceApp:
                     return job
         return None
 
-    def _compact_ui_text(self, value: object, max_length: int = 72) -> str:
+    @staticmethod
+    def _compact_ui_text(value: object, max_length: int = 72) -> str:
         normalized = " ".join(str(value or "").split())
         if len(normalized) <= max_length:
             return normalized
-        return f"{normalized[: max_length - 3].rstrip()}..."
+        return normalized[: max_length - 1].rstrip() + "\u2026"
 
     def _build_server_visual_subtitle(self, job: object, max_length: int = 68) -> str:
         status = str(getattr(job, "status", "")).strip().lower() or "processing"

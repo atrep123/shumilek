@@ -2282,7 +2282,7 @@ class PixelWorkspaceAppFlowTests(unittest.TestCase):
 
         self.assertIn("Live PixelLab feed: PROCESSING", str(app.server_visual_text.get()))
         self.assertIn("processing |", str(app.server_visual_text.get()))
-        self.assertIn("...", str(app.server_visual_text.get()))
+        self.assertIn("\u2026", str(app.server_visual_text.get()))
         self.assertNotIn(long_prompt, str(app.server_visual_text.get()))
 
     def test_clear_server_visuals_keeps_live_canvases_blank(self) -> None:
@@ -2326,7 +2326,7 @@ class PixelWorkspaceAppFlowTests(unittest.TestCase):
 
         self.assertIn("Prompt: ", app.asset_meta_text.get())
         self.assertIn("Detail: ", app.asset_meta_text.get())
-        self.assertIn("...", app.asset_meta_text.get())
+        self.assertIn("\u2026", app.asset_meta_text.get())
         self.assertNotIn(long_prompt, app.asset_meta_text.get())
         self.assertNotIn(long_detail, app.asset_meta_text.get())
 
@@ -2523,6 +2523,122 @@ class PixelWorkspaceAppFlowTests(unittest.TestCase):
             self.assertEqual(len(lines), 20)
             for line in lines:
                 self.assertTrue(line.startswith("line-"), f"Corrupted line: {line!r}")
+
+
+class CompactUiTextTests(unittest.TestCase):
+    """Tests for _compact_ui_text staticmethod."""
+
+    def test_short_string_returned_unchanged(self) -> None:
+        result = PixelWorkspaceApp._compact_ui_text("hello", 72)
+        self.assertEqual(result, "hello")
+
+    def test_none_returns_empty(self) -> None:
+        result = PixelWorkspaceApp._compact_ui_text(None, 72)
+        self.assertEqual(result, "")
+
+    def test_whitespace_normalized(self) -> None:
+        result = PixelWorkspaceApp._compact_ui_text("  hello   world  ", 72)
+        self.assertEqual(result, "hello world")
+
+    def test_long_string_truncated_with_ellipsis(self) -> None:
+        result = PixelWorkspaceApp._compact_ui_text("a" * 100, 20)
+        self.assertLessEqual(len(result), 20)
+        self.assertTrue(result.endswith("\u2026"))
+
+    def test_exact_max_length_not_truncated(self) -> None:
+        text = "a" * 72
+        result = PixelWorkspaceApp._compact_ui_text(text, 72)
+        self.assertEqual(result, text)
+
+    def test_result_never_exceeds_max_length(self) -> None:
+        for length in (5, 10, 20, 50, 72):
+            result = PixelWorkspaceApp._compact_ui_text("x" * 200, length)
+            self.assertLessEqual(len(result), length, f"Failed for max_length={length}")
+
+    def test_non_string_value_converted(self) -> None:
+        result = PixelWorkspaceApp._compact_ui_text(42, 72)
+        self.assertEqual(result, "42")
+
+
+class BlendColorTests(unittest.TestCase):
+    """Tests for _blend_color method."""
+
+    def _blend(self, start: str, end: str, amount: float) -> str:
+        app = PixelWorkspaceApp.__new__(PixelWorkspaceApp)
+        return app._blend_color(start, end, amount)
+
+    def test_blend_zero_returns_start(self) -> None:
+        result = self._blend("#FF0000", "#0000FF", 0.0)
+        self.assertEqual(result, "#FF0000")
+
+    def test_blend_one_returns_end(self) -> None:
+        result = self._blend("#FF0000", "#0000FF", 1.0)
+        self.assertEqual(result, "#0000FF")
+
+    def test_blend_half_returns_midpoint(self) -> None:
+        result = self._blend("#000000", "#FFFFFF", 0.5)
+        # Each channel should be ~128
+        r = int(result[1:3], 16)
+        g = int(result[3:5], 16)
+        b = int(result[5:7], 16)
+        self.assertTrue(126 <= r <= 130)
+        self.assertTrue(126 <= g <= 130)
+        self.assertTrue(126 <= b <= 130)
+
+    def test_blend_returns_valid_hex(self) -> None:
+        import re
+        result = self._blend("#1A2B3C", "#4D5E6F", 0.73)
+        self.assertRegex(result, re.compile(r'^#[0-9A-F]{6}$'))
+
+    def test_blend_same_colors(self) -> None:
+        result = self._blend("#AABBCC", "#AABBCC", 0.5)
+        self.assertEqual(result, "#AABBCC")
+
+
+class AuthForUrlTests(unittest.TestCase):
+    """Tests for _auth_for_url URL validation."""
+
+    def _make_app(self) -> PixelWorkspaceApp:
+        app = PixelWorkspaceApp.__new__(PixelWorkspaceApp)
+        app._pixellab_auth_cache = {"Authorization": "Bearer test-token"}
+        return app
+
+    def test_pixellab_api_returns_auth(self) -> None:
+        app = self._make_app()
+        result = app._auth_for_url("https://api.pixellab.ai/v1/assets/123")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["Authorization"], "Bearer test-token")
+
+    def test_subdomain_returns_auth(self) -> None:
+        app = self._make_app()
+        result = app._auth_for_url("https://cdn.pixellab.ai/assets/image.png")
+        self.assertIsNotNone(result)
+
+    def test_unrelated_domain_returns_none(self) -> None:
+        app = self._make_app()
+        result = app._auth_for_url("https://example.com/image.png")
+        self.assertIsNone(result)
+
+    def test_spoofed_domain_in_path_returns_none(self) -> None:
+        """Regression: previously 'api.pixellab.ai' in url matched path components."""
+        app = self._make_app()
+        result = app._auth_for_url("https://evil.com/api.pixellab.ai/steal")
+        self.assertIsNone(result)
+
+    def test_spoofed_domain_in_query_returns_none(self) -> None:
+        app = self._make_app()
+        result = app._auth_for_url("https://evil.com/?redirect=api.pixellab.ai")
+        self.assertIsNone(result)
+
+    def test_empty_url_returns_none(self) -> None:
+        app = self._make_app()
+        result = app._auth_for_url("")
+        self.assertIsNone(result)
+
+    def test_non_url_string_returns_none(self) -> None:
+        app = self._make_app()
+        result = app._auth_for_url("not a url at all")
+        self.assertIsNone(result)
 
 
 if __name__ == "__main__":
