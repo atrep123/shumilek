@@ -2439,6 +2439,10 @@ PŘÍSTUP K PRÁCI:
           message: `🔄 Přechodná chyba sítě — zkouším znovu (${retryCount + 1}/${maxRetries})...`
         });
         await new Promise(resolve => setTimeout(resolve, backoffMs));
+        if (localAbortController.signal.aborted) {
+          postToAllWebviews({ type: 'responseStopped' });
+          return;
+        }
         return handleChatInternal(panel, context, trimmedPrompt, messages, retryCount + 1);
       }
       // Remove the user message on error (only if it was our first attempt)

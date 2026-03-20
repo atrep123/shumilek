@@ -308,7 +308,7 @@ export function resolveChatConfig(config: vscode.WorkspaceConfiguration): ChatCo
   const timeout = resolveTimeoutMs(config);
 
   let maxRetries = config.get<number>('maxRetries', 2);
-  if (typeof maxRetries !== 'number' || isNaN(maxRetries) || maxRetries < 0) {
+  if (typeof maxRetries !== 'number' || Number.isNaN(maxRetries) || maxRetries < 0) {
     maxRetries = 2;
   }
   maxRetries = Math.min(maxRetries, 5);
