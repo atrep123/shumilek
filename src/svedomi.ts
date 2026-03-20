@@ -174,23 +174,26 @@ export class SvedomiValidator {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
-      const res = await fetchFn(`${this.baseUrl}/api/generate`, {
-        method: 'POST',
-        headers: new HeadersCtor({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({
-          model: this.model,
-          prompt: validationPrompt,
-          stream: false,
-          options: {
-            temperature: 0.1,
-            num_predict: 200,
-            top_p: 0.9
-          }
-        }),
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
+      let res;
+      try {
+        res = await fetchFn(`${this.baseUrl}/api/generate`, {
+          method: 'POST',
+          headers: new HeadersCtor({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            model: this.model,
+            prompt: validationPrompt,
+            stream: false,
+            options: {
+              temperature: 0.1,
+              num_predict: 200,
+              top_p: 0.9
+            }
+          }),
+          signal: controller.signal
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (!res.ok) {
         logChannel?.appendLine(`[Svedomi] Error: ${res.status} ${res.statusText}`);

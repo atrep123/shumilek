@@ -302,6 +302,30 @@ describe('SvedomiValidator', () => {
       expect(res.reason).to.include('timeout');
     });
 
+    it('should clear timeout even when fetch throws non-AbortError', async () => {
+      const v = new SvedomiValidator();
+      let timeoutCleared = false;
+      const origSetTimeout = globalThis.setTimeout;
+      const origClearTimeout = globalThis.clearTimeout;
+      let capturedId: any;
+      globalThis.setTimeout = ((fn: any, ms: any) => {
+        capturedId = origSetTimeout(fn, ms);
+        return capturedId;
+      }) as any;
+      globalThis.clearTimeout = ((id: any) => {
+        if (id === capturedId) timeoutCleared = true;
+        origClearTimeout(id);
+      }) as any;
+      globalThis.fetch = async () => { throw new Error('ECONNREFUSED'); };
+      try {
+        await v.validate('prompt', 'response');
+        expect(timeoutCleared).to.be.true;
+      } finally {
+        globalThis.setTimeout = origSetTimeout;
+        globalThis.clearTimeout = origClearTimeout;
+      }
+    });
+
     it('should return valid result on successful API call', async () => {
       const v = new SvedomiValidator();
       globalThis.fetch = async () => ({

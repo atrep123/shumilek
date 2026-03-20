@@ -25,6 +25,7 @@ const {
   handleDeleteFileTool,
   handleFetchWebpageTool,
   handleGetDiagnosticsTool,
+  handleApplyPatchTool,
 } = require('../src/toolHandlers');
 
 // --- Helper: minimal deps factory ---
@@ -622,5 +623,56 @@ describe('handleGetDiagnosticsTool', () => {
     expect((result.data as any).diagnostics).to.have.length(1);
     // Restore
     vscodeMock.languages.getDiagnostics = () => [];
+  });
+});
+
+// ====================== handleApplyPatchTool TOCTOU ======================
+describe('handleApplyPatchTool', () => {
+  it('rejects write when file hash changed during approval', async () => {
+    let readCount = 0;
+    const deps = makeDeps({
+      parseUnifiedDiff: () => [{ oldPath: 'src/a.ts', newPath: 'src/a.ts', hunks: [{ oldStart: 1, oldLines: 1, newStart: 1, newLines: 1, lines: ['-old', '+new'] }] }],
+      applyUnifiedDiffToText: () => ({ text: 'new content', appliedHunks: 1, totalHunks: 1 }),
+      readFileForTool: async () => {
+        readCount++;
+        // First read: original file content
+        // Second read (pre-approval hash): hash_v1
+        // Third read (pre-write check): hash_v2 — changed!
+        if (readCount <= 2) return { text: 'old content', size: 11, hash: 'hash_v1' };
+        return { text: 'externally modified', size: 20, hash: 'hash_v2' };
+      },
+      showDiffAndConfirm: async () => true,
+    });
+    // stat succeeds so file "exists"
+    vscodeMock.workspace.fs.stat = async () => ({ type: 1 });
+    const result = await handleApplyPatchTool(
+      'apply_patch',
+      { diff: '--- a/src/a.ts\n+++ b/src/a.ts\n@@ -1 +1 @@\n-old\n+new' },
+      true, // confirmEdits
+      { edit: false, commands: false }, // not auto-approved
+      deps
+    );
+    expect(result.ok).to.be.false;
+    expect(result.message).to.include('zmenil behem schvalovani');
+  });
+
+  it('applies patch when hash is stable during approval', async () => {
+    const deps = makeDeps({
+      parseUnifiedDiff: () => [{ oldPath: 'src/b.ts', newPath: 'src/b.ts', hunks: [{ oldStart: 1, oldLines: 1, newStart: 1, newLines: 1, lines: ['-old', '+new'] }] }],
+      applyUnifiedDiffToText: () => ({ text: 'new content', appliedHunks: 1, totalHunks: 1 }),
+      readFileForTool: async () => ({ text: 'old content', size: 11, hash: 'stable_hash' }),
+      showDiffAndConfirm: async () => true,
+      applyFileContent: async () => true,
+    });
+    vscodeMock.workspace.fs.stat = async () => ({ type: 1 });
+    const result = await handleApplyPatchTool(
+      'apply_patch',
+      { diff: '--- a/src/b.ts\n+++ b/src/b.ts\n@@ -1 +1 @@\n-old\n+new' },
+      true,
+      { edit: false, commands: false },
+      deps
+    );
+    expect(result.ok).to.be.true;
+    expect(result.approved).to.be.true;
   });
 });

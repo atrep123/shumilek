@@ -1030,6 +1030,13 @@ export async function handleApplyPatchTool(
       };
     }
 
+    // Capture pre-approval hash for TOCTOU detection on existing files
+    let preApprovalHash: string | undefined;
+    if (exists && confirmEdits && !autoApprove.edit) {
+      const preRead = await deps.readFileForTool(uri, deps.DEFAULT_MAX_WRITE_BYTES);
+      preApprovalHash = preRead.hash;
+    }
+
     let approved = true;
     if (confirmEdits && !autoApprove.edit) {
       if (exists) {
@@ -1064,6 +1071,18 @@ export async function handleApplyPatchTool(
     }
 
     if (exists) {
+      // Re-verify file hash before write to close TOCTOU race window
+      if (preApprovalHash) {
+        const preWriteRead = await deps.readFileForTool(uri, deps.DEFAULT_MAX_WRITE_BYTES);
+        if (preWriteRead.hash && preApprovalHash !== preWriteRead.hash) {
+          return {
+            ok: false,
+            tool: name,
+            message: 'soubor se zmenil behem schvalovani; nacti ho znovu (read_file) a opakuj apply_patch',
+            data: appliedFiles.length > 0 ? { appliedFiles } : undefined
+          };
+        }
+      }
       const appliedOk = await deps.applyFileContent(uri, applied.text);
       if (!appliedOk) {
         const data = appliedFiles.length > 0 ? { appliedFiles } : undefined;
