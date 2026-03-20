@@ -682,6 +682,7 @@ ${this.index.structure}`;
 
     try {
       const stat = await vscode.workspace.fs.stat(uri);
+      if (!this.index) return;
       if (stat.size > this.maxFileSize) {
         this.removeFile(uri);
         return;
@@ -706,6 +707,7 @@ ${this.index.structure}`;
       this.index.symbols = this.index.symbols.filter(s => s.filePath !== uri.fsPath);
       if (fileInfo.isSource) {
         const fileSymbols = await this.getFileSymbols(uri.fsPath);
+        if (!this.index) return;
         this.index.symbols.push(...fileSymbols);
       }
 

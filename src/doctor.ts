@@ -108,11 +108,10 @@ export function formatDoctorReport(report: DoctorReport): string {
 }
 
 async function checkOllamaConnection(baseUrl: string, timeoutMs: number): Promise<DoctorCheck> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
     const res = await fetch(`${baseUrl}/api/tags`, { signal: controller.signal });
-    clearTimeout(timer);
     if (res.ok) {
       return { name: 'Ollama spojení', status: 'ok', detail: `${baseUrl} — odezva OK` };
     }
@@ -123,6 +122,8 @@ async function checkOllamaConnection(baseUrl: string, timeoutMs: number): Promis
       return { name: 'Ollama spojení', status: 'fail', detail: `${baseUrl} — timeout (${timeoutMs}ms)` };
     }
     return { name: 'Ollama spojení', status: 'fail', detail: `${baseUrl} — ${msg}` };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -132,11 +133,10 @@ interface OllamaModel {
 }
 
 async function listModels(baseUrl: string, timeoutMs: number): Promise<OllamaModel[]> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
     const res = await fetch(`${baseUrl}/api/tags`, { signal: controller.signal });
-    clearTimeout(timer);
     if (!res.ok) {
       await res.text().catch(() => {});
       return [];
@@ -145,13 +145,15 @@ async function listModels(baseUrl: string, timeoutMs: number): Promise<OllamaMod
     return data?.models ?? [];
   } catch {
     return [];
+  } finally {
+    clearTimeout(timer);
   }
 }
 
 async function checkGeneration(baseUrl: string, model: string, timeoutMs: number): Promise<DoctorCheck> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
     const start = Date.now();
     const res = await fetch(`${baseUrl}/api/generate`, {
       method: 'POST',
@@ -159,7 +161,6 @@ async function checkGeneration(baseUrl: string, model: string, timeoutMs: number
       body: JSON.stringify({ model, prompt: 'Say OK', stream: false }),
       signal: controller.signal
     });
-    clearTimeout(timer);
     const elapsed = Date.now() - start;
     if (!res.ok) {
       await res.text().catch(() => {});
@@ -175,5 +176,7 @@ async function checkGeneration(baseUrl: string, model: string, timeoutMs: number
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return { name: 'Generování', status: 'fail', detail: `${model} — ${msg}` };
+  } finally {
+    clearTimeout(timer);
   }
 }
