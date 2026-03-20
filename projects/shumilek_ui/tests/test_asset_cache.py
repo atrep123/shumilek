@@ -292,6 +292,22 @@ class DownloadSecurityTests(unittest.TestCase):
         fake_resp.read.assert_not_called()
         fake_conn.close.assert_called_once()
 
+    def test_download_rejects_oversized_response(self) -> None:
+        fake_resp = mock.MagicMock()
+        fake_resp.status = 200
+        # Return >500MB of data
+        fake_resp.read.return_value = b"x" * 500_000_002
+        fake_resp.getheader.return_value = "application/octet-stream"
+        fake_conn = mock.MagicMock()
+        fake_conn.getresponse.return_value = fake_resp
+
+        with mock.patch("projects.shumilek_ui.asset_cache._is_public_download_host", return_value=True), \
+             mock.patch("projects.shumilek_ui.asset_cache.http.client.HTTPSConnection", return_value=fake_conn):
+            with self.assertRaises(ValueError) as ctx:
+                _download_with_auth_redirect("https://cdn.example.com/huge.bin")
+
+        self.assertIn("too large", str(ctx.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

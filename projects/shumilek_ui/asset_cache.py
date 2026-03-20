@@ -94,7 +94,10 @@ def _download_with_auth_redirect(url: str, auth_headers: dict[str, str] | None =
                 continue
             if resp.status != 200:
                 raise ValueError(f"HTTP {resp.status} downloading {url}")
-            data = resp.read()
+            MAX_DOWNLOAD_BYTES = 500_000_000  # 500 MB
+            data = resp.read(MAX_DOWNLOAD_BYTES + 1)
+            if len(data) > MAX_DOWNLOAD_BYTES:
+                raise ValueError(f"Download too large (>{MAX_DOWNLOAD_BYTES} bytes)")
             content_type = resp.getheader("Content-Type", "application/octet-stream")
             return data, content_type
         finally:

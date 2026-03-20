@@ -152,6 +152,19 @@ describe('chatPersistence', () => {
         console.warn = origWarn;
       }
     });
+
+    it('caps individual message content at 100KB', () => {
+      const longContent = 'Z'.repeat(200_000);
+      const result = sanitizeChatMessages({
+        messages: [
+          { role: 'user', content: longContent },
+          { role: 'assistant', content: 'short' }
+        ]
+      });
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].content.length).to.equal(100_000);
+      expect(result[1].content).to.equal('short');
+    });
   });
 
   // ---- formatQualityReport ----

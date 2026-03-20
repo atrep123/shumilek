@@ -34,9 +34,10 @@ export function sanitizeChatMessages(raw: unknown): ChatMessage[] {
   if (!raw || typeof raw !== 'object') return [];
   const maybeState = raw as any;
   const arr = Array.isArray(maybeState.messages) ? maybeState.messages : [];
+  const MAX_CONTENT_LEN = 100_000;
   const sanitized = arr.filter(isChatMessage).map((m: ChatMessage) => ({
     role: m.role,
-    content: m.content,
+    content: m.content.length > MAX_CONTENT_LEN ? m.content.slice(0, MAX_CONTENT_LEN) : m.content,
     timestamp: typeof m.timestamp === 'number' ? m.timestamp : undefined
   }));
 

@@ -120,7 +120,7 @@ class PixelLabBridgeTests(unittest.TestCase):
             def __init__(self, body: str) -> None:
                 self._body = body.encode("utf-8")
 
-            def read(self) -> bytes:
+            def read(self, max_bytes=None) -> bytes:
                 return self._body
 
             def __enter__(self) -> "_FakeResponse":
@@ -399,7 +399,7 @@ class PixelLabBridgeTests(unittest.TestCase):
         class _FakeResponse:
             def __init__(self) -> None:
                 pass
-            def read(self) -> bytes:
+            def read(self, max_bytes=None) -> bytes:
                 return b'{"ok": true, "result": {"character_id": "c1"}}'
             def __enter__(self):
                 return self
@@ -422,7 +422,7 @@ class PixelLabBridgeTests(unittest.TestCase):
         captured_timeouts: list[float] = []
 
         class _FakeResponse:
-            def read(self) -> bytes:
+            def read(self, max_bytes=None) -> bytes:
                 return b'{"ok": true}'
             def __enter__(self):
                 return self
@@ -751,6 +751,43 @@ class PixelLabBridgeTests(unittest.TestCase):
         self.assertEqual(len(jobs), 1)
         self.assertIn("t1", jobs[0].preview_url)
         self.assertIn("t1", jobs[0].download_url)
+
+    def test_read_json_response_rejects_oversized_response(self) -> None:
+        from projects.shumilek_ui.pixellab_bridge import _read_json_response, MAX_BRIDGE_RESPONSE_BYTES
+
+        class _HugeResponse:
+            def read(self, max_bytes=None):
+                # Return more data than the cap allows
+                return b"x" * (MAX_BRIDGE_RESPONSE_BYTES + 2)
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return None
+
+        with mock.patch("projects.shumilek_ui.pixellab_bridge.urlrequest.urlopen", return_value=_HugeResponse()):
+            from urllib import request as urlrequest
+            req = urlrequest.Request("http://127.0.0.1:9999/huge")
+            with self.assertRaises(ValueError) as ctx:
+                _read_json_response(req)
+            self.assertIn("too large", str(ctx.exception))
+
+    def test_read_text_response_rejects_oversized_response(self) -> None:
+        from projects.shumilek_ui.pixellab_bridge import _read_text_response, MAX_BRIDGE_RESPONSE_BYTES
+
+        class _HugeResponse:
+            def read(self, max_bytes=None):
+                return b"y" * (MAX_BRIDGE_RESPONSE_BYTES + 2)
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return None
+
+        with mock.patch("projects.shumilek_ui.pixellab_bridge.urlrequest.urlopen", return_value=_HugeResponse()):
+            from urllib import request as urlrequest
+            req = urlrequest.Request("http://127.0.0.1:9999/huge-text")
+            with self.assertRaises(ValueError) as ctx:
+                _read_text_response(req)
+            self.assertIn("too large", str(ctx.exception))
 
 
 if __name__ == "__main__":

@@ -42,9 +42,15 @@ def _candidate_remote_mcp_paths() -> list[Path]:
     return unique_candidates
 
 
+MAX_BRIDGE_RESPONSE_BYTES = 50_000_000  # 50 MB
+
+
 def _read_json_response(req: urlrequest.Request, timeout: float = 1.5) -> dict[str, Any]:
     with urlrequest.urlopen(req, timeout=timeout) as response:
-        raw = response.read().decode("utf-8")
+        raw = response.read(MAX_BRIDGE_RESPONSE_BYTES + 1)
+        if len(raw) > MAX_BRIDGE_RESPONSE_BYTES:
+            raise ValueError(f"Bridge response too large (>{MAX_BRIDGE_RESPONSE_BYTES} bytes)")
+        raw = raw.decode("utf-8")
     parsed = json.loads(raw or "{}")
     if not isinstance(parsed, dict):
         raise ValueError("Bridge response must be a JSON object")
@@ -53,7 +59,10 @@ def _read_json_response(req: urlrequest.Request, timeout: float = 1.5) -> dict[s
 
 def _read_text_response(req: urlrequest.Request) -> str:
     with urlrequest.urlopen(req, timeout=REMOTE_MCP_HTTP_TIMEOUT_SECONDS) as response:
-        return response.read().decode("utf-8")
+        raw = response.read(MAX_BRIDGE_RESPONSE_BYTES + 1)
+        if len(raw) > MAX_BRIDGE_RESPONSE_BYTES:
+            raise ValueError(f"Bridge text response too large (>{MAX_BRIDGE_RESPONSE_BYTES} bytes)")
+        return raw.decode("utf-8")
 
 
 def _parse_mcp_messages(raw: str) -> list[dict[str, Any]]:
