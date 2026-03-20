@@ -41,7 +41,8 @@ def _load_icon(name: str, size: tuple[int, int] = (20, 20)) -> "ImageTk.PhotoIma
         photo = ImageTk.PhotoImage(img)
         _loaded_images[name] = photo
         return photo
-    except Exception:
+    except (OSError, ValueError) as e:
+        print(f"[WARN] Failed to load icon {name}: {e}")
         return None
     finally:
         if img is not None:
@@ -200,7 +201,7 @@ class ParticleSystem:
                 canvas.create_rectangle(
                     p.x, p.y, p.x + p.size, p.y + p.size,
                     fill=col, outline="", tags="particle")
-            except Exception:
+            except (ValueError, tk.TclError):
                 pass
 
 
@@ -660,7 +661,11 @@ class ShumilekHive:
             content = fp.read_text(encoding="utf-8")
             self._file_content_cache[fp] = (mtime, content)
             return content
-        except Exception:
+        except FileNotFoundError:
+            self._file_content_cache.pop(fp, None)
+            return ""
+        except (OSError, UnicodeDecodeError) as e:
+            print(f"[WARN] Cannot read {fp.name}: {e}")
             self._file_content_cache.pop(fp, None)
             return ""
 
@@ -1921,7 +1926,7 @@ class ShumilekHive:
         """Show a file in the split pane."""
         try:
             content = path.read_text(encoding="utf-8")
-        except Exception:
+        except (OSError, UnicodeDecodeError):
             # Try to get from open tabs
             for tab in self._open_tabs:
                 if tab["path"] == path:
