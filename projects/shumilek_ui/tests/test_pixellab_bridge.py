@@ -8,7 +8,17 @@ import threading
 import unittest
 from unittest import mock
 
-from projects.shumilek_ui.pixellab_bridge import BRIDGE_MANIFEST_ENV, PixelLabBridge, PixelLabJob, discover_remote_tool_bindings
+from projects.shumilek_ui.pixellab_bridge import (
+    BRIDGE_MANIFEST_ENV,
+    PixelLabBridge,
+    PixelLabJob,
+    _extract_backtick_value,
+    _extract_markdown_urls,
+    _extract_named_value,
+    _parse_mcp_messages,
+    _tool_text_content,
+    discover_remote_tool_bindings,
+)
 
 
 class _BridgeHandler(BaseHTTPRequestHandler):
@@ -426,6 +436,123 @@ class PixelLabBridgeTests(unittest.TestCase):
             _read_json_response(req)
 
         self.assertEqual(captured_timeouts, [1.5])
+
+    # ------------------------------------------------------------------
+    # Round 34 – expanded coverage
+    # ------------------------------------------------------------------
+
+    def test_parse_mcp_messages_survives_malformed_json(self) -> None:
+        raw = "data: {broken\n\ndata: " + json.dumps({"jsonrpc": "2.0", "id": 1, "result": {"ok": True}}) + "\n\n"
+        messages = _parse_mcp_messages(raw)
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(messages[0]["result"]["ok"], True)
+
+    def test_parse_mcp_messages_malformed_standalone_json(self) -> None:
+        self.assertEqual(_parse_mcp_messages("{bad json}"), [])
+
+    def test_parse_mcp_messages_empty_input(self) -> None:
+        self.assertEqual(_parse_mcp_messages(""), [])
+        self.assertEqual(_parse_mcp_messages("   "), [])
+
+    def test_parse_mcp_messages_trailing_buffer_malformed(self) -> None:
+        raw = "data: {not valid json"
+        messages = _parse_mcp_messages(raw)
+        self.assertEqual(messages, [])
+
+    def test_submit_character_none_raises_value_error(self) -> None:
+        bridge = PixelLabBridge()
+        with self.assertRaises(ValueError):
+            bridge.submit_character(None)  # type: ignore[arg-type]
+
+    def test_submit_tileset_none_raises_value_error(self) -> None:
+        bridge = PixelLabBridge()
+        with self.assertRaises(ValueError):
+            bridge.submit_tileset(None, "upper")  # type: ignore[arg-type]
+        with self.assertRaises(ValueError):
+            bridge.submit_tileset("lower", None)  # type: ignore[arg-type]
+
+    def test_refresh_jobs_isolates_per_job_failure(self) -> None:
+        call_count = 0
+
+        def get_character(**kwargs):
+            nonlocal call_count
+            call_count += 1
+            if kwargs["character_id"] == "fail-id":
+                raise RuntimeError("network error")
+            return {
+                "status": "ready",
+                "name": "good char",
+                "preview_url": "https://example.invalid/good.png",
+            }
+
+        bridge = PixelLabBridge({"get_character": get_character})
+        with bridge._jobs_lock:
+            bridge.jobs = [
+                PixelLabJob(job_id="j1", job_type="character", label="Char", prompt="ok", status="queued", source="mcp", remote_id="good-id"),
+                PixelLabJob(job_id="j2", job_type="character", label="Char", prompt="fail", status="queued", source="mcp", remote_id="fail-id"),
+            ]
+
+        jobs = bridge.refresh_jobs()
+        self.assertEqual(len(jobs), 2)
+        good = next(j for j in jobs if j.job_id == "j1")
+        failed = next(j for j in jobs if j.job_id == "j2")
+        self.assertEqual(good.status, "ready")
+        self.assertEqual(failed.status, "queued")  # kept original
+
+    def test_seed_jobs_preserves_concurrent_submissions(self) -> None:
+        import threading
+
+        def list_characters(**_kwargs):
+            # Simulate slow HTTP: submit a job concurrently during this call
+            bridge.submit_character("concurrent wizard")
+            return {"items": []}
+
+        bridge = PixelLabBridge({"list_characters": list_characters, "create_character": lambda **kw: {"character_id": "conc-1"}})
+        bridge.submit_character("original elf")
+
+        jobs = bridge.seed_jobs_for_ui()
+        job_prompts = {j.prompt for j in jobs}
+        self.assertIn("original elf", job_prompts)
+        self.assertIn("concurrent wizard", job_prompts)
+
+    def test_extract_backtick_value_parses_markdown(self) -> None:
+        text = "**Character ID:** `abc-123`\n**Name:** Wizard"
+        self.assertEqual(_extract_backtick_value(text, "Character ID"), "abc-123")
+        self.assertEqual(_extract_backtick_value(text, "Missing"), "")
+
+    def test_extract_named_value_parses_markdown(self) -> None:
+        text = "**Name:** Moss wizard\n**Status:** Processing"
+        self.assertEqual(_extract_named_value(text, "Name"), "Moss wizard")
+        self.assertEqual(_extract_named_value(text, "Status"), "Processing")
+        self.assertEqual(_extract_named_value(text, "Missing"), "")
+
+    def test_extract_markdown_urls(self) -> None:
+        text = "[south](https://example.invalid/south.png) and [download](https://example.invalid/file.zip)"
+        urls = _extract_markdown_urls(text)
+        self.assertEqual(urls, ["https://example.invalid/south.png", "https://example.invalid/file.zip"])
+        self.assertEqual(_extract_markdown_urls("no urls here"), [])
+
+    def test_tool_text_content_extracts_text_parts(self) -> None:
+        result = {"content": [{"type": "text", "text": "hello"}, {"type": "image", "data": "..."}, {"type": "text", "text": "world"}]}
+        self.assertEqual(_tool_text_content(result), "hello\nworld")
+
+    def test_tool_text_content_handles_missing_content(self) -> None:
+        self.assertEqual(_tool_text_content({}), "")
+        self.assertEqual(_tool_text_content({"content": "not a list"}), "")
+
+    def test_merge_detail_appends_metadata(self) -> None:
+        bridge = PixelLabBridge()
+        result = {"name": "wizard", "preview_url": "https://example.invalid/p.png", "download_url": "https://example.invalid/d.zip"}
+        merged = bridge._merge_detail("size=48", result)
+        self.assertIn("size=48", merged)
+        self.assertIn("download_url=", merged)
+        self.assertIn("preview_url=", merged)
+        self.assertIn("name=wizard", merged)
+
+    def test_merge_detail_returns_existing_when_no_metadata(self) -> None:
+        bridge = PixelLabBridge()
+        self.assertEqual(bridge._merge_detail("size=48", {}), "size=48")
+        self.assertEqual(bridge._merge_detail("size=48", "not a dict"), "size=48")
 
 
 if __name__ == "__main__":

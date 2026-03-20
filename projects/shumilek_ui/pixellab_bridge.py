@@ -63,7 +63,10 @@ def _parse_mcp_messages(raw: str) -> list[dict[str, Any]]:
 
     messages: list[dict[str, Any]] = []
     if stripped.startswith("{"):
-        parsed = json.loads(stripped)
+        try:
+            parsed = json.loads(stripped)
+        except json.JSONDecodeError:
+            return []
         if isinstance(parsed, dict):
             return [parsed]
         return []
@@ -75,14 +78,21 @@ def _parse_mcp_messages(raw: str) -> list[dict[str, Any]]:
             continue
         if buffer and not line.strip():
             payload = "\n".join(buffer)
-            parsed = json.loads(payload)
+            try:
+                parsed = json.loads(payload)
+            except json.JSONDecodeError:
+                buffer = []
+                continue
             if isinstance(parsed, dict):
                 messages.append(parsed)
             buffer = []
 
     if buffer:
         payload = "\n".join(buffer)
-        parsed = json.loads(payload)
+        try:
+            parsed = json.loads(payload)
+        except json.JSONDecodeError:
+            return messages
         if isinstance(parsed, dict):
             messages.append(parsed)
 
@@ -522,7 +532,7 @@ class PixelLabBridge:
         return "live-mcp" if self.has_live_tools else "draft-ready"
 
     def submit_character(self, description: str, *, n_directions: int = 8, size: int = 48) -> PixelLabJob:
-        description = description.strip()
+        description = str(description or "").strip()
         if not description:
             raise ValueError("Character description is required")
 
@@ -563,8 +573,8 @@ class PixelLabBridge:
         return job
 
     def submit_tileset(self, lower_description: str, upper_description: str, *, tile_size: int = 16) -> PixelLabJob:
-        lower_description = lower_description.strip()
-        upper_description = upper_description.strip()
+        lower_description = str(lower_description or "").strip()
+        upper_description = str(upper_description or "").strip()
         if not lower_description or not upper_description:
             raise ValueError("Both lower and upper tileset descriptions are required")
 
@@ -613,10 +623,12 @@ class PixelLabBridge:
 
         refreshed: list[PixelLabJob] = []
         for job in jobs:
-            refreshed.append(self._refresh_job(job))
+            try:
+                refreshed.append(self._refresh_job(job))
+            except (OSError, RuntimeError, ValueError, urlerror.URLError, TimeoutError):
+                refreshed.append(job)
         with self._jobs_lock:
-            self.jobs = refreshed
-            return list(self.jobs)
+            return self._apply_jobs_preserving_concurrent(refreshed)
 
     def seed_jobs_for_ui(self) -> list[PixelLabJob]:
         with self._jobs_lock:
@@ -653,8 +665,7 @@ class PixelLabBridge:
             break
 
         with self._jobs_lock:
-            self.jobs = jobs
-            return list(self.jobs)
+            return self._apply_jobs_preserving_concurrent(jobs)
 
     def seed_tileset_jobs_for_ui(self) -> list[PixelLabJob]:
         with self._jobs_lock:
@@ -669,12 +680,21 @@ class PixelLabBridge:
             jobs = self._merge_jobs(jobs, imported_jobs)
 
         with self._jobs_lock:
-            self.jobs = jobs
-            return list(self.jobs)
+            return self._apply_jobs_preserving_concurrent(jobs)
 
     def list_jobs(self) -> list[PixelLabJob]:
         with self._jobs_lock:
             return list(self.jobs)
+
+    def _apply_jobs_preserving_concurrent(self, enriched: list[PixelLabJob]) -> list[PixelLabJob]:
+        """Apply enriched job list while preserving jobs added concurrently.
+
+        Must be called while holding ``self._jobs_lock``.
+        """
+        enriched_ids = {j.job_id for j in enriched}
+        concurrent = [j for j in self.jobs if j.job_id not in enriched_ids]
+        self.jobs = concurrent + enriched
+        return list(self.jobs)
 
     def _merge_imported_remote_jobs(self, jobs: list[PixelLabJob]) -> list[PixelLabJob]:
         imported_jobs: list[PixelLabJob] = []
