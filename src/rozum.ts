@@ -4,6 +4,18 @@
 import type { ChatMessage } from './types';
 import fetch, { Headers } from 'node-fetch';
 
+const JSON_PARSE_TIMEOUT = 30_000; // 30s for body parsing after HTTP 200
+
+/** Race res.json() against a timeout to prevent hanging on incomplete bodies */
+function jsonWithTimeout<T>(res: { json: () => Promise<T> }, ms: number = JSON_PARSE_TIMEOUT): Promise<T> {
+  return Promise.race([
+    res.json(),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('res.json() timeout')), ms)
+    )
+  ]);
+}
+
 // Step types for planning
 export type StepType = 
   | 'analyze'
@@ -142,16 +154,16 @@ export class Rozum {
         return defaultPlan;
       }
 
-      const data = await res.json() as { response?: string };
+      const data = await jsonWithTimeout<{ response?: string }>(res);
       const output = data?.response || '';
 
-      logChannel?.appendLine(`[Rozum] đź“ť Raw odpovÄ›ÄŹ: ${output.slice(0, 300)}...`);
+      logChannel?.appendLine(`[Rozum] \u{1F4DD} Raw odpov\u011B\u010F: ${output.slice(0, 300)}...`);
 
       // Parse the plan
       const plan = this.parsePlan(output);
       
-      logChannel?.appendLine(`[Rozum] đź“Š SloĹľitost: ${plan.complexity}`);
-      logChannel?.appendLine(`[Rozum] đź“‹ Kroky: ${plan.steps.length}`);
+      logChannel?.appendLine(`[Rozum] \u{1F4CA} Slo\u017Eitost: ${plan.complexity}`);
+      logChannel?.appendLine(`[Rozum] \u{1F4CB} Kroky: ${plan.steps.length}`);
       plan.steps.forEach((step, i) => {
         logChannel?.appendLine(`[Rozum]   ${i + 1}. [${step.type}] ${step.title}`);
       });
@@ -234,13 +246,13 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
         return { approved: false, feedback: 'Review nedostupný (HTTP ' + res.status + ')', shouldRetry: true };
       }
 
-      const data = await res.json() as { response?: string };
+      const data = await jsonWithTimeout<{ response?: string }>(res);
       const output = data?.response || '';
 
       logChannel?.appendLine(`[Rozum Review] Raw: ${output.slice(0, 200)}...`);
 
       // Parse review response
-      const approvedMatch = output.match(/(?:SCHVĂLENO|SCHVÁLENO|APPROVED):\s*(ANO|NE|YES|NO)/i);
+      const approvedMatch = output.match(/(?:SCHV\u00C1LENO|APPROVED):\s*(ANO|NE|YES|NO)/i);
       const approved = approvedMatch ? 
         (approvedMatch[1].toUpperCase() === 'ANO' || approvedMatch[1].toUpperCase() === 'YES') : 
         true;

@@ -84,6 +84,22 @@ describe('humanizeApiError', () => {
     const msg = 'Something completely unexpected happened';
     expect(humanizeApiError(msg)).to.equal(msg);
   });
+
+  it('should truncate very long error strings before regex matching (ReDoS prevention)', () => {
+    // Build a 5000-char error string with ECONNREFUSED near the end (beyond 1000).
+    // After truncation to 1000 chars, the pattern won't be found → passthrough (truncated raw returned).
+    const longPrefix = 'x'.repeat(1500);
+    const hugeMsg = longPrefix + ' ECONNREFUSED at end';
+    const result = humanizeApiError(hugeMsg);
+    // The ECONNREFUSED is beyond 1000 chars, so it should NOT be humanized
+    expect(result).to.equal(hugeMsg);
+  });
+
+  it('should still humanize errors within the first 1000 chars', () => {
+    const msg = 'ECONNREFUSED ' + 'y'.repeat(2000);
+    const result = humanizeApiError(msg);
+    expect(result).to.include('Ollama');
+  });
 });
 
 describe('isTransientError', () => {

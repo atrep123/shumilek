@@ -360,6 +360,20 @@ describe('SvedomiValidator', () => {
       expect(res.score).to.equal(8);
       expect(res.shouldRetry).to.be.false;
     });
+
+    it('should return shouldRetry=true when res.json() hangs (body timeout)', async () => {
+      const v = new SvedomiValidator();
+      globalThis.fetch = async () => ({
+        ok: true,
+        status: 200,
+        json: () => new Promise(() => {}) // never resolves
+      });
+      const res = await v.validate('test prompt', 'test response');
+      expect(res.isValid).to.be.false;
+      expect(res.shouldRetry).to.be.true;
+      expect(res.unavailable).to.be.true;
+      expect(res.errorCode).to.equal('exception');
+    }).timeout(40000);
   });
 
   describe('eviction safety', () => {

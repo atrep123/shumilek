@@ -5,7 +5,7 @@ registerMock('workspace', { workspaceIndexer: { getIndex: () => null } }, 'conte
 flushModuleCache('../src/contextProviders');
 
 const { expect } = require('chai');
-const { ContextProviderRegistry, DEFAULT_CONTEXT_PROVIDERS } = require('../src/contextProviders');
+const { ContextProviderRegistry, DEFAULT_CONTEXT_PROVIDERS, setContextProviderLogger } = require('../src/contextProviders');
 
 describe('contextProviders', () => {
 
@@ -342,6 +342,45 @@ describe('contextProviders', () => {
       });
       expect(result).to.include('[CONTEXT:diff]');
       expect(result).to.include('DIRTY_FILE');
+    });
+  });
+
+  // ── provider error logging ────────────────────────────────
+  describe('provider error logging', () => {
+    afterEach(() => {
+      setContextProviderLogger(undefined);
+    });
+
+    it('logs provider errors to the output channel', async () => {
+      const logs: string[] = [];
+      setContextProviderLogger({ appendLine: (msg: string) => logs.push(msg) });
+
+      const reg = new ContextProviderRegistry();
+      reg.register('workspace', async () => { throw new Error('test provider crash'); });
+      reg.register('file', async () => ({ name: 'file', content: 'OK' }));
+      await reg.collect({
+        prompt: 'test',
+        enabled: ['workspace', 'file'],
+        tokenBudget: 1024,
+        workspaceIndexEnabled: true
+      });
+
+      expect(logs).to.have.lengthOf(1);
+      expect(logs[0]).to.include('workspace');
+      expect(logs[0]).to.include('test provider crash');
+    });
+
+    it('does not crash when logger is not set', async () => {
+      setContextProviderLogger(undefined);
+      const reg = new ContextProviderRegistry();
+      reg.register('workspace', async () => { throw new Error('no logger'); });
+      const result = await reg.collect({
+        prompt: 'test',
+        enabled: ['workspace'],
+        tokenBudget: 1024,
+        workspaceIndexEnabled: true
+      });
+      expect(result).to.equal('');
     });
   });
 });

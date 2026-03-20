@@ -5,6 +5,18 @@ import type { MiniModelResult, Task } from './types';
 import fetch, { Headers } from 'node-fetch';
 import * as crypto from 'crypto';
 
+const JSON_PARSE_TIMEOUT = 30_000; // 30s for body parsing after HTTP 200
+
+/** Race res.json() against a timeout to prevent hanging on incomplete bodies */
+function jsonWithTimeout<T>(res: { json: () => Promise<T> }, ms: number = JSON_PARSE_TIMEOUT): Promise<T> {
+  return Promise.race([
+    res.json(),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('res.json() timeout')), ms)
+    )
+  ]);
+}
+
 type OutputChannel = { appendLine: (msg: string) => void } | undefined;
 type GuardianStatsRef = { miniModelValidations: number; miniModelRejections: number };
 
@@ -208,7 +220,7 @@ export class SvedomiValidator {
         };
       }
 
-      const data = await res.json() as { response?: string };
+      const data = await jsonWithTimeout<{ response?: string }>(res);
       const output = data?.response || '';
       
       // 6. Parse and Cache

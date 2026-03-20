@@ -608,5 +608,36 @@ DÉLKA: short`;
         globalThis.clearTimeout = origClearTimeout;
       }
     });
+
+    it('should return default plan when res.json() hangs indefinitely', async () => {
+      const rozum = new Rozum();
+      rozum.configure('http://localhost:11434', 'test-model', true, true);
+      // Mock fetch returning ok:true but json() that never resolves
+      (globalThis as any).fetch = async () => ({
+        ok: true,
+        status: 200,
+        json: () => new Promise(() => {}) // never resolves
+      });
+      const plan = await rozum.plan('A long enough prompt for planning to trigger', []);
+      // Should fall back to default plan (catch block) because jsonWithTimeout rejects
+      expect(plan.shouldPlan).to.be.false;
+      expect(plan.steps).to.have.length(0);
+    }).timeout(40000); // jsonWithTimeout is 30s
+
+    it('should fail-open review when res.json() hangs', async () => {
+      const rozum = new Rozum();
+      (globalThis as any).fetch = async () => ({
+        ok: true,
+        status: 200,
+        json: () => new Promise(() => {}) // never resolves
+      });
+      const step = {
+        id: 1, type: 'code' as const, title: 'Test', instruction: 'Do it', status: 'pending' as const
+      };
+      const res = await rozum.reviewStepResult(step, 'result', 'prompt');
+      // reviewStepResult fails open on errors
+      expect(res.approved).to.be.true;
+      expect(res.shouldRetry).to.be.false;
+    }).timeout(40000);
   });
 });

@@ -2,6 +2,13 @@ import * as vscode from 'vscode';
 import { workspaceIndexer } from './workspace';
 import type { ContextProviderName } from './types';
 
+type OutputChannel = { appendLine: (msg: string) => void } | undefined;
+let logChannel: OutputChannel = undefined;
+
+export function setContextProviderLogger(channel: OutputChannel): void {
+  logChannel = channel;
+}
+
 type ProviderResult = {
   name: ContextProviderName;
   content: string;
@@ -152,7 +159,8 @@ export class ContextProviderRegistry {
           maxChars: Math.max(200, Math.floor(remainingChars / Math.max(1, remainingProviders))),
           workspaceIndexEnabled: params.workspaceIndexEnabled
         });
-      } catch {
+      } catch (err: unknown) {
+        logChannel?.appendLine(`[ContextProvider] Provider '${name}' failed: ${(err as Error)?.message || String(err)}`);
         continue;
       }
       if (!result || !result.content.trim()) continue;

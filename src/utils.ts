@@ -48,10 +48,13 @@ export async function isSafeUrl(raw: string): Promise<{ safe: boolean; reason?: 
   // DNS rebinding check: resolve hostname and validate resolved IP
   try {
     const address = await new Promise<string>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('DNS lookup timeout')), 5000);
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (!settled) { settled = true; reject(new Error('DNS lookup timeout')); }
+      }, 5000);
       dns.promises.lookup(hostname).then(
-        ({ address }) => { clearTimeout(timer); resolve(address); },
-        (err) => { clearTimeout(timer); reject(err); }
+        ({ address }) => { clearTimeout(timer); if (!settled) { settled = true; resolve(address); } },
+        (err) => { clearTimeout(timer); if (!settled) { settled = true; reject(err); } }
       );
     });
     // Strip IPv4-mapped IPv6 prefix for consistent checking
@@ -121,7 +124,9 @@ export function normalizeScore(value: unknown): number | undefined {
  * with actionable guidance. Returns the original message if no pattern matches.
  */
 export function humanizeApiError(raw: string): string {
-  const lower = raw.toLowerCase();
+  // Truncate to prevent ReDoS on unbounded error strings
+  const safeRaw = raw.length > 1000 ? raw.slice(0, 1000) : raw;
+  const lower = safeRaw.toLowerCase();
 
   if (lower.includes('econnrefused') || lower.includes('connect econnrefused')) {
     return 'Nelze se připojit k Ollama serveru. Zkontrolujte, že Ollama běží (spusťte `ollama serve`).';
@@ -136,7 +141,7 @@ export function humanizeApiError(raw: string): string {
     return 'Spojení bylo neočekávaně přerušeno. Ollama mohla spadnout — restartujte ji příkazem `ollama serve`.';
   }
   if (lower.includes('model') && lower.includes('not found')) {
-    const modelMatch = raw.match(/model\s+['"]?([^\s'"]+)['"]?/i);
+    const modelMatch = safeRaw.match(/model\s+['"]?([^\s'"]+)['"]?/i);
     const modelName = modelMatch?.[1] ?? '';
     return `Model ${modelName ? `"${modelName}" ` : ''}nenalezen. Stáhněte ho příkazem \`ollama pull ${modelName || '<model>'}\`.`;
   }
