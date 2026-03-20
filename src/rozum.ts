@@ -334,7 +334,10 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
           onStepStart?.(step, i, plan.steps.length);
           logChannel?.appendLine(`[Rozum] đź”„ SpouĹˇtĂ­m krok ${step.id}/${plan.totalSteps}: ${step.title}`);
         } else {
-          logChannel?.appendLine(`[Rozum] đź”„ Opakuji krok ${step.id} (pokus ${stepRetries + 1}/${MAX_STEP_RETRIES + 1})`);
+          // Exponential backoff: 1s, 2s, 4s, 8s, 16s
+          const backoffMs = Math.min(1000 * Math.pow(2, stepRetries - 1), 16000);
+          await new Promise(resolve => setTimeout(resolve, backoffMs));
+          logChannel?.appendLine(`[Rozum] đź"„ Opakuji krok ${step.id} (pokus ${stepRetries + 1}/${MAX_STEP_RETRIES + 1}, backoff ${backoffMs}ms)`);
           onStatus?.(`đź”„ Opakuji krok ${step.id} (pokus ${stepRetries + 1})`);
           
           // Rebuild instruction from original + retry suffix (prevent accumulation)

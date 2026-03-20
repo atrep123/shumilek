@@ -275,3 +275,79 @@ describe('getNonce', () => {
     }
   });
 });
+
+describe('surrogate pair safe truncation (pattern used in extension.ts)', () => {
+  function safeTruncate(str: string, maxLen: number): string {
+    let truncated = str.slice(0, maxLen);
+    if (truncated.length === maxLen && truncated.charCodeAt(maxLen - 1) >= 0xD800 && truncated.charCodeAt(maxLen - 1) <= 0xDBFF) {
+      truncated = truncated.slice(0, maxLen - 1);
+    }
+    return truncated;
+  }
+
+  it('should not split a surrogate pair at the boundary', () => {
+    // U+1F600 (😀) is encoded as \uD83D\uDE00 in UTF-16
+    const emoji = '\uD83D\uDE00'; // 😀
+    const str = 'a'.repeat(1999) + emoji;
+    const result = safeTruncate(str, 2000);
+    // Should drop the high surrogate rather than including an orphan
+    expect(result.length).to.equal(1999);
+    expect(result.charCodeAt(result.length - 1)).to.equal(97); // 'a'
+  });
+
+  it('should keep full string if no surrogate at boundary', () => {
+    const str = 'a'.repeat(2000);
+    const result = safeTruncate(str, 2000);
+    expect(result.length).to.equal(2000);
+  });
+
+  it('should handle string shorter than maxLen', () => {
+    const str = 'hello';
+    const result = safeTruncate(str, 2000);
+    expect(result).to.equal('hello');
+  });
+
+  it('should handle string with surrogate pair well before boundary', () => {
+    const emoji = '\uD83D\uDE00';
+    const str = emoji + 'a'.repeat(2000);
+    const result = safeTruncate(str, 2000);
+    expect(result.length).to.equal(2000);
+    // First two chars are the emoji surrogate pair, rest are 'a'
+    expect(result.charCodeAt(0)).to.equal(0xD83D);
+    expect(result.charCodeAt(1)).to.equal(0xDE00);
+  });
+});
+
+describe('SHA-256 hash for prompt comparison (pattern used in extension.ts)', () => {
+  const { createHash } = require('crypto');
+
+  function hashString(str: string): string {
+    const sample = str.toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 300);
+    return createHash('sha256').update(sample).digest('hex').slice(0, 16);
+  }
+
+  it('should produce deterministic 16-char hex output', () => {
+    const h1 = hashString('test prompt');
+    const h2 = hashString('test prompt');
+    expect(h1).to.equal(h2);
+    expect(h1).to.match(/^[0-9a-f]{16}$/);
+  });
+
+  it('should produce different hashes for different inputs', () => {
+    const h1 = hashString('prompt A');
+    const h2 = hashString('prompt B');
+    expect(h1).to.not.equal(h2);
+  });
+
+  it('should normalize whitespace before hashing', () => {
+    const h1 = hashString('hello   world');
+    const h2 = hashString('hello world');
+    expect(h1).to.equal(h2);
+  });
+
+  it('should be case-insensitive', () => {
+    const h1 = hashString('Hello World');
+    const h2 = hashString('hello world');
+    expect(h1).to.equal(h2);
+  });
+});

@@ -402,7 +402,7 @@ DÉLKA: short`;
       expect(capturedInstructions[2]).to.include('Original instruction');
       expect(capturedInstructions[2]).to.include('RETRY ATTEMPT 3');
       expect((capturedInstructions[2].match(/RETRY ATTEMPT/g) || []).length).to.equal(1);
-    });
+    }).timeout(10000);
 
     it('should not accumulate Rozum feedback on step.instruction', async () => {
       const rozum = new Rozum();
@@ -448,7 +448,7 @@ DÉLKA: short`;
       const lastInstruction = capturedInstructions[capturedInstructions.length - 1];
       expect((lastInstruction.match(/OPRAVA OD ROZUMU/g) || []).length).to.be.at.most(1);
       expect((lastInstruction.match(/RETRY ATTEMPT/g) || []).length).to.be.at.most(1);
-    });
+    }).timeout(10000);
 
     it('should stop retrying when Svedomi repeats the same rejection for the same result', async () => {
       const rozum = new Rozum();
@@ -491,7 +491,7 @@ DÉLKA: short`;
       expect(callCount).to.equal(2);
       expect(results).to.have.length(1);
       expect(results[0]).to.include('Svedomi opakovaně vracelo stejnou námitku');
-    });
+    }).timeout(10000);
 
     it('should detect repeated rejection even with very large result strings', async () => {
       const rozum = new Rozum();
@@ -537,7 +537,56 @@ DÉLKA: short`;
       // Should stop after 2 tries due to truncated signature match
       expect(callCount).to.equal(2);
       expect(results).to.have.length(1);
-    });
+    }).timeout(10000);
+
+    it('should apply exponential backoff between retries', async () => {
+      const rozum = new Rozum();
+      rozum.configure('http://localhost:11434', 'test-model', false, false);
+
+      const plan = {
+        shouldPlan: true,
+        complexity: 'simple' as const,
+        steps: [{
+          id: 1,
+          type: 'code' as const,
+          title: 'Write code',
+          instruction: 'Original instruction',
+          status: 'pending' as const,
+        }],
+        warnings: [],
+        suggestedApproach: 'test',
+        estimatedLength: 'short' as const,
+        totalSteps: 1,
+      };
+
+      const timestamps: number[] = [];
+      let callCount = 0;
+
+      const executeStep = async () => {
+        callCount++;
+        timestamps.push(Date.now());
+        return `Result ${callCount}`;
+      };
+
+      let reviewCount = 0;
+      rozum.reviewStepResult = async () => {
+        reviewCount++;
+        if (reviewCount <= 2) {
+          return { approved: false, shouldRetry: true, feedback: `Issue ${reviewCount}` };
+        }
+        return { approved: true, shouldRetry: false, feedback: 'OK' };
+      };
+
+      await rozum.executeStepByStep(plan, 'test prompt', executeStep);
+
+      expect(callCount).to.equal(3);
+      // First retry should have >= 1s backoff (1000ms)
+      const gap1 = timestamps[1] - timestamps[0];
+      expect(gap1).to.be.at.least(900); // allow 100ms margin
+      // Second retry should have >= 2s backoff (2000ms)
+      const gap2 = timestamps[2] - timestamps[1];
+      expect(gap2).to.be.at.least(1800); // allow 200ms margin
+    }).timeout(15000);
   });
 
   describe('reviewStepResult error handling', () => {

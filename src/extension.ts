@@ -1,6 +1,7 @@
 ﻿import * as vscode from 'vscode';
 import { Logger } from './logger';
 import * as path from 'path';
+import { createHash } from 'crypto';
 import { exec } from 'child_process';
 import fetch, { Headers } from 'node-fetch';
 import { fetchWithTimeout } from './fetchUtils';
@@ -241,6 +242,27 @@ const MAX_HISTORY_SIZE = 20;
 const lastReadHashes = new Map<string, { hash: string; updatedAt: number }>();
 const LAST_READ_HASHES_MAX = 1000;
 const LAST_READ_HASHES_TTL = 600000; // 10 minutes
+const BODY_PARSE_TIMEOUT = 30_000; // 30 seconds
+
+/** Race res.json() against a timeout to prevent hanging on incomplete bodies */
+function jsonWithTimeout<T>(res: { json: () => Promise<T> }, ms: number = BODY_PARSE_TIMEOUT): Promise<T> {
+  return Promise.race([
+    res.json(),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('res.json() timeout')), ms)
+    )
+  ]);
+}
+
+/** Race res.text() against a timeout to prevent hanging on incomplete bodies */
+function textWithTimeout(res: { text: () => Promise<string> }, ms: number = BODY_PARSE_TIMEOUT): Promise<string> {
+  return Promise.race([
+    res.text(),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('res.text() timeout')), ms)
+    )
+  ]);
+}
 
 function evictStaleHashes(): void {
   if (lastReadHashes.size <= LAST_READ_HASHES_MAX) return;
@@ -328,7 +350,7 @@ async function summarizeResponse(
     }, timeoutMs);
 
     if (!res.ok) return null;
-    const json = await res.json();
+    const json = await jsonWithTimeout<{ message?: { content?: string } }>(res);
     const content = json?.message?.content;
     return typeof content === 'string' ? content.trim() : null;
   } catch (e) {
@@ -359,7 +381,7 @@ async function callExternalValidator(
         body: JSON.stringify(payload),
         signal: controller.signal
       });
-      text = await res.text();
+      text = await textWithTimeout(res);
     } finally {
       clearTimeout(timeout);
     }
@@ -519,8 +541,13 @@ class ResponseHistoryManager {
    * Add response to history
    */
   addResponse(response: string, prompt: string, score: number): void {
+    // Safe truncation: avoid splitting a trailing surrogate pair
+    let truncated = response.slice(0, 2000);
+    if (truncated.length === 2000 && truncated.charCodeAt(1999) >= 0xD800 && truncated.charCodeAt(1999) <= 0xDBFF) {
+      truncated = truncated.slice(0, 1999);
+    }
     const entry: ResponseHistoryEntry = {
-      response: response.slice(0, 2000), // Store truncated for memory
+      response: truncated,
       timestamp: Date.now(),
       promptHash: this.hashString(prompt),
       score
@@ -587,13 +614,7 @@ class ResponseHistoryManager {
    */
   private hashString(str: string): string {
     const sample = str.toLowerCase().replace(/\s+/g, ' ').trim().slice(0, this.HASH_SAMPLE_SIZE);
-    let hash = 0;
-    for (let i = 0; i < sample.length; i++) {
-      const char = sample.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
-    }
-    return hash.toString(36);
+    return createHash('sha256').update(sample).digest('hex').slice(0, 16);
   }
 
   /**
