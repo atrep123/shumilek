@@ -46,7 +46,12 @@ export class TurnOrchestrator {
     return this.checkpoints.slice();
   }
 
+  private static readonly MAX_CHECKPOINTS = 500;
+
   private checkpoint(node: PipelineNode, meta?: Record<string, unknown>): void {
+    if (this.checkpoints.length >= TurnOrchestrator.MAX_CHECKPOINTS) {
+      this.checkpoints.splice(0, 1);
+    }
     this.checkpoints.push({ node, at: Date.now(), meta });
   }
 }

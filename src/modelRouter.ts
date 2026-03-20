@@ -67,6 +67,9 @@ export class ModelRouter {
    * If all are backed off, returns the one with the soonest resume time.
    */
   pick(): string {
+    if (this.config.models.length === 0) {
+      throw new Error('ModelRouter: no models configured');
+    }
     const now = Date.now();
     for (const model of this.config.models) {
       const resumeAt = this.backoff.get(model);
@@ -95,6 +98,7 @@ export class ModelRouter {
   recordSuccess(model: string, latencyMs: number): void {
     const h = this.health.get(model);
     if (!h) return;
+    if (!Number.isFinite(latencyMs) || latencyMs < 0) latencyMs = 0;
     h.totalCalls++;
     h.successCalls++;
     h.consecutiveFailures = 0;

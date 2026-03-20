@@ -141,5 +141,17 @@ describe('TurnOrchestrator', () => {
         expect(cp[i].at).to.be.at.least(cp[i - 1].at);
       }
     });
+
+    it('should cap checkpoints at 500 to prevent memory leaks', () => {
+      const o = new TurnOrchestrator();
+      // force() bypasses transition rules, so we can push many checkpoints
+      for (let i = 0; i < 600; i++) {
+        o.force('error', { i });
+      }
+      const cp = o.getCheckpoints();
+      expect(cp.length).to.be.at.most(500);
+      // Last checkpoint should be the most recent
+      expect(cp[cp.length - 1].meta).to.deep.equal({ i: 599 });
+    });
   });
 });

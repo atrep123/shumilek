@@ -287,4 +287,35 @@ describe('ModelRouter', () => {
       expect(router.pick()).to.equal('model-a');
     });
   });
+
+  describe('edge cases', () => {
+    it('should throw when models array is empty', () => {
+      const router = new ModelRouter({
+        baseUrl: 'http://localhost:11434',
+        models: [],
+      });
+      expect(() => router.pick()).to.throw('no models configured');
+    });
+
+    it('should guard NaN latency in recordSuccess', () => {
+      const router = new ModelRouter({
+        baseUrl: 'http://localhost:11434',
+        models: ['model-a'],
+      });
+      router.recordSuccess('model-a', NaN);
+      const report = router.getHealthReport();
+      expect(Number.isFinite(report[0].avgLatencyMs)).to.be.true;
+    });
+
+    it('should guard Infinity latency in recordSuccess', () => {
+      const router = new ModelRouter({
+        baseUrl: 'http://localhost:11434',
+        models: ['model-a'],
+      });
+      router.recordSuccess('model-a', Infinity);
+      router.recordSuccess('model-a', 200);
+      const report = router.getHealthReport();
+      expect(Number.isFinite(report[0].avgLatencyMs)).to.be.true;
+    });
+  });
 });
