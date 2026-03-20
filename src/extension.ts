@@ -2405,8 +2405,10 @@ PŘÍSTUP K PRÁCI:
       postToAllWebviews({ type: 'responseChunk', text: fullResponse });
     }
 
-    messages.push({ role: 'assistant', content: fullResponse, timestamp: Date.now() });
-    await saveChatMessages(context, messages);
+    if (fullResponse && fullResponse.trim()) {
+      messages.push({ role: 'assistant', content: fullResponse, timestamp: Date.now() });
+      await saveChatMessages(context, messages);
+    }
 
     postToAllWebviews({ type: 'responseDone' });
 

@@ -11,7 +11,7 @@ describe('ResponseGuardian', () => {
     const res = g.analyze('', 'Hello');
     expect(res.isOk).to.be.false;
     expect(res.shouldRetry).to.be.true;
-    expect(res.issues).to.include('Prázdná nebo příliš krátká odpověď');
+    expect(res.issues).to.include('Prázdná odpověď');
   });
 
   it('should detect too short response', () => {
@@ -19,6 +19,16 @@ describe('ResponseGuardian', () => {
     const res = g.analyze('Hi', 'Hello');
     expect(res.isOk).to.be.false;
     expect(res.shouldRetry).to.be.true;
+    expect(res.issues).to.include('Příliš krátká odpověď');
+  });
+
+  it('should distinguish empty from short in issue messages', () => {
+    const g = new ResponseGuardian();
+    const empty = g.analyze('', 'Q');
+    const short = g.analyze('Hi', 'Q');
+    expect(empty.issues.some(i => i === 'Prázdná odpověď')).to.be.true;
+    expect(short.issues.some(i => i === 'Příliš krátká odpověď')).to.be.true;
+    expect(empty.issues).to.not.include('Příliš krátká odpověď');
   });
 
   it('should accept valid response', () => {

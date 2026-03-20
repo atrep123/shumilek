@@ -54,8 +54,11 @@ export class ResponseGuardian {
     const analysisText = this.truncateForAnalysis(response);
 
     // 1. Check for empty/too short response
-    if (!response || response.trim().length < this.MIN_RESPONSE_LENGTH) {
-      issues.push('Prázdná nebo příliš krátká odpověď');
+    if (!response || response.trim().length === 0) {
+      issues.push('Prázdná odpověď');
+      shouldRetry = true;
+    } else if (response.trim().length < this.MIN_RESPONSE_LENGTH) {
+      issues.push('Příliš krátká odpověď');
       shouldRetry = true;
     }
 
