@@ -53,7 +53,6 @@ export class Rozum {
   private forcePlan: boolean = false;
   private timeout: number = 300000; // 5 minut per step (was 25s)
   private minPromptLength: number = 30;
-  private currentPlanSteps: number = 0;
 
   /** Prefer a globally injected fetch (for tests) and fallback to node-fetch */
   private getFetch(): typeof fetch {
@@ -285,7 +284,6 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
     onStatus?: (status: string) => void
   ): Promise<string[]> {
     const results: string[] = [];
-    this.currentPlanSteps = plan.totalSteps;
     // Massive retry limit for "slow, methodical" checking
     const MAX_STEP_RETRIES = 5;
 
@@ -328,7 +326,6 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
           onStatus?.(`đź”„ Opakuji krok ${step.id} (pokus ${stepRetries + 1})`);
           
           // Rebuild instruction from original + retry suffix (prevent accumulation)
-          const _lastResult = results.length > 0 ? results[results.length - 1] : '';
           step.instruction = `${originalInstruction}\n\n[RETRY ATTEMPT ${stepRetries + 1}: The previous attempt was rejected. Review the feedback carefully and address the specific issues. Do NOT repeat the same mistake.]`;
         }
 

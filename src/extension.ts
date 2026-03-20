@@ -2948,7 +2948,7 @@ async function ensureUniqueFileUri(folderUri: vscode.Uri, fileName: string): Pro
     }
     candidateName = `${parsed.name}-${counter}${parsed.ext}`;
     counter++;
-    if (counter > 1000) return candidateUri;
+    if (counter > 1000) return vscode.Uri.joinPath(folderUri, candidateName);
   }
 }
 
