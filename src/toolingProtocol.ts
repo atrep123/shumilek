@@ -56,21 +56,28 @@ export function parseToolCalls(text: string): ParseToolCallsResult {
     sawTaggedCallBlock = true;
     const raw = match[1]?.trim();
     if (!raw) {
-      errors.push('Empty tool_call payload');
+      if (errors.length < 100) errors.push('Empty tool_call payload');
       continue;
     }
     try {
       const parsed = JSON.parse(raw);
       if (!parsed || typeof parsed.name !== 'string') {
-        errors.push('Missing tool name');
+        if (errors.length < 100) errors.push('Missing tool name');
+        continue;
+      }
+      const name = String(parsed.name).trim();
+      if (!name || name.length > 200) {
+        if (errors.length < 100) errors.push('Invalid tool name');
         continue;
       }
       const args = parsed.arguments && typeof parsed.arguments === 'object' && !Array.isArray(parsed.arguments)
         ? parsed.arguments
         : undefined;
-      calls.push({ name: parsed.name, arguments: args });
+      calls.push({ name, arguments: args });
     } catch (err) {
-      errors.push(`Invalid JSON: ${String(err)}`);
+      if (errors.length < 100) {
+        errors.push(`Invalid JSON: ${err instanceof Error ? err.message : String(err)}`);
+      }
     }
   }
 
@@ -78,7 +85,7 @@ export function parseToolCalls(text: string): ParseToolCallsResult {
     const candidates: string[] = [];
     const fenceRegex = /```(\w+)?\s*([\s\S]*?)```/gi;
     let fenceMatch: RegExpExecArray | null;
-    while ((fenceMatch = fenceRegex.exec(text)) !== null) {
+    while ((fenceMatch = fenceRegex.exec(text)) !== null && candidates.length < 50) {
       const lang = (fenceMatch[1] || '').toLowerCase();
       if (lang && lang !== 'json') continue;
       const payload = fenceMatch[2]?.trim();
@@ -114,7 +121,9 @@ export function parseToolCalls(text: string): ParseToolCallsResult {
         const parsed = JSON.parse(candidate);
         pushParsed(parsed);
       } catch (err) {
-        errors.push(`Invalid JSON: ${String(err)}`);
+        if (errors.length < 100) {
+          errors.push(`Invalid JSON: ${err instanceof Error ? err.message : String(err)}`);
+        }
       }
     }
   }

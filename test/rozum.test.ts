@@ -492,6 +492,52 @@ DÉLKA: short`;
       expect(results).to.have.length(1);
       expect(results[0]).to.include('Svedomi opakovaně vracelo stejnou námitku');
     });
+
+    it('should detect repeated rejection even with very large result strings', async () => {
+      const rozum = new Rozum();
+      rozum.configure('http://localhost:11434', 'test-model', false, false);
+
+      const plan = {
+        shouldPlan: true,
+        complexity: 'simple' as const,
+        steps: [{
+          id: 1,
+          type: 'code' as const,
+          title: 'Write code',
+          instruction: 'Original instruction',
+          status: 'pending' as const,
+        }],
+        warnings: [],
+        suggestedApproach: 'test',
+        estimatedLength: 'short' as const,
+        totalSteps: 1,
+      };
+
+      // Large result (10KB) with identical first 200 chars
+      const largePrefix = 'A'.repeat(200);
+      let callCount = 0;
+      const executeStep = async () => {
+        callCount++;
+        // Different suffix each time but same first 200 chars
+        return largePrefix + 'B'.repeat(10000 + callCount);
+      };
+
+      rozum.reviewStepResult = async () => ({ approved: true, shouldRetry: false, feedback: 'OK' });
+
+      const results = await rozum.executeStepByStep(
+        plan,
+        'test prompt',
+        executeStep,
+        undefined,
+        undefined,
+        undefined,
+        async () => ({ approved: false, reason: 'Same rejection reason' })
+      );
+
+      // Should stop after 2 tries due to truncated signature match
+      expect(callCount).to.equal(2);
+      expect(results).to.have.length(1);
+    });
   });
 
   describe('reviewStepResult error handling', () => {

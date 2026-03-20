@@ -18,7 +18,7 @@ type ProviderFn = (ctx: ProviderContext) => Promise<ProviderResult | null>;
 const CHARS_PER_TOKEN = 4;
 
 function toCharBudget(tokenBudget: number): number {
-  const safeTokens = Number.isFinite(tokenBudget) ? Math.max(256, Math.floor(tokenBudget)) : 1024;
+  const safeTokens = (Number.isFinite(tokenBudget) && tokenBudget > 0) ? Math.max(256, Math.floor(tokenBudget)) : 1024;
   return safeTokens * CHARS_PER_TOKEN;
 }
 

@@ -135,5 +135,42 @@ describe('toolingProtocol', () => {
       assert.equal(parsed.calls.length, 0);
       assert.equal(parsed.remainingText, input);
     });
+
+    it('caps errors array at 100 to prevent unbounded growth', () => {
+      // Generate 150 invalid tool_call blocks
+      const blocks = Array.from({ length: 150 }, () => '<tool_call>{invalid json!}</tool_call>').join('\n');
+      const parsed = parseToolCalls(blocks);
+      assert.equal(parsed.calls.length, 0);
+      assert.ok(parsed.errors.length <= 100, `Expected <= 100 errors, got ${parsed.errors.length}`);
+    });
+
+    it('rejects empty or oversized tool names', () => {
+      const emptyName = '<tool_call>{"name":"","arguments":{"a":1}}</tool_call>';
+      const longName = `<tool_call>{"name":"${'x'.repeat(250)}","arguments":{"a":1}}</tool_call>`;
+      const emptyResult = parseToolCalls(emptyName);
+      assert.equal(emptyResult.calls.length, 0);
+      assert.ok(emptyResult.errors.some(e => e.includes('Invalid tool name')));
+
+      const longResult = parseToolCalls(longName);
+      assert.equal(longResult.calls.length, 0);
+      assert.ok(longResult.errors.some(e => e.includes('Invalid tool name')));
+    });
+
+    it('trims whitespace from tool names', () => {
+      const input = '<tool_call>{"name":"  read_file  ","arguments":{"path":"a.ts"}}</tool_call>';
+      const parsed = parseToolCalls(input);
+      assert.equal(parsed.calls.length, 1);
+      assert.equal(parsed.calls[0].name, 'read_file');
+    });
+
+    it('caps fallback candidates to prevent CPU exhaustion', () => {
+      // Generate 100 fenced JSON blocks (more than 50 cap)
+      const blocks = Array.from({ length: 100 }, (_, i) =>
+        '```json\n{"name":"tool_' + i + '","arguments":{"i":' + i + '}}\n```'
+      ).join('\n');
+      const parsed = parseToolCalls(blocks);
+      // Should have at most 50 candidates processed
+      assert.ok(parsed.calls.length <= 50, `Expected <= 50 calls, got ${parsed.calls.length}`);
+    });
   });
 });

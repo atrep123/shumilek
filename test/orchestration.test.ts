@@ -153,5 +153,26 @@ describe('TurnOrchestrator', () => {
       // Last checkpoint should be the most recent
       expect(cp[cp.length - 1].meta).to.deep.equal({ i: 599 });
     });
+
+    it('should truncate oversized meta to prevent memory leaks', () => {
+      const o = new TurnOrchestrator();
+      const hugeMeta = { data: 'x'.repeat(20000) };
+      o.force('act', hugeMeta);
+      const cp = o.getCheckpoints();
+      const lastMeta = cp[cp.length - 1].meta as any;
+      expect(lastMeta._truncated).to.be.true;
+      expect(lastMeta._originalSize).to.be.a('number');
+      expect(lastMeta._originalSize).to.be.greaterThan(10000);
+    });
+
+    it('should handle unserializable meta gracefully', () => {
+      const o = new TurnOrchestrator();
+      const circular: Record<string, unknown> = { a: 1 };
+      circular.self = circular;
+      o.force('act', circular);
+      const cp = o.getCheckpoints();
+      const lastMeta = cp[cp.length - 1].meta as any;
+      expect(lastMeta._error).to.equal('unserializable');
+    });
   });
 });

@@ -52,7 +52,19 @@ export class TurnOrchestrator {
     if (this.checkpoints.length >= TurnOrchestrator.MAX_CHECKPOINTS) {
       this.checkpoints.splice(0, 1);
     }
-    this.checkpoints.push({ node, at: Date.now(), meta });
+    // Cap meta size to prevent memory leaks from oversized metadata
+    let safeMeta = meta;
+    if (meta) {
+      try {
+        const serialized = JSON.stringify(meta);
+        if (serialized.length > 10000) {
+          safeMeta = { _truncated: true, _originalSize: serialized.length };
+        }
+      } catch {
+        safeMeta = { _error: 'unserializable' };
+      }
+    }
+    this.checkpoints.push({ node, at: Date.now(), meta: safeMeta });
   }
 }
 

@@ -297,7 +297,7 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
       let repeatedRejectionCount = 0;
 
       const isRepeatedRejection = (source: 'rozum' | 'svedomi', reason: string, result: string): boolean => {
-        const signature = `${source}::${reason.trim()}::${result.trim()}`;
+        const signature = `${source}::${reason.trim().slice(0, 200)}::${result.trim().slice(0, 200)}`;
         if (signature === lastRejectionSignature) {
           repeatedRejectionCount++;
         } else {
