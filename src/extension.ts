@@ -1241,7 +1241,8 @@ export function activate(context: vscode.ExtensionContext) {
       );
 
       if (action === '🗑️ Smazat') {
-        tasksDatabase = tasksDatabase.filter(t => t.id !== selected.task.id);
+        const removeIdx = tasksDatabase.findIndex(t => t.id === selected.task.id);
+        if (removeIdx !== -1) { tasksDatabase.splice(removeIdx, 1); }
         await context.workspaceState.update('tasks', tasksDatabase);
     setSvedomiTasks(tasksDatabase);
         vscode.window.showInformationMessage(`✅ Úkol smazán: ${selected.task.title}`);

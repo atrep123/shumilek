@@ -57,7 +57,7 @@ export async function isSafeUrl(raw: string): Promise<{ safe: boolean; reason?: 
       return { safe: false, reason: 'DNS resolves to cloud metadata endpoint' };
     }
   } catch {
-    // DNS lookup failure — allow through (may be offline or internal DNS issue)
+    return { safe: false, reason: 'DNS lookup failed — cannot verify URL safety' };
   }
   return { safe: true };
 }

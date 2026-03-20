@@ -186,6 +186,19 @@ describe('isSafeUrl', () => {
   it('should block IPv6 loopback', async () => {
     expect((await isSafeUrl('http://[::1]:8080')).safe).to.be.false;
   });
+
+  it('should fail-closed when DNS lookup throws', async () => {
+    const dns = require('dns');
+    const original = dns.promises.lookup;
+    dns.promises.lookup = () => Promise.reject(new Error('DNS failed'));
+    try {
+      const r = await isSafeUrl('http://attacker-controlled.example.com');
+      expect(r.safe).to.be.false;
+      expect(r.reason).to.include('DNS lookup failed');
+    } finally {
+      dns.promises.lookup = original;
+    }
+  });
 });
 
 describe('getNonce', () => {
