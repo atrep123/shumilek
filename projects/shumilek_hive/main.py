@@ -2004,7 +2004,7 @@ class ShumilekHive:
         name = simpledialog.askstring("New Folder", "Folder name:", parent=self.root)
         if not name:
             return
-        if not re.match(r'^[\w\-. ]+$', name):
+        if not re.match(r'^[\w\-. ]+$', name) or ".." in name or Path(name).name != name:
             messagebox.showwarning("Invalid Name", "Folder name contains invalid characters.")
             return
         folder_path = self.vault_path / name
@@ -5701,6 +5701,8 @@ class ShumilekHive:
                 return
 
     def _navigate_to(self, name):
+        if not _is_safe_note_name(name):
+            return
         target = self.vault_path / f"{name}.md"
         if target.exists():
             self._maybe_save_then(lambda: self._open_file(target))

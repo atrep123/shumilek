@@ -15,7 +15,10 @@ from projects.shumilek_ui.pixellab_bridge import (
     _extract_backtick_value,
     _extract_markdown_urls,
     _extract_named_value,
+    _extract_progress_status,
+    _normalize_remote_tool_result,
     _parse_mcp_messages,
+    _parse_remote_listing_entries,
     _tool_text_content,
     discover_remote_tool_bindings,
 )
@@ -553,6 +556,201 @@ class PixelLabBridgeTests(unittest.TestCase):
         bridge = PixelLabBridge()
         self.assertEqual(bridge._merge_detail("size=48", {}), "size=48")
         self.assertEqual(bridge._merge_detail("size=48", "not a dict"), "size=48")
+
+    # ------------------------------------------------------------------
+    # Round 35 – parser and extractor coverage
+    # ------------------------------------------------------------------
+
+    def test_parse_remote_listing_entries_parses_ready_and_processing(self) -> None:
+        text = (
+            "📋 Your Characters (2 shown)\n\n"
+            "✅ **Moss wizard** `char-001`\n"
+            "    - 8 directions • 48×48\n"
+            "\n"
+            "⏳ **Fire mage** `char-002`\n"
+            "    - Creating 4-directions\n"
+            "    - Status: processing in background\n"
+        )
+        entries = _parse_remote_listing_entries(text)
+        self.assertEqual(len(entries), 2)
+        self.assertEqual(entries[0]["remote_id"], "char-001")
+        self.assertEqual(entries[0]["status"], "ready")
+        self.assertIn("8 directions", entries[0]["detail"])
+        self.assertEqual(entries[1]["remote_id"], "char-002")
+        self.assertEqual(entries[1]["status"], "processing in background")
+
+    def test_parse_remote_listing_entries_empty_text(self) -> None:
+        self.assertEqual(_parse_remote_listing_entries(""), [])
+        self.assertEqual(_parse_remote_listing_entries("no entries here"), [])
+
+    def test_parse_remote_listing_entries_skips_next_hint(self) -> None:
+        text = (
+            "✅ **Wizard** `w-1`\n"
+            "    - 8 directions\n"
+            "→ Next: create more characters\n"
+        )
+        entries = _parse_remote_listing_entries(text)
+        self.assertEqual(len(entries), 1)
+        self.assertNotIn("Next:", entries[0]["detail"])
+
+    def test_extract_progress_status_detects_processing(self) -> None:
+        self.assertEqual(
+            _extract_progress_status("Character is still being generated in background", "Character"),
+            "processing",
+        )
+        self.assertEqual(
+            _extract_progress_status("**Status:** Processing in background", "Character"),
+            "processing",
+        )
+
+    def test_extract_progress_status_detects_ready(self) -> None:
+        self.assertEqual(
+            _extract_progress_status("**Status:** Ready\nRotation Images:\n- [south](https://example.invalid/s.png)", "Character"),
+            "ready",
+        )
+        self.assertEqual(
+            _extract_progress_status("**Status:** Completed", "Tileset"),
+            "ready",
+        )
+
+    def test_extract_progress_status_detects_ready_from_content(self) -> None:
+        self.assertEqual(
+            _extract_progress_status("Rotation Images:\n- preview available", "Character"),
+            "ready",
+        )
+        self.assertEqual(
+            _extract_progress_status("Download:\n- [zip](https://example.invalid/file.zip)", "Tileset"),
+            "ready",
+        )
+
+    def test_extract_progress_status_unknown_fallback(self) -> None:
+        self.assertEqual(_extract_progress_status("nothing useful here", "Character"), "unknown")
+
+    def test_normalize_remote_tool_result_create_character(self) -> None:
+        result = {
+            "content": [{"type": "text", "text": "**Character ID:** `abc-123`\n**Name:** Moss wizard\nCharacter is still being generated in background"}]
+        }
+        normalized = _normalize_remote_tool_result("create_character", result)
+        self.assertEqual(normalized["character_id"], "abc-123")
+        self.assertEqual(normalized["name"], "Moss wizard")
+        self.assertEqual(normalized["status"], "processing")
+
+    def test_normalize_remote_tool_result_get_character(self) -> None:
+        result = {
+            "content": [{"type": "text", "text": (
+                "**Character:** Moss wizard\n**ID:** `abc-123`\n**Status:** Ready\n\n"
+                "**Rotation Images:**\n- [south](https://example.invalid/rotations/south.png)\n\n"
+                "**Download:** [Download as ZIP](https://example.invalid/download/char.zip)"
+            )}]
+        }
+        normalized = _normalize_remote_tool_result("get_character", result)
+        self.assertEqual(normalized["character_id"], "abc-123")
+        self.assertEqual(normalized["name"], "Moss wizard")
+        self.assertEqual(normalized["status"], "ready")
+        self.assertEqual(normalized["preview_url"], "https://example.invalid/rotations/south.png")
+        self.assertEqual(normalized["download_url"], "https://example.invalid/download/char.zip")
+
+    def test_normalize_remote_tool_result_create_tileset(self) -> None:
+        result = {
+            "content": [{"type": "text", "text": "**Tileset ID:** `tile-99`\n**Description:** Dark grid\nTileset is still being generated in background"}]
+        }
+        normalized = _normalize_remote_tool_result("create_topdown_tileset", result)
+        self.assertEqual(normalized["tileset_id"], "tile-99")
+        self.assertEqual(normalized["tileset_name"], "Dark grid")
+        self.assertEqual(normalized["status"], "processing")
+
+    def test_normalize_remote_tool_result_get_tileset(self) -> None:
+        result = {
+            "content": [{"type": "text", "text": (
+                "**Tileset ID:** `tile-99`\n**Tileset:** Dark topology\n**Status:** Ready\n\n"
+                "- [Preview](https://example.invalid/tilesets/tile-99/image)\n"
+            )}]
+        }
+        normalized = _normalize_remote_tool_result("get_topdown_tileset", result)
+        self.assertEqual(normalized["tileset_id"], "tile-99")
+        self.assertEqual(normalized["tileset_name"], "Dark topology")
+        self.assertEqual(normalized["status"], "ready")
+        self.assertIn("example.invalid", normalized["preview_url"])
+
+    def test_normalize_remote_tool_result_list_characters(self) -> None:
+        result = {
+            "content": [{"type": "text", "text": "✅ **Wizard** `w-1`\n    - 8 dirs\n"}]
+        }
+        normalized = _normalize_remote_tool_result("list_characters", result)
+        self.assertIsInstance(normalized["items"], list)
+        self.assertEqual(len(normalized["items"]), 1)
+        self.assertEqual(normalized["items"][0]["remote_id"], "w-1")
+
+    def test_normalize_remote_tool_result_unknown_tool(self) -> None:
+        result = {"content": [{"type": "text", "text": "hello"}]}
+        self.assertEqual(_normalize_remote_tool_result("unknown_tool", result), result)
+
+    def test_extract_status_dict_paths(self) -> None:
+        bridge = PixelLabBridge()
+        self.assertEqual(bridge._extract_status({"status": "ready"}), "ready")
+        self.assertEqual(bridge._extract_status({"state": "processing"}), "processing")
+        self.assertEqual(bridge._extract_status({"job_status": "queued"}), "queued")
+        self.assertEqual(bridge._extract_status({"pending_jobs": [1]}), "processing")
+        self.assertEqual(bridge._extract_status({"animations": []}), "ready")
+        self.assertEqual(bridge._extract_status({}), "unknown")
+
+    def test_extract_status_non_dict(self) -> None:
+        bridge = PixelLabBridge()
+        self.assertEqual(bridge._extract_status("not a dict"), "unknown")
+
+    def test_extract_remote_id_dict_and_object(self) -> None:
+        bridge = PixelLabBridge()
+        self.assertEqual(bridge._extract_remote_id({"character_id": "c1"}, "character_id"), "c1")
+        self.assertIsNone(bridge._extract_remote_id({}, "character_id"))
+        job = PixelLabJob(job_id="j", job_type="c", label="L", prompt="p", status="q", source="m", remote_id="r1")
+        self.assertEqual(bridge._extract_remote_id(job, "remote_id"), "r1")
+
+    def test_extract_asset_metadata_non_dict(self) -> None:
+        bridge = PixelLabBridge()
+        meta = bridge._extract_asset_metadata("not a dict")
+        self.assertEqual(meta, {"asset_name": "", "preview_url": "", "download_url": ""})
+
+    def test_extract_asset_metadata_priority_keys(self) -> None:
+        bridge = PixelLabBridge()
+        meta = bridge._extract_asset_metadata({
+            "title": "fallback",
+            "name": "primary",
+            "thumbnail_url": "https://example.invalid/thumb.png",
+            "preview_url": "https://example.invalid/preview.png",
+            "asset_url": "https://example.invalid/asset.zip",
+            "download_url": "https://example.invalid/download.zip",
+        })
+        self.assertEqual(meta["asset_name"], "primary")
+        self.assertEqual(meta["preview_url"], "https://example.invalid/preview.png")
+        self.assertEqual(meta["download_url"], "https://example.invalid/download.zip")
+
+    def test_build_imported_jobs_handles_malformed_input(self) -> None:
+        bridge = PixelLabBridge()
+        self.assertEqual(bridge._build_imported_jobs("not a dict", "character", "Char"), [])
+        self.assertEqual(bridge._build_imported_jobs({"items": "not a list"}, "character", "Char"), [])
+        self.assertEqual(bridge._build_imported_jobs({"items": [{"no_id": True}]}, "character", "Char"), [])
+
+    def test_build_imported_jobs_creates_valid_jobs(self) -> None:
+        bridge = PixelLabBridge()
+        result = {"items": [
+            {"remote_id": "r1", "label": "Wizard", "status": "ready", "detail": "8 dirs"},
+            {"remote_id": "r2", "prompt": "Mage", "status": "processing"},
+        ]}
+        jobs = bridge._build_imported_jobs(result, "character", "Character queued")
+        self.assertEqual(len(jobs), 2)
+        self.assertEqual(jobs[0].remote_id, "r1")
+        self.assertEqual(jobs[0].prompt, "Wizard")
+        self.assertEqual(jobs[0].status, "ready")
+        self.assertEqual(jobs[1].remote_id, "r2")
+        self.assertEqual(jobs[1].prompt, "Mage")
+
+    def test_build_imported_jobs_tileset_ready_gets_preview_url(self) -> None:
+        bridge = PixelLabBridge()
+        result = {"items": [{"remote_id": "t1", "label": "Grid", "status": "ready"}]}
+        jobs = bridge._build_imported_jobs(result, "tileset", "Tileset queued")
+        self.assertEqual(len(jobs), 1)
+        self.assertIn("t1", jobs[0].preview_url)
+        self.assertIn("t1", jobs[0].download_url)
 
 
 if __name__ == "__main__":

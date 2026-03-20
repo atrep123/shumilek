@@ -63,6 +63,84 @@ class SafeNoteNameTests(unittest.TestCase):
         # Guard should handle falsy input
         self.assertFalse(self._is_safe(None))
 
+    # --- Additional traversal bypass patterns (R35) ---
+    def test_rejects_dotdot_backslash_traversal(self):
+        self.assertFalse(self._is_safe("..\\etc\\passwd"))
+
+    def test_rejects_mixed_separators(self):
+        self.assertFalse(self._is_safe("foo/..\\bar"))
+
+    def test_rejects_encoded_dot_dot(self):
+        # Even if someone tries a name containing literal ".."
+        self.assertFalse(self._is_safe(".."))
+
+    def test_rejects_only_dots(self):
+        self.assertFalse(self._is_safe("..."))
+
+    def test_rejects_absolute_unix_path(self):
+        self.assertFalse(self._is_safe("/etc/passwd"))
+
+    def test_rejects_absolute_windows_path(self):
+        self.assertFalse(self._is_safe("C:\\Windows\\system32"))
+
+    def test_accepts_name_with_dots_no_traversal(self):
+        # "my.note.v2" is fine — no ".." component
+        self.assertTrue(self._is_safe("my.note.v2"))
+
+    def test_accepts_name_with_underscore(self):
+        self.assertTrue(self._is_safe("_draft_notes"))
+
+    def test_rejects_path_with_directory_component(self):
+        self.assertFalse(self._is_safe("subdir/file.md"))
+
+
+class NewFolderValidationTests(unittest.TestCase):
+    """Tests for _new_folder validation regex + Path check (R35 security fix)."""
+
+    def _is_valid_folder_name(self, name: str) -> bool:
+        """Replicate the _new_folder validation logic from main.py."""
+        if not name:
+            return False
+        if not re.match(r'^[\w\-. ]+$', name) or ".." in name or Path(name).name != name:
+            return False
+        return True
+
+    def test_simple_folder_name(self):
+        self.assertTrue(self._is_valid_folder_name("Projects"))
+
+    def test_folder_with_spaces(self):
+        self.assertTrue(self._is_valid_folder_name("My Folder"))
+
+    def test_folder_with_hyphen_underscore(self):
+        self.assertTrue(self._is_valid_folder_name("project-notes_2025"))
+
+    def test_folder_with_dot(self):
+        self.assertTrue(self._is_valid_folder_name("archive.old"))
+
+    def test_rejects_traversal(self):
+        self.assertFalse(self._is_valid_folder_name("../evil"))
+
+    def test_rejects_backslash_traversal(self):
+        self.assertFalse(self._is_valid_folder_name("..\\evil"))
+
+    def test_rejects_subdirectory_slash(self):
+        self.assertFalse(self._is_valid_folder_name("sub/folder"))
+
+    def test_rejects_special_chars(self):
+        self.assertFalse(self._is_valid_folder_name("folder<name>"))
+
+    def test_rejects_empty(self):
+        self.assertFalse(self._is_valid_folder_name(""))
+
+    def test_rejects_colon(self):
+        self.assertFalse(self._is_valid_folder_name("C:"))
+
+    def test_rejects_pipe(self):
+        self.assertFalse(self._is_valid_folder_name("a|b"))
+
+    def test_rejects_dotdot_only(self):
+        self.assertFalse(self._is_valid_folder_name(".."))
+
 
 class HiveReportPathTests(unittest.TestCase):
     """Tests for _hive_report_path sanitization without instantiating full Hive."""
