@@ -333,5 +333,34 @@ describe('validationPipeline', () => {
       expect(result!.external.ragasResult.unavailable).to.be.true;
       expect(logs.some(l => l.includes('Crashed'))).to.be.true;
     });
+
+    it('gracefully handles svedomi crash and marks result unavailable', async () => {
+      const logs: string[] = [];
+      const deps = noopDeps({
+        log: (msg: string) => logs.push(msg),
+        svedomi: {
+          validate: async () => { throw new Error('ECONNREFUSED'); }
+        }
+      });
+      const cfg = baseCfg({ miniModelEnabled: true });
+      const result = await runValidationPipeline('resp', baseSession(), cfg, deps);
+      expect(result).to.not.be.null;
+      expect(result!.miniResult).to.not.be.null;
+      expect(result!.miniResult!.unavailable).to.be.true;
+      expect(logs.some(l => l.includes('Svedomi') && l.includes('ECONNREFUSED'))).to.be.true;
+    });
+
+    it('gracefully handles summarizer crash and returns null summary', async () => {
+      const logs: string[] = [];
+      const deps = noopDeps({
+        log: (msg: string) => logs.push(msg),
+        summarizeResponse: async () => { throw new Error('Model not loaded'); }
+      });
+      const cfg = baseCfg({ summarizerEnabled: true });
+      const result = await runValidationPipeline('resp', baseSession(), cfg, deps);
+      expect(result).to.not.be.null;
+      expect(result!.summary).to.be.null;
+      expect(logs.some(l => l.includes('Summarizer') && l.includes('Model not loaded'))).to.be.true;
+    });
   });
 });

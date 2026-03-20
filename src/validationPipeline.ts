@@ -324,13 +324,18 @@ export async function runValidationPipeline(
       loading: true
     });
     deps.postToAllWebviews({ type: 'svedomiValidating' });
-    miniResult = await deps.svedomi.validate(
-      cfg.trimmedPrompt,
-      fullResponse,
-      (status: string) => {
-        deps.postToAllWebviews({ type: 'pipelineStatus', icon: '🧠', text: status, statusType: 'validation', loading: true });
-      }
-    );
+    try {
+      miniResult = await deps.svedomi.validate(
+        cfg.trimmedPrompt,
+        fullResponse,
+        (status: string) => {
+          deps.postToAllWebviews({ type: 'pipelineStatus', icon: '🧠', text: status, statusType: 'validation', loading: true });
+        }
+      );
+    } catch (svedErr: unknown) {
+      deps.log(`[Svedomi] Validation error: ${(svedErr as Error).message || String(svedErr)}`);
+      miniResult = { score: 0, reason: 'Validator error', unavailable: true } as MiniModelResult;
+    }
     deps.postToAllWebviews({ type: 'svedomiValidationDone' });
     deps.postToAllWebviews({ type: 'miniModelResult', result: miniResult });
   } else {
@@ -405,9 +410,14 @@ export async function runValidationPipeline(
   qualityChecks.push(...external.results);
 
   // === SUMMARIZER + STRUCTURED OUTPUT ===
-  const summary = cfg.summarizerEnabled
-    ? await deps.summarizeResponse(cfg.baseUrl, cfg.summarizerModel, cfg.trimmedPrompt, fullResponse, cfg.timeout)
-    : null;
+  let summary: string | null = null;
+  if (cfg.summarizerEnabled) {
+    try {
+      summary = await deps.summarizeResponse(cfg.baseUrl, cfg.summarizerModel, cfg.trimmedPrompt, fullResponse, cfg.timeout);
+    } catch (sumErr: unknown) {
+      deps.log(`[Summarizer] Error: ${(sumErr as Error).message || String(sumErr)}`);
+    }
+  }
   const structuredOutput = deps.buildStructuredOutput(fullResponse, summary, qualityChecks, !cfg.stepMode);
 
   return {
