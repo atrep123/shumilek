@@ -464,6 +464,18 @@ class PipelineSimulator:
 # ═══════════════════════════════════════════════════════════════════
 #   MAIN APPLICATION
 # ═══════════════════════════════════════════════════════════════════
+def _is_safe_note_name(name: str) -> bool:
+    """Return True if *name* is a safe single-component filename (no traversal)."""
+    if not name or not name.strip():
+        return False
+    if ".." in name or "/" in name or "\\" in name:
+        return False
+    # After stripping, must remain a simple filename (no path components)
+    if Path(name).name != name:
+        return False
+    return True
+
+
 class ShumilekHive:
     """Living AI knowledge hub with pipeline visualization and task management."""
 
@@ -2168,6 +2180,9 @@ class ShumilekHive:
             return
         if not name.endswith(".md"):
             name += ".md"
+        if not _is_safe_note_name(name):
+            messagebox.showwarning("Invalid", "Name cannot contain path separators or '..'")
+            return
         path = self.vault_path / name
         if path.exists():
             messagebox.showwarning("exists", f"'{name}' already exists")
@@ -2233,11 +2248,11 @@ class ShumilekHive:
                                            parent=self.root)
         if not new_name:
             return
-        if ".." in new_name or "/" in new_name or "\\" in new_name:
-            messagebox.showwarning("Invalid", "Name cannot contain path separators or '..'")
-            return
         if not new_name.endswith(".md"):
             new_name += ".md"
+        if not _is_safe_note_name(new_name):
+            messagebox.showwarning("Invalid", "Name cannot contain path separators or '..'")
+            return
         new_path = self.vault_path / new_name
         if new_path.exists():
             messagebox.showwarning("exists", f"'{new_name}' already exists")
@@ -2319,6 +2334,9 @@ class ShumilekHive:
         if not name:
             return
         fname = name if name.endswith(".md") else name + ".md"
+        if not _is_safe_note_name(fname):
+            messagebox.showwarning("Invalid", "Name cannot contain path separators or '..'")
+            return
         path = self.vault_path / fname
         if path.exists():
             messagebox.showwarning("exists", f"'{fname}' already exists")
@@ -3762,7 +3780,11 @@ class ShumilekHive:
         self._hive_upsert_section("Hive Analysis", analysis)
 
     def _hive_report_path(self, report_name: str) -> Path:
-        safe_name = re.sub(r'[^\w\-. ]+', ' ', str(report_name)).strip() or "Hive Report"
+        safe_name = re.sub(r'[^\w\- ]+', ' ', str(report_name)).strip() or "Hive Report"
+        # Remove dots to prevent traversal (e.g. "..")
+        safe_name = safe_name.replace(".", "")
+        if not safe_name:
+            safe_name = "Hive Report"
         report_dir = self.vault_path / "Hive Reports"
         return report_dir / f"{safe_name}.md"
 
