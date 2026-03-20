@@ -93,8 +93,8 @@ export async function executeModelCallWithMessages(
       }
     }
   } finally {
-    // Drain / destroy the response body on early break to release the socket
-    if (earlyBreak && res.body) {
+    // Destroy the response body to release the socket (no-op if already ended)
+    if (res.body) {
       try {
         const body = res.body as any;
         if (typeof body.destroy === 'function') {

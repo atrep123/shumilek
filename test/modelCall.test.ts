@@ -377,4 +377,37 @@ describe('modelCall', () => {
     assert.ok(destroyCalled, 'body.destroy() should be called on buffer overflow');
     assert.ok(logs.some(l => l.includes('Buffer overflow')));
   });
+
+  it('destroys response body when stream throws an exception', async () => {
+    let destroyCalled = false;
+    const errorStream = {
+      async *[Symbol.asyncIterator]() {
+        yield Buffer.from('{"message":{"content":"partial"}}\n', 'utf8');
+        throw new Error('network failure');
+      },
+      destroy() { destroyCalled = true; }
+    };
+
+    const { executeModelCallWithMessages } = loadModelCall({
+      fetchWithTimeout: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: errorStream
+      })
+    });
+
+    await assert.rejects(
+      () => executeModelCallWithMessages(
+        'http://example.test',
+        'test-model',
+        'system prompt',
+        [{ role: 'user', content: 'hello' }],
+        5000
+      ),
+      /network failure/
+    );
+
+    assert.ok(destroyCalled, 'body.destroy() should be called even when stream throws');
+  });
 });

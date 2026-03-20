@@ -141,7 +141,8 @@ export async function streamPlainOllamaChat(opts: {
       }
     }
   } finally {
-    if (earlyBreak && res.body) {
+    // Destroy the response body to release the socket (no-op if already ended)
+    if (res.body) {
       try {
         const body = res.body as any;
         if (typeof body.destroy === 'function') {

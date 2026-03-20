@@ -423,4 +423,39 @@ describe('responseStreaming', () => {
     assert.ok(destroyCalled, 'body.destroy() should be called on buffer overflow');
     assert.ok(logs.some(l => l.includes('Buffer overflow detected')));
   });
+
+  it('destroys response body when stream throws an exception', async () => {
+    let destroyCalled = false;
+    const abortCtrl = new AbortController();
+
+    const errorStream = {
+      async *[Symbol.asyncIterator]() {
+        yield Buffer.from('{"message":{"content":"partial"}}\n', 'utf8');
+        throw new Error('network failure');
+      },
+      destroy() { destroyCalled = true; }
+    };
+
+    await assert.rejects(
+      () => streamPlainOllamaChat({
+        url: 'http://example.test',
+        model: 'test-model',
+        apiMessages: [{ role: 'user', content: 'hello' }],
+        timeout: 1000,
+        panel: createPanel([]),
+        abortCtrl,
+        guardianEnabled: false,
+        log: () => {},
+        fetchWithTimeoutFn: async () => ({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          body: errorStream
+        }) as any
+      }),
+      /network failure/
+    );
+
+    assert.ok(destroyCalled, 'body.destroy() should be called even when stream throws');
+  });
 });
