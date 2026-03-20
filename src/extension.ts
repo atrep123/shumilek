@@ -3246,10 +3246,12 @@ async function executeModelCall(
     let lastChunkAt = Date.now();
     const STREAM_STALL_MS = 15000;
 
+    const generationStartMs = Date.now();
+
     for await (const chunk of res.body as any) {
       if (!chunk) continue;
       const now = Date.now();
-      if (now - lastChunkAt > STREAM_STALL_MS && fullResponse.length > 50) {
+      if (now - lastChunkAt > STREAM_STALL_MS && (fullResponse.length > 50 || now - generationStartMs > STREAM_STALL_MS * 2)) {
         outputChannel?.appendLine('[executeModelCall] Stream stall detected, aborting');
         fullResponse += '\n\n[Odpověď zkrácena – stream stall]';
         controller.abort();

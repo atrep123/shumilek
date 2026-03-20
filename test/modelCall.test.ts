@@ -190,7 +190,8 @@ describe('modelCall', () => {
   it('stops on stalled stream after partial output and logs the stall', async () => {
     const logs: string[] = [];
     const originalNow = Date.now;
-    const nowValues = [0, 1000, 17050];
+    // lastChunkAt=0, generationStartMs=0, chunk1 now=1000, chunk2 now=17050
+    const nowValues = [0, 0, 1000, 17050];
     Date.now = () => nowValues.shift() ?? 17050;
 
     try {
@@ -310,7 +311,8 @@ describe('modelCall', () => {
     const logs: string[] = [];
     let destroyCalled = false;
     const originalNow = Date.now;
-    const nowValues = [0, 1000, 17050];
+    // lastChunkAt=0, generationStartMs=0, chunk1 now=1000, chunk2 now=17050
+    const nowValues = [0, 0, 1000, 17050];
     Date.now = () => nowValues.shift() ?? 17050;
 
     try {
@@ -481,5 +483,46 @@ describe('modelCall', () => {
     );
 
     assert.strictEqual(result, 'hello world');
+  });
+
+  it('detects stream stall even with short response when elapsed time exceeds 2× stall threshold', async () => {
+    const logs: string[] = [];
+    const originalNow = Date.now;
+    // generationStartMs=0, lastChunkAt=0, then next chunk arrives at time=31000
+    // lastChunkAt=0, generationStartMs=0, chunk1 now=1000, chunk2 now=31050
+    // fullResponse.length < 50 but elapsed (31050) > STREAM_STALL_MS*2 (30000)
+    const nowValues = [0, 0, 1000, 31050];
+    Date.now = () => nowValues.shift() ?? 31050;
+
+    try {
+      const { executeModelCallWithMessages } = loadModelCall({
+        fetchWithTimeout: async () => ({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          body: createStream([
+            '{"message":{"content":"hi"}}\n',
+            '{"message":{"content":"tail"}}\n'
+          ])
+        })
+      });
+
+      const result = await executeModelCallWithMessages(
+        'http://example.test',
+        'test-model',
+        'system prompt',
+        [{ role: 'user', content: 'hello' }],
+        5000,
+        undefined,
+        false,
+        (message: string) => logs.push(message)
+      );
+
+      assert.ok(result.includes('hi'), 'should contain first content');
+      assert.ok(result.includes('[Odpověď zkrácena'), 'should contain stall marker');
+      assert.ok(logs.some(l => l.includes('Stream stall detected')));
+    } finally {
+      Date.now = originalNow;
+    }
   });
 });

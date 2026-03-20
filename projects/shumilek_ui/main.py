@@ -83,6 +83,7 @@ class PixelWorkspaceApp:
         self.status_text = tk.StringVar(value="Aktualni task: Stavime prirodni pixel workspace pro Shumilka")
         self.bridge = PixelLabBridge()
         self._pixellab_auth_cache: dict[str, str] | None = None
+        self._pixellab_auth_cache_time: float = 0.0
         self.bridge_mode_text = tk.StringVar(value=f"PixelLab bridge: {self.bridge.get_mode_label()}")
         self.server_style_preset = tk.StringVar(value=DEFAULT_SERVER_STYLE_PRESET)
         self.server_style_preset_text = tk.StringVar(value=server_style_preset_label(DEFAULT_SERVER_STYLE_PRESET))
@@ -309,10 +310,14 @@ class PixelWorkspaceApp:
             return
         queue.put(callback)
 
+    PIXELLAB_AUTH_TTL_SECONDS = 3600
+
     def _get_pixellab_auth(self) -> dict[str, str] | None:
-        if self._pixellab_auth_cache is None:
+        now = time.time()
+        if self._pixellab_auth_cache is None or (now - self._pixellab_auth_cache_time > self.PIXELLAB_AUTH_TTL_SECONDS):
             headers = get_remote_auth_headers()
             self._pixellab_auth_cache = headers if headers else {}
+            self._pixellab_auth_cache_time = now
         return self._pixellab_auth_cache or None
 
     def _auth_for_url(self, url: str) -> dict[str, str] | None:
@@ -1089,6 +1094,8 @@ class PixelWorkspaceApp:
             pass
         self._dispatch_to_ui(lambda: self._apply_library_result(items))
 
+    MAX_LIBRARY_ITEMS = 2000
+
     def _parse_library_listing(self, result: object, asset_type: str) -> list[dict[str, str]]:
         if not isinstance(result, dict):
             return []
@@ -1097,6 +1104,8 @@ class PixelWorkspaceApp:
             return []
         parsed: list[dict[str, str]] = []
         for item in raw_items:
+            if len(parsed) >= self.MAX_LIBRARY_ITEMS:
+                break
             if not isinstance(item, dict):
                 continue
             remote_id = str(item.get("remote_id") or "").strip()

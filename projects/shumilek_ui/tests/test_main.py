@@ -2601,6 +2601,7 @@ class AuthForUrlTests(unittest.TestCase):
     def _make_app(self) -> PixelWorkspaceApp:
         app = PixelWorkspaceApp.__new__(PixelWorkspaceApp)
         app._pixellab_auth_cache = {"Authorization": "Bearer test-token"}
+        app._pixellab_auth_cache_time = time.time()
         return app
 
     def test_pixellab_api_returns_auth(self) -> None:
@@ -2639,6 +2640,53 @@ class AuthForUrlTests(unittest.TestCase):
         app = self._make_app()
         result = app._auth_for_url("not a url at all")
         self.assertIsNone(result)
+
+
+class ParseLibraryListingTests(unittest.TestCase):
+    """Tests for _parse_library_listing including max cap."""
+
+    def _make_app(self) -> PixelWorkspaceApp:
+        return PixelWorkspaceApp.__new__(PixelWorkspaceApp)
+
+    def test_caps_items_at_max_library_items(self) -> None:
+        app = self._make_app()
+        raw_items = [{"remote_id": f"id-{i}", "label": f"item-{i}", "status": "ready"} for i in range(3000)]
+        result = app._parse_library_listing({"items": raw_items}, "character")
+        self.assertEqual(len(result), app.MAX_LIBRARY_ITEMS)
+        self.assertEqual(result[0]["id"], "id-0")
+        self.assertEqual(result[-1]["id"], f"id-{app.MAX_LIBRARY_ITEMS - 1}")
+
+
+class AuthCacheExpiryTests(unittest.TestCase):
+    """Tests for _get_pixellab_auth TTL expiry."""
+
+    def _make_app(self) -> PixelWorkspaceApp:
+        app = PixelWorkspaceApp.__new__(PixelWorkspaceApp)
+        app._pixellab_auth_cache = None
+        app._pixellab_auth_cache_time = 0.0
+        return app
+
+    @mock.patch("projects.shumilek_ui.main.get_remote_auth_headers")
+    def test_expired_cache_refreshes_auth(self, mock_auth: mock.Mock) -> None:
+        app = self._make_app()
+        app._pixellab_auth_cache = {"Authorization": "Bearer old"}
+        app._pixellab_auth_cache_time = 0.0  # epoch — long expired
+
+        mock_auth.return_value = {"Authorization": "Bearer new"}
+        result = app._get_pixellab_auth()
+        self.assertEqual(result, {"Authorization": "Bearer new"})
+        mock_auth.assert_called_once()
+
+    @mock.patch("projects.shumilek_ui.main.get_remote_auth_headers")
+    def test_fresh_cache_does_not_refresh(self, mock_auth: mock.Mock) -> None:
+        import time as _time
+        app = self._make_app()
+        app._pixellab_auth_cache = {"Authorization": "Bearer still-valid"}
+        app._pixellab_auth_cache_time = _time.time()  # just now
+
+        result = app._get_pixellab_auth()
+        self.assertEqual(result, {"Authorization": "Bearer still-valid"})
+        mock_auth.assert_not_called()
 
 
 if __name__ == "__main__":
