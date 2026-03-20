@@ -231,6 +231,29 @@ describe('ModelRouter', () => {
       expect(report[0].successCalls).to.equal(1);
       expect(report[1].successCalls).to.equal(0);
     });
+
+    it('should remove stale models from health and backoff maps', () => {
+      const router = new ModelRouter({
+        baseUrl: 'http://localhost:11434',
+        models: ['model-a', 'model-b', 'model-c'],
+        maxConsecutiveFailures: 1,
+        backoffMs: 60000,
+      });
+      router.recordSuccess('model-a', 100);
+      router.recordFailure('model-b', 'down');
+      // model-b is now backed off
+      expect(router.isBackedOff('model-b')).to.be.true;
+
+      // Remove model-b and model-c, add model-d
+      router.updateModels(['model-a', 'model-d']);
+      const report = router.getHealthReport();
+      const names = report.map(h => h.model);
+      expect(names).to.deep.equal(['model-a', 'model-d']);
+      expect(names).to.not.include('model-b');
+      expect(names).to.not.include('model-c');
+      // Backoff for removed model should also be gone
+      expect(router.isBackedOff('model-b')).to.be.false;
+    });
   });
 
   describe('getHealthReport', () => {

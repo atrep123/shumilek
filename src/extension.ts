@@ -2078,15 +2078,21 @@ PŘÍSTUP K PRÁCI:
             panel.webview.postMessage({ type: 'svedomiValidating' });
           }
 
-          const svedomiResult = await svedomi.validate(
-            `Krok ${step.id}: ${step.instruction}`,
-            result,
-            (status: string) => {
-              if (panel && panel.visible) {
-                panel.webview.postMessage({ type: 'pipelineStatus', icon: '🧠', text: status, statusType: 'validation', loading: true });
+          let svedomiResult;
+          try {
+            svedomiResult = await svedomi.validate(
+              `Krok ${step.id}: ${step.instruction}`,
+              result,
+              (status: string) => {
+                if (panel && panel.visible) {
+                  panel.webview.postMessage({ type: 'pipelineStatus', icon: '🧠', text: status, statusType: 'validation', loading: true });
+                }
               }
-            }
-          );
+            );
+          } catch (svedErr: unknown) {
+            outputChannel?.appendLine(`[svedomi] Krok ${step.id}: validation error: ${(svedErr as Error).message || String(svedErr)}`);
+            svedomiResult = { score: 0, reason: 'Validator error', unavailable: true, shouldRetry: false, isValid: false };
+          }
 
           if (panel && panel.visible) {
             panel.webview.postMessage({ type: 'svedomiValidationDone' });

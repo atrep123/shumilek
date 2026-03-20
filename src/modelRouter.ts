@@ -168,6 +168,14 @@ export class ModelRouter {
    * Update the model list (e.g. from config change).
    */
   updateModels(models: string[]): void {
+    const newSet = new Set(models);
+    // Remove stale entries for models no longer in the list
+    for (const key of this.health.keys()) {
+      if (!newSet.has(key)) {
+        this.health.delete(key);
+        this.backoff.delete(key);
+      }
+    }
     this.config.models = models;
     // Add health entries for new models
     for (const model of models) {

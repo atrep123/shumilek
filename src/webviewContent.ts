@@ -681,8 +681,7 @@ export function getWebviewContent(_webview: vscode.Webview, _initialMessages: Ch
   html += '      clearPipelineMessages();';
   html += '      var assistantMsgsErr = chat.querySelectorAll(".message.assistant:not(.pipeline)");';
   html += '      if (assistantMsgsErr.length > 0) assistantMsgsErr[assistantMsgsErr.length - 1].remove();';
-  html += '      var errText = String(msg.text || "Neznama chyba").replace(/</g, "&lt;").replace(/>/g, "&gt;");';
-  html += '      addMessageToUI("Chyba: " + errText, "assistant", false, Date.now());';
+  html += '      addMessageToUI("Chyba: " + String(msg.text || "Neznama chyba"), "assistant", false, Date.now());';
   html += '      setBusy(false);';
   html += '      break;';
   html += '    case "activeFileContent":';
