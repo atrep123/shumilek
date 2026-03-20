@@ -378,6 +378,55 @@ class PixelLabBridgeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             bridge.submit_character("   ")
 
+    def test_bridge_post_uses_long_timeout(self) -> None:
+        from projects.shumilek_ui.pixellab_bridge import _bridge_post, REMOTE_MCP_HTTP_TIMEOUT_SECONDS
+
+        captured_timeouts: list[float] = []
+
+        class _FakeResponse:
+            def __init__(self) -> None:
+                pass
+            def read(self) -> bytes:
+                return b'{"ok": true, "result": {"character_id": "c1"}}'
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return None
+
+        def fake_urlopen(req, timeout=0):
+            captured_timeouts.append(timeout)
+            return _FakeResponse()
+
+        with mock.patch("projects.shumilek_ui.pixellab_bridge.urlrequest.urlopen", side_effect=fake_urlopen):
+            result = _bridge_post("http://127.0.0.1:9999", "/character/create", {"desc": "elf"})
+
+        self.assertEqual(result, {"character_id": "c1"})
+        self.assertEqual(captured_timeouts, [REMOTE_MCP_HTTP_TIMEOUT_SECONDS])
+
+    def test_read_json_response_default_timeout_is_short(self) -> None:
+        from projects.shumilek_ui.pixellab_bridge import _read_json_response
+
+        captured_timeouts: list[float] = []
+
+        class _FakeResponse:
+            def read(self) -> bytes:
+                return b'{"ok": true}'
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return None
+
+        def fake_urlopen(req, timeout=0):
+            captured_timeouts.append(timeout)
+            return _FakeResponse()
+
+        with mock.patch("projects.shumilek_ui.pixellab_bridge.urlrequest.urlopen", side_effect=fake_urlopen):
+            from urllib import request as urlrequest
+            req = urlrequest.Request("http://127.0.0.1:9999/health")
+            _read_json_response(req)
+
+        self.assertEqual(captured_timeouts, [1.5])
+
 
 if __name__ == "__main__":
     unittest.main()

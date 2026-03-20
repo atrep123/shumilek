@@ -42,8 +42,8 @@ def _candidate_remote_mcp_paths() -> list[Path]:
     return unique_candidates
 
 
-def _read_json_response(req: urlrequest.Request) -> dict[str, Any]:
-    with urlrequest.urlopen(req, timeout=1.5) as response:
+def _read_json_response(req: urlrequest.Request, timeout: float = 1.5) -> dict[str, Any]:
+    with urlrequest.urlopen(req, timeout=timeout) as response:
         raw = response.read().decode("utf-8")
     parsed = json.loads(raw or "{}")
     if not isinstance(parsed, dict):
@@ -412,7 +412,7 @@ def _bridge_post(base_url: str, endpoint: str, payload: dict[str, Any]) -> dict[
         },
         method="POST",
     )
-    data = _read_json_response(req)
+    data = _read_json_response(req, timeout=REMOTE_MCP_HTTP_TIMEOUT_SECONDS)
     if not data.get("ok"):
         raise RuntimeError(str(data.get("error") or "PixelLab bridge request failed"))
     result = data.get("result")

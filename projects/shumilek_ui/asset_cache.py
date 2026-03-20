@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import hashlib
 import http.client
+import ipaddress
 import json
 import mimetypes
 from pathlib import Path
 import shutil
+import socket
 import ssl
 import tempfile
 import time
@@ -40,37 +42,63 @@ def cached_asset_path(url: str, cache_dir: Path | None = None, content_type: str
     return get_asset_cache_dir(cache_dir) / f"{digest}{suffix}"
 
 
+def _is_public_download_host(hostname: str) -> bool:
+    """Return False for loopback, private, and link-local addresses."""
+    if not hostname:
+        return False
+    try:
+        addr_info = socket.getaddrinfo(hostname, None, socket.AF_UNSPEC, socket.SOCK_STREAM)
+    except socket.gaierror:
+        return False
+    for _family, _type, _proto, _canonname, sockaddr in addr_info:
+        ip_str = sockaddr[0]
+        if ip_str.startswith("::ffff:"):
+            ip_str = ip_str[7:]
+        try:
+            addr = ipaddress.ip_address(ip_str)
+        except ValueError:
+            continue
+        if addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved:
+            return False
+    return True
+
+
 def _download_with_auth_redirect(url: str, auth_headers: dict[str, str] | None = None, timeout: int = 5) -> tuple[bytes, str]:
     """Download url, sending auth_headers only to api.pixellab.ai, stripping on CDN redirect."""
     parsed = urlparse.urlparse(url)
     for _ in range(5):
+        if parsed.scheme not in ("http", "https"):
+            raise ValueError(f"Unsupported scheme: {parsed.scheme}")
+        if not _is_public_download_host(parsed.hostname or ""):
+            raise ValueError(f"Download blocked: {parsed.hostname} is not a public host")
         use_ssl = parsed.scheme == "https"
         conn: http.client.HTTPConnection
         if use_ssl:
             conn = http.client.HTTPSConnection(parsed.hostname or "", parsed.port or 443, context=ssl.create_default_context(), timeout=timeout)
         else:
             conn = http.client.HTTPConnection(parsed.hostname or "", parsed.port or 80, timeout=timeout)
-        path = parsed.path
-        if parsed.query:
-            path += "?" + parsed.query
-        headers = dict(DEFAULT_ASSET_REQUEST_HEADERS)
-        if auth_headers and "api.pixellab.ai" in (parsed.hostname or ""):
-            headers.update(auth_headers)
-        conn.request("GET", path, headers=headers)
-        resp = conn.getresponse()
-        if resp.status in (301, 302, 303, 307, 308):
-            location = resp.getheader("Location", "")
+        try:
+            path = parsed.path
+            if parsed.query:
+                path += "?" + parsed.query
+            headers = dict(DEFAULT_ASSET_REQUEST_HEADERS)
+            if auth_headers and "api.pixellab.ai" in (parsed.hostname or ""):
+                headers.update(auth_headers)
+            conn.request("GET", path, headers=headers)
+            resp = conn.getresponse()
+            if resp.status in (301, 302, 303, 307, 308):
+                location = resp.getheader("Location", "")
+                if not location:
+                    raise ValueError("Redirect without Location header")
+                parsed = urlparse.urlparse(location)
+                continue
+            if resp.status != 200:
+                raise ValueError(f"HTTP {resp.status} downloading {url}")
+            data = resp.read()
+            content_type = resp.getheader("Content-Type", "application/octet-stream")
+            return data, content_type
+        finally:
             conn.close()
-            if not location:
-                raise ValueError("Redirect without Location header")
-            parsed = urlparse.urlparse(location)
-            continue
-        data = resp.read()
-        content_type = resp.getheader("Content-Type", "application/octet-stream")
-        conn.close()
-        if resp.status != 200:
-            raise ValueError(f"HTTP {resp.status} downloading {url}")
-        return data, content_type
     raise ValueError("Too many redirects")
 
 

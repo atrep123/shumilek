@@ -6,6 +6,8 @@ import unittest
 from unittest import mock
 
 from projects.shumilek_ui.asset_cache import (
+    _download_with_auth_redirect,
+    _is_public_download_host,
     browser_url_for_path,
     cached_asset_path,
     describe_visual_bootstrap_state_issue,
@@ -218,6 +220,77 @@ class AssetCacheTests(unittest.TestCase):
                 },
             )
             self.assertIsNone(reason)
+
+
+class DownloadSecurityTests(unittest.TestCase):
+    def test_is_public_download_host_rejects_loopback(self) -> None:
+        self.assertFalse(_is_public_download_host("127.0.0.1"))
+        self.assertFalse(_is_public_download_host("localhost"))
+
+    def test_is_public_download_host_rejects_private_ip(self) -> None:
+        with mock.patch("projects.shumilek_ui.asset_cache.socket.getaddrinfo", return_value=[
+            (2, 1, 0, "", ("10.0.0.5", 0)),
+        ]):
+            self.assertFalse(_is_public_download_host("internal.example.com"))
+
+    def test_is_public_download_host_accepts_public_ip(self) -> None:
+        with mock.patch("projects.shumilek_ui.asset_cache.socket.getaddrinfo", return_value=[
+            (2, 1, 0, "", ("93.184.216.34", 0)),
+        ]):
+            self.assertTrue(_is_public_download_host("example.com"))
+
+    def test_is_public_download_host_rejects_metadata_ip(self) -> None:
+        with mock.patch("projects.shumilek_ui.asset_cache.socket.getaddrinfo", return_value=[
+            (2, 1, 0, "", ("169.254.169.254", 0)),
+        ]):
+            self.assertFalse(_is_public_download_host("metadata.internal"))
+
+    def test_is_public_download_host_rejects_ipv4_mapped_private(self) -> None:
+        with mock.patch("projects.shumilek_ui.asset_cache.socket.getaddrinfo", return_value=[
+            (10, 1, 0, "", ("::ffff:192.168.1.1", 0, 0, 0)),
+        ]):
+            self.assertFalse(_is_public_download_host("mapped.example.com"))
+
+    def test_download_with_auth_redirect_rejects_private_host(self) -> None:
+        with mock.patch("projects.shumilek_ui.asset_cache._is_public_download_host", return_value=False):
+            with self.assertRaises(ValueError) as ctx:
+                _download_with_auth_redirect("https://10.0.0.1/asset.png")
+            self.assertIn("not a public host", str(ctx.exception))
+
+    def test_download_with_auth_redirect_rejects_bad_scheme(self) -> None:
+        with self.assertRaises(ValueError) as ctx:
+            _download_with_auth_redirect("ftp://example.com/asset.png")
+        self.assertIn("Unsupported scheme", str(ctx.exception))
+
+    def test_download_closes_conn_on_read_exception(self) -> None:
+        fake_resp = mock.MagicMock()
+        fake_resp.status = 200
+        fake_resp.read.side_effect = OSError("connection reset")
+        fake_conn = mock.MagicMock()
+        fake_conn.getresponse.return_value = fake_resp
+
+        with mock.patch("projects.shumilek_ui.asset_cache._is_public_download_host", return_value=True), \
+             mock.patch("projects.shumilek_ui.asset_cache.http.client.HTTPSConnection", return_value=fake_conn):
+            with self.assertRaises(OSError):
+                _download_with_auth_redirect("https://cdn.example.com/asset.png")
+
+        fake_conn.close.assert_called_once()
+
+    def test_download_non_200_raises_without_reading_body(self) -> None:
+        fake_resp = mock.MagicMock()
+        fake_resp.status = 403
+        fake_resp.getheader.return_value = ""
+        fake_conn = mock.MagicMock()
+        fake_conn.getresponse.return_value = fake_resp
+
+        with mock.patch("projects.shumilek_ui.asset_cache._is_public_download_host", return_value=True), \
+             mock.patch("projects.shumilek_ui.asset_cache.http.client.HTTPSConnection", return_value=fake_conn):
+            with self.assertRaises(ValueError) as ctx:
+                _download_with_auth_redirect("https://cdn.example.com/asset.png")
+
+        self.assertIn("HTTP 403", str(ctx.exception))
+        fake_resp.read.assert_not_called()
+        fake_conn.close.assert_called_once()
 
 
 if __name__ == "__main__":
