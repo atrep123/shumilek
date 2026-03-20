@@ -34,7 +34,7 @@ export function parseServerUrl(raw: string | undefined, fallback: string): { bas
 
 export function resolveTimeoutMs(config: vscode.WorkspaceConfiguration): number {
   let timeoutSeconds = config.get<number>('timeout', 1200);
-  if (typeof timeoutSeconds !== 'number' || isNaN(timeoutSeconds) || timeoutSeconds <= 0) {
+  if (typeof timeoutSeconds !== 'number' || Number.isNaN(timeoutSeconds) || timeoutSeconds <= 0) {
     timeoutSeconds = 1200;
   }
   timeoutSeconds = Math.min(Math.max(timeoutSeconds, 10), 3600);

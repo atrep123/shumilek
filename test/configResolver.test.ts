@@ -8,7 +8,7 @@ mock('vscode', {
 });
 
 import { expect } from 'chai';
-import { parseServerUrl, resolveModelPreset, clampNumber, MODEL_PRESETS, resolveExecutionMode, resolveChatConfig } from '../src/configResolver';
+import { parseServerUrl, resolveModelPreset, clampNumber, MODEL_PRESETS, resolveExecutionMode, resolveChatConfig, resolveTimeoutMs, resolveStepTimeoutMs } from '../src/configResolver';
 
 describe('configResolver', () => {
   describe('parseServerUrl', () => {
@@ -213,6 +213,47 @@ describe('configResolver', () => {
         model: 'my-model'
       }));
       expect(cfg.summarizerModel).to.equal('my-model');
+    });
+  });
+
+  describe('resolveTimeoutMs', () => {
+    function makeConfig(overrides: Record<string, any> = {}) {
+      return {
+        get: (key: string, def: any) => (key in overrides ? overrides[key] : def)
+      } as any;
+    }
+
+    it('should fallback on NaN', () => {
+      const result = resolveTimeoutMs(makeConfig({ timeout: NaN }));
+      expect(result).to.equal(1200 * 1000);
+    });
+
+    it('should fallback on non-number', () => {
+      const result = resolveTimeoutMs(makeConfig({ timeout: 'abc' }));
+      expect(result).to.equal(1200 * 1000);
+    });
+
+    it('should clamp negative to minimum 10', () => {
+      const result = resolveTimeoutMs(makeConfig({ timeout: -5 }));
+      expect(result).to.equal(1200 * 1000);
+    });
+
+    it('should accept valid number', () => {
+      const result = resolveTimeoutMs(makeConfig({ timeout: 60 }));
+      expect(result).to.equal(60 * 1000);
+    });
+  });
+
+  describe('resolveStepTimeoutMs', () => {
+    function makeConfig(overrides: Record<string, any> = {}) {
+      return {
+        get: (key: string, def: any) => (key in overrides ? overrides[key] : def)
+      } as any;
+    }
+
+    it('should use Number.isNaN consistently', () => {
+      const result = resolveStepTimeoutMs(makeConfig({ stepTimeoutSec: NaN }), 60000);
+      expect(result).to.equal(60 * 1000);
     });
   });
 });

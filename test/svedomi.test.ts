@@ -314,5 +314,19 @@ describe('SvedomiValidator', () => {
       expect(res.shouldRetry).to.be.false;
     });
   });
+
+  describe('eviction safety', () => {
+    it('should use Array.from snapshot for overflow eviction', () => {
+      const v = new SvedomiValidator() as any;
+      // Fill cache beyond CACHE_MAX_SIZE
+      const max = v.CACHE_MAX_SIZE;
+      for (let i = 0; i < max + 10; i++) {
+        v.validationCache.set(`key${i}`, { result: { isValid: true, score: 5, reason: '', shouldRetry: false }, timestamp: Date.now() });
+      }
+      // Trigger eviction
+      v.evictStaleEntries();
+      expect(v.validationCache.size).to.be.at.most(max);
+    });
+  });
 });
 

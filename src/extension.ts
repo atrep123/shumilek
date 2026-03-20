@@ -252,11 +252,9 @@ function evictStaleHashes(): void {
   }
   if (lastReadHashes.size > LAST_READ_HASHES_MAX) {
     const excess = lastReadHashes.size - LAST_READ_HASHES_MAX;
-    const iter = lastReadHashes.keys();
-    for (let i = 0; i < excess; i++) {
-      const next = iter.next();
-      if (next.done) break;
-      lastReadHashes.delete(next.value);
+    const keysToDelete = Array.from(lastReadHashes.keys()).slice(0, excess);
+    for (const k of keysToDelete) {
+      lastReadHashes.delete(k);
     }
   }
 }

@@ -85,11 +85,9 @@ export class SvedomiValidator {
     }
     if (this.validationCache.size > this.CACHE_MAX_SIZE) {
       const excess = this.validationCache.size - this.CACHE_MAX_SIZE;
-      const iter = this.validationCache.keys();
-      for (let i = 0; i < excess; i++) {
-        const next = iter.next();
-        if (next.done) break;
-        this.validationCache.delete(next.value);
+      const keysToDelete = Array.from(this.validationCache.keys()).slice(0, excess);
+      for (const k of keysToDelete) {
+        this.validationCache.delete(k);
       }
     }
   }
