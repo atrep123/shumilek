@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
 from pathlib import Path
 
 try:
@@ -61,5 +62,16 @@ def save_ui_settings(settings: object, path: Path | None = None) -> Path:
     settings_path = path or default_ui_settings_path()
     normalized = normalize_ui_settings(settings)
     settings_path.parent.mkdir(parents=True, exist_ok=True)
-    settings_path.write_text(f"{json.dumps(normalized, indent=2)}\n", encoding="utf-8")
+    content = f"{json.dumps(normalized, indent=2)}\n"
+    fd, tmp_path = tempfile.mkstemp(dir=str(settings_path.parent), suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as tmp_file:
+            tmp_file.write(content)
+        os.replace(tmp_path, str(settings_path))
+    except BaseException:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
     return settings_path

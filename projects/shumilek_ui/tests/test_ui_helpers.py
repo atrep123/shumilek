@@ -19,6 +19,8 @@ from projects.shumilek_ui.ui_helpers import (
     compose_graph_character_prompt,
     compose_graph_tileset_prompts,
     image_like_download_url,
+    is_graph_style_job,
+    matches_style_preset,
     normalize_server_style_preset,
     normalize_poll_interval_seconds,
     server_style_preset_label,
@@ -26,6 +28,7 @@ from projects.shumilek_ui.ui_helpers import (
     should_reload_preview,
     summarize_asset_history_entry,
     summarize_tracked_job_entry,
+    _compact_detail_value,
 )
 
 
@@ -283,6 +286,168 @@ class UiHelperTests(unittest.TestCase):
             build_tracked_job_detail(job),
             "Type: tileset\nStatus: ready\nSource: mcp\nPrompt: mossy floor\nDetail: 48x48\nAsset: mossy_floor_sheet.png\nPreview: https://example.invalid/preview.png\nDownload: https://example.invalid/download.zip",
         )
+
+    # ------------------------------------------------------------------
+    # Round 33 – expanded coverage
+    # ------------------------------------------------------------------
+
+    def test_compose_character_prompt_returns_suffix_when_empty(self) -> None:
+        result = compose_character_prompt("")
+        self.assertIn("style preset: graph-workbench", result)
+        self.assertNotIn(", style", result[:2])
+
+    def test_compose_tileset_prompts_returns_suffixes_when_empty(self) -> None:
+        lower, upper = compose_tileset_prompts("", "")
+        self.assertIn("charcoal topology floor", lower)
+        self.assertIn("luminous node clusters", upper)
+        self.assertNotIn(", style", lower[:2])
+        self.assertNotIn(", style", upper[:2])
+
+    def test_matches_style_preset_by_marker(self) -> None:
+        job = PixelLabJob(
+            job_id="m", job_type="character", label="Char", prompt="op, style preset: graph-workbench, extra",
+            status="ready", source="mcp",
+        )
+        self.assertTrue(matches_style_preset(job, "graph_workbench"))
+        self.assertFalse(matches_style_preset(job, "dark_network_map"))
+
+    def test_matches_style_preset_by_keyword(self) -> None:
+        job = PixelLabJob(
+            job_id="k", job_type="character", label="Char", prompt="a graph navigator operator walks",
+            status="ready", source="mcp",
+        )
+        self.assertTrue(matches_style_preset(job, "graph_workbench"))
+
+    def test_is_graph_style_job_delegates_to_default_preset(self) -> None:
+        graph_job = PixelLabJob(
+            job_id="g", job_type="character", label="Char", prompt="node-link topology scan",
+            status="ready", source="mcp",
+        )
+        plain_job = PixelLabJob(
+            job_id="p", job_type="character", label="Char", prompt="forest bear",
+            status="ready", source="mcp",
+        )
+        self.assertTrue(is_graph_style_job(graph_job))
+        self.assertFalse(is_graph_style_job(plain_job))
+
+    def test_choose_asset_job_returns_none_on_empty_list(self) -> None:
+        self.assertIsNone(choose_asset_job([]))
+
+    def test_compact_detail_value_truncates_long_text(self) -> None:
+        long_text = "a" * 100
+        result = _compact_detail_value(long_text, max_length=20)
+        self.assertEqual(len(result), 20)
+        self.assertTrue(result.endswith("..."))
+
+    def test_compact_detail_value_collapses_whitespace(self) -> None:
+        self.assertEqual(_compact_detail_value("hello   world\n  test"), "hello world test")
+
+    def test_compact_detail_value_none_returns_empty(self) -> None:
+        self.assertEqual(_compact_detail_value(None), "")
+
+    def test_compact_detail_value_unlimited_preserves_full_text(self) -> None:
+        long_text = "x" * 200
+        self.assertEqual(_compact_detail_value(long_text, max_length=None), long_text)
+
+    def test_build_tracked_job_detail_uncompact_shows_full_text(self) -> None:
+        long_prompt = "a" * 200
+        job = PixelLabJob(
+            job_id="u", job_type="character", label="Char", prompt=long_prompt,
+            status="ready", source="mcp",
+        )
+        detail = build_tracked_job_detail(job, compact=False)
+        self.assertIn(long_prompt, detail)
+        self.assertNotIn("...", detail)
+
+    def test_asset_ready_jobs_limit_zero_returns_empty(self) -> None:
+        jobs = [
+            PixelLabJob(job_id="1", job_type="character", label="Char", prompt="x", status="ready", source="mcp"),
+        ]
+        self.assertEqual(asset_ready_jobs(jobs, limit=0), [])
+
+    def test_asset_ready_jobs_invalid_filter_falls_back_to_all(self) -> None:
+        jobs = [
+            PixelLabJob(job_id="1", job_type="character", label="Char", prompt="x", status="ready", source="mcp"),
+        ]
+        result = asset_ready_jobs(jobs, limit=5, job_type_filter="bogus")
+        self.assertEqual([j.job_id for j in result], ["1"])
+
+    def test_build_asset_activity_text_cache_refresh_path(self) -> None:
+        self.assertEqual(
+            build_asset_activity_text(True, "", [], True),
+            "Refreshing cache in background...",
+        )
+
+    def test_build_asset_activity_text_save_and_open_download_paths(self) -> None:
+        self.assertEqual(
+            build_asset_activity_text(True, "", ["save_preview"], False),
+            "Preparing preview export...",
+        )
+        self.assertEqual(
+            build_asset_activity_text(True, "", ["save_download"], False),
+            "Preparing download export...",
+        )
+        self.assertEqual(
+            build_asset_activity_text(True, "", ["open_download"], False),
+            "Preparing download asset...",
+        )
+
+    def test_build_asset_activity_text_ready_state(self) -> None:
+        self.assertEqual(
+            build_asset_activity_text(True, "", [], False),
+            "Ready for open, save, or refresh.",
+        )
+
+    def test_build_bridge_activity_text_queue_character_path(self) -> None:
+        self.assertEqual(
+            build_bridge_activity_text(["queue_character"]),
+            "Queueing character in background...",
+        )
+
+    def test_build_bridge_activity_text_queue_tileset_path(self) -> None:
+        self.assertEqual(
+            build_bridge_activity_text(["queue_tileset"]),
+            "Queueing tileset in background...",
+        )
+
+    def test_normalize_server_style_preset_none_and_empty(self) -> None:
+        self.assertEqual(normalize_server_style_preset(None), "graph_workbench")
+        self.assertEqual(normalize_server_style_preset(""), "graph_workbench")
+        self.assertEqual(normalize_server_style_preset("  DARK_NETWORK_MAP  "), "dark_network_map")
+
+    def test_summarize_asset_history_entry_truncates_long_prompt(self) -> None:
+        job = PixelLabJob(
+            job_id="t", job_type="character", label="Char",
+            prompt="extremely long character description that exceeds the max length",
+            status="ready", source="mcp",
+        )
+        result = summarize_asset_history_entry(job, max_length=20)
+        self.assertLessEqual(len(result.split("] ", 1)[1]), 20)
+        self.assertTrue(result.endswith("..."))
+
+    def test_summarize_tracked_job_entry_fallback_to_label(self) -> None:
+        job = PixelLabJob(
+            job_id="f", job_type="character", label="Fallback Label",
+            prompt="", status="queued", source="mcp",
+        )
+        self.assertIn("Fallback Label", summarize_tracked_job_entry(job))
+
+    def test_build_asset_link_text_download_only(self) -> None:
+        self.assertEqual(
+            build_asset_link_text("", "https://example.invalid/download.zip"),
+            "Download: https://example.invalid/download.zip",
+        )
+
+    def test_build_asset_link_text_both_urls(self) -> None:
+        result = build_asset_link_text("https://example.invalid/p.png", "https://example.invalid/d.zip")
+        self.assertIn("Preview: https://example.invalid/p.png", result)
+        self.assertIn("Download: https://example.invalid/d.zip", result)
+
+    def test_should_apply_preview_result_rejects_empty_url(self) -> None:
+        self.assertFalse(should_apply_preview_result(1, 1, "", ""))
+
+    def test_cache_refresh_targets_empty_urls(self) -> None:
+        self.assertEqual(cache_refresh_targets("", ""), [])
 
 
 if __name__ == "__main__":
