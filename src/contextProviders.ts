@@ -139,15 +139,17 @@ export class ContextProviderRegistry {
     let remainingChars = toCharBudget(params.tokenBudget);
     const enabled = params.enabled.length > 0 ? params.enabled : DEFAULT_CONTEXT_PROVIDERS;
 
-    for (const name of enabled) {
+    for (let i = 0; i < enabled.length; i++) {
+      const name = enabled[i];
       if (remainingChars <= 120) break;
       const provider = this.providers.get(name);
       if (!provider) continue;
       let result: ProviderResult | null;
+      const remainingProviders = enabled.length - i;
       try {
         result = await provider({
           prompt: params.prompt,
-          maxChars: Math.max(200, Math.floor(remainingChars / Math.max(1, enabled.length))),
+          maxChars: Math.max(200, Math.floor(remainingChars / Math.max(1, remainingProviders))),
           workspaceIndexEnabled: params.workspaceIndexEnabled
         });
       } catch {

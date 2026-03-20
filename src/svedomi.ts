@@ -119,7 +119,7 @@ export class SvedomiValidator {
     let score = 5;
     if (scoreMatch) {
       const parsed = parseInt(scoreMatch[1], 10);
-      if (!isNaN(parsed)) {
+      if (!Number.isNaN(parsed)) {
         score = Math.min(10, Math.max(1, parsed));
       }
     }

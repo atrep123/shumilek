@@ -227,13 +227,13 @@ export async function generateWithTools(
         content: `<tool_result>${JSON.stringify(result)}</tool_result>`
       });
 
-      if (result.ok && ['write_file', 'replace_lines', 'rename_file', 'delete_file'].includes(call.name)) {
+      if (result.ok && ['write_file', 'replace_lines', 'apply_patch', 'rename_file', 'delete_file'].includes(call.name)) {
         localMutation = true;
       }
     }
 
     if (session?.toolCallRecords && session.toolCallRecords.length > 0) {
-      const writes = session.toolCallRecords.filter(record => ['write_file', 'replace_lines'].includes(record.tool));
+      const writes = session.toolCallRecords.filter(record => ['write_file', 'replace_lines', 'apply_patch'].includes(record.tool));
       const failedWrites = writes.filter(record => !record.ok);
       const successfulWrites = writes.filter(record => record.ok);
       deps.log?.(`[ToolTrack] Total calls: ${session.toolCallRecords.length}, writes: ${writes.length}, failed writes: ${failedWrites.length}`);

@@ -1188,7 +1188,7 @@ export function activate(context: vscode.ExtensionContext) {
       value: '5',
       validateInput: (v) => {
         const n = parseInt(v, 10);
-        return isNaN(n) || n < 1 || n > 10 ? 'Zadej číslo 1-10' : null;
+        return Number.isNaN(n) || n < 1 || n > 10 ? 'Zadej číslo 1-10' : null;
       }
     });
     const weight = weightStr ? Math.max(1, Math.min(10, parseInt(weightStr, 10))) : 5;
@@ -1252,12 +1252,12 @@ export function activate(context: vscode.ExtensionContext) {
           value: String(selected.task.weight),
           validateInput: (v) => {
             const n = parseInt(v, 10);
-            return isNaN(n) || n < 1 || n > 10 ? 'Zadej číslo 1-10' : null;
+            return Number.isNaN(n) || n < 1 || n > 10 ? 'Zadej číslo 1-10' : null;
           }
         });
         if (newWeightStr) {
           const parsed = parseInt(newWeightStr, 10);
-          const weight = isNaN(parsed) ? selected.task.weight : Math.max(1, Math.min(10, parsed));
+          const weight = Number.isNaN(parsed) ? selected.task.weight : Math.max(1, Math.min(10, parsed));
           // Find and update the task in array
           const taskIndex = tasksDatabase.findIndex(t => t.id === selected.task.id);
           if (taskIndex !== -1) {

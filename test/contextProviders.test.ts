@@ -162,6 +162,27 @@ describe('contextProviders', () => {
       });
       expect(result).to.equal('');
     });
+
+    it('gives last provider fair budget share (remaining-count division)', async () => {
+      const reg = new ContextProviderRegistry();
+      // Provider A returns null, provider B should get the full budget
+      reg.register('workspace', async () => null);
+      reg.register('file', async (ctx: any) => {
+        // The last provider should receive maxChars = entire budget, not budget/2
+        return { name: 'file', content: 'B'.repeat(Math.min(ctx.maxChars, 2000)) };
+      });
+      const result = await reg.collect({
+        prompt: 'test',
+        enabled: ['workspace', 'file'],
+        tokenBudget: 512,  // 2048 chars total
+        workspaceIndexEnabled: true
+      });
+      // With remaining-count division, file gets full remaining budget
+      const fileBlock = result.match(/\[CONTEXT:file\]\n(B+)/);
+      expect(fileBlock).to.not.be.null;
+      // Budget is 2048 chars. Provider B should get close to full budget
+      expect(fileBlock![1].length).to.be.greaterThan(1024);
+    });
   });
 
   // ── ContextProviderRegistry.register ───────────────────────

@@ -248,4 +248,60 @@ describe('toolGeneration integration', () => {
     );
     assert.equal(callCount, 1, 'should stop after first iteration when aborted');
   });
+
+  it('tracks apply_patch as localMutation and in writes filter', async () => {
+    const session: any = {
+      hadMutations: false,
+      toolCallRecords: []
+    };
+    const logs: string[] = [];
+
+    // apply_patch fails → should be caught by writes filter
+    const result = await generateWithTools(
+      createPanel([]),
+      'http://example.test',
+      'primary-model',
+      'system',
+      [{ role: 'user', content: 'patch file' }],
+      1000,
+      2,
+      false,
+      createDeps({
+        log: (message: string) => logs.push(message),
+        executeModelCallWithMessagesFn: async () => toolCall('apply_patch', { diff: 'bad' }),
+        runToolCallFn: async (_panel: any, call: any) => ({ ok: false, tool: call.name, message: 'patch failed' })
+      }),
+      { requireToolCall: true, requireMutation: false },
+      undefined,
+      undefined,
+      session
+    );
+
+    assert.equal(result, 'Chyba: vsechny zapisy selhaly. Soubory nebyly zmeneny.');
+    assert.ok(logs.some(message => message.includes('WARNING: All write operations failed')));
+  });
+
+  it('sets localMutation for successful apply_patch when session is undefined', async () => {
+    const result = await generateWithTools(
+      createPanel([]),
+      'http://example.test',
+      'primary-model',
+      'system',
+      [{ role: 'user', content: 'patch file' }],
+      1000,
+      1,
+      false,
+      createDeps({
+        executeModelCallWithMessagesFn: async () => toolCall('apply_patch', { diff: '...' }),
+        runToolCallFn: async (_panel: any, call: any) => ({ ok: true, tool: call.name, message: 'applied' }),
+        collectPostWriteDiagnosticsFn: async () => []
+      }),
+      { requireToolCall: true, requireMutation: true },
+      undefined,
+      undefined,
+      undefined // no session
+    );
+
+    assert.ok(result.includes('Hotovo'), 'should recognize apply_patch as mutation');
+  });
 });

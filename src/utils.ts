@@ -64,7 +64,7 @@ export async function isSafeUrl(raw: string): Promise<{ safe: boolean; reason?: 
 
 export function normalizeTaskWeight(w: number | undefined): number {
   // Normalize existing 0.1-1.0 scale to 1-10, and clamp any value to [1,10]
-  if (typeof w !== 'number' || isNaN(w)) return 5;
+  if (typeof w !== 'number' || Number.isNaN(w)) return 5;
   if (w <= 1) {
     // assume legacy 0.1-1.0 scale
     return Math.max(1, Math.min(10, Math.round(w * 10)));
