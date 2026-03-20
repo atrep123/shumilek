@@ -61,7 +61,7 @@ export class SvedomiValidator {
 
   private getCacheKey(prompt: string, response: string): string {
     const combined = prompt.slice(0, 200) + '|' + response.slice(0, 500);
-    return crypto.createHash('sha256').update(combined).digest('hex').slice(0, 16);
+    return crypto.createHash('sha256').update(combined).digest('hex');
   }
 
   private checkCache(key: string): MiniModelResult | null {
@@ -115,7 +115,7 @@ export class SvedomiValidator {
 
     const lines = output.toUpperCase();
 
-    const scoreMatch = lines.match(/SK\W*O?\W*RE:\s*(\d+)/i) || lines.match(/SCORE:\s*(\d+)/i);
+    const scoreMatch = lines.match(/SK[ÓO]RE:\s*(\d+)/i) || lines.match(/SCORE:\s*(\d+)/i);
     let score = 5;
     if (scoreMatch) {
       const parsed = parseInt(scoreMatch[1], 10);
@@ -124,12 +124,12 @@ export class SvedomiValidator {
       }
     }
 
-    const validMatch = lines.match(/VALIDN\W*I?:\s*(ANO|NE|YES|NO)/i) || lines.match(/VALID:\s*(ANO|NE|YES|NO)/i);
+    const validMatch = lines.match(/VALIDN[ÍI]:\s*(ANO|NE|YES|NO)/i) || lines.match(/VALID:\s*(ANO|NE|YES|NO)/i);
     const isValid = validMatch
       ? (validMatch[1] === 'ANO' || validMatch[1] === 'YES')
       : score >= 5;
 
-    const reasonMatch = output.match(/D\W*VOD:\s*(.+)/i) || output.match(/REASON:\s*(.+)/i);
+    const reasonMatch = output.match(/D[ŮU]VOD:\s*(.+)/i) || output.match(/REASON:\s*(.+)/i);
     const reason = reasonMatch
       ? reasonMatch[1].trim().slice(0, 100)
       : (isValid ? 'Odpověď je v pořádku' : 'Odpověď nesplňuje kritéria');

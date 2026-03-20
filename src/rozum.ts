@@ -522,6 +522,7 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
     }
 
     if (plan.steps.length === 0) {
+      logChannel?.appendLine('[Rozum] ⚠️ New format parse found 0 steps, trying old format fallback');
       const oldStepsSection = output.match(/KROKY?:([\s\S]*?)(?=VAROV[ÁA]N[ÍI]:|P[ŘR][ÍI]STUP:|D[ÉE]LKA:|$)/i);
       if (oldStepsSection) {
         const oldSteps = oldStepsSection[1].match(/-\s*(.+)/g);
@@ -540,6 +541,13 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
           });
         }
       }
+    }
+
+    // Cap plan to MAX_PLAN_STEPS to prevent unbounded execution
+    const MAX_PLAN_STEPS = 10;
+    if (plan.steps.length > MAX_PLAN_STEPS) {
+      logChannel?.appendLine(`[Rozum] ⚠️ Plan truncated from ${plan.steps.length} to ${MAX_PLAN_STEPS} steps`);
+      plan.steps = plan.steps.slice(0, MAX_PLAN_STEPS);
     }
 
     plan.totalSteps = plan.steps.length;

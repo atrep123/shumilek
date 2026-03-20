@@ -8,18 +8,18 @@ describe('SvedomiValidator', () => {
   describe('parseValidationResponse', () => {
     it('should parse valid response with high score', () => {
       const validator = new SvedomiValidator();
-      const output = 'SKĂ“RE: 9\nVALIDNĂŤ: ANO\nDĹ®VOD: OdpovÄ›ÄŹ je pĹ™esnĂˇ a bez chyb';
+      const output = 'SK\u00D3RE: 9\nVALIDN\u00CD: ANO\nD\u016eVOD: Odpov\u011b\u010f je p\u0159esn\u00e1 a bez chyb';
       const result = validator.parseValidationResponse(output);
       
       expect(result.score).to.equal(9);
       expect(result.isValid).to.be.true;
-      expect(result.reason).to.include('pĹ™esnĂˇ');
+      expect(result.reason).to.include('p\u0159esn');
       expect(result.shouldRetry).to.be.false;
     });
 
     it('should parse invalid response with low score', () => {
       const validator = new SvedomiValidator();
-      const output = 'SKĂ“RE: 2\nVALIDNĂŤ: NE\nDĹ®VOD: Obsahuje halucinace a opakovĂˇnĂ­';
+      const output = 'SK\u00D3RE: 2\nVALIDN\u00CD: NE\nD\u016eVOD: Obsahuje halucinace a opakov\u00e1n\u00ed';
       const result = validator.parseValidationResponse(output);
       
       expect(result.score).to.equal(2);
@@ -49,30 +49,46 @@ describe('SvedomiValidator', () => {
     it('should clamp score to 1-10 range', () => {
       const validator = new SvedomiValidator();
       
-      const tooHigh = validator.parseValidationResponse('SKĂ“RE: 15\nVALIDNĂŤ: ANO');
+      const tooHigh = validator.parseValidationResponse('SK\u00D3RE: 15\nVALIDN\u00CD: ANO');
       expect(tooHigh.score).to.equal(10);
       
-      const tooLow = validator.parseValidationResponse('SKĂ“RE: 0\nVALIDNĂŤ: NE');
+      const tooLow = validator.parseValidationResponse('SK\u00D3RE: 0\nVALIDN\u00CD: NE');
       expect(tooLow.score).to.equal(1);
     });
 
     it('should default validity based on score when not specified', () => {
       const validator = new SvedomiValidator();
       
-      const highScore = validator.parseValidationResponse('SKĂ“RE: 8');
+      const highScore = validator.parseValidationResponse('SK\u00D3RE: 8');
       expect(highScore.isValid).to.be.true;
       
-      const lowScore = validator.parseValidationResponse('SKĂ“RE: 3');
+      const lowScore = validator.parseValidationResponse('SK\u00D3RE: 3');
       expect(lowScore.isValid).to.be.false;
     });
 
     it('should set shouldRetry true for score <= 3', () => {
       const validator = new SvedomiValidator();
       
-      expect(validator.parseValidationResponse('SKĂ“RE: 3').shouldRetry).to.be.true;
-      expect(validator.parseValidationResponse('SKĂ“RE: 4').shouldRetry).to.be.false;
+      expect(validator.parseValidationResponse('SK\u00D3RE: 3').shouldRetry).to.be.true;
+      expect(validator.parseValidationResponse('SK\u00D3RE: 4').shouldRetry).to.be.false;
     });
-  });
+    it('should parse Czech diacritics format (SKÓRE, VALIDNÍ, DŮVOD)', () => {
+      const validator = new SvedomiValidator();
+      const output = 'SKÓRE: 8\nVALIDNÍ: ANO\nDŮVOD: Odpověď je korektní';
+      const result = validator.parseValidationResponse(output);
+      expect(result.score).to.equal(8);
+      expect(result.isValid).to.be.true;
+      expect(result.reason).to.include('korektní');
+    });
+
+    it('should parse ASCII fallback format (SKORE, VALIDNI, DUVOD)', () => {
+      const validator = new SvedomiValidator();
+      const output = 'SKORE: 4\nVALIDNI: NE\nDUVOD: Chybí kontext';
+      const result = validator.parseValidationResponse(output);
+      expect(result.score).to.equal(4);
+      expect(result.isValid).to.be.false;
+      expect(result.reason).to.include('kontext');
+    });  });
 
   describe('validateInputs', () => {
     it('should return disabled result when disabled', () => {
@@ -199,6 +215,13 @@ describe('SvedomiValidator', () => {
       const hit = validator.getCachedResult('prompt x', 'response x');
       expect(hit).to.be.null;
       expect(validator.validationCache.has(cacheKey)).to.be.false;
+    });
+
+    it('should produce full-length SHA256 cache keys (64 hex chars)', () => {
+      const validator = new SvedomiValidator() as any;
+      const key = validator.getCacheKey('test prompt', 'test response');
+      expect(key).to.have.length(64);
+      expect(key).to.match(/^[0-9a-f]{64}$/);
     });
   });
 

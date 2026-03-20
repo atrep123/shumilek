@@ -178,6 +178,30 @@ DÉLKA: short`;
       const withoutSteps = rozum.parsePlan('SLOŽITOST: simple');
       expect(withoutSteps.shouldPlan).to.be.false;
     });
+
+    it('should truncate plans to maximum 10 steps', () => {
+      const rozum = new Rozum();
+      // Generate 15 steps in new format
+      let output = 'SLOŽITOST: complex\n\n';
+      for (let i = 1; i <= 15; i++) {
+        output += `KROK ${i}:\nTYP: CODE\nNÁZEV: Step ${i}\nINSTRUKCE: Do thing ${i}\n\n`;
+      }
+      const plan = rozum.parsePlan(output);
+      expect(plan.steps).to.have.length(10);
+      expect(plan.totalSteps).to.equal(10);
+      expect(plan.steps[9].title).to.equal('Step 10');
+    });
+
+    it('should not truncate plans with 10 or fewer steps', () => {
+      const rozum = new Rozum();
+      let output = 'SLOŽITOST: medium\n\n';
+      for (let i = 1; i <= 8; i++) {
+        output += `KROK ${i}:\nTYP: CODE\nNÁZEV: Step ${i}\nINSTRUKCE: Do thing ${i}\n\n`;
+      }
+      const plan = rozum.parsePlan(output);
+      expect(plan.steps).to.have.length(8);
+      expect(plan.totalSteps).to.equal(8);
+    });
   });
 
   describe('inferStepType', () => {
