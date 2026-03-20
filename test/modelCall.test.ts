@@ -305,4 +305,76 @@ describe('modelCall', () => {
     assert.equal(result, 'ok');
     assert.ok(logs.some(l => l.includes('Malformed residual JSON')));
   });
+
+  it('destroys response body on stream stall early break', async () => {
+    const logs: string[] = [];
+    let destroyCalled = false;
+    const originalNow = Date.now;
+    const nowValues = [0, 1000, 17050];
+    Date.now = () => nowValues.shift() ?? 17050;
+
+    try {
+      const stream = createStream([
+        `{"message":{"content":"${'a'.repeat(60)}"}}\n`,
+        '{"message":{"content":"tail"}}\n'
+      ]);
+      (stream as any).destroy = () => { destroyCalled = true; };
+
+      const { executeModelCallWithMessages } = loadModelCall({
+        fetchWithTimeout: async () => ({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          body: stream
+        })
+      });
+
+      await executeModelCallWithMessages(
+        'http://example.test',
+        'test-model',
+        'system prompt',
+        [{ role: 'user', content: 'hello' }],
+        5000,
+        undefined,
+        false,
+        (message: string) => logs.push(message)
+      );
+
+      assert.ok(destroyCalled, 'body.destroy() should be called on stall');
+      assert.ok(logs.some(l => l.includes('Stream stall detected')));
+    } finally {
+      Date.now = originalNow;
+    }
+  });
+
+  it('destroys response body on buffer overflow early break', async () => {
+    const logs: string[] = [];
+    let destroyCalled = false;
+    const bigChunk = '{"message":{"content":"' + 'X'.repeat(1_100_000) + '"}}';
+    const stream = createStream([bigChunk]);
+    (stream as any).destroy = () => { destroyCalled = true; };
+
+    const { executeModelCallWithMessages } = loadModelCall({
+      fetchWithTimeout: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: stream
+      })
+    });
+
+    await executeModelCallWithMessages(
+      'http://example.test',
+      'test-model',
+      'system prompt',
+      [{ role: 'user', content: 'hello' }],
+      5000,
+      undefined,
+      false,
+      (message: string) => logs.push(message)
+    );
+
+    assert.ok(destroyCalled, 'body.destroy() should be called on buffer overflow');
+    assert.ok(logs.some(l => l.includes('Buffer overflow')));
+  });
 });

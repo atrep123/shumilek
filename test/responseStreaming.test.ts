@@ -360,4 +360,67 @@ describe('responseStreaming', () => {
     assert.equal(result.length, 10000, 'should have exactly 10000 x chars');
     assert.ok(logs.some(l => l.includes('Stream processing limit reached')));
   });
+
+  it('destroys response body on stall early break', async () => {
+    const logs: string[] = [];
+    let destroyCalled = false;
+    const abortCtrl = new AbortController();
+    const times = [0, 1000, 13050];
+
+    const stream = createStream([
+      `{"message":{"content":"${'a'.repeat(120)}"}}\n`,
+      '{"message":{"content":"tail"}}\n'
+    ]);
+    (stream as any).destroy = () => { destroyCalled = true; };
+
+    await streamPlainOllamaChat({
+      url: 'http://example.test',
+      model: 'test-model',
+      apiMessages: [{ role: 'user', content: 'hello' }],
+      timeout: 1000,
+      panel: createPanel([]),
+      abortCtrl,
+      guardianEnabled: false,
+      log: message => logs.push(message),
+      now: () => times.shift() ?? 13050,
+      fetchWithTimeoutFn: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: stream
+      }) as any
+    });
+
+    assert.ok(destroyCalled, 'body.destroy() should be called on stall');
+    assert.ok(logs.some(l => l.includes('Stall detected')));
+  });
+
+  it('destroys response body on buffer overflow early break', async () => {
+    const logs: string[] = [];
+    let destroyCalled = false;
+    const abortCtrl = new AbortController();
+
+    const stream = createStream(['x'.repeat(100001)]);
+    (stream as any).destroy = () => { destroyCalled = true; };
+
+    await streamPlainOllamaChat({
+      url: 'http://example.test',
+      model: 'test-model',
+      apiMessages: [{ role: 'user', content: 'hello' }],
+      timeout: 1000,
+      panel: createPanel([]),
+      abortCtrl,
+      guardianEnabled: false,
+      log: message => logs.push(message),
+      fetchWithTimeoutFn: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: stream
+      }) as any
+    });
+
+    assert.ok(destroyCalled, 'body.destroy() should be called on buffer overflow');
+    assert.ok(logs.some(l => l.includes('Buffer overflow detected')));
+  });
 });

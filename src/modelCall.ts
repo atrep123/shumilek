@@ -55,36 +55,53 @@ export async function executeModelCallWithMessages(
   let fullResponse = '';
   let lastChunkAt = Date.now();
   const STREAM_STALL_MS = 15000;
+  let earlyBreak = false;
 
-  for await (const chunk of res.body as any) {
-    if (!chunk) continue;
-    const now = Date.now();
-    if (now - lastChunkAt > STREAM_STALL_MS && fullResponse.length > 50) {
-      log?.('[executeModelCallWithMessages] Stream stall detected, aborting');
-      fullResponse += '\n\n[Odpověď zkrácena – stream stall]';
-      break;
+  try {
+    for await (const chunk of res.body as any) {
+      if (!chunk) continue;
+      const now = Date.now();
+      if (now - lastChunkAt > STREAM_STALL_MS && fullResponse.length > 50) {
+        log?.('[executeModelCallWithMessages] Stream stall detected, aborting');
+        fullResponse += '\n\n[Odpověď zkrácena – stream stall]';
+        earlyBreak = true;
+        break;
+      }
+      lastChunkAt = now;
+      buffer += decoder.decode(chunk, { stream: true });
+
+      if (buffer.length > 1_000_000) {
+        log?.('[executeModelCallWithMessages] Buffer overflow, aborting');
+        fullResponse += '\n\n[Odpověď zkrácena – buffer overflow]';
+        earlyBreak = true;
+        break;
+      }
+
+      let newlineIndex;
+      while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+        const line = buffer.slice(0, newlineIndex).trim();
+        buffer = buffer.slice(newlineIndex + 1);
+        if (!line) continue;
+        try {
+          const parsed = JSON.parse(line);
+          if (parsed.message?.content) {
+            fullResponse += parsed.message.content;
+          }
+        } catch {
+          log?.(`[ModelCall] Malformed JSON: ${line.slice(0, 120)}`);
+        }
+      }
     }
-    lastChunkAt = now;
-    buffer += decoder.decode(chunk, { stream: true });
-
-    if (buffer.length > 1_000_000) {
-      log?.('[executeModelCallWithMessages] Buffer overflow, aborting');
-      fullResponse += '\n\n[Odpověď zkrácena – buffer overflow]';
-      break;
-    }
-
-    let newlineIndex;
-    while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
-      const line = buffer.slice(0, newlineIndex).trim();
-      buffer = buffer.slice(newlineIndex + 1);
-      if (!line) continue;
+  } finally {
+    // Drain / destroy the response body on early break to release the socket
+    if (earlyBreak && res.body) {
       try {
-        const parsed = JSON.parse(line);
-        if (parsed.message?.content) {
-          fullResponse += parsed.message.content;
+        const body = res.body as any;
+        if (typeof body.destroy === 'function') {
+          body.destroy();
         }
       } catch {
-        log?.(`[ModelCall] Malformed JSON: ${line.slice(0, 120)}`);
+        // ignore cleanup errors
       }
     }
   }
