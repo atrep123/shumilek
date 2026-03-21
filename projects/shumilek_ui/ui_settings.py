@@ -52,6 +52,8 @@ def normalize_ui_settings(raw_settings: object) -> dict[str, object]:
 def load_ui_settings(path: Path | None = None) -> dict[str, object]:
     settings_path = path or default_ui_settings_path()
     try:
+        if settings_path.stat().st_size > 100_000:
+            return dict(DEFAULT_UI_SETTINGS)
         raw_settings = json.loads(settings_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return dict(DEFAULT_UI_SETTINGS)

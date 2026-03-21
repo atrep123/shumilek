@@ -296,8 +296,10 @@ export class SvedomiValidator {
     const truncatedResponse = response.slice(0, 6000); // More context for thorough validation
     const truncatedPrompt = userPrompt.slice(0, 2500);
 
-    const tasksInstruction = relevantTasks.length > 0
-      ? `\nCHECK SPECIFIC TASKS:\n${relevantTasks.map(t => `- ${t.title} (Weight: ${t.weight})`).join('\n')}`
+    const MAX_TASKS_IN_PROMPT = 20;
+    const cappedTasks = relevantTasks.slice(0, MAX_TASKS_IN_PROMPT);
+    const tasksInstruction = cappedTasks.length > 0
+      ? `\nCHECK SPECIFIC TASKS:\n${cappedTasks.map(t => `- ${t.title} (Weight: ${t.weight})`).join('\n')}${relevantTasks.length > MAX_TASKS_IN_PROMPT ? `\n... and ${relevantTasks.length - MAX_TASKS_IN_PROMPT} more` : ''}`
       : '';
 
     return `You are an AI quality validator named "Svedomi". Analyze the given answer strictly against the user prompt.

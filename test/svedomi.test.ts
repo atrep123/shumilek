@@ -389,5 +389,31 @@ describe('SvedomiValidator', () => {
       expect(v.validationCache.size).to.be.at.most(max);
     });
   });
-});
 
+  // ── buildValidationPrompt tasks cap (R50) ──────────────────
+  describe('buildValidationPrompt tasks cap', () => {
+    it('should include at most 20 tasks', () => {
+      const validator = new SvedomiValidator();
+      const tasks = Array.from({ length: 50 }, (_, i) => ({
+        title: `Task ${i}`,
+        weight: 1,
+      }));
+      const prompt = validator.buildValidationPrompt('user asks something', 'AI answers', tasks);
+      const taskLines = prompt.split('\n').filter((l: string) => l.startsWith('- Task '));
+      expect(taskLines.length).to.equal(20);
+      expect(prompt).to.include('... and 30 more');
+    });
+
+    it('should include all tasks when under cap', () => {
+      const validator = new SvedomiValidator();
+      const tasks = Array.from({ length: 5 }, (_, i) => ({
+        title: `Task ${i}`,
+        weight: 1,
+      }));
+      const prompt = validator.buildValidationPrompt('prompt', 'response', tasks);
+      const taskLines = prompt.split('\n').filter((l: string) => l.startsWith('- Task '));
+      expect(taskLines.length).to.equal(5);
+      expect(prompt).to.not.include('more');
+    });
+  });
+});

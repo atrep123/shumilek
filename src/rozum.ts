@@ -387,7 +387,7 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
                 acceptStepWithNote(`Tento krok byl přijat, protože Svedomi opakovaně vracelo stejnou námitku bez nové informace: ${svedomiReason}`);
                 logChannel?.appendLine(`[Pipeline] âš ď¸Ź UkonÄŤuji opakovĂˇnĂ­ kroku ${step.id}: opakovanĂˇ stejnĂˇ nĂˇmitka od Svedomi`);
               } else if (stepRetries < MAX_STEP_RETRIES) {
-                step.instruction = `${originalInstruction}\n\n[OPRAVA OD SVÄšDOMĂŤ - AUTOKOREKCE]: ${svedomiReason}`;
+                step.instruction = `${originalInstruction}\n\n[OPRAVA OD SVĚDOMÍ - AUTOKOREKCE]: ${svedomiReason.slice(0, 500)}`;
                 stepRetries++;
                 onStatus?.(`âš ď¸Ź Svedomi zamĂ­tlo: ${svedomiReason.slice(0, 50)}..., opravuji`);
               } else {
@@ -401,7 +401,7 @@ OPRAVA: [pokud NE, co konkrĂ©tnÄ› opravit - jinak "ĹľĂˇdnĂˇ"]
               acceptStepWithNote(`Tento krok byl přijat, protože Rozum opakovaně vracel stejnou námitku bez nové informace: ${review.feedback}`);
               logChannel?.appendLine(`[Rozum] âš ď¸Ź UkonÄŤuji opakovĂˇnĂ­ kroku ${step.id}: opakovanĂˇ stejnĂˇ nĂˇmitka od Rozumu`);
             } else {
-              step.instruction = `${originalInstruction}\n\n[OPRAVA OD ROZUMU]: ${review.feedback}`;
+              step.instruction = `${originalInstruction}\n\n[OPRAVA OD ROZUMU]: ${review.feedback.slice(0, 500)}`;
               stepRetries++;
             }
           } else {

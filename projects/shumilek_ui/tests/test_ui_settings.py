@@ -112,6 +112,24 @@ class UiSettingsTests(unittest.TestCase):
         self.assertIsInstance(path, Path)
         self.assertTrue(path.name.endswith(".json"))
 
+    def test_load_ui_settings_rejects_oversized_file(self) -> None:
+        """Files > 100 KB should return defaults (R50)."""
+        from projects.shumilek_ui.ui_settings import load_ui_settings, DEFAULT_UI_SETTINGS
+        with tempfile.TemporaryDirectory() as td:
+            settings_path = Path(td) / "big.json"
+            settings_path.write_text("x" * 200_000, encoding="utf-8")
+            result = load_ui_settings(settings_path)
+            self.assertEqual(result, dict(DEFAULT_UI_SETTINGS))
+
+    def test_load_ui_settings_accepts_normal_file(self) -> None:
+        """Normal-sized valid JSON should load fine."""
+        from projects.shumilek_ui.ui_settings import load_ui_settings
+        with tempfile.TemporaryDirectory() as td:
+            settings_path = Path(td) / "ok.json"
+            settings_path.write_text('{"auto_poll_seconds": 20}', encoding="utf-8")
+            result = load_ui_settings(settings_path)
+            self.assertEqual(result["auto_poll_seconds"], 20)
+
 
 if __name__ == "__main__":
     unittest.main()

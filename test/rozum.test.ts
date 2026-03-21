@@ -708,4 +708,23 @@ DÉLKA: short`;
       expect(prompt).to.not.include(longInstruction);
     });
   });
+
+  // ── retry feedback truncation (replicated logic, R50) ──────
+  describe('retry feedback truncation', () => {
+    it('should cap svedomi reason to 500 chars in instruction', () => {
+      const originalInstruction = 'Original';
+      const svedomiReason = 'x'.repeat(2000);
+      const instruction = `${originalInstruction}\n\n[OPRAVA OD SVĚDOMI - AUTOKOREKCE]: ${svedomiReason.slice(0, 500)}`;
+      expect(instruction).to.include('Original');
+      expect(instruction.length).to.be.lessThan(originalInstruction.length + 600);
+    });
+
+    it('should cap rozum feedback to 500 chars in instruction', () => {
+      const originalInstruction = 'Original';
+      const feedback = 'y'.repeat(3000);
+      const instruction = `${originalInstruction}\n\n[OPRAVA OD ROZUMU]: ${feedback.slice(0, 500)}`;
+      expect(instruction).to.include('Original');
+      expect(instruction.length).to.be.lessThan(originalInstruction.length + 600);
+    });
+  });
 });
