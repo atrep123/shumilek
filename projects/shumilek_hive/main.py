@@ -285,11 +285,12 @@ class FlowParticle:
 
 
 class StarField:
-    """Twinkling pixel star background."""
+    """Twinkling pixel star background with micro-jitter."""
     _BRIGHT_STEPS = 8  # pre-computed brightness levels per color
 
     def __init__(self, count=80):
-        self.stars: list[tuple[float, float, float, str]] = []
+        # Stars now store (x, y, phase, color, jitter_phase)
+        self.stars: list[tuple[float, float, float, str, float]] = []
         colors = [P["text_dim"], P["amethyst_dim"], P["cyan_dim"], P["ice"]]
         # Pre-compute color lookup: color → [hex at brightness 0..7]
         self._color_lut: dict[str, list[str]] = {}
@@ -309,21 +310,29 @@ class StarField:
             y = random.random()
             phase = random.uniform(0, math.pi * 2)
             color = random.choice(colors)
-            self.stars.append((x, y, phase, color))
+            jitter_phase = random.uniform(0, math.pi * 2)
+            self.stars.append((x, y, phase, color, jitter_phase))
 
     def draw(self, canvas: tk.Canvas, w: int, h: int, t: float):
         steps_m1 = self._BRIGHT_STEPS - 1
-        for sx, sy, phase, color in self.stars:
+        for sx, sy, phase, color, jp in self.stars:
             brightness = 0.3 + 0.7 * abs(math.sin(t * 0.8 + phase))
             if brightness < 0.35:
                 continue
-            px = int(sx * w)
-            py = int(sy * h)
+            # Micro-jitter: stars wobble ±1px for organic feel
+            jx = math.sin(t * 1.2 + jp) * 1.2
+            jy = math.cos(t * 0.9 + jp * 1.7) * 1.2
+            px = int(sx * w + jx)
+            py = int(sy * h + jy)
             idx = min(steps_m1, int((brightness - 0.3) / 0.7 * steps_m1))
+            col = self._color_lut[color][idx]
             size = 1 if brightness < 0.6 else 2
             canvas.create_rectangle(px, py, px + size, py + size,
-                                    fill=self._color_lut[color][idx], outline="",
-                                    tags="stars")
+                                    fill=col, outline="", tags="stars")
+            # Cross sparkle on brightest stars
+            if brightness > 0.85 and size >= 2:
+                canvas.create_line(px - 3, py, px + 4, py, fill=col, width=1, tags="stars")
+                canvas.create_line(px, py - 3, px + 1, py + 4, fill=col, width=1, tags="stars")
 
 
 # ─── PIPELINE SIMULATION ────────────────────────────────────────────
@@ -4496,6 +4505,35 @@ class ShumilekHive:
 
         t = time.time()
 
+        # Nebula clouds — large faint colored blobs in background
+        if not hasattr(self, '_hive_nebulae'):
+            self._hive_nebulae = []
+            neb_colors = [P["cyan_dim"], P["amethyst_dim"], P["rose_dim"]]
+            for _ in range(5):
+                self._hive_nebulae.append({
+                    "x": random.uniform(0.1, 0.9),
+                    "y": random.uniform(0.1, 0.8),
+                    "r": random.uniform(60, 120),
+                    "color": random.choice(neb_colors),
+                    "phase": random.uniform(0, math.pi * 2),
+                })
+        for neb in self._hive_nebulae:
+            nx = int(neb["x"] * w)
+            ny = int(neb["y"] * h)
+            nr = neb["r"]
+            breath = 0.5 + 0.5 * abs(math.sin(t * 0.3 + neb["phase"]))
+            ncol = neb["color"].lstrip("#")
+            for ri in range(4):
+                frac = 1.0 - ri / 4.0
+                cr = int(nr * frac * (0.8 + 0.2 * breath))
+                if cr < 1:
+                    continue
+                br = max(0, min(255, int(int(ncol[:2], 16) * 0.04 * frac * breath)))
+                bg = max(0, min(255, int(int(ncol[2:4], 16) * 0.04 * frac * breath)))
+                bb = max(0, min(255, int(int(ncol[4:6], 16) * 0.04 * frac * breath)))
+                c.create_oval(nx - cr, ny - cr, nx + cr, ny + cr,
+                             fill=f"#{br:02x}{bg:02x}{bb:02x}", outline="")
+
         # Subtle grid
         for gx in range(0, w, 40):
             c.create_line(gx, 0, gx, h, fill="#0C0920", width=1)
@@ -4513,13 +4551,15 @@ class ShumilekHive:
                     c.create_text(px, gy, text="\u2B21", font=F_PIXEL,
                                  fill=f"#{col:02x}{col+2:02x}{col+8:02x}")
 
-        # Constellation stars (twinkling idle dots between neurons)
+        # Constellation stars (twinkling idle dots between neurons — with drift)
         if not self._ai_processing_task:
             # Spawn new stars occasionally
             if self._hive_ambient_tick % 20 == 0 and len(self._hive_constellations) < 40:
                 self._hive_constellations.append({
                     "x": random.uniform(0.05, 0.95),
                     "y": random.uniform(0.05, 0.85),
+                    "vx": random.uniform(-0.0003, 0.0003),  # slow drift
+                    "vy": random.uniform(-0.0002, 0.0002),
                     "phase": random.uniform(0, math.pi * 2),
                     "speed": random.uniform(0.8, 2.5),
                     "size": random.choice([1, 2, 2, 3]),
@@ -4531,7 +4571,10 @@ class ShumilekHive:
             new_stars = []
             for star in self._hive_constellations:
                 star["life"] += 1
-                if star["life"] < star["max_life"]:
+                # Drift position
+                star["x"] += star.get("vx", 0)
+                star["y"] += star.get("vy", 0)
+                if star["life"] < star["max_life"] and 0.0 < star["x"] < 1.0 and 0.0 < star["y"] < 1.0:
                     new_stars.append(star)
                     sx = int(star["x"] * w)
                     sy = int(star["y"] * h)
@@ -4546,12 +4589,16 @@ class ShumilekHive:
                         c.create_oval(sx - sz, sy - sz, sx + sz, sy + sz,
                                      fill=col, outline="")
                         if twinkle > 0.8 and sz >= 2:
-                            # Cross sparkle
-                            c.create_line(sx - 3, sy, sx + 3, sy, fill=col, width=1)
-                            c.create_line(sx, sy - 3, sx, sy + 3, fill=col, width=1)
+                            # Cross + diagonal sparkle
+                            c.create_line(sx - 4, sy, sx + 4, sy, fill=col, width=1)
+                            c.create_line(sx, sy - 4, sx, sy + 4, fill=col, width=1)
+                            # Diagonal rays (fainter)
+                            dim_col = f"#{max(0,rr//2):02x}{max(0,gg//2):02x}{max(0,bb//2):02x}"
+                            c.create_line(sx - 3, sy - 3, sx + 3, sy + 3, fill=dim_col, width=1)
+                            c.create_line(sx + 3, sy - 3, sx - 3, sy + 3, fill=dim_col, width=1)
             self._hive_constellations = new_stars
 
-        # Synapses
+        # Synapses (with glow for active connections)
         n_count = len(self._ai_neurons)
         for syn in self._ai_synapses:
             si, di = syn["src"], syn["dst"]
@@ -4562,14 +4609,21 @@ class ShumilekHive:
             activation = max(src["activation"], dst["activation"])
             if activation < 0.05:
                 base = P["border"]
+                c.create_line(src["x"], src["y"], dst["x"], dst["y"],
+                             fill=base, width=1)
             else:
                 br = min(1.0, activation * 0.8)
                 r = int(70 * br); g = int(60 * br); b = int(130 * br)
                 base = f"#{r:02x}{g:02x}{b:02x}"
-            c.create_line(src["x"], src["y"], dst["x"], dst["y"],
-                         fill=base, width=1)
+                # Glow layer behind active synapses
+                if activation > 0.25:
+                    gr = max(0, r // 3); gg = max(0, g // 3); gb = max(0, b // 3)
+                    c.create_line(src["x"], src["y"], dst["x"], dst["y"],
+                                 fill=f"#{gr:02x}{gg:02x}{gb:02x}", width=3)
+                c.create_line(src["x"], src["y"], dst["x"], dst["y"],
+                             fill=base, width=1)
 
-        # Pulses traveling along synapses
+        # Pulses traveling along synapses (with glow halo + longer trail)
         new_pulses = []
         for pulse in self._ai_pulses:
             pulse["t"] += pulse["speed"]
@@ -4582,18 +4636,31 @@ class ShumilekHive:
                 dst = self._ai_neurons[di]
                 px = src["x"] + (dst["x"] - src["x"]) * pulse["t"]
                 py = src["y"] + (dst["y"] - src["y"]) * pulse["t"]
+                # Outer glow halo
+                pcol = pulse["color"].lstrip("#")
+                pr = int(pcol[:2], 16); pg = int(pcol[2:4], 16); pb = int(pcol[4:6], 16)
+                ghr = max(0, pr // 4); ghg = max(0, pg // 4); ghb = max(0, pb // 4)
+                c.create_oval(px - 6, py - 6, px + 6, py + 6,
+                             fill=f"#{ghr:02x}{ghg:02x}{ghb:02x}", outline="")
+                # Core pulse
                 c.create_oval(px - 3, py - 3, px + 3, py + 3,
                              fill=pulse["color"], outline="")
-                for i in range(3):
-                    tt = pulse["t"] - (i + 1) * 0.03
+                # Trail — 5 dots fading behind
+                for i in range(5):
+                    tt = pulse["t"] - (i + 1) * 0.025
                     if tt > 0:
                         tx = src["x"] + (dst["x"] - src["x"]) * tt
                         ty = src["y"] + (dst["y"] - src["y"]) * tt
-                        c.create_oval(tx - 1, ty - 1, tx + 1, ty + 1,
-                                     fill=P["border_glow"], outline="")
+                        frac = 1.0 - (i + 1) / 6.0
+                        tr = max(0, min(255, int(pr * frac * 0.5)))
+                        tg = max(0, min(255, int(pg * frac * 0.5)))
+                        tb = max(0, min(255, int(pb * frac * 0.5)))
+                        ts = 2 if i < 3 else 1
+                        c.create_oval(tx - ts, ty - ts, tx + ts, ty + ts,
+                                     fill=f"#{tr:02x}{tg:02x}{tb:02x}", outline="")
         self._ai_pulses = new_pulses[-50:] if len(new_pulses) > 50 else new_pulses
 
-        # Neurons
+        # Neurons (multi-ring smooth radial gradient glow)
         for neuron in self._ai_neurons:
             x, y = neuron["x"], neuron["y"]
             size = neuron["size"]
@@ -4605,22 +4672,21 @@ class ShumilekHive:
                 r0 = int(base_col[:2], 16)
                 g0 = int(base_col[2:4], 16)
                 b0 = int(base_col[4:6], 16)
-                # Outer halo (large, faint)
-                halo_size = size + int(act * 14) + int(pulse * 6)
-                hr = max(0, min(255, int(r0 * 0.15 * act)))
-                hg = max(0, min(255, int(g0 * 0.15 * act)))
-                hb = max(0, min(255, int(b0 * 0.15 * act)))
-                c.create_oval(x - halo_size, y - halo_size,
-                             x + halo_size, y + halo_size,
-                             fill=f"#{hr:02x}{hg:02x}{hb:02x}", outline="")
-                # Inner glow
-                glow_size = size + int(act * 8) + int(pulse * 4)
-                gr = int(r0 * 0.3 * act)
-                gg = int(g0 * 0.3 * act)
-                gb = int(b0 * 0.3 * act)
-                c.create_oval(x - glow_size, y - glow_size,
-                             x + glow_size, y + glow_size,
-                             fill=f"#{gr:02x}{gg:02x}{gb:02x}", outline="")
+                # 5-ring smooth radial gradient (outermost → innermost)
+                max_radius = size + int(act * 16) + int(pulse * 7)
+                for ring_i in range(5):
+                    frac = 1.0 - ring_i / 5.0  # 1.0, 0.8, 0.6, 0.4, 0.2
+                    ring_r = int(max_radius * frac)
+                    if ring_r < 1:
+                        continue
+                    brightness = 0.08 + ring_i * 0.06  # 0.08, 0.14, 0.20, 0.26, 0.32
+                    rr = max(0, min(255, int(r0 * brightness * act)))
+                    rg = max(0, min(255, int(g0 * brightness * act)))
+                    rb = max(0, min(255, int(b0 * brightness * act)))
+                    c.create_oval(x - ring_r, y - ring_r,
+                                 x + ring_r, y + ring_r,
+                                 fill=f"#{rr:02x}{rg:02x}{rb:02x}", outline="")
+                # Core circle
                 cr = min(255, int(r0 * (0.5 + act * 0.5)))
                 cg = min(255, int(g0 * (0.5 + act * 0.5)))
                 cb = min(255, int(b0 * (0.5 + act * 0.5)))
@@ -4628,6 +4694,13 @@ class ShumilekHive:
                              fill=f"#{cr:02x}{cg:02x}{cb:02x}",
                              outline=neuron["color"], width=2)
             else:
+                # Idle neurons: subtle pulse ring
+                idle_br = 0.2 + 0.1 * pulse
+                ir = max(0, min(255, int(30 * idle_br)))
+                ig = max(0, min(255, int(25 * idle_br)))
+                ib = max(0, min(255, int(60 * idle_br)))
+                c.create_oval(x - size - 2, y - size - 2, x + size + 2, y + size + 2,
+                             fill=f"#{ir:02x}{ig:02x}{ib:02x}", outline="")
                 c.create_oval(x - size, y - size, x + size, y + size,
                              fill=P["panel"], outline=P["border"], width=1)
 
@@ -4636,13 +4709,21 @@ class ShumilekHive:
                 c.create_text(x, y + size + 12, text=neuron["label"],
                              font=F_PIXEL, fill=lc)
 
-        # Layer labels
+        # Layer labels with glow text
         layers_info = [("INPUT", P["cyan"]), ("ANALYZE", P["amethyst"]),
                        ("PROCESS", P["ice"]), ("OUTPUT", P["emerald"])]
         margin_x = 80
         ls = (w - 2 * margin_x) / max(len(layers_info) - 1, 1)
         for i, (ln, lc) in enumerate(layers_info):
-            c.create_text(margin_x + i * ls, 20, text=ln, font=F_SMALL, fill=lc)
+            lx = margin_x + i * ls
+            # Glow text layer (offset)
+            lcol = lc.lstrip("#")
+            lr = max(0, int(int(lcol[:2], 16) * 0.3))
+            lg = max(0, int(int(lcol[2:4], 16) * 0.3))
+            lb = max(0, int(int(lcol[4:6], 16) * 0.3))
+            c.create_text(lx + 1, 21, text=ln, font=F_SMALL,
+                         fill=f"#{lr:02x}{lg:02x}{lb:02x}")
+            c.create_text(lx, 20, text=ln, font=F_SMALL, fill=lc)
 
         # Status overlay
         if self._ai_processing_task:
@@ -4672,10 +4753,13 @@ class ShumilekHive:
             c.create_text(w // 2, h - 25, text="HIVE IDLE \u2014 assign a task to activate",
                          font=F_SMALL, fill=col)
 
+        # Title with glow
+        c.create_text(w // 2 + 1, h - 7, text="SHUMILEK HIVE NEURAL VIEW",
+                     font=F_PIXEL, fill=P["border"])
         c.create_text(w // 2, h - 8, text="SHUMILEK HIVE NEURAL VIEW",
                      font=F_PIXEL, fill=P["border_glow"])
 
-        # Thought bubbles
+        # Thought bubbles (with glow outline)
         new_thoughts = []
         for tb in self._ai_thought_bubbles:
             tb["life"] += 1
@@ -4690,8 +4774,14 @@ class ShumilekHive:
                     g0 = int(int(base_col[2:4], 16) * fade)
                     b0 = int(int(base_col[4:6], 16) * fade)
                     col = f"#{r0:02x}{g0:02x}{b0:02x}"
-                    # Bubble background
+                    # Glow behind bubble
+                    gr = max(0, r0 // 4); gg = max(0, g0 // 4); gb = max(0, b0 // 4)
+                    gcol = f"#{gr:02x}{gg:02x}{gb:02x}"
                     tw = len(tb["text"]) * 5 + 12
+                    c.create_rectangle(bx - tw // 2 - 2, by - 10,
+                                      bx + tw // 2 + 2, by + 10,
+                                      fill=gcol, outline="")
+                    # Bubble background
                     c.create_rectangle(bx - tw // 2, by - 8,
                                       bx + tw // 2, by + 8,
                                       fill=P["surface"], outline=col, width=1)
@@ -4705,6 +4795,28 @@ class ShumilekHive:
             ks_col = P["emerald"] if ks >= 70 else (P["ice"] if ks >= 40 else P["ember"])
             c.create_text(10, h - 10, text=f"Knowledge: {ks}/100",
                          font=F_PIXEL, fill=ks_col, anchor="w")
+
+        # Vignette overlay — dark edges for cinematic depth
+        vg = P["void"]
+        vg_size = 40
+        # Top vignette
+        for vi in range(vg_size):
+            frac = 1.0 - vi / vg_size
+            vr = max(0, min(255, int(8 * frac)))
+            vgc = max(0, min(255, int(6 * frac)))
+            vb = max(0, min(255, int(16 * frac)))
+            if vr + vgc + vb > 0:
+                c.create_line(0, vi, w, vi,
+                             fill=f"#{vr:02x}{vgc:02x}{vb:02x}", width=1)
+        # Bottom vignette
+        for vi in range(vg_size):
+            frac = vi / vg_size
+            vr = max(0, min(255, int(8 * frac)))
+            vgc = max(0, min(255, int(6 * frac)))
+            vb = max(0, min(255, int(16 * frac)))
+            if vr + vgc + vb > 0:
+                c.create_line(0, h - vg_size + vi, w, h - vg_size + vi,
+                             fill=f"#{vr:02x}{vgc:02x}{vb:02x}", width=1)
 
     def _show_hive(self):
         """Switch to Hive view."""
@@ -8679,21 +8791,23 @@ class ShumilekHive:
             if not self._ai_processing_task and self._ai_hive_initialized:
                 self._hive_ambient_tick += 1
                 if self._hive_ambient_tick % 50 == 0:
-                    # Gentle breathing: randomly light up 1-3 neurons slightly
-                    for _ in range(random.randint(1, 3)):
+                    # Gentle breathing: randomly light up 1-4 neurons slightly
+                    for _ in range(random.randint(1, 4)):
                         idx = random.randint(0, len(self._ai_neurons) - 1)
                         self._ai_neurons[idx]["activation"] = max(
                             self._ai_neurons[idx]["activation"],
-                            random.uniform(0.15, 0.45)
+                            random.uniform(0.15, 0.50)
                         )
-                if self._hive_ambient_tick % 100 == 0 and self._ai_synapses:
-                    # Occasional ambient pulse traveling along a random synapse
-                    syn = random.choice(self._ai_synapses)
-                    self._ai_pulses.append({
-                        "src": syn["src"], "dst": syn["dst"],
-                        "t": 0.0, "speed": random.uniform(0.015, 0.03),
-                        "color": random.choice([P["cyan_dim"], P["amethyst_dim"], P["border_glow"]]),
-                    })
+                if self._hive_ambient_tick % 70 == 0 and self._ai_synapses:
+                    # Ambient pulses — 1-2 at a time for more activity
+                    for _ in range(random.randint(1, 2)):
+                        syn = random.choice(self._ai_synapses)
+                        self._ai_pulses.append({
+                            "src": syn["src"], "dst": syn["dst"],
+                            "t": 0.0, "speed": random.uniform(0.013, 0.028),
+                            "color": random.choice([P["cyan_dim"], P["amethyst_dim"],
+                                                   P["border_glow"], P["ice"]]),
+                        })
 
         if not self._closing:
             self.root.after(38, self._animate)
