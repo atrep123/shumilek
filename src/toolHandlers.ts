@@ -482,7 +482,7 @@ export async function handleRunTerminalCommandTool(
   const cwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 
   return await new Promise((resolve) => {
-    exec(command, { cwd, timeout: timeoutMs }, (error, stdout, stderr) => {
+    exec(command, { cwd, timeout: timeoutMs, maxBuffer: 4 * 1024 * 1024 }, (error, stdout, stderr) => {
       const exitCode = error ? (error as any).code || 1 : 0;
       const succeeded = exitCode === 0;
       resolve({

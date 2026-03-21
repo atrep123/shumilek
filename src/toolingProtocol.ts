@@ -53,6 +53,7 @@ export function parseToolCalls(text: string): ParseToolCallsResult {
 
   TOOL_CALL_REGEX.lastIndex = 0;
   while ((match = TOOL_CALL_REGEX.exec(text)) !== null) {
+    if (calls.length >= 50) break;
     sawTaggedCallBlock = true;
     const raw = match[1]?.trim();
     if (!raw) {

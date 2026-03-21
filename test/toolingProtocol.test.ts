@@ -172,5 +172,14 @@ describe('toolingProtocol', () => {
       // Should have at most 50 candidates processed
       assert.ok(parsed.calls.length <= 50, `Expected <= 50 calls, got ${parsed.calls.length}`);
     });
+
+    it('caps tagged tool_call blocks at 50', () => {
+      const blocks = Array.from({ length: 80 }, (_, i) =>
+        '<tool_call>{"name":"t_' + i + '","arguments":{"x":' + i + '}}</tool_call>'
+      ).join('\n');
+      const parsed = parseToolCalls(blocks);
+      assert.equal(parsed.calls.length, 50);
+      assert.equal(parsed.calls[49].name, 't_49');
+    });
   });
 });

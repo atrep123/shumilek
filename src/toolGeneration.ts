@@ -195,12 +195,15 @@ export async function generateWithTools(
       const result = await runToolCallImpl(panel, call, confirmEdits, session, autoApprovePolicy, deps);
       if (session) {
         if (!session.toolCallRecords) session.toolCallRecords = [];
-        session.toolCallRecords.push({
-          tool: call.name,
-          args: call.arguments ?? {},
-          ok: result.ok,
-          message: result.message
-        });
+        if (session.toolCallRecords.length < 200) {
+          const argsSnapshot = call.arguments ? JSON.stringify(call.arguments) : '';
+          session.toolCallRecords.push({
+            tool: call.name,
+            args: argsSnapshot.length > 2000 ? { _truncated: argsSnapshot.slice(0, 2000) } : (call.arguments ?? {}),
+            ok: result.ok,
+            message: result.message
+          });
+        }
       }
 
       if (!result.ok) {

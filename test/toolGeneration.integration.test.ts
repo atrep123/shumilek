@@ -304,4 +304,79 @@ describe('toolGeneration integration', () => {
 
     assert.ok(result.includes('Hotovo'), 'should recognize apply_patch as mutation');
   });
+
+  it('caps toolCallRecords at 200 entries', async () => {
+    // model returns 1 call per iteration, loop runs up to 10 iterations but
+    // we only need to verify the cap behaviour so we simulate many tool calls
+    // via a single iteration returning many calls
+    const session: any = {
+      hadMutations: false,
+      lastWritePath: undefined,
+      toolCallRecords: []
+    };
+    // Pre-fill 199 records
+    for (let i = 0; i < 199; i++) {
+      session.toolCallRecords.push({ tool: `pre_${i}`, args: {}, ok: true, message: 'ok' });
+    }
+
+    const result = await generateWithTools(
+      createPanel([]),
+      'http://example.test',
+      'm',
+      'sys',
+      [{ role: 'user', content: 'do it' }],
+      1000,
+      1,
+      false,
+      createDeps({
+        executeModelCallWithMessagesFn: async () =>
+          toolCall('read_file', { path: 'a.ts' }) + toolCall('read_file', { path: 'b.ts' }) + toolCall('read_file', { path: 'c.ts' }),
+        runToolCallFn: async (_panel: any, call: any) => ({ ok: true, tool: call.name, message: 'ok' }),
+        collectPostWriteDiagnosticsFn: async () => []
+      }),
+      undefined,
+      undefined,
+      undefined,
+      session
+    );
+
+    // 199 pre-filled + at most 1 new = 200 cap
+    assert.ok(session.toolCallRecords.length <= 200, `Expected <= 200, got ${session.toolCallRecords.length}`);
+  });
+
+  it('truncates large args in toolCallRecords', async () => {
+    const session: any = {
+      hadMutations: false,
+      lastWritePath: undefined,
+      toolCallRecords: []
+    };
+    const bigContent = 'x'.repeat(5000);
+
+    const result = await generateWithTools(
+      createPanel([]),
+      'http://example.test',
+      'm',
+      'sys',
+      [{ role: 'user', content: 'write' }],
+      1000,
+      1,
+      false,
+      createDeps({
+        executeModelCallWithMessagesFn: async () =>
+          toolCall('write_file', { path: 'big.ts', text: bigContent }),
+        runToolCallFn: async (_panel: any, call: any) => ({ ok: true, tool: call.name, message: 'ok' }),
+        collectPostWriteDiagnosticsFn: async () => []
+      }),
+      undefined,
+      undefined,
+      undefined,
+      session
+    );
+
+    const record = session.toolCallRecords[0];
+    assert.ok(record, 'should have 1 record');
+    // Args should be truncated to _truncated with max 2000 chars
+    assert.ok(record.args._truncated, 'should have _truncated field');
+    assert.ok(record.args._truncated.length <= 2000, `Expected <= 2000, got ${record.args._truncated.length}`);
+  });
 });
