@@ -1900,5 +1900,208 @@ class GraphAutoClusterTests(unittest.TestCase):
         self.assertIn("cluster_id += 1", source)
 
 
+# ─── Tier 11: Graph Zoom/Pan ────────────────────────────────────
+class GraphZoomPanTests(unittest.TestCase):
+    """Tests for graph zoom and pan functionality."""
+
+    def test_zoom_scale_state(self):
+        """_graph_zoom_scale state variable exists."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("_graph_zoom_scale: float = 1.0", source)
+
+    def test_pan_offset_state(self):
+        """_graph_pan_offset state variable exists."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("_graph_pan_offset: list[float]", source)
+
+    def test_scroll_zoom_handler(self):
+        """_on_graph_scroll_zoom applies zoom factor and clamps."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _on_graph_scroll_zoom(")
+        body = source[idx:idx + 400]
+        self.assertIn("_graph_zoom_scale", body)
+        self.assertIn("0.3", body)
+        self.assertIn("3.0", body)
+        self.assertIn("_draw_graph", body)
+
+    def test_pan_start_handler(self):
+        """_on_graph_pan_start records start coordinates."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _on_graph_pan_start(")
+        body = source[idx:idx + 200]
+        self.assertIn("_graph_pan_start", body)
+        self.assertIn("event.x", body)
+
+    def test_pan_move_handler(self):
+        """_on_graph_pan_move updates offset and redraws."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _on_graph_pan_move(")
+        body = source[idx:idx + 600]
+        self.assertIn("_graph_pan_offset", body)
+        self.assertIn("_draw_graph", body)
+
+    def test_pan_end_handler(self):
+        """_on_graph_pan_end clears pan state."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _on_graph_pan_end(")
+        body = source[idx:idx + 200]
+        self.assertIn("_graph_pan_start", body)
+        self.assertIn("None", body)
+
+    def test_zoom_transform_in_draw(self):
+        """_draw_graph applies zoom and pan transform to positions."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("Apply zoom and pan transform")
+        body = source[idx:idx + 400]
+        self.assertIn("z_scale", body)
+        self.assertIn("z_pan_dx", body)
+        self.assertIn("positions[node]", body)
+
+    def test_mousewheel_binding(self):
+        """Graph canvas binds MouseWheel for zoom."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("MouseWheel", source)
+        self.assertIn("_on_graph_scroll_zoom", source)
+
+    def test_button2_pan_bindings(self):
+        """Graph canvas binds Button-2 for pan."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("Button-2", source)
+        self.assertIn("B2-Motion", source)
+        self.assertIn("_on_graph_pan_end", source)
+
+
+# ─── Tier 11: Kanban Board ──────────────────────────────────────
+class KanbanBoardTests(unittest.TestCase):
+    """Tests for kanban board view."""
+
+    def test_kanban_columns_state(self):
+        """_kanban_columns has Todo/In Progress/Done."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn('"Todo"', source)
+        self.assertIn('"In Progress"', source)
+        self.assertIn('"Done"', source)
+        self.assertIn("_kanban_columns", source)
+
+    def test_show_kanban_sets_view_mode(self):
+        """_show_kanban sets view_mode to kanban."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _show_kanban(")
+        body = source[idx:idx + 700]
+        self.assertIn('view_mode = "kanban"', body)
+        self.assertIn("KANBAN", body)
+        self.assertIn("_draw_kanban", body)
+
+    def test_extract_tasks_parses_checkboxes(self):
+        """_extract_tasks parses - [ ] and - [x] syntax."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _extract_tasks(")
+        body = source[idx:idx + 800]
+        self.assertIn("- [x]", body)
+        self.assertIn("- [ ]", body)
+        self.assertIn("Todo", body)
+        self.assertIn("Done", body)
+
+    def test_draw_kanban_columns(self):
+        """_draw_kanban draws column headers."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _draw_kanban(")
+        body = source[idx:idx + 1200]
+        self.assertIn("col_name", body)
+        self.assertIn("create_rectangle", body)
+        self.assertIn("create_text", body)
+
+    def test_kanban_click_opens_note(self):
+        """_on_kanban_click opens source note."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _on_kanban_click(")
+        body = source[idx:idx + 600]
+        self.assertIn("_show_editor", body)
+        self.assertIn("_open_file", body)
+
+    def test_kanban_frame_in_hide_all(self):
+        """kanban_frame is hidden in _hide_all_views."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _hide_all_views(")
+        body = source[idx:idx + 400]
+        self.assertIn("kanban_frame", body)
+
+    def test_kanban_in_command_palette(self):
+        """Kanban Board appears in command palette."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("Kanban Board", source)
+        self.assertIn("_show_kanban", source)
+
+    def test_extract_tasks_in_progress(self):
+        """Tasks with 'in progress' or 'wip' go to In Progress column."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _extract_tasks(")
+        body = source[idx:idx + 1200]
+        self.assertIn("in progress", body)
+        self.assertIn("wip", body)
+
+
+# ─── Tier 11: Duplicate Note ────────────────────────────────────
+class DuplicateNoteTests(unittest.TestCase):
+    """Tests for note duplication."""
+
+    def test_duplicate_note_method_exists(self):
+        """_duplicate_note method exists."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("def _duplicate_note(self)", source)
+
+    def test_duplicate_creates_copy_suffix(self):
+        """Duplicate creates file with (copy) suffix."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _duplicate_note(")
+        body = source[idx:idx + 600]
+        self.assertIn("(copy)", body)
+        self.assertIn("write_text", body)
+
+    def test_duplicate_handles_existing_copy(self):
+        """Duplicate increments counter for existing copies."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _duplicate_note(")
+        body = source[idx:idx + 600]
+        self.assertIn("counter", body)
+        self.assertIn("while dest.exists()", body)
+
+    def test_duplicate_in_command_palette(self):
+        """Duplicate Note appears in command palette."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("Duplicate Note", source)
+        self.assertIn("_duplicate_note", source)
+
+    def test_duplicate_rescans_vault(self):
+        """Duplicate note rescans vault after creation."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _duplicate_note(")
+        body = source[idx:idx + 900]
+        self.assertIn("_scan_vault", body)
+        self.assertIn("_toast", body)
+
+
 if __name__ == "__main__":
     unittest.main()

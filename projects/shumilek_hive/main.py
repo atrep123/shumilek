@@ -619,6 +619,9 @@ class ShumilekHive:
         self._graph_layout_mode: str = "circular"  # circular | force | radial
         self._graph_filter_query: str = ""  # node filter text
         self._graph_clusters: dict[str, int] = {}  # node -> cluster_id
+        self._graph_zoom_scale: float = 1.0  # graph canvas zoom level
+        self._graph_pan_offset: list[float] = [0.0, 0.0]  # canvas pan offset [dx, dy]
+        self._graph_pan_start: tuple[int, int] | None = None  # pan drag start coords
         self._graph_starfield = StarField(120)  # starfield for graph background
         self._graph_flow_particles: list[FlowParticle] = []  # animated edge particles
         self._graph_anim_phase: float = 0.0  # animation phase counter
@@ -664,6 +667,9 @@ class ShumilekHive:
 
         # Bookmarks: {note_stem: [(line, label), ...]}
         self._bookmarks: dict[str, list[tuple[int, str]]] = {}
+
+        # Kanban task board
+        self._kanban_columns: list[str] = ["Todo", "In Progress", "Done"]
 
         # Link hover preview
         self._link_preview_win: tk.Toplevel | None = None
@@ -800,7 +806,7 @@ class ShumilekHive:
         for frame in (self.editor_container, self.graph_frame,
                       self.schema_frame, self.preview_frame,
                       self.hive_frame, self.timeline_frame,
-                      self.cards_frame):
+                      self.cards_frame, self.kanban_frame):
             frame.pack_forget()
         if hasattr(self, 'split_container'):
             self.split_container.pack_forget()
@@ -1501,6 +1507,10 @@ class ShumilekHive:
         self.graph_canvas.bind("<Configure>", lambda e: self._on_canvas_resize("graph"))
         self.graph_canvas.bind("<Motion>", self._on_graph_hover)
         self.graph_canvas.bind("<Button-3>", self._on_graph_right_click)
+        self.graph_canvas.bind("<MouseWheel>", self._on_graph_scroll_zoom)
+        self.graph_canvas.bind("<Button-2>", self._on_graph_pan_start)
+        self.graph_canvas.bind("<B2-Motion>", self._on_graph_pan_move)
+        self.graph_canvas.bind("<ButtonRelease-2>", self._on_graph_pan_end)
         # AI scenario controls bar
         self.graph_controls = tk.Frame(self.graph_frame, bg=P["panel"], height=28)
         self.graph_controls.pack(fill="x", side="bottom")
@@ -1605,6 +1615,15 @@ class ShumilekHive:
         self.cards_canvas.bind("<Configure>", lambda e: self._on_canvas_resize("cards"))
         self._card_rects: dict[str, tuple[int, int, int, int]] = {}  # stem → (x,y,w,h)
         self._card_hover_stem: str | None = None  # currently hovered card
+
+        # Kanban board frame (hidden)
+        self.kanban_frame = tk.Frame(self.center_frame, bg=P["void"])
+        self.kanban_canvas = tk.Canvas(self.kanban_frame, bg=P["void"],
+                                       highlightthickness=0, cursor="hand2")
+        self.kanban_canvas.pack(fill="both", expand=True)
+        self.kanban_canvas.bind("<Button-1>", self._on_kanban_click)
+        self.kanban_canvas.bind("<Configure>", lambda e: self._on_canvas_resize("kanban"))
+        self._kanban_task_rects: dict[str, tuple[int, int, int, int, str, str]] = {}
 
     # ─── RIGHT PANEL ─────────────────────────────────────────────
     def _build_right_panel(self):
@@ -2381,6 +2400,8 @@ class ShumilekHive:
             ("Vault Changelog", self._show_vault_changelog),
             ("Move Heading Up", self._reorder_heading_up),
             ("Move Heading Down", self._reorder_heading_down),
+            ("Kanban Board", self._show_kanban),
+            ("Duplicate Note", self._duplicate_note),
         ]
 
         win = tk.Toplevel(self.root)
@@ -6237,6 +6258,31 @@ class ShumilekHive:
         self._graph_press_xy = None
         self._graph_dragged = False
 
+    def _on_graph_scroll_zoom(self, event):
+        """Zoom graph via mouse wheel."""
+        factor = 1.1 if event.delta > 0 else 1 / 1.1
+        self._graph_zoom_scale = max(0.3, min(3.0, self._graph_zoom_scale * factor))
+        self._draw_graph()
+
+    def _on_graph_pan_start(self, event):
+        """Start panning graph with middle mouse button."""
+        self._graph_pan_start = (event.x, event.y)
+
+    def _on_graph_pan_move(self, event):
+        """Pan graph while middle mouse button held."""
+        if self._graph_pan_start is None:
+            return
+        dx = event.x - self._graph_pan_start[0]
+        dy = event.y - self._graph_pan_start[1]
+        self._graph_pan_offset[0] += dx
+        self._graph_pan_offset[1] += dy
+        self._graph_pan_start = (event.x, event.y)
+        self._draw_graph()
+
+    def _on_graph_pan_end(self, event):
+        """End graph panning."""
+        self._graph_pan_start = None
+
     def _on_graph_hover(self, event):
         """Show tooltip when hovering a graph node."""
         if self._graph_drag_node:
@@ -7205,6 +7251,15 @@ class ShumilekHive:
         for node in nodes:
             if node in self._graph_custom_positions:
                 positions[node] = self._graph_custom_positions[node]
+
+        # Apply zoom and pan transform
+        z_scale = self._graph_zoom_scale
+        z_pan_dx, z_pan_dy = self._graph_pan_offset
+        for node in nodes:
+            if node in positions:
+                nx, ny = positions[node]
+                positions[node] = (cx + (nx - cx) * z_scale + z_pan_dx,
+                                   cy + (ny - cy) * z_scale + z_pan_dy)
 
         # ── Auto-clustering (connected components) ──
         cluster_colors = [P["cyan"], P["amethyst"], P["emerald"], P["ice"],
@@ -8607,6 +8662,135 @@ class ShumilekHive:
         """Remove card hover highlight."""
         self._card_hover_stem = None
         self.cards_canvas.delete("hover_glow")
+
+    # ─── KANBAN BOARD ────────────────────────────────────────────
+    def _show_kanban(self):
+        """Switch to kanban board view showing tasks from notes."""
+        self._hide_all_views()
+        self.kanban_frame.pack(fill="both", expand=True, padx=4, pady=4)
+        self.view_mode = "kanban"
+        self.view_indicator.config(text="KANBAN", fg=P["ember"])
+        tasks = self._extract_tasks()
+        total = sum(len(v) for v in tasks.values())
+        self.status_left.config(text=f"kanban board \u2014 {total} tasks across {len(self._all_files)} notes")
+        self.root.after(50, self._draw_kanban)
+
+    def _extract_tasks(self) -> dict[str, list[dict]]:
+        """Extract tasks from all notes. Returns {column: [{text, file, line, done}]}."""
+        result: dict[str, list[dict]] = {"Todo": [], "In Progress": [], "Done": []}
+        for fp in self._all_files:
+            content = self._read_cached(fp)
+            for line_no, line in enumerate(content.split("\n"), 1):
+                stripped = line.strip()
+                if stripped.startswith("- [x] ") or stripped.startswith("- [X] "):
+                    result["Done"].append({
+                        "text": stripped[6:].strip(),
+                        "file": fp.stem,
+                        "line": line_no,
+                        "done": True,
+                    })
+                elif stripped.startswith("- [ ] "):
+                    task_text = stripped[6:].strip().lower()
+                    if "in progress" in task_text or "wip" in task_text:
+                        col = "In Progress"
+                    else:
+                        col = "Todo"
+                    result[col].append({
+                        "text": stripped[6:].strip(),
+                        "file": fp.stem,
+                        "line": line_no,
+                        "done": False,
+                    })
+        return result
+
+    def _draw_kanban(self):
+        """Draw kanban board with three columns."""
+        c = self.kanban_canvas
+        c.delete("all")
+        w = max(c.winfo_width(), 400)
+        h = max(c.winfo_height(), 300)
+        self._kanban_task_rects.clear()
+
+        tasks = self._extract_tasks()
+        columns = self._kanban_columns
+        col_w = (w - 20) // len(columns)
+        col_colors = [P["cyan_dim"], P["ember"], P["emerald"]]
+
+        # Draw columns
+        for ci, col_name in enumerate(columns):
+            x = 10 + ci * col_w
+            col_color = col_colors[ci % len(col_colors)]
+
+            # Column header
+            c.create_rectangle(x, 10, x + col_w - 10, 40,
+                              fill=P["surface"], outline=col_color, width=2)
+            count = len(tasks.get(col_name, []))
+            c.create_text(x + (col_w - 10) // 2, 25,
+                         text=f"{col_name} ({count})",
+                         font=F_HEAD, fill=col_color, anchor="center")
+
+            # Task cards
+            card_y = 50
+            for task in tasks.get(col_name, []):
+                card_h = 60
+                if card_y + card_h > h + 20:
+                    break
+                bg = P["panel"]
+                c.create_rectangle(x + 4, card_y, x + col_w - 14, card_y + card_h,
+                                  fill=bg, outline=P["border_glow"], width=1)
+
+                # Task text
+                text = task["text"]
+                if len(text) > 30:
+                    text = text[:29] + "\u2026"
+                c.create_text(x + 10, card_y + 10, text=text,
+                             font=F_PIXEL, fill=P["text_bright"],
+                             anchor="nw", width=col_w - 30)
+
+                # Source file
+                c.create_text(x + 10, card_y + card_h - 14,
+                             text=f"\u2190 {task['file']}:{task['line']}",
+                             font=(FONT, 7), fill=P["text_dim"], anchor="nw")
+
+                # Checkbox indicator
+                check = "\u2611" if task["done"] else "\u2610"
+                c.create_text(x + col_w - 22, card_y + 10, text=check,
+                             font=F_HEAD, fill=col_color, anchor="ne")
+
+                self._kanban_task_rects[f"{task['file']}:{task['line']}"] = (
+                    x + 4, card_y, col_w - 18, card_h, task["file"], task["line"])
+                card_y += card_h + 8
+
+    def _on_kanban_click(self, event):
+        """Open source note when clicking a kanban task card."""
+        for key, (x, y, w, h, stem, line_no) in self._kanban_task_rects.items():
+            if x <= event.x <= x + w and y <= event.y <= y + h:
+                target = self.vault_path / f"{stem}.md"
+                if target.exists():
+                    self._show_editor()
+                    self._open_file(target)
+                return
+
+    # ─── DUPLICATE NOTE ──────────────────────────────────────────
+    def _duplicate_note(self):
+        """Duplicate the current note with a (copy) suffix."""
+        if not self.current_file or not self.current_file.exists():
+            return
+        src = self.current_file
+        stem = src.stem
+        suffix = src.suffix
+        copy_name = f"{stem} (copy){suffix}"
+        dest = src.parent / copy_name
+        counter = 2
+        while dest.exists():
+            copy_name = f"{stem} (copy {counter}){suffix}"
+            dest = src.parent / copy_name
+            counter += 1
+        content = src.read_text(encoding="utf-8")
+        dest.write_text(content, encoding="utf-8")
+        self._scan_vault()
+        self._open_file(dest)
+        self._toast(f"Duplicated \u2192 {dest.name}")
 
     # ─── QUICK SWITCHER (FUZZY FINDER) ───────────────────────────
     def _show_quick_switcher(self):
