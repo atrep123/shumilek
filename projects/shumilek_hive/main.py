@@ -3371,6 +3371,14 @@ class ShumilekHive:
                       command=lambda t=task_text: self._hive_quick_task(t)
                       ).pack(side="right", padx=2, pady=6)
 
+        # History viewer button
+        tk.Button(input_bar, text="\U0001F4CB History", font=F_PIXEL,
+                  fg=P["amethyst"], bg=P["surface"],
+                  activebackground=P["hover"], activeforeground=P["ice"],
+                  bd=0, padx=6, cursor="hand2",
+                  command=self._hive_show_history
+                  ).pack(side="right", padx=2, pady=6)
+
         # Bottom: task list + activity log + output
         bottom = tk.Frame(self.hive_frame, bg=P["obsidian"], height=210)
         bottom.pack(fill="x")
@@ -3383,8 +3391,23 @@ class ShumilekHive:
         # Left: task queue
         tq_frame = tk.Frame(bottom, bg=P["panel"])
         tq_frame.grid(row=0, column=0, sticky="nsew", padx=(2, 1), pady=2)
-        tk.Label(tq_frame, text="TASK QUEUE", font=F_PIXEL,
-                 fg=P["cyan"], bg=P["surface"]).pack(fill="x")
+
+        # Task queue header with filter controls
+        tq_header = tk.Frame(tq_frame, bg=P["surface"])
+        tq_header.pack(fill="x")
+        tk.Label(tq_header, text="TASK QUEUE", font=F_PIXEL,
+                 fg=P["cyan"], bg=P["surface"]).pack(side="left", padx=(4, 0))
+
+        self._hive_filter_status = tk.StringVar(value="all")
+        for label, val in [("All", "all"), ("Err", "error"), ("Done", "done")]:
+            tk.Radiobutton(
+                tq_header, text=label, variable=self._hive_filter_status,
+                value=val, font=F_PIXEL, fg=P["text_dim"], bg=P["surface"],
+                selectcolor=P["panel"], activebackground=P["surface"],
+                indicatoron=0, bd=0, padx=4, pady=1, cursor="hand2",
+                command=self._hive_update_task_list,
+            ).pack(side="right", padx=1)
+
         self.hive_task_list = tk.Text(
             tq_frame, font=F_SMALL, bg=P["panel"], fg=P["text"],
             bd=0, padx=6, pady=4, height=8, state="disabled",
@@ -3395,6 +3418,7 @@ class ShumilekHive:
         self.hive_task_list.tag_configure("pending", foreground=P["text_dim"])
         self.hive_task_list.tag_configure("running", foreground=P["cyan"])
         self.hive_task_list.tag_configure("done", foreground=P["ok"])
+        self.hive_task_list.tag_configure("error", foreground=P["ember"])
         self.hive_task_list.tag_configure("id", foreground=P["amethyst"])
         self.hive_task_list.tag_configure("progress", foreground=P["emerald"])
 
@@ -3519,6 +3543,7 @@ class ShumilekHive:
             "actions": [],
             "created": time.time(),
             "steps": [],
+            "retries": 0,
         }
         self._ai_tasks.append(task)
         # Cap task list — remove oldest finished tasks beyond 100
@@ -3603,6 +3628,49 @@ class ShumilekHive:
             tag = "accent" if title == "Hive online" and not meta else None
             ot.insert("end", body.strip() + "\n", tag)
         ot.config(state="disabled")
+
+    def _hive_show_history(self):
+        """Load and display task history from vault JSON."""
+        history_path = self.vault_path / "Hive Reports" / "task_history.json"
+        if not history_path.exists():
+            self._hive_set_output("Task History", "No task history yet.", "")
+            self._hive_set_actions([])
+            return
+        try:
+            raw = history_path.read_text(encoding="utf-8")
+            history = json.loads(raw) if raw.strip() else []
+        except Exception:
+            self._hive_set_output("Task History", "Failed to load history file.", "")
+            self._hive_set_actions([])
+            return
+        if not history:
+            self._hive_set_output("Task History", "History is empty.", "")
+            self._hive_set_actions([])
+            return
+        lines = []
+        for entry in reversed(history[-30:]):
+            status = entry.get("status", "?")
+            icon = {"done": "\u2713", "error": "\u2718", "cancelled": "\u2715"}.get(status, "\u25CB")
+            tid = entry.get("id", "?")
+            kind = entry.get("kind", "task")
+            text = entry.get("text", "")[:50]
+            result = entry.get("result", "")[:40]
+            ts = ""
+            if entry.get("completed"):
+                ts = datetime.datetime.fromtimestamp(entry["completed"]).strftime("%m/%d %H:%M")
+            line = f"{icon} #{tid} [{kind}] {text}"
+            if result:
+                line += f"\n   \u2192 {result}"
+            if ts:
+                line += f"  ({ts})"
+            lines.append(line)
+        body = "\n".join(lines)
+        self._hive_set_output(
+            "Task History",
+            body,
+            f"showing last {min(30, len(history))} of {len(history)} entries",
+        )
+        self._hive_set_actions([])
 
     def _hive_set_actions(self, actions: list[dict] | None = None):
         for btn in self._hive_action_buttons:
@@ -4408,12 +4476,20 @@ class ShumilekHive:
         tl.config(state="normal")
         tl.delete("1.0", "end")
         self._hive_task_line_map = []
-        visible = [t for t in self._ai_tasks[-15:] if t["status"] != "cancelled"]
-        for task in reversed(visible):
+        status_filter = getattr(self, "_hive_filter_status", None)
+        filter_val = status_filter.get() if status_filter else "all"
+        candidates = [t for t in self._ai_tasks[-15:] if t["status"] != "cancelled"]
+        if filter_val == "error":
+            candidates = [t for t in candidates if t["status"] == "error"]
+        elif filter_val == "done":
+            candidates = [t for t in candidates if t["status"] == "done"]
+        for task in reversed(candidates):
             start_line = int(tl.index("end-1c").split(".")[0])
             tid = f"#{task['id']}"
             pri = task.get("priority", 0)
             pri_tag = f" \u2191{pri}" if pri > 0 else ""
+            retries = task.get("retries", 0)
+            retry_tag = f" \u21BB{retries}" if retries > 0 else ""
             if task["status"] == "running":
                 bar_len = task["progress"] // 5
                 bar = "\u2588" * bar_len + "\u2591" * (20 - bar_len)
@@ -4427,9 +4503,15 @@ class ShumilekHive:
                 tl.insert("end", f"{task['text'][:30]}\n", "done")
                 if task["result"]:
                     tl.insert("end", f"   \u2192 {task['result'][:50]}\n", "done")
+            elif task["status"] == "error":
+                tl.insert("end", " \u2718 ", "error")
+                tl.insert("end", f"{tid}{retry_tag} ", "id")
+                tl.insert("end", f"{task['text'][:30]}\n", "error")
+                if task["result"]:
+                    tl.insert("end", f"   \u2192 {task['result'][:50]}\n", "error")
             else:
                 tl.insert("end", " \u25CB ", "pending")
-                tl.insert("end", f"{tid}{pri_tag} ", "id")
+                tl.insert("end", f"{tid}{pri_tag}{retry_tag} ", "id")
                 tl.insert("end", f"{task['text'][:40]}\n", "pending")
             end_line = int(tl.index("end-1c").split(".")[0])
             self._hive_task_line_map.append((start_line, end_line, task["id"]))
@@ -4685,6 +4767,8 @@ class ShumilekHive:
         except Exception:
             self._ai_log("warn", "Failed to save task history")
 
+    _TASK_RETRY_MAX = 1
+
     def _hive_complete_task(self, task: dict):
         task["status"] = "done"
         task["progress"] = 100
@@ -4697,6 +4781,29 @@ class ShumilekHive:
             task["detail"] = tb[-500:] if len(tb) > 500 else tb
             task["actions"] = []
             self._ai_log("err", f"Task #{task['id']} error: {tb.splitlines()[-1][:80]}")
+        # Auto-retry on error (up to _TASK_RETRY_MAX times)
+        if task["status"] == "error" and task.get("retries", 0) < self._TASK_RETRY_MAX:
+            task["retries"] = task.get("retries", 0) + 1
+            task["status"] = "pending"
+            task["progress"] = 0
+            task["result"] = ""
+            task["detail"] = ""
+            task["actions"] = []
+            self._ai_processing_task = None
+            if self.pipeline.is_running:
+                for nid in list(self.pipeline.node_states):
+                    if self.pipeline.node_states[nid] in ("idle", "active"):
+                        self.pipeline.node_states[nid] = "error"
+                self.pipeline.is_running = False
+            self._ai_log("warn", f"Task #{task['id']} retry {task['retries']}/{self._TASK_RETRY_MAX}")
+            self._hive_update_task_list()
+            self._hive_set_output(
+                f"Task #{task['id']} retrying",
+                f"Automatic retry {task['retries']}/{self._TASK_RETRY_MAX} after error",
+                f"kind: {task.get('kind', 'task')}",
+            )
+            self.root.after(2000, self._hive_start_next_task)
+            return
         self._hive_save_task_history(task)
         if task["status"] != "error":
             self._ai_log("ok", f"Task #{task['id']} complete: {task.get('result', '')[:60]}")

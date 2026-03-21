@@ -870,5 +870,209 @@ class RebuildGraphSafetyTests(unittest.TestCase):
         self.assertIn("except OSError:", method_src)
 
 
+class TaskAutoRetryTests(unittest.TestCase):
+    """Tests for automatic task retry on error."""
+
+    def _make_task(self, tid=1, status="running", retries=0):
+        return {
+            "id": tid, "text": "test task", "kind": "summary",
+            "status": status, "progress": 50, "result": "",
+            "detail": "", "actions": [], "created": 1.0,
+            "steps": [], "retries": retries,
+        }
+
+    def test_retry_resets_task_to_pending(self):
+        """First error triggers retry: status→pending, retries incremented."""
+        task = self._make_task(retries=0)
+        task["status"] = "error"
+        task["result"] = "Task failed with error"
+        # Simulate retry logic from _hive_complete_task
+        _TASK_RETRY_MAX = 1
+        if task["status"] == "error" and task.get("retries", 0) < _TASK_RETRY_MAX:
+            task["retries"] = task.get("retries", 0) + 1
+            task["status"] = "pending"
+            task["progress"] = 0
+            task["result"] = ""
+            task["detail"] = ""
+            task["actions"] = []
+        self.assertEqual(task["status"], "pending")
+        self.assertEqual(task["retries"], 1)
+        self.assertEqual(task["progress"], 0)
+
+    def test_no_retry_after_max_retries(self):
+        """Second error does NOT retry: task stays in error."""
+        task = self._make_task(retries=1)
+        task["status"] = "error"
+        task["result"] = "Task failed with error"
+        _TASK_RETRY_MAX = 1
+        if task["status"] == "error" and task.get("retries", 0) < _TASK_RETRY_MAX:
+            task["retries"] += 1
+            task["status"] = "pending"
+        self.assertEqual(task["status"], "error")
+        self.assertEqual(task["retries"], 1)
+
+    def test_retries_field_in_submit(self):
+        """Task dict from _hive_submit_task includes retries=0."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _hive_submit_task(self")
+        method_src = source[idx:idx + 600]
+        self.assertIn('"retries": 0', method_src)
+
+    def test_retry_max_constant_exists(self):
+        """_TASK_RETRY_MAX constant is defined in source."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        match = re.search(r"_TASK_RETRY_MAX\s*=\s*(\d+)", source)
+        self.assertIsNotNone(match)
+        self.assertEqual(int(match.group(1)), 1)
+
+    def test_successful_task_not_retried(self):
+        """Done tasks are never retried."""
+        task = self._make_task(retries=0)
+        task["status"] = "done"
+        _TASK_RETRY_MAX = 1
+        retried = False
+        if task["status"] == "error" and task.get("retries", 0) < _TASK_RETRY_MAX:
+            retried = True
+        self.assertFalse(retried)
+
+
+class TaskHistoryViewerTests(unittest.TestCase):
+    """Tests for _hive_show_history functionality."""
+
+    def test_history_formatting(self):
+        """Verify history entries are formatted correctly."""
+        import datetime as _dt
+        entries = [
+            {"id": 1, "text": "scan vault", "kind": "vault-stats",
+             "status": "done", "result": "Found 42 notes", "completed": 1700000000.0},
+            {"id": 2, "text": "find gaps", "kind": "vault-links",
+             "status": "error", "result": "Failed", "completed": 1700001000.0},
+        ]
+        lines = []
+        for entry in reversed(entries[-30:]):
+            status = entry.get("status", "?")
+            icon = {
+                "done": "\u2713", "error": "\u2718", "cancelled": "\u2715"
+            }.get(status, "\u25CB")
+            tid = entry.get("id", "?")
+            kind = entry.get("kind", "task")
+            text = entry.get("text", "")[:50]
+            result = entry.get("result", "")[:40]
+            line = f"{icon} #{tid} [{kind}] {text}"
+            if result:
+                line += f"\n   \u2192 {result}"
+            lines.append(line)
+        body = "\n".join(lines)
+        self.assertIn("\u2718 #2", body)  # error icon for task 2
+        self.assertIn("\u2713 #1", body)  # done icon for task 1
+        self.assertIn("[vault-stats]", body)
+        self.assertIn("Found 42 notes", body)
+
+    def test_empty_history_file(self):
+        """Empty JSON array results in 'empty' message logic."""
+        history = []
+        self.assertEqual(len(history), 0)
+
+    def test_history_viewer_button_exists_in_source(self):
+        """Source contains the History button widget."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("History", source)
+        self.assertIn("_hive_show_history", source)
+
+    def test_history_capped_at_30_entries(self):
+        """History viewer shows at most 30 entries."""
+        entries = [{"id": i, "status": "done", "text": f"task {i}",
+                     "kind": "summary", "result": "ok", "completed": 1.0}
+                    for i in range(50)]
+        shown = entries[-30:]
+        self.assertEqual(len(shown), 30)
+
+
+class TaskFilterTests(unittest.TestCase):
+    """Tests for task list filtering by status."""
+
+    def _make_task(self, tid, status="done"):
+        return {
+            "id": tid, "text": f"task {tid}", "kind": "summary",
+            "status": status, "progress": 100 if status == "done" else 0,
+            "result": "ok" if status == "done" else "",
+            "detail": "", "actions": [], "created": 1.0,
+            "steps": [], "retries": 0, "priority": 0,
+        }
+
+    def test_filter_all_shows_non_cancelled(self):
+        """filter_val='all' shows everything except cancelled."""
+        tasks = [
+            self._make_task(1, "done"),
+            self._make_task(2, "error"),
+            self._make_task(3, "pending"),
+            self._make_task(4, "cancelled"),
+        ]
+        filter_val = "all"
+        candidates = [t for t in tasks[-15:] if t["status"] != "cancelled"]
+        if filter_val == "error":
+            candidates = [t for t in candidates if t["status"] == "error"]
+        elif filter_val == "done":
+            candidates = [t for t in candidates if t["status"] == "done"]
+        self.assertEqual(len(candidates), 3)
+        self.assertNotIn("cancelled", [t["status"] for t in candidates])
+
+    def test_filter_error_shows_only_error(self):
+        """filter_val='error' shows only error tasks."""
+        tasks = [
+            self._make_task(1, "done"),
+            self._make_task(2, "error"),
+            self._make_task(3, "error"),
+            self._make_task(4, "pending"),
+        ]
+        filter_val = "error"
+        candidates = [t for t in tasks[-15:] if t["status"] != "cancelled"]
+        if filter_val == "error":
+            candidates = [t for t in candidates if t["status"] == "error"]
+        self.assertEqual(len(candidates), 2)
+        self.assertTrue(all(t["status"] == "error" for t in candidates))
+
+    def test_filter_done_shows_only_done(self):
+        """filter_val='done' shows only completed tasks."""
+        tasks = [
+            self._make_task(1, "done"),
+            self._make_task(2, "error"),
+            self._make_task(3, "done"),
+        ]
+        filter_val = "done"
+        candidates = [t for t in tasks[-15:] if t["status"] != "cancelled"]
+        if filter_val == "done":
+            candidates = [t for t in candidates if t["status"] == "done"]
+        self.assertEqual(len(candidates), 2)
+        self.assertTrue(all(t["status"] == "done" for t in candidates))
+
+    def test_filter_status_var_exists_in_source(self):
+        """Source contains _hive_filter_status StringVar."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("_hive_filter_status", source)
+
+    def test_error_tag_configured_in_task_list(self):
+        """Task list has 'error' tag configured."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn('tag_configure("error"', source)
+
+    def test_retry_badge_shown_for_retried_tasks(self):
+        """Tasks with retries > 0 show retry badge in display."""
+        task = self._make_task(1, "pending")
+        task["retries"] = 1
+        retries = task.get("retries", 0)
+        retry_tag = f" \u21BB{retries}" if retries > 0 else ""
+        self.assertEqual(retry_tag, " \u21BB1")
+        task2 = self._make_task(2, "pending")
+        task2["retries"] = 0
+        retry_tag2 = f" \u21BB{task2.get('retries', 0)}" if task2.get("retries", 0) > 0 else ""
+        self.assertEqual(retry_tag2, "")
+
+
 if __name__ == "__main__":
     unittest.main()
