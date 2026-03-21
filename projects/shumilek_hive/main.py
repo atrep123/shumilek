@@ -617,6 +617,8 @@ class ShumilekHive:
         self._graph_dragged = False  # whether current graph press turned into a drag
         self._graph_custom_positions: dict[str, tuple[float, float]] = {}  # custom graph layout
         self._graph_layout_mode: str = "circular"  # circular | force | radial
+        self._graph_filter_query: str = ""  # node filter text
+        self._graph_clusters: dict[str, int] = {}  # node -> cluster_id
         self._graph_starfield = StarField(120)  # starfield for graph background
         self._graph_flow_particles: list[FlowParticle] = []  # animated edge particles
         self._graph_anim_phase: float = 0.0  # animation phase counter
@@ -1474,6 +1476,21 @@ class ShumilekHive:
             btn.pack(side="left", padx=2, pady=2)
             self._layout_buttons[mode] = btn
         self._layout_buttons["circular"].config(fg=P["cyan"])
+        # Graph filter entry
+        self.graph_filter_var = tk.StringVar()
+        self.graph_filter_var.trace_add("write", lambda *a: self._on_graph_filter_change())
+        gf_frame = tk.Frame(self.graph_layout_bar, bg=P["panel"])
+        gf_frame.pack(side="right", padx=(8, 6))
+        tk.Label(gf_frame, text="\U0001f50d", font=F_PIXEL, bg=P["panel"],
+                 fg=P["text_dim"]).pack(side="left")
+        self.graph_filter_entry = tk.Entry(
+            gf_frame, textvariable=self.graph_filter_var,
+            font=F_SMALL, bg=P["surface"], fg=P["text"],
+            insertbackground=P["cyan"], bd=0, width=14,
+            highlightthickness=1, highlightcolor=P["cyan"],
+            highlightbackground=P["border"]
+        )
+        self.graph_filter_entry.pack(side="left", padx=2)
         # Canvas area
         self.graph_canvas = tk.Canvas(self.graph_frame, bg=P["void"],
                                       highlightthickness=0, cursor="crosshair")
@@ -2792,6 +2809,12 @@ class ShumilekHive:
             btn.config(fg=P["cyan"] if m == mode else P["text"])
         self._draw_graph()
         self._show_toast(f"Layout: {mode}")
+
+    def _on_graph_filter_change(self):
+        """Handle graph filter entry change — redraw with filter applied."""
+        self._graph_filter_query = self.graph_filter_var.get()
+        if self.view_mode == "graph":
+            self._draw_graph()
 
     # ─── BOOKMARKS ───────────────────────────────────────────────
     def _toggle_bookmark(self):
@@ -7183,6 +7206,44 @@ class ShumilekHive:
             if node in self._graph_custom_positions:
                 positions[node] = self._graph_custom_positions[node]
 
+        # ── Auto-clustering (connected components) ──
+        cluster_colors = [P["cyan"], P["amethyst"], P["emerald"], P["ice"],
+                          P["ember"], P["rose"], P["tag"]]
+        visited_cluster: set[str] = set()
+        cluster_id = 0
+        self._graph_clusters.clear()
+        for start in nodes:
+            if start in visited_cluster:
+                continue
+            # BFS to find connected component
+            queue = [start]
+            component: list[str] = []
+            while queue:
+                nd = queue.pop(0)
+                if nd in visited_cluster:
+                    continue
+                visited_cluster.add(nd)
+                component.append(nd)
+                # outgoing
+                for tgt in self.notes_graph.get(nd, set()):
+                    if tgt in positions and tgt not in visited_cluster:
+                        queue.append(tgt)
+                # incoming
+                for src_n, tgts_n in self.notes_graph.items():
+                    if nd in tgts_n and src_n in positions and src_n not in visited_cluster:
+                        queue.append(src_n)
+            for nd in component:
+                self._graph_clusters[nd] = cluster_id
+            cluster_id += 1
+
+        # ── Graph filter ──
+        gf_query = self._graph_filter_query.lower().strip()
+        filtered_nodes: set[str] = set()
+        if gf_query:
+            for nd in nodes:
+                if gf_query in nd.lower():
+                    filtered_nodes.add(nd)
+
         # ── Pre-compute connection counts ──
         incoming: dict[str, int] = {}
         for tgts in self.notes_graph.values():
@@ -7256,6 +7317,12 @@ class ShumilekHive:
                     c.create_polygon(arr_x, arr_y, ax1, ay1, ax2, ay2,
                                     fill=ec, outline="")
 
+                # Edge label at midpoint
+                if dist > 80:
+                    c.create_text(mx, my - 8, text="\u2192",
+                                 font=(FONT, 7), fill=P["text_dim"],
+                                 anchor="center")
+
         # ── Animated flow particles along edges ──
         c.delete("graph_flow")
         for fp in self._graph_flow_particles:
@@ -7274,6 +7341,13 @@ class ShumilekHive:
             is_active = node == active
             is_orphan = node in orphans
             imp = importance.get(node, 0.0)
+
+            # Filter dimming: if query active, non-matching nodes are dimmed
+            is_dimmed = bool(gf_query and node not in filtered_nodes)
+
+            # Cluster color ring
+            cl_id = self._graph_clusters.get(node, 0)
+            cluster_col = cluster_colors[cl_id % len(cluster_colors)]
 
             if is_active:
                 fill = P["cyan"]
@@ -7332,6 +7406,18 @@ class ShumilekHive:
             # Main node circle
             c.create_oval(x - r, y - r, x + r, y + r,
                          fill=fill, outline=border_c, width=2)
+
+            # Cluster color indicator ring
+            if cl_id > 0:
+                cr = r + 7
+                c.create_oval(x - cr, y - cr, x + cr, y + cr,
+                             fill="", outline=cluster_col, width=1, dash=(3, 5))
+
+            # Dimming overlay for filtered-out nodes
+            if is_dimmed:
+                dim_r = r + 2
+                c.create_oval(x - dim_r, y - dim_r, x + dim_r, y + dim_r,
+                             fill=P["void"], outline="", stipple="gray50")
 
             # Inner highlight (pixel-art style)
             if r >= 10:

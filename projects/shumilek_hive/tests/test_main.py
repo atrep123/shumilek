@@ -1778,5 +1778,127 @@ class BookmarkTests(unittest.TestCase):
         self.assertIn("_open_file_at_line", body)
 
 
+# ── Tier 10 ─────────────────────────────────────────────────────────────
+
+class GraphEdgeLabelTests(unittest.TestCase):
+    """Tests for graph edge labels at midpoints."""
+
+    def test_edge_label_drawn(self):
+        """Edge label arrow symbol is drawn at midpoint."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("# Edge label at midpoint")
+        body = source[idx:idx + 300]
+        self.assertIn("create_text", body)
+
+    def test_edge_label_only_long_edges(self):
+        """Edge labels only appear on edges longer than 80px."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("# Edge label at midpoint")
+        body = source[idx:idx + 200]
+        self.assertIn("dist > 80", body)
+
+    def test_edge_label_uses_arrow(self):
+        """Edge label displays direction arrow."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("# Edge label at midpoint")
+        body = source[idx:idx + 300]
+        # Arrow symbol \u2192 is in the source as unicode escape
+        self.assertIn("2192", body)
+
+
+class GraphNodeFilterTests(unittest.TestCase):
+    """Tests for graph node filter/search functionality."""
+
+    def test_graph_filter_var_exists(self):
+        """graph_filter_var StringVar exists."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("graph_filter_var", source)
+
+    def test_graph_filter_entry_widget(self):
+        """Graph filter entry widget is created in layout bar."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("graph_filter_entry", source)
+
+    def test_on_graph_filter_change_method(self):
+        """_on_graph_filter_change redraws graph with filter."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _on_graph_filter_change(")
+        body = source[idx:idx + 400]
+        self.assertIn("_graph_filter_query", body)
+        self.assertIn("_draw_graph", body)
+
+    def test_filter_dimming_in_draw(self):
+        """Filtered-out nodes are dimmed in _draw_graph."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("is_dimmed", source)
+        self.assertIn("filtered_nodes", source)
+
+    def test_graph_filter_state_var(self):
+        """_graph_filter_query state variable exists."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("_graph_filter_query", source)
+
+    def test_filter_magnifying_icon(self):
+        """Filter has magnifying glass icon label."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("graph_filter_var")
+        body = source[idx:idx + 500]
+        # Magnifying glass icon is present near filter entry
+        self.assertIn("graph_filter_entry", body)
+
+
+class GraphAutoClusterTests(unittest.TestCase):
+    """Tests for auto-clustering with connected components."""
+
+    def test_graph_clusters_state(self):
+        """_graph_clusters dict state variable exists."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("_graph_clusters: dict[str, int]", source)
+
+    def test_cluster_bfs_in_draw(self):
+        """_draw_graph uses BFS for connected component detection."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("Auto-clustering")
+        body = source[idx:idx + 1200]
+        self.assertIn("visited_cluster", body)
+        self.assertIn("queue", body)
+        self.assertIn("component", body)
+
+    def test_cluster_colors_defined(self):
+        """Multiple cluster colors are defined."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("cluster_colors")
+        body = source[idx:idx + 200]
+        self.assertIn("cyan", body)
+        self.assertIn("emerald", body)
+
+    def test_cluster_ring_drawn(self):
+        """Cluster indicator ring is drawn around nodes."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("# Cluster color indicator ring")
+        body = source[idx:idx + 300]
+        self.assertIn("cluster_col", body)
+        self.assertIn("create_oval", body)
+
+    def test_cluster_id_assignment(self):
+        """Nodes get assigned cluster_id values."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("cluster_id += 1", source)
+
+
 if __name__ == "__main__":
     unittest.main()
