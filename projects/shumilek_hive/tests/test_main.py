@@ -1434,5 +1434,188 @@ class StatusBarLinkCountTests(unittest.TestCase):
         self.assertIn("if links > 0", body)
 
 
+class EditorContextMenuTests(unittest.TestCase):
+    """Tests for editor right-click context menu."""
+
+    def test_editor_ctx_menu_exists(self):
+        """Editor context menu widget is created."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("editor_ctx_menu = tk.Menu", source)
+
+    def test_editor_ctx_has_cut_copy_paste(self):
+        """Menu has basic clipboard commands."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("editor_ctx_menu = tk.Menu")
+        block = source[idx:idx + 1200]
+        self.assertIn('"Cut"', block)
+        self.assertIn('"Copy"', block)
+        self.assertIn('"Paste"', block)
+
+    def test_editor_ctx_has_formatting(self):
+        """Menu has formatting options: Bold, Italic, Code, Link."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("editor_ctx_menu = tk.Menu")
+        block = source[idx:idx + 1200]
+        self.assertIn("Bold", block)
+        self.assertIn("Italic", block)
+        self.assertIn("Code", block)
+        self.assertIn("Link", block)
+
+    def test_editor_ctx_has_heading_checkbox(self):
+        """Menu has Heading and Checkbox entries."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("editor_ctx_menu = tk.Menu")
+        block = source[idx:idx + 1500]
+        self.assertIn('"Heading"', block)
+        self.assertIn("Checkbox", block)
+
+    def test_editor_right_click_binding(self):
+        """Editor binds Button-3 for context menu."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn('"<Button-3>"', source)
+        self.assertIn("_on_editor_right_click", source)
+
+
+class FormattingShortcutTests(unittest.TestCase):
+    """Tests for Ctrl+B/I/L/Shift+C formatting shortcuts."""
+
+    def test_bold_shortcut_binding(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn('"<Control-b>"', source)
+        self.assertIn("_format_bold", source)
+
+    def test_italic_shortcut_binding(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn('"<Control-i>"', source)
+        self.assertIn("_format_italic", source)
+
+    def test_link_shortcut_binding(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn('"<Control-l>"', source)
+        self.assertIn("_format_link", source)
+
+    def test_code_shortcut_binding(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn('"<Control-Shift-C>"', source)
+        self.assertIn("_format_code", source)
+
+    def test_format_bold_uses_double_star(self):
+        """Bold wraps selection with **."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _format_bold(")
+        body = source[idx:idx + 200]
+        self.assertIn('_format_wrap("**")', body)
+
+    def test_format_italic_uses_single_star(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _format_italic(")
+        body = source[idx:idx + 200]
+        self.assertIn('_format_wrap("*")', body)
+
+    def test_format_heading_cycles(self):
+        """Heading formatter cycles through # levels."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _format_heading(")
+        body = source[idx:idx + 600]
+        self.assertIn('### ', body)
+        self.assertIn('## ', body)
+        self.assertIn('# ', body)
+
+    def test_format_checkbox_inserts_bracket(self):
+        """Checkbox inserts - [ ] prefix."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _format_checkbox(")
+        body = source[idx:idx + 400]
+        self.assertIn("[ ]", body)
+
+    def test_format_link_inserts_wiki_brackets(self):
+        """Link formatter uses [[...]] syntax."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _format_link(")
+        body = source[idx:idx + 500]
+        self.assertIn("[[", body)
+        self.assertIn("]]", body)
+
+
+class SearchReplaceTests(unittest.TestCase):
+    """Tests for search replace and navigation."""
+
+    def test_replace_bar_exists(self):
+        """Replace bar widget is created."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("replace_bar = tk.Frame", source)
+        self.assertIn("replace_entry_var", source)
+
+    def test_replace_buttons_exist(self):
+        """Replace and Replace All buttons exist."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("replace_bar = tk.Frame")
+        block = source[idx:idx + 1200]
+        self.assertIn('"Replace All"', block)
+        self.assertIn('"Replace"', block)
+
+    def test_search_next_prev_buttons(self):
+        """Search bar has next/prev navigation buttons."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("_search_next", source)
+        self.assertIn("_search_prev", source)
+
+    def test_regex_toggle_exists(self):
+        """Search has regex toggle checkbox."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("_search_regex_var", source)
+        self.assertIn("BooleanVar", source)
+
+    def test_search_uses_regex_flag(self):
+        """_do_search supports regexp mode."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _do_search(")
+        body = source[idx:idx + 1000]
+        self.assertIn("regexp=use_regex", body)
+
+    def test_replace_all_method(self):
+        """_replace_all performs bulk replacement."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _replace_all(")
+        body = source[idx:idx + 800]
+        self.assertIn("re.subn", body)
+
+    def test_search_next_wraps_around(self):
+        """_search_next wraps using modulo."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _search_next(")
+        body = source[idx:idx + 400]
+        self.assertIn("% len(", body)
+
+    def test_replace_bar_shown_with_search(self):
+        """Toggle search also shows replace bar."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _toggle_search(")
+        body = source[idx:idx + 400]
+        self.assertIn("replace_bar.pack", body)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1144,6 +1144,25 @@ class ShumilekHive:
         self.graph_ctx_menu.add_command(label="\U0001f517 Show Links", command=self._graph_ctx_links)
         self._graph_ctx_node: str | None = None
 
+        # Editor context menu
+        self.editor_ctx_menu = tk.Menu(self.root, tearoff=0,
+                                        bg=P["surface"], fg=P["text"],
+                                        activebackground=P["hover"],
+                                        activeforeground=P["cyan"],
+                                        font=F_SMALL, bd=1,
+                                        relief="solid")
+        self.editor_ctx_menu.add_command(label="Cut", command=self._editor_ctx_cut)
+        self.editor_ctx_menu.add_command(label="Copy", command=self._editor_ctx_copy)
+        self.editor_ctx_menu.add_command(label="Paste", command=self._editor_ctx_paste)
+        self.editor_ctx_menu.add_separator()
+        self.editor_ctx_menu.add_command(label="Bold  (Ctrl+B)", command=self._format_bold)
+        self.editor_ctx_menu.add_command(label="Italic  (Ctrl+I)", command=self._format_italic)
+        self.editor_ctx_menu.add_command(label="Code  (Ctrl+Shift+C)", command=self._format_code)
+        self.editor_ctx_menu.add_command(label="Link  (Ctrl+L)", command=self._format_link)
+        self.editor_ctx_menu.add_separator()
+        self.editor_ctx_menu.add_command(label="Heading", command=self._format_heading)
+        self.editor_ctx_menu.add_command(label="\u2610 Checkbox", command=self._format_checkbox)
+
         # Tags
         tag_canvas = tk.Canvas(self.sidebar, height=24, bg=P["surface"],
                                highlightthickness=0)
@@ -1226,11 +1245,53 @@ class ShumilekHive:
         self.search_entry.pack(side="left", fill="x", expand=True, padx=4, pady=4)
         self.search_entry.bind("<Return>", lambda e: self._do_search())
         self.search_entry.bind("<Escape>", lambda e: self._toggle_search())
+        self._search_regex_var = tk.BooleanVar(value=False)
+        tk.Checkbutton(self.search_bar, text=".*", variable=self._search_regex_var,
+                       font=F_PIXEL, fg=P["text_dim"], bg=P["surface"],
+                       selectcolor=P["panel"], activebackground=P["surface"],
+                       activeforeground=P["cyan"], bd=0
+        ).pack(side="right", padx=2)
+        tk.Button(self.search_bar, text="\u25bc", font=F_PIXEL,
+                  bg=P["surface"], fg=P["text_dim"],
+                  activebackground=P["hover"], bd=0,
+                  command=self._search_next, cursor="hand2"
+        ).pack(side="right", padx=1)
+        tk.Button(self.search_bar, text="\u25b2", font=F_PIXEL,
+                  bg=P["surface"], fg=P["text_dim"],
+                  activebackground=P["hover"], bd=0,
+                  command=self._search_prev, cursor="hand2"
+        ).pack(side="right", padx=1)
         tk.Button(self.search_bar, text="x", font=F_SMALL,
                   bg=P["surface"], fg=P["text_dim"],
                   activebackground=P["hover"], bd=0,
                   command=self._toggle_search, cursor="hand2"
         ).pack(side="right", padx=4)
+        self._search_match_idx = 0
+        self._search_match_positions: list[str] = []
+
+        # Replace bar (hidden)
+        self.replace_bar = tk.Frame(self.center_frame, bg=P["surface"], height=30)
+        self.replace_entry_var = tk.StringVar()
+        tk.Label(self.replace_bar, text="replace:", font=F_SMALL,
+                 fg=P["text_dim"], bg=P["surface"]).pack(side="left", padx=(8, 4))
+        self.replace_entry = tk.Entry(
+            self.replace_bar, textvariable=self.replace_entry_var,
+            font=F_MONO, bg=P["panel"], fg=P["text"],
+            insertbackground=P["cyan"], bd=0,
+            highlightthickness=1, highlightcolor=P["cyan"],
+            highlightbackground=P["border"]
+        )
+        self.replace_entry.pack(side="left", fill="x", expand=True, padx=4, pady=4)
+        tk.Button(self.replace_bar, text="Replace All", font=F_PIXEL,
+                  bg=P["surface"], fg=P["text_dim"],
+                  activebackground=P["hover"], bd=0,
+                  command=self._replace_all, cursor="hand2"
+        ).pack(side="right", padx=4)
+        tk.Button(self.replace_bar, text="Replace", font=F_PIXEL,
+                  bg=P["surface"], fg=P["text_dim"],
+                  activebackground=P["hover"], bd=0,
+                  command=self._replace_one, cursor="hand2"
+        ).pack(side="right", padx=2)
 
         # Editor container
         self.editor_container = tk.Frame(self.center_frame, bg=P["border"])
@@ -1290,6 +1351,11 @@ class ShumilekHive:
         self.editor.bind("<ButtonRelease-1>", lambda e: self._update_cursor_pos())
         self.editor.bind("<bracketleft>", self._on_bracket, add="+")
         self.editor.bind("<Motion>", self._on_editor_motion)
+        self.editor.bind("<Button-3>", self._on_editor_right_click)
+        self.editor.bind("<Control-b>", lambda e: self._format_bold())
+        self.editor.bind("<Control-i>", lambda e: self._format_italic())
+        self.editor.bind("<Control-l>", lambda e: self._format_link())
+        self.editor.bind("<Control-Shift-C>", lambda e: self._format_code())
 
         # Wiki-link autocomplete popup
         self._autocomplete_popup = tk.Listbox(
@@ -2777,6 +2843,102 @@ class ShumilekHive:
                 self._apply_syntax()
                 return
         self._hide_autocomplete()
+
+    # ─── EDITOR CONTEXT MENU ────────────────────────────────────
+    def _on_editor_right_click(self, event):
+        """Show editor context menu on right-click."""
+        self.editor_ctx_menu.tk_popup(event.x_root, event.y_root)
+
+    def _editor_ctx_cut(self):
+        try:
+            self.editor.event_generate("<<Cut>>")
+        except tk.TclError:
+            pass
+
+    def _editor_ctx_copy(self):
+        try:
+            self.editor.event_generate("<<Copy>>")
+        except tk.TclError:
+            pass
+
+    def _editor_ctx_paste(self):
+        try:
+            self.editor.event_generate("<<Paste>>")
+        except tk.TclError:
+            pass
+
+    # ─── FORMATTING ──────────────────────────────────────────────
+    def _format_wrap(self, marker: str):
+        """Wrap selection with marker (e.g. ** for bold)."""
+        try:
+            sel_start = self.editor.index("sel.first")
+            sel_end = self.editor.index("sel.last")
+            selected = self.editor.get(sel_start, sel_end)
+            self.editor.delete(sel_start, sel_end)
+            self.editor.insert(sel_start, f"{marker}{selected}{marker}")
+        except tk.TclError:
+            # No selection — insert markers around cursor
+            pos = self.editor.index("insert")
+            self.editor.insert(pos, f"{marker}{marker}")
+            self.editor.mark_set("insert", f"{pos}+{len(marker)}c")
+        self._apply_syntax()
+
+    def _format_bold(self):
+        self._format_wrap("**")
+        return "break"
+
+    def _format_italic(self):
+        self._format_wrap("*")
+        return "break"
+
+    def _format_code(self):
+        self._format_wrap("`")
+        return "break"
+
+    def _format_link(self):
+        """Insert wiki-link around selection or at cursor."""
+        try:
+            sel_start = self.editor.index("sel.first")
+            sel_end = self.editor.index("sel.last")
+            selected = self.editor.get(sel_start, sel_end)
+            self.editor.delete(sel_start, sel_end)
+            self.editor.insert(sel_start, f"[[{selected}]]")
+        except tk.TclError:
+            pos = self.editor.index("insert")
+            self.editor.insert(pos, "[[]]")
+            self.editor.mark_set("insert", f"{pos}+2c")
+        self._apply_syntax()
+        return "break"
+
+    def _format_heading(self):
+        """Toggle/cycle heading level on current line."""
+        idx = self.editor.index("insert")
+        li = idx.split(".")[0]
+        line = self.editor.get(f"{li}.0", f"{li}.end")
+        if line.startswith("### "):
+            self.editor.delete(f"{li}.0", f"{li}.4")
+        elif line.startswith("## "):
+            self.editor.delete(f"{li}.0", f"{li}.3")
+            self.editor.insert(f"{li}.0", "### ")
+        elif line.startswith("# "):
+            self.editor.delete(f"{li}.0", f"{li}.2")
+            self.editor.insert(f"{li}.0", "## ")
+        else:
+            self.editor.insert(f"{li}.0", "# ")
+        self._apply_syntax()
+
+    def _format_checkbox(self):
+        """Insert checkbox at current line."""
+        idx = self.editor.index("insert")
+        li = idx.split(".")[0]
+        line = self.editor.get(f"{li}.0", f"{li}.end")
+        if re.match(r'^\s*- \[[ x]\]', line):
+            return
+        if line.startswith("- "):
+            self.editor.insert(f"{li}.2", "[ ] ")
+        else:
+            self.editor.insert(f"{li}.0", "- [ ] ")
+        self._apply_syntax()
 
     def _on_bracket(self, event):
         """Detect [[ and show autocomplete."""
@@ -6571,28 +6733,126 @@ class ShumilekHive:
         self.search_visible = not self.search_visible
         if self.search_visible:
             self.search_bar.pack(fill="x", after=self.tab_bar)
+            self.replace_bar.pack(fill="x", after=self.search_bar)
             self.search_entry.focus_set()
         else:
             self.search_bar.pack_forget()
+            self.replace_bar.pack_forget()
             self.editor.tag_remove("search_match", "1.0", "end")
+            self._search_match_positions = []
 
     def _do_search(self):
         self.editor.tag_remove("search_match", "1.0", "end")
         q = self.search_entry_var.get()
         if not q:
+            self._search_match_positions = []
             return
+        use_regex = self._search_regex_var.get()
         start, count = "1.0", 0
+        positions: list[str] = []
         while True:
-            pos = self.editor.search(q, start, stopindex="end", nocase=True, regexp=False)
+            pos = self.editor.search(q, start, stopindex="end", nocase=True,
+                                      regexp=use_regex)
             if not pos:
                 break
-            end = f"{pos}+{len(q)}c"
+            if use_regex:
+                # For regex, measure actual match length
+                line_idx = pos.split(".")[0]
+                col = int(pos.split(".")[1])
+                line_text = self.editor.get(f"{line_idx}.0", f"{line_idx}.end")
+                m = re.search(q, line_text[col:], re.IGNORECASE)
+                match_len = len(m.group()) if m else len(q)
+            else:
+                match_len = len(q)
+            end = f"{pos}+{match_len}c"
             self.editor.tag_add("search_match", pos, end)
+            positions.append(pos)
             start = end
             count += 1
             if count == 1:
                 self.editor.see(pos)
+        self._search_match_positions = positions
+        self._search_match_idx = 0
         self.status_left.config(text=f"found {count} match{'es' if count != 1 else ''}")
+
+    def _search_next(self):
+        """Jump to next search match."""
+        if not self._search_match_positions:
+            self._do_search()
+            return
+        self._search_match_idx = (self._search_match_idx + 1) % len(self._search_match_positions)
+        pos = self._search_match_positions[self._search_match_idx]
+        self.editor.see(pos)
+        self.editor.mark_set("insert", pos)
+        n = len(self._search_match_positions)
+        self.status_left.config(text=f"match {self._search_match_idx + 1}/{n}")
+
+    def _search_prev(self):
+        """Jump to previous search match."""
+        if not self._search_match_positions:
+            self._do_search()
+            return
+        self._search_match_idx = (self._search_match_idx - 1) % len(self._search_match_positions)
+        pos = self._search_match_positions[self._search_match_idx]
+        self.editor.see(pos)
+        self.editor.mark_set("insert", pos)
+        n = len(self._search_match_positions)
+        self.status_left.config(text=f"match {self._search_match_idx + 1}/{n}")
+
+    def _replace_one(self):
+        """Replace current match and advance."""
+        if not self._search_match_positions:
+            self._do_search()
+            return
+        q = self.search_entry_var.get()
+        r = self.replace_entry_var.get()
+        idx = self._search_match_idx
+        pos = self._search_match_positions[idx]
+        use_regex = self._search_regex_var.get()
+        if use_regex:
+            line_idx = pos.split(".")[0]
+            col = int(pos.split(".")[1])
+            line_text = self.editor.get(f"{line_idx}.0", f"{line_idx}.end")
+            m = re.search(q, line_text[col:], re.IGNORECASE)
+            match_len = len(m.group()) if m else len(q)
+        else:
+            match_len = len(q)
+        end = f"{pos}+{match_len}c"
+        self.editor.delete(pos, end)
+        self.editor.insert(pos, r)
+        self._do_search()
+
+    def _replace_all(self):
+        """Replace all matches."""
+        q = self.search_entry_var.get()
+        r = self.replace_entry_var.get()
+        if not q:
+            return
+        content = self.editor.get("1.0", "end-1c")
+        use_regex = self._search_regex_var.get()
+        if use_regex:
+            new_content, count = re.subn(q, r, content, flags=re.IGNORECASE)
+        else:
+            count = content.lower().count(q.lower())
+            # Case-insensitive replace without regex
+            result, i = [], 0
+            ql = q.lower()
+            cl = content.lower()
+            while i < len(content):
+                if cl[i:i + len(q)] == ql:
+                    result.append(r)
+                    i += len(q)
+                else:
+                    result.append(content[i])
+                    i += 1
+            new_content = "".join(result)
+        self.editor.delete("1.0", "end")
+        self.editor.insert("1.0", new_content)
+        self._search_match_positions = []
+        self.editor.tag_remove("search_match", "1.0", "end")
+        self.status_left.config(text=f"replaced {count} occurrence{'s' if count != 1 else ''}")
+        self._show_toast(f"Replaced {count}")
+        self._apply_syntax()
 
     # ─── VIEW SWITCHING ──────────────────────────────────────────
     def _show_editor(self):
