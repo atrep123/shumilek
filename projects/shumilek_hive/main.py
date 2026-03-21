@@ -4485,6 +4485,71 @@ class ShumilekHive:
                     "color": src["color"],
                 })
 
+    # ── Pipeline → Hive neuron mapping ──
+    _PIPELINE_LAYER_MAP = {
+        "context": "input", "routing": "input",
+        "rozum": "analyze",
+        "generate": "process", "guardian": "process",
+        "halluc": "process", "svedomi": "process",
+        "decision": "output", "output": "output",
+    }
+
+    def _hive_pipeline_sync(self):
+        """Activate hive neurons based on real pipeline stage states."""
+        if not self._ai_neurons:
+            return
+        n_count = len(self._ai_neurons)
+        # Find which layers have active/done stages
+        active_layers: set[str] = set()
+        done_layers: set[str] = set()
+        for nid, state in self.pipeline.node_states.items():
+            layer = self._PIPELINE_LAYER_MAP.get(nid)
+            if not layer:
+                continue
+            if state == "active":
+                active_layers.add(layer)
+            elif state in ("done", "error", "retry"):
+                done_layers.add(layer)
+
+        for neuron in self._ai_neurons:
+            if neuron["layer"] in active_layers:
+                neuron["activation"] = max(neuron["activation"],
+                                           random.uniform(0.6, 1.0))
+            elif neuron["layer"] in done_layers:
+                neuron["activation"] = max(neuron["activation"], 0.15)
+
+        # Fire pulses from active layers to downstream synapses
+        if self._anim_tick % 8 == 0 and self._ai_synapses:
+            for syn in self._ai_synapses:
+                si, di = syn["src"], syn["dst"]
+                if si >= n_count or di >= n_count:
+                    continue
+                src = self._ai_neurons[si]
+                if src["layer"] in active_layers and random.random() < 0.25:
+                    self._ai_pulses.append({
+                        "src": si, "dst": di,
+                        "t": 0.0, "speed": random.uniform(0.04, 0.09),
+                        "color": src["color"],
+                    })
+
+        # Pipeline stage thought bubbles
+        if self._anim_tick % 60 == 0:
+            _stage_thoughts = {
+                "context": "scanning workspace...",
+                "routing": "routing query...",
+                "rozum": "planning steps...",
+                "generate": "generating response...",
+                "guardian": "quality check...",
+                "halluc": "hallucination scan...",
+                "svedomi": "validating answer...",
+                "decision": "pass/retry decision...",
+                "output": "delivering result...",
+            }
+            for nid, state in self.pipeline.node_states.items():
+                if state == "active" and nid in _stage_thoughts:
+                    self._ai_add_thought(_stage_thoughts[nid])
+                    break
+
     def _hive_complete_task(self, task: dict):
         task["status"] = "done"
         task["progress"] = 100
@@ -4738,27 +4803,114 @@ class ShumilekHive:
             c.create_text(lx, 20, text=ln, font=F_SMALL, fill=lc)
 
         # Status overlay
-        if self._ai_processing_task:
-            task = self._ai_processing_task
-            c.create_rectangle(w - 280, 10, w - 10, 60,
+        pipeline_live = self.pipeline.is_running
+        has_task = self._ai_processing_task is not None
+        if has_task or pipeline_live:
+            # ── Main status panel (top-right) ──
+            panel_h = 100 if pipeline_live else 60
+            c.create_rectangle(w - 290, 10, w - 10, 10 + panel_h,
                               fill=P["surface"], outline=P["cyan_dim"], width=1)
-            c.create_text(w - 270, 22, text=f"\u25B6 Processing #{task['id']}",
-                         font=F_SMALL, fill=P["cyan"], anchor="w")
-            bar_x = w - 270
-            bar_w = 240
-            c.create_rectangle(bar_x, 38, bar_x + bar_w, 46,
-                              fill=P["panel"], outline=P["border"])
-            fill_w = int(bar_w * task["progress"] / 100)
-            if fill_w > 0:
-                c.create_rectangle(bar_x, 38, bar_x + fill_w, 46,
-                                  fill=P["emerald"], outline="")
-            c.create_text(bar_x + bar_w + 4, 42, text=f"{task['progress']}%",
-                         font=F_PIXEL, fill=P["text_bright"], anchor="w")
-            steps = task.get("steps", [])
-            si = task.get("_step_idx", 0)
-            if si < len(steps):
-                c.create_text(w - 270, 54, text=f"\u25B8 {steps[si][0]}",
-                             font=F_PIXEL, fill=P["amethyst"], anchor="w")
+            # Corner accents
+            for (cx_, cy_) in [(w - 290, 10), (w - 14, 10),
+                               (w - 290, 6 + panel_h), (w - 14, 6 + panel_h)]:
+                c.create_rectangle(cx_, cy_, cx_ + 4, cy_ + 4,
+                                  fill=P["cyan_dim"], outline="")
+
+            if has_task:
+                task = self._ai_processing_task
+                c.create_text(w - 280, 22, text=f"\u25B6 Processing #{task['id']}",
+                             font=F_SMALL, fill=P["cyan"], anchor="w")
+                bar_x = w - 280
+                bar_w = 250
+                c.create_rectangle(bar_x, 36, bar_x + bar_w, 44,
+                                  fill=P["panel"], outline=P["border"])
+                fill_w = int(bar_w * task["progress"] / 100)
+                if fill_w > 0:
+                    c.create_rectangle(bar_x, 36, bar_x + fill_w, 44,
+                                      fill=P["emerald"], outline="")
+                c.create_text(bar_x + bar_w + 4, 40, text=f"{task['progress']}%",
+                             font=F_PIXEL, fill=P["text_bright"], anchor="w")
+                steps = task.get("steps", [])
+                si = task.get("_step_idx", 0)
+                if si < len(steps):
+                    c.create_text(w - 280, 52, text=f"\u25B8 {steps[si][0]}",
+                                 font=F_PIXEL, fill=P["amethyst"], anchor="w")
+
+            if pipeline_live:
+                # ── Pipeline 9-stage segmented progress bar ──
+                pipe_y = 60 if has_task else 22
+                c.create_text(w - 280, pipe_y,
+                             text="AI PIPELINE", font=F_PIXEL,
+                             fill=P["heading"], anchor="w")
+                # Live dot
+                dot_pulse = abs(math.sin(t * 4))
+                dot_r = 2 + int(dot_pulse * 2)
+                dot_x = w - 225
+                c.create_oval(dot_x - dot_r, pipe_y - dot_r,
+                             dot_x + dot_r, pipe_y + dot_r,
+                             fill=P["emerald"], outline="")
+                # Elapsed time
+                c.create_text(w - 30, pipe_y,
+                             text=f"{self.pipeline.elapsed_time:.1f}s",
+                             font=F_PIXEL, fill=P["text_dim"], anchor="e")
+                # Retry counter
+                if self.pipeline.retry_count > 0:
+                    c.create_text(w - 70, pipe_y,
+                                 text=f"R{self.pipeline.retry_count}",
+                                 font=F_PIXEL, fill=P["warn"], anchor="e")
+
+                # Segmented bar
+                bar_x = w - 280
+                bar_y = pipe_y + 10
+                bar_w = 250
+                bar_h = 10
+                nodes = PipelineSimulator.NODES
+                seg_w = bar_w / len(nodes)
+                c.create_rectangle(bar_x, bar_y, bar_x + bar_w, bar_y + bar_h,
+                                  fill=P["panel_alt"], outline=P["border"])
+                # Current active stage info
+                active_stage_label = ""
+                active_stage_color = P["text_dim"]
+                active_stage_metric = ""
+                for si, (nid, lbl, ck, _) in enumerate(nodes):
+                    sx = bar_x + si * seg_w
+                    state = self.pipeline.node_states.get(nid, "idle")
+                    if state == "done":
+                        c.create_rectangle(sx, bar_y, sx + seg_w, bar_y + bar_h,
+                                          fill=P["ok"], outline="")
+                    elif state == "active":
+                        fill_frac = abs(math.sin(t * 3))
+                        c.create_rectangle(sx, bar_y, sx + seg_w * fill_frac,
+                                          bar_y + bar_h,
+                                          fill=P.get(ck, P["cyan"]), outline="")
+                        active_stage_label = lbl.replace("\n", " ")
+                        active_stage_color = P.get(ck, P["cyan"])
+                        active_stage_metric = self.pipeline.metrics.get(nid, "")
+                    elif state in ("error", "retry"):
+                        c.create_rectangle(sx, bar_y, sx + seg_w, bar_y + bar_h,
+                                          fill=P["err"] if state == "error" else P["warn"],
+                                          outline="")
+                    # Segment divider
+                    if si > 0:
+                        c.create_line(sx, bar_y, sx, bar_y + bar_h,
+                                     fill=P["border"], width=1)
+
+                # Done count
+                done_count = sum(1 for s in self.pipeline.node_states.values()
+                                if s == "done")
+                c.create_text(bar_x + bar_w + 4, bar_y + bar_h // 2,
+                             text=f"{done_count}/{len(nodes)}", font=F_PIXEL,
+                             fill=P["text_dim"], anchor="w")
+
+                # Active stage label + metric
+                if active_stage_label:
+                    c.create_text(w - 280, bar_y + bar_h + 10,
+                                 text=f"\u25C6 {active_stage_label}",
+                                 font=F_SMALL, fill=active_stage_color, anchor="w")
+                    if active_stage_metric:
+                        c.create_text(w - 280, bar_y + bar_h + 24,
+                                     text=active_stage_metric[:40],
+                                     font=F_PIXEL, fill=P["text_dim"], anchor="w")
         else:
             idle_pulse = abs(math.sin(t * 0.8))
             col = P["text_dim"] if idle_pulse < 0.5 else P["cyan_dim"]
@@ -8960,15 +9112,18 @@ class ShumilekHive:
         # Hive AI processing + redraw
         if self._ai_processing_task:
             self._hive_process_tick()
+        # Pipeline → Hive neuron mapping: light up neurons based on real pipeline stages
+        if self.pipeline.is_running and self._ai_hive_initialized:
+            self._hive_pipeline_sync()
         if self.view_mode == "hive":
             self._hive_draw()
             # Slowly decay neuron activations (slower in idle for sustained glow)
-            decay = 0.985 if not self._ai_processing_task else 0.97
+            is_active = self._ai_processing_task or self.pipeline.is_running
+            decay = 0.985 if not is_active else 0.97
             for neuron in self._ai_neurons:
                 neuron["activation"] *= decay
-            # Ambient idle animation — gentle random neuron breathing + occasional pulse
             # Ambient idle animation — rich, alive, always-on effects
-            if not self._ai_processing_task and self._ai_hive_initialized:
+            if not is_active and self._ai_hive_initialized:
                 self._hive_ambient_tick += 1
                 tick = self._hive_ambient_tick
                 n_count = len(self._ai_neurons)
