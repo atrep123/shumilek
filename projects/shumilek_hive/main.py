@@ -680,6 +680,8 @@ class ShumilekHive:
         self._animate()
 
     # ─── CACHED FILE READ ──────────────────────────────────────────
+    _FILE_CACHE_MAX = 200
+
     def _read_cached(self, fp: Path) -> str:
         """Read file content with mtime-based cache to avoid repeated I/O."""
         try:
@@ -688,6 +690,13 @@ class ShumilekHive:
             if cached and cached[0] == mtime:
                 return cached[1]
             content = fp.read_text(encoding="utf-8")
+            # Evict oldest entries when cache exceeds limit
+            if len(self._file_content_cache) >= self._FILE_CACHE_MAX:
+                to_remove = sorted(
+                    self._file_content_cache, key=lambda k: self._file_content_cache[k][0]
+                )[:len(self._file_content_cache) - self._FILE_CACHE_MAX + 1]
+                for k in to_remove:
+                    del self._file_content_cache[k]
             self._file_content_cache[fp] = (mtime, content)
             return content
         except FileNotFoundError:
@@ -3498,12 +3507,53 @@ class ShumilekHive:
             "steps": [],
         }
         self._ai_tasks.append(task)
+        # Cap task list — remove oldest done tasks beyond 100
+        if len(self._ai_tasks) > 100:
+            self._ai_tasks = [
+                t for t in self._ai_tasks
+                if t["status"] != "done"
+            ] + [
+                t for t in self._ai_tasks
+                if t["status"] == "done"
+            ][-50:]
         self._ai_log("info", f"Task #{task['id']} queued: {text[:50]}")
         self._hive_set_output(f"Task #{task['id']} queued", text, f"kind: {task['kind']}")
         self._hive_set_actions([])
         self._hive_update_task_list()
         if not self._ai_processing_task:
             self._hive_start_next_task()
+
+    def _hive_cancel_task(self, task_id: int | None = None):
+        """Cancel a running or pending task."""
+        if task_id is None:
+            task = self._ai_processing_task
+        else:
+            task = next((t for t in self._ai_tasks if t["id"] == task_id), None)
+        if not task:
+            return
+        if task["status"] == "running":
+            task["status"] = "cancelled"
+            task["progress"] = task.get("progress", 0)
+            task["result"] = "Cancelled by user"
+            self._ai_log("warn", f"Task #{task['id']} cancelled")
+            self._ai_processing_task = None
+            # Stop pipeline
+            if self.pipeline.is_running:
+                for nid in list(self.pipeline.node_states):
+                    if self.pipeline.node_states[nid] in ("idle", "active"):
+                        self.pipeline.node_states[nid] = "error"
+                self.pipeline.is_running = False
+            for neuron in self._ai_neurons:
+                neuron["activation"] *= 0.2
+            self._hive_update_task_list()
+            self._hive_set_output(f"Task #{task['id']} cancelled", task["text"], "status: cancelled")
+            self._hive_set_actions([])
+            self.root.after(300, self._hive_start_next_task)
+        elif task["status"] == "pending":
+            task["status"] = "cancelled"
+            task["result"] = "Cancelled before start"
+            self._ai_log("warn", f"Task #{task['id']} cancelled (pending)")
+            self._hive_update_task_list()
 
     def _hive_quick_task(self, text: str):
         self.hive_task_var.set(text)
@@ -3874,11 +3924,21 @@ class ShumilekHive:
         if not self._hive_task_line_map:
             return
         try:
-            line_no = int(self.hive_task_list.index(f"@{event.x},{event.y}").split(".")[0])
+            idx = self.hive_task_list.index(f"@{event.x},{event.y}")
+            line_no = int(idx.split(".")[0])
+            col = int(idx.split(".")[1])
         except Exception:
             return
+        # Check if click is on the "[✕ cancel]" text in progress line
+        try:
+            line_text = self.hive_task_list.get(f"{line_no}.0", f"{line_no}.end")
+        except Exception:
+            line_text = ""
         for start_line, end_line, task_id in self._hive_task_line_map:
             if start_line <= line_no <= end_line:
+                if "\u2715 cancel" in line_text:
+                    self._hive_cancel_task(task_id)
+                    return
                 task = next((item for item in self._ai_tasks if item["id"] == task_id), None)
                 if not task:
                     return
@@ -4331,16 +4391,19 @@ class ShumilekHive:
         tl.config(state="normal")
         tl.delete("1.0", "end")
         self._hive_task_line_map = []
-        for task in reversed(self._ai_tasks[-15:]):
+        visible = [t for t in self._ai_tasks[-15:] if t["status"] != "cancelled"]
+        for task in reversed(visible):
             start_line = int(tl.index("end-1c").split(".")[0])
             tid = f"#{task['id']}"
+            pri = task.get("priority", 0)
+            pri_tag = f" \u2191{pri}" if pri > 0 else ""
             if task["status"] == "running":
                 bar_len = task["progress"] // 5
                 bar = "\u2588" * bar_len + "\u2591" * (20 - bar_len)
                 tl.insert("end", " \u25B6 ", "running")
                 tl.insert("end", f"{tid} ", "id")
                 tl.insert("end", f"{task['text'][:30]}\n", "running")
-                tl.insert("end", f"   [{bar}] {task['progress']}%\n", "progress")
+                tl.insert("end", f"   [{bar}] {task['progress']}%  [\u2715 cancel]\n", "progress")
             elif task["status"] == "done":
                 tl.insert("end", " \u2713 ", "done")
                 tl.insert("end", f"{tid} ", "id")
@@ -4349,7 +4412,7 @@ class ShumilekHive:
                     tl.insert("end", f"   \u2192 {task['result'][:50]}\n", "done")
             else:
                 tl.insert("end", " \u25CB ", "pending")
-                tl.insert("end", f"{tid} ", "id")
+                tl.insert("end", f"{tid}{pri_tag} ", "id")
                 tl.insert("end", f"{task['text'][:40]}\n", "pending")
             end_line = int(tl.index("end-1c").split(".")[0])
             self._hive_task_line_map.append((start_line, end_line, task["id"]))
@@ -4380,22 +4443,27 @@ class ShumilekHive:
     }
 
     def _hive_start_next_task(self):
-        for task in self._ai_tasks:
-            if task["status"] == "pending":
-                task["status"] = "running"
-                task["progress"] = 0
-                self._ai_processing_task = task
-                self._ai_process_tick = 0
-                self._ai_log("info", f"Starting task #{task['id']}")
-                self._hive_plan_task(task)
-                # Start pipeline alongside the task
-                scenario = self._TASK_PIPELINE_MAP.get(
-                    task.get("kind", ""), "default")
-                self.pipeline.start_scenario(scenario)
-                self._ai_log("info", f"Pipeline scenario: {scenario}")
-                self._hive_set_output(f"Task #{task['id']} starting", task["text"], f"kind: {task.get('kind', 'task')}")
-                self._hive_set_actions([])
-                return
+        if self._ai_processing_task:
+            return  # guard against concurrent scheduling
+        # Pick highest-priority pending task
+        pending = [t for t in self._ai_tasks if t["status"] == "pending"]
+        if not pending:
+            return
+        pending.sort(key=lambda t: t.get("priority", 0), reverse=True)
+        task = pending[0]
+        task["status"] = "running"
+        task["progress"] = 0
+        self._ai_processing_task = task
+        self._ai_process_tick = 0
+        self._ai_log("info", f"Starting task #{task['id']}")
+        self._hive_plan_task(task)
+        # Start pipeline alongside the task
+        scenario = self._TASK_PIPELINE_MAP.get(
+            task.get("kind", ""), "default")
+        self.pipeline.start_scenario(scenario)
+        self._ai_log("info", f"Pipeline scenario: {scenario}")
+        self._hive_set_output(f"Task #{task['id']} starting", task["text"], f"kind: {task.get('kind', 'task')}")
+        self._hive_set_actions([])
 
     def _hive_plan_task(self, task: dict):
         kind = task.get("kind") or self._hive_classify_task(task["text"])

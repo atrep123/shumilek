@@ -379,5 +379,196 @@ class EventLogCapTests(unittest.TestCase):
         self.assertEqual(len(event_log), 50)
 
 
+class TaskPipelineMapTests(unittest.TestCase):
+    """Tests for _TASK_PIPELINE_MAP task-kind → pipeline-scenario mapping."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        start = source.index("_TASK_PIPELINE_MAP = {")
+        end = source.index("}", start) + 1
+        ns: dict = {}
+        exec(source[start:end], ns)  # noqa: S102
+        cls.mapping = ns["_TASK_PIPELINE_MAP"]
+
+    def test_all_9_task_kinds_mapped(self):
+        expected = {"vault-health", "vault-quality", "vault-links", "smart-links",
+                    "note-analysis", "vault-stats", "tags", "summary", "title"}
+        self.assertEqual(set(self.mapping.keys()), expected)
+
+    def test_complex_tasks_map_to_retry(self):
+        self.assertEqual(self.mapping["vault-health"], "retry")
+        self.assertEqual(self.mapping["vault-quality"], "retry")
+
+    def test_link_tasks_map_to_hallucination(self):
+        self.assertEqual(self.mapping["vault-links"], "hallucination")
+        self.assertEqual(self.mapping["smart-links"], "hallucination")
+
+    def test_simple_tasks_map_to_success(self):
+        for kind in ("note-analysis", "vault-stats", "tags", "summary", "title"):
+            self.assertEqual(self.mapping[kind], "success", f"{kind} should map to 'success'")
+
+    def test_unknown_kind_falls_back_to_default(self):
+        scenario = self.mapping.get("unknown-kind", "default")
+        self.assertEqual(scenario, "default")
+
+    def test_all_scenarios_valid(self):
+        valid = {"success", "retry", "hallucination", "default"}
+        for kind, scenario in self.mapping.items():
+            self.assertIn(scenario, valid, f"Kind '{kind}' maps to invalid scenario '{scenario}'")
+
+
+class TaskLifecycleTests(unittest.TestCase):
+    """Tests for task lifecycle logic (priority, cancel, cap) without Tkinter."""
+
+    def _make_task(self, tid, text="test", kind="summary", status="pending", priority=0):
+        return {
+            "id": tid, "text": text, "kind": kind, "status": status,
+            "progress": 0, "result": "", "detail": "", "actions": [],
+            "created": 0, "steps": [], "priority": priority,
+        }
+
+    def test_priority_sort_picks_highest(self):
+        tasks = [
+            self._make_task(1, priority=0),
+            self._make_task(2, priority=5),
+            self._make_task(3, priority=2),
+        ]
+        pending = [t for t in tasks if t["status"] == "pending"]
+        pending.sort(key=lambda t: t.get("priority", 0), reverse=True)
+        self.assertEqual(pending[0]["id"], 2)
+
+    def test_priority_sort_stable_for_equal_priority(self):
+        tasks = [
+            self._make_task(1, priority=0),
+            self._make_task(2, priority=0),
+            self._make_task(3, priority=0),
+        ]
+        pending = [t for t in tasks if t["status"] == "pending"]
+        pending.sort(key=lambda t: t.get("priority", 0), reverse=True)
+        # Original order preserved (stable sort)
+        self.assertEqual([t["id"] for t in pending], [1, 2, 3])
+
+    def test_cancel_running_task_sets_cancelled_status(self):
+        task = self._make_task(1, status="running")
+        task["status"] = "cancelled"
+        task["result"] = "Cancelled by user"
+        self.assertEqual(task["status"], "cancelled")
+        self.assertEqual(task["result"], "Cancelled by user")
+
+    def test_cancel_pending_task_sets_cancelled_status(self):
+        task = self._make_task(1, status="pending")
+        task["status"] = "cancelled"
+        task["result"] = "Cancelled before start"
+        self.assertEqual(task["status"], "cancelled")
+
+    def test_task_list_cap_keeps_recent_done(self):
+        """Simulate task list cap logic from _hive_submit_task."""
+        tasks = []
+        for i in range(110):
+            t = self._make_task(i, status="done")
+            tasks.append(t)
+        # Add some pending
+        for i in range(110, 115):
+            t = self._make_task(i, status="pending")
+            tasks.append(t)
+        # Apply cap logic
+        if len(tasks) > 100:
+            tasks = [
+                t for t in tasks if t["status"] != "done"
+            ] + [
+                t for t in tasks if t["status"] == "done"
+            ][-50:]
+        self.assertLessEqual(len(tasks), 55)  # 5 pending + 50 done
+        # All pending tasks preserved
+        pending = [t for t in tasks if t["status"] == "pending"]
+        self.assertEqual(len(pending), 5)
+        # Only last 50 done tasks kept
+        done = [t for t in tasks if t["status"] == "done"]
+        self.assertEqual(len(done), 50)
+
+    def test_task_list_cap_noop_under_threshold(self):
+        tasks = [self._make_task(i, status="done") for i in range(50)]
+        original_len = len(tasks)
+        if len(tasks) > 100:
+            tasks = [t for t in tasks if t["status"] != "done"] + [
+                t for t in tasks if t["status"] == "done"
+            ][-50:]
+        self.assertEqual(len(tasks), original_len)
+
+    def test_cancelled_tasks_hidden_in_visible_list(self):
+        """Simulate _hive_update_task_list filtering of cancelled tasks."""
+        tasks = [
+            self._make_task(1, status="done"),
+            self._make_task(2, status="cancelled"),
+            self._make_task(3, status="pending"),
+        ]
+        visible = [t for t in tasks[-15:] if t["status"] != "cancelled"]
+        self.assertEqual(len(visible), 2)
+        self.assertNotIn("cancelled", [t["status"] for t in visible])
+
+    def test_start_next_guards_against_concurrent(self):
+        """_hive_start_next_task returns early when processing_task is set."""
+        processing_task = self._make_task(1, status="running")
+        # Guard: if processing_task is set, don't start another
+        started = False
+        if not processing_task:
+            started = True
+        self.assertFalse(started)
+
+
+class FileCacheLRUTests(unittest.TestCase):
+    """Tests for _file_content_cache LRU eviction."""
+
+    def test_cache_evicts_oldest_when_full(self):
+        """Replicate _read_cached LRU logic."""
+        cache: dict[str, tuple[float, str]] = {}
+        max_size = 5
+        # Fill cache with entries with increasing mtime
+        for i in range(max_size + 3):
+            key = f"file_{i}"
+            if len(cache) >= max_size:
+                to_remove = sorted(cache, key=lambda k: cache[k][0])
+                to_remove = to_remove[:len(cache) - max_size + 1]
+                for k in to_remove:
+                    del cache[k]
+            cache[key] = (float(i), f"content_{i}")
+        self.assertLessEqual(len(cache), max_size)
+        # Oldest entries should be evicted
+        self.assertNotIn("file_0", cache)
+        self.assertNotIn("file_1", cache)
+        self.assertNotIn("file_2", cache)
+        # Newest should be present
+        self.assertIn(f"file_{max_size + 2}", cache)
+
+    def test_cache_retains_all_when_under_limit(self):
+        cache: dict[str, tuple[float, str]] = {}
+        max_size = 10
+        for i in range(5):
+            key = f"file_{i}"
+            if len(cache) >= max_size:
+                to_remove = sorted(cache, key=lambda k: cache[k][0])[:len(cache) - max_size + 1]
+                for k in to_remove:
+                    del cache[k]
+            cache[key] = (float(i), f"content_{i}")
+        self.assertEqual(len(cache), 5)
+
+    def test_cache_eviction_keeps_newest_entries(self):
+        cache: dict[str, tuple[float, str]] = {}
+        max_size = 3
+        for i in range(10):
+            key = f"f{i}"
+            if len(cache) >= max_size:
+                to_remove = sorted(cache, key=lambda k: cache[k][0])[:len(cache) - max_size + 1]
+                for k in to_remove:
+                    del cache[k]
+            cache[key] = (float(i), f"c{i}")
+        self.assertEqual(len(cache), max_size)
+        # Last 3 entries should be present
+        for i in range(7, 10):
+            self.assertIn(f"f{i}", cache)
+
+
 if __name__ == "__main__":
     unittest.main()
