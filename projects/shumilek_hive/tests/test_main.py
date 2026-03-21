@@ -2103,5 +2103,171 @@ class DuplicateNoteTests(unittest.TestCase):
         self.assertIn("_toast", body)
 
 
+# ─── Tier 12: Graph Minimap ─────────────────────────────────────
+class GraphMinimapTests(unittest.TestCase):
+    """Tests for graph minimap overlay."""
+
+    def test_minimap_size_state(self):
+        """_graph_minimap_size state variable exists."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("_graph_minimap_size: int = 140", source)
+
+    def test_draw_graph_minimap_method(self):
+        """_draw_graph_minimap method exists and draws elements."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _draw_graph_minimap(")
+        body = source[idx:idx + 1800]
+        self.assertIn("MINIMAP", body)
+        self.assertIn("create_rectangle", body)
+        self.assertIn("create_oval", body)
+
+    def test_minimap_viewport_rect(self):
+        """Minimap draws a viewport rectangle for visible area."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _draw_graph_minimap(")
+        body = source[idx:idx + 2200]
+        self.assertIn("viewport", body.lower())
+        self.assertIn("dash", body)
+
+    def test_minimap_called_in_draw_graph(self):
+        """_draw_graph calls _draw_graph_minimap."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("self._draw_graph_minimap(c, w, h)", source)
+
+    def test_minimap_bounding_box(self):
+        """Minimap computes bounding box of all node positions."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _draw_graph_minimap(")
+        body = source[idx:idx + 1200]
+        self.assertIn("min_x", body)
+        self.assertIn("max_x", body)
+        self.assertIn("span_x", body)
+
+
+# ─── Tier 12: Tag Cloud Full View ───────────────────────────────
+class TagCloudViewTests(unittest.TestCase):
+    """Tests for full-screen tag cloud view."""
+
+    def test_tag_cloud_view_rects_state(self):
+        """_tag_cloud_view_rects state variable exists."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("_tag_cloud_view_rects: dict", source)
+
+    def test_show_tag_cloud_view_method(self):
+        """_show_tag_cloud_view sets view_mode."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _show_tag_cloud_view(")
+        body = source[idx:idx + 500]
+        self.assertIn('view_mode = "tag_cloud_view"', body)
+        self.assertIn("TAGS", body)
+        self.assertIn("_draw_tag_cloud_view", body)
+
+    def test_draw_tag_cloud_view_counts(self):
+        """_draw_tag_cloud_view counts tag frequencies."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _draw_tag_cloud_view(")
+        body = source[idx:idx + 2500]
+        self.assertIn("tag_counts", body)
+        self.assertIn("sorted_tags", body)
+        self.assertIn("font_size", body)
+
+    def test_draw_tag_cloud_view_pills(self):
+        """Tags are drawn as clickable pill shapes."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _draw_tag_cloud_view(")
+        body = source[idx:idx + 3000]
+        self.assertIn("create_rectangle", body)
+        self.assertIn("create_text", body)
+        self.assertIn("_tag_cloud_view_rects", body)
+
+    def test_tag_cloud_view_click_filters(self):
+        """Clicking a tag sets search filter."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _on_tag_cloud_view_click(")
+        body = source[idx:idx + 500]
+        self.assertIn("search_entry", body)
+        self.assertIn("_show_editor", body)
+
+    def test_tag_cloud_view_frame_in_hide_all(self):
+        """tag_cloud_view_frame is hidden in _hide_all_views."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _hide_all_views(")
+        body = source[idx:idx + 500]
+        self.assertIn("tag_cloud_view_frame", body)
+
+    def test_tag_cloud_view_in_command_palette(self):
+        """Tag Cloud View appears in command palette."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("Tag Cloud View", source)
+        self.assertIn("_show_tag_cloud_view", source)
+
+
+# ─── Tier 12: Focus/Zen Mode ────────────────────────────────────
+class FocusZenModeTests(unittest.TestCase):
+    """Tests for focus/zen distraction-free writing mode."""
+
+    def test_zen_mode_state(self):
+        """_zen_mode state variable exists."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("_zen_mode: bool = False", source)
+
+    def test_toggle_zen_mode_method(self):
+        """_toggle_zen_mode toggles _zen_mode flag."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _toggle_zen_mode(")
+        body = source[idx:idx + 800]
+        self.assertIn("_zen_mode = not self._zen_mode", body)
+
+    def test_zen_mode_hides_chrome(self):
+        """Zen mode hides sidebar, right panel, toolbar, status bar."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _toggle_zen_mode(")
+        body = source[idx:idx + 800]
+        self.assertIn("sidebar", body)
+        self.assertIn("right_panel", body)
+        self.assertIn("toolbar", body)
+        self.assertIn("status_bar", body)
+
+    def test_zen_mode_restores_chrome(self):
+        """Exiting zen mode restores UI elements."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _toggle_zen_mode(")
+        body = source[idx:idx + 1200]
+        self.assertIn("grid()", body)
+        self.assertIn("Focus mode OFF", body)
+
+    def test_zen_mode_in_command_palette(self):
+        """Focus Mode appears in command palette."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("Focus Mode", source)
+        self.assertIn("_toggle_zen_mode", source)
+
+    def test_zen_mode_toast_notification(self):
+        """Zen mode shows toast on toggle."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _toggle_zen_mode(")
+        body = source[idx:idx + 800]
+        self.assertIn("_toast", body)
+        self.assertIn("Focus mode ON", body)
+
+
 if __name__ == "__main__":
     unittest.main()

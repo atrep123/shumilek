@@ -622,6 +622,7 @@ class ShumilekHive:
         self._graph_zoom_scale: float = 1.0  # graph canvas zoom level
         self._graph_pan_offset: list[float] = [0.0, 0.0]  # canvas pan offset [dx, dy]
         self._graph_pan_start: tuple[int, int] | None = None  # pan drag start coords
+        self._graph_minimap_size: int = 140  # minimap width/height in pixels
         self._graph_starfield = StarField(120)  # starfield for graph background
         self._graph_flow_particles: list[FlowParticle] = []  # animated edge particles
         self._graph_anim_phase: float = 0.0  # animation phase counter
@@ -670,6 +671,12 @@ class ShumilekHive:
 
         # Kanban task board
         self._kanban_columns: list[str] = ["Todo", "In Progress", "Done"]
+
+        # Tag cloud full view
+        self._tag_cloud_view_rects: dict[str, tuple[int, int, int, int]] = {}
+
+        # Focus/Zen mode
+        self._zen_mode: bool = False
 
         # Link hover preview
         self._link_preview_win: tk.Toplevel | None = None
@@ -806,7 +813,8 @@ class ShumilekHive:
         for frame in (self.editor_container, self.graph_frame,
                       self.schema_frame, self.preview_frame,
                       self.hive_frame, self.timeline_frame,
-                      self.cards_frame, self.kanban_frame):
+                      self.cards_frame, self.kanban_frame,
+                      self.tag_cloud_view_frame):
             frame.pack_forget()
         if hasattr(self, 'split_container'):
             self.split_container.pack_forget()
@@ -1625,6 +1633,14 @@ class ShumilekHive:
         self.kanban_canvas.bind("<Configure>", lambda e: self._on_canvas_resize("kanban"))
         self._kanban_task_rects: dict[str, tuple[int, int, int, int, str, str]] = {}
 
+        # Tag cloud full view frame (hidden)
+        self.tag_cloud_view_frame = tk.Frame(self.center_frame, bg=P["void"])
+        self.tag_cloud_view_canvas = tk.Canvas(self.tag_cloud_view_frame, bg=P["void"],
+                                                highlightthickness=0, cursor="hand2")
+        self.tag_cloud_view_canvas.pack(fill="both", expand=True)
+        self.tag_cloud_view_canvas.bind("<Button-1>", self._on_tag_cloud_view_click)
+        self.tag_cloud_view_canvas.bind("<Configure>", lambda e: self._on_canvas_resize("tag_cloud_view"))
+
     # ─── RIGHT PANEL ─────────────────────────────────────────────
     def _build_right_panel(self):
         self.right_panel = tk.Frame(self.main_frame, bg=P["panel"], width=250)
@@ -2402,6 +2418,8 @@ class ShumilekHive:
             ("Move Heading Down", self._reorder_heading_down),
             ("Kanban Board", self._show_kanban),
             ("Duplicate Note", self._duplicate_note),
+            ("Tag Cloud View", self._show_tag_cloud_view),
+            ("Focus Mode", self._toggle_zen_mode),
         ]
 
         win = tk.Toplevel(self.root)
@@ -7679,6 +7697,9 @@ class ShumilekHive:
         # ── Graph stats panel (bottom-right) ──
         self._draw_graph_stats(c, w, h, nodes, importance, conn_count, orphans)
 
+        # ── Graph minimap (bottom-left corner) ──
+        self._draw_graph_minimap(c, w, h)
+
         # ── Heat map legend (bottom-left) ──
         ly = h - 28
         c.create_rectangle(6, ly - 6, 200, ly + 14, fill=P["surface"], outline=P["border"], width=1)
@@ -8791,6 +8812,172 @@ class ShumilekHive:
         self._scan_vault()
         self._open_file(dest)
         self._toast(f"Duplicated \u2192 {dest.name}")
+
+    # ─── GRAPH MINIMAP ───────────────────────────────────────────
+    def _draw_graph_minimap(self, c, w, h):
+        """Draw a minimap overview in the bottom-left corner of the graph."""
+        if not self._graph_node_positions:
+            return
+        ms = self._graph_minimap_size
+        margin = 8
+        mx, my = margin, h - ms - margin - 30  # above heat map legend
+
+        # Minimap background
+        c.create_rectangle(mx, my, mx + ms, my + ms,
+                          fill=P["surface"], outline=P["border_glow"], width=1)
+        c.create_text(mx + 4, my + 2, text="MINIMAP", font=(FONT, 6),
+                     fill=P["text_dim"], anchor="nw")
+
+        # Compute bounding box of all node positions
+        all_x = [pos[0] for pos in self._graph_node_positions.values()]
+        all_y = [pos[1] for pos in self._graph_node_positions.values()]
+        min_x, max_x = min(all_x), max(all_x)
+        min_y, max_y = min(all_y), max(all_y)
+        span_x = max(max_x - min_x, 1)
+        span_y = max(max_y - min_y, 1)
+
+        # Scale factor to fit all nodes in minimap
+        pad = 12
+        inner = ms - pad * 2
+        scale = min(inner / span_x, inner / span_y)
+
+        # Draw mini nodes
+        for node, (nx, ny, r) in self._graph_node_positions.items():
+            sx = mx + pad + (nx - min_x) * scale
+            sy = my + pad + (ny - min_y) * scale
+            mr = max(2, r * scale * 0.3)
+            c.create_oval(sx - mr, sy - mr, sx + mr, sy + mr,
+                         fill=P["cyan_dim"], outline="")
+
+        # Draw viewport rectangle showing visible area
+        vp_x1 = mx + pad + (0 - min_x) * scale
+        vp_y1 = my + pad + (0 - min_y) * scale
+        vp_x2 = mx + pad + (w - min_x) * scale
+        vp_y2 = my + pad + (h - min_y) * scale
+        # Clamp to minimap bounds
+        vp_x1 = max(mx, min(mx + ms, vp_x1))
+        vp_y1 = max(my, min(my + ms, vp_y1))
+        vp_x2 = max(mx, min(mx + ms, vp_x2))
+        vp_y2 = max(my, min(my + ms, vp_y2))
+        c.create_rectangle(vp_x1, vp_y1, vp_x2, vp_y2,
+                          fill="", outline=P["cyan"], width=1, dash=(3, 2))
+
+    # ─── TAG CLOUD FULL VIEW ─────────────────────────────────────
+    def _show_tag_cloud_view(self):
+        """Switch to full-screen tag cloud view."""
+        self._hide_all_views()
+        self.tag_cloud_view_frame.pack(fill="both", expand=True, padx=4, pady=4)
+        self.view_mode = "tag_cloud_view"
+        self.view_indicator.config(text="TAGS", fg=P["tag"])
+        self.status_left.config(text="tag cloud \u2014 click a tag to filter notes")
+        self.root.after(50, self._draw_tag_cloud_view)
+
+    def _draw_tag_cloud_view(self):
+        """Draw full-screen tag cloud with sized tags."""
+        c = self.tag_cloud_view_canvas
+        c.delete("all")
+        w = max(c.winfo_width(), 400)
+        h = max(c.winfo_height(), 300)
+        self._tag_cloud_view_rects.clear()
+
+        # Collect tag frequencies
+        tag_counts: dict[str, int] = {}
+        for fp in self._all_files:
+            content = self._read_cached(fp)
+            for t in re.findall(r'#(\w[\w-]*)', content):
+                tag_counts[t] = tag_counts.get(t, 0) + 1
+
+        if not tag_counts:
+            c.create_text(w // 2, h // 2, text="no tags found in vault",
+                         font=F_TITLE, fill=P["text_dim"])
+            return
+
+        # Sort by frequency descending
+        sorted_tags = sorted(tag_counts.items(), key=lambda x: -x[1])
+        max_count = sorted_tags[0][1]
+        min_count = sorted_tags[-1][1] if len(sorted_tags) > 1 else 1
+
+        # Title
+        c.create_text(w // 2, 24, text=f"Tag Cloud \u2014 {len(sorted_tags)} tags",
+                     font=F_TITLE, fill=P["heading"], anchor="center")
+
+        # Tag colors cycling
+        tag_colors = [P["cyan"], P["amethyst"], P["emerald"], P["ice"],
+                      P["ember"], P["rose"], P["tag"], P["teal"]]
+
+        # Layout tags in a flowing word-cloud arrangement
+        x_cursor = 30
+        y_cursor = 60
+        line_height = 0
+        max_width = w - 60
+
+        for idx, (tag, count) in enumerate(sorted_tags):
+            # Font size based on frequency (10..32)
+            if max_count > min_count:
+                ratio = (count - min_count) / (max_count - min_count)
+            else:
+                ratio = 1.0
+            font_size = int(10 + ratio * 22)
+            color = tag_colors[idx % len(tag_colors)]
+
+            # Estimate text width
+            text_w = len(tag) * font_size * 0.6 + 16
+            text_h = font_size + 8
+
+            # Wrap to next line if needed
+            if x_cursor + text_w > max_width and x_cursor > 30:
+                x_cursor = 30
+                y_cursor += line_height + 12
+                line_height = 0
+
+            if y_cursor + text_h > h - 20:
+                break
+
+            # Draw tag pill
+            c.create_rectangle(x_cursor, y_cursor, x_cursor + text_w, y_cursor + text_h,
+                              fill=P["surface"], outline=color, width=1)
+            label = f"#{tag} ({count})"
+            c.create_text(x_cursor + text_w // 2, y_cursor + text_h // 2,
+                         text=label, font=(FONT, font_size),
+                         fill=color, anchor="center")
+
+            self._tag_cloud_view_rects[tag] = (
+                int(x_cursor), int(y_cursor), int(text_w), int(text_h))
+
+            x_cursor += text_w + 12
+            line_height = max(line_height, text_h)
+
+    def _on_tag_cloud_view_click(self, event):
+        """Filter vault by clicked tag in tag cloud view."""
+        for tag, (x, y, tw, th) in self._tag_cloud_view_rects.items():
+            if x <= event.x <= x + tw and y <= event.y <= y + th:
+                # Set search to this tag and switch to editor
+                self._show_editor()
+                self.search_entry.delete(0, "end")
+                self.search_entry.insert(0, f"#{tag}")
+                self._on_search_change(None)
+                return
+
+    # ─── FOCUS / ZEN MODE ─────────────────────────────────────────
+    def _toggle_zen_mode(self):
+        """Toggle distraction-free writing mode, hiding sidebar, right panel, toolbar and status."""
+        self._zen_mode = not self._zen_mode
+        if self._zen_mode:
+            # Hide UI chrome
+            self.sidebar.grid_remove()
+            self.right_panel.grid_remove()
+            self.toolbar.pack_forget()
+            self.status_bar.pack_forget()
+            if self.view_mode != "editor":
+                self._show_editor()
+            self._toast("Focus mode ON \u2014 Ctrl+Shift+P \u2192 Focus Mode to exit")
+        else:
+            # Restore UI chrome
+            self.sidebar.grid()
+            self.right_panel.grid()
+            self.toolbar.pack(fill="x", padx=2, pady=(2, 0))
+            self.status_bar.pack(fill="x", side="bottom")
+            self._toast("Focus mode OFF")
 
     # ─── QUICK SWITCHER (FUZZY FINDER) ───────────────────────────
     def _show_quick_switcher(self):
