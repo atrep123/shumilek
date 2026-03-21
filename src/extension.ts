@@ -171,6 +171,7 @@ interface ValidatorPayload {
 // === Global State ===
 let currentPanel: vscode.WebviewPanel | undefined;
 let abortController: AbortController | undefined;
+let abortControllerRequestId = 0;
 let outputChannel: vscode.OutputChannel | undefined;
 let toolsStatusBarItem: vscode.StatusBarItem | undefined;
 let confirmStatusBarItem: vscode.StatusBarItem | undefined;
@@ -1801,12 +1802,13 @@ async function handleChatInternal(
 
   // Create AbortController early so both step-by-step and single-call paths have it
   const localAbortController = new AbortController();
+  const localRequestId = ++abortControllerRequestId;
   abortController = localAbortController;
 
   /** Release guard + clear abort on any exit after tryAcquire */
   const releaseGuardAndAbort = () => {
     chatRequestGuard.release(retryCount);
-    if (abortController === localAbortController) {
+    if (abortControllerRequestId === localRequestId) {
       abortController = undefined;
     }
   };
@@ -3022,6 +3024,11 @@ async function resolveWorkspaceUri(
 
   const multiRoot = folders.length > 1;
   const parts = cleaned.split(/[\\/]/).filter(Boolean);
+
+  // Reject path traversal before joinPath (defense-in-depth)
+  if (parts.some(p => p === '..')) {
+    return { error: 'cesta nesmi obsahovat ..' };
+  }
   const rootCandidate = parts[0];
   const rest = parts.slice(1).join('/');
 
@@ -3091,7 +3098,7 @@ function getFullDocumentRange(doc: vscode.TextDocument): vscode.Range {
 function markToolMutation(session: ToolSessionState | undefined, toolName: string): void {
   if (!session) return;
   session.hadMutations = true;
-  if (!session.mutationTools.includes(toolName)) {
+  if (session.mutationTools.length < 50 && !session.mutationTools.includes(toolName)) {
     session.mutationTools.push(toolName);
   }
 }
@@ -3403,5 +3410,5 @@ function getActiveFileName(): string {
 }
 
 // Export helpers for unit testing
-export { ResponseGuardian, normalizeTaskWeight };
+export { ResponseGuardian, normalizeTaskWeight, markToolMutation, resolveWorkspaceUri };
 
