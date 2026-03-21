@@ -3444,7 +3444,7 @@ class ShumilekHive:
                     "x": lx, "y": ny,
                     "layer": layer_name, "color": color,
                     "label": labels[ni] if ni < len(labels) else "",
-                    "activation": 0.0,
+                    "activation": random.uniform(0.1, 0.4),
                     "size": random.randint(8, 14),
                     "phase": random.uniform(0, math.pi * 2),
                 })
@@ -3465,6 +3465,18 @@ class ShumilekHive:
                         })
 
         self._ai_hive_initialized = True
+
+        # Fire some initial pulses so the network looks alive immediately
+        for _ in range(6):
+            if self._ai_synapses:
+                syn = random.choice(self._ai_synapses)
+                self._ai_pulses.append({
+                    "src": syn["src"], "dst": syn["dst"],
+                    "t": random.uniform(0.0, 0.5),
+                    "speed": random.uniform(0.015, 0.03),
+                    "color": random.choice([P["cyan_dim"], P["amethyst_dim"],
+                                           P["border_glow"], P["ice"]]),
+                })
 
     def _hive_submit_task(self):
         """Submit a new task from the input bar."""
@@ -4658,7 +4670,7 @@ class ShumilekHive:
                         ts = 2 if i < 3 else 1
                         c.create_oval(tx - ts, ty - ts, tx + ts, ty + ts,
                                      fill=f"#{tr:02x}{tg:02x}{tb:02x}", outline="")
-        self._ai_pulses = new_pulses[-50:] if len(new_pulses) > 50 else new_pulses
+        self._ai_pulses = new_pulses[-80:] if len(new_pulses) > 80 else new_pulses
 
         # Neurons (multi-ring smooth radial gradient glow)
         for neuron in self._ai_neurons:
@@ -4667,7 +4679,7 @@ class ShumilekHive:
             act = neuron["activation"]
             pulse = abs(math.sin(t * 2.5 + neuron["phase"]))
 
-            if act > 0.3:
+            if act > 0.15:
                 base_col = neuron["color"].lstrip("#")
                 r0 = int(base_col[:2], 16)
                 g0 = int(base_col[2:4], 16)
@@ -4705,7 +4717,7 @@ class ShumilekHive:
                              fill=P["panel"], outline=P["border"], width=1)
 
             if neuron["label"]:
-                lc = neuron["color"] if act > 0.3 else P["text_dim"]
+                lc = neuron["color"] if act > 0.15 else P["text_dim"]
                 c.create_text(x, y + size + 12, text=neuron["label"],
                              font=F_PIXEL, fill=lc)
 
@@ -4750,8 +4762,22 @@ class ShumilekHive:
         else:
             idle_pulse = abs(math.sin(t * 0.8))
             col = P["text_dim"] if idle_pulse < 0.5 else P["cyan_dim"]
-            c.create_text(w // 2, h - 25, text="HIVE IDLE \u2014 assign a task to activate",
+            # Rotating idle status messages
+            idle_msgs = [
+                "NEURAL NET STANDBY \u2014 monitoring vault",
+                "HIVE ACTIVE \u2014 passive pattern scan",
+                "DEEP IDLE \u2014 semantic index running",
+                "AWAITING INPUT \u2014 knowledge graph live",
+            ]
+            msg_idx = int(t / 5) % len(idle_msgs)
+            c.create_text(w // 2, h - 25, text=idle_msgs[msg_idx],
                          font=F_SMALL, fill=col)
+            # Live neural stats
+            active_n = sum(1 for n in self._ai_neurons if n["activation"] > 0.2)
+            pulse_count = len(self._ai_pulses)
+            stats_col = P["border_glow"]
+            c.create_text(w - 10, 10, text=f"neurons: {active_n}/{len(self._ai_neurons)}  pulses: {pulse_count}",
+                         font=F_PIXEL, fill=stats_col, anchor="ne")
 
         # Title with glow
         c.create_text(w // 2 + 1, h - 7, text="SHUMILEK HIVE NEURAL VIEW",
@@ -8784,30 +8810,79 @@ class ShumilekHive:
             self._hive_process_tick()
         if self.view_mode == "hive":
             self._hive_draw()
-            # Slowly decay neuron activations
+            # Slowly decay neuron activations (slower in idle for sustained glow)
+            decay = 0.985 if not self._ai_processing_task else 0.97
             for neuron in self._ai_neurons:
-                neuron["activation"] *= 0.97
+                neuron["activation"] *= decay
             # Ambient idle animation — gentle random neuron breathing + occasional pulse
+            # Ambient idle animation — rich, alive, always-on effects
             if not self._ai_processing_task and self._ai_hive_initialized:
                 self._hive_ambient_tick += 1
-                if self._hive_ambient_tick % 50 == 0:
-                    # Gentle breathing: randomly light up 1-4 neurons slightly
-                    for _ in range(random.randint(1, 4)):
-                        idx = random.randint(0, len(self._ai_neurons) - 1)
+                tick = self._hive_ambient_tick
+                n_count = len(self._ai_neurons)
+
+                # ── Scanning sweep: wave of activation rolls across layers ──
+                if tick % 3 == 0:
+                    wave_phase = math.sin(time.time() * 0.4) * 0.5 + 0.5  # 0-1 oscillating
+                    for neuron in self._ai_neurons:
+                        layer_map = {"input": 0, "analyze": 0.33, "process": 0.66, "output": 1.0}
+                        layer_pos = layer_map.get(neuron["layer"], 0.5)
+                        dist = abs(layer_pos - wave_phase)
+                        if dist < 0.2:
+                            boost = (0.2 - dist) / 0.2 * 0.35
+                            neuron["activation"] = max(neuron["activation"], boost)
+
+                # ── Breathing: randomly light up neurons ──
+                if tick % 35 == 0:
+                    for _ in range(random.randint(2, 5)):
+                        idx = random.randint(0, n_count - 1)
                         self._ai_neurons[idx]["activation"] = max(
                             self._ai_neurons[idx]["activation"],
-                            random.uniform(0.15, 0.50)
+                            random.uniform(0.25, 0.60)
                         )
-                if self._hive_ambient_tick % 70 == 0 and self._ai_synapses:
-                    # Ambient pulses — 1-2 at a time for more activity
-                    for _ in range(random.randint(1, 2)):
+
+                # ── Frequent ambient pulses along synapses ──
+                if tick % 30 == 0 and self._ai_synapses:
+                    for _ in range(random.randint(2, 4)):
                         syn = random.choice(self._ai_synapses)
                         self._ai_pulses.append({
                             "src": syn["src"], "dst": syn["dst"],
-                            "t": 0.0, "speed": random.uniform(0.013, 0.028),
+                            "t": 0.0, "speed": random.uniform(0.012, 0.030),
                             "color": random.choice([P["cyan_dim"], P["amethyst_dim"],
-                                                   P["border_glow"], P["ice"]]),
+                                                   P["border_glow"], P["ice"],
+                                                   P["emerald"]]),
                         })
+
+                # ── Idle thought bubbles — system "thinking" ──
+                if tick % 200 == 0:
+                    idle_thoughts = [
+                        "monitoring vault...", "indexing links",
+                        "scanning patterns", "analyzing structure",
+                        "graph updated", "neural standby",
+                        "knowledge sync", "awaiting input",
+                        "link analysis", "pattern match",
+                        "vault integrity OK", "ready for tasks",
+                        "deep learning idle", "semantic index",
+                    ]
+                    self._ai_add_thought(random.choice(idle_thoughts))
+
+                # ── Chain reaction: high-activation neurons fire along synapses ──
+                if tick % 15 == 0 and self._ai_synapses:
+                    for syn in self._ai_synapses:
+                        si = syn["src"]
+                        if si < n_count and self._ai_neurons[si]["activation"] > 0.4:
+                            if random.random() < 0.12:
+                                di = syn["dst"]
+                                if di < n_count:
+                                    self._ai_neurons[di]["activation"] = max(
+                                        self._ai_neurons[di]["activation"],
+                                        self._ai_neurons[si]["activation"] * 0.5
+                                    )
+                                    self._ai_pulses.append({
+                                        "src": si, "dst": di,
+                                        "t": 0.0, "speed": random.uniform(0.02, 0.05),
+                                        "color": self._ai_neurons[si]["color"],
+                                    })
 
         if not self._closing:
             self.root.after(38, self._animate)
