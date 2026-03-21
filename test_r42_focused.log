@@ -1,0 +1,131 @@
+﻿
+
+  Rozum
+    configuration
+      Ôťö should be enabled by default
+      Ôťö should store configuration
+    shouldTriggerPlanning
+      Ôťö should return false when disabled
+      Ôťö should return true for long prompts when enabled
+      Ôťö should return false for short prompts
+      Ôťö should return true when forcePlan is enabled regardless of length
+      Ôťö should return false for simple greeting "ahoj"
+      Ôťö should return false for simple greeting with punctuation
+      Ôťö should return false for thanks messages
+      Ôťö should return false for simple yes/no responses
+      Ôťö should return true for actual programming questions
+    getDefaultPlan
+      Ôťö should return default plan structure
+    parsePlan
+      Ôťö should parse complexity
+      Ôťö should parse new format with typed steps
+      Ôťö should parse old format (fallback)
+      Ôťö should parse warnings
+      Ôťö should not include "┼ż├ídn├ę" as warning
+      Ôťö should parse approach
+      Ôťö should parse estimated length
+      Ôťö should set shouldPlan based on steps
+      Ôťö should truncate plans to maximum 10 steps
+      Ôťö should not truncate plans with 10 or fewer steps
+    inferStepType
+      Ôťö should infer install type
+      Ôťö should infer code type
+      Ôťö should infer test type
+      Ôťö should infer debug type
+      Ôťö should return other for unknown
+    generateStepPrompt
+      Ôťö should generate prompt for step
+      Ôťö should include previous results
+    parseReviewResponse
+      Ôťö should parse approved response
+      Ôťö should parse rejected response
+      Ôťö should handle English format
+      Ôťö should default to approved when unclear
+      Ôťö should not retry when fix is "┼ż├ídn├í"
+    buildPlanningPrompt
+      Ôťö should build planning prompt
+      Ôťö should truncate long prompts
+      Ôťö should not coerce excessive step counts
+    executePlan - instruction mutation fix
+      Ôťö should not accumulate retry suffixes on step.instruction (3018ms)
+      Ôťö should not accumulate Rozum feedback on step.instruction (3015ms)
+      Ôťö should stop retrying when Svedomi repeats the same rejection for the same result (1008ms)
+      Ôťö should detect repeated rejection even with very large result strings (1008ms)
+      Ôťö should apply exponential backoff between retries (3020ms)
+    reviewStepResult error handling
+      Ôťö should reject step on HTTP 500
+      Ôťö should fail-open on network error (step already succeeded)
+      Ôťö should fail-open on timeout/abort (step already succeeded)
+      Ôťö clearTimeout fires even when fetch throws in plan()
+      Ôťö should return default plan when res.json() hangs indefinitely (30004ms)
+      Ôťö should fail-open review when res.json() hangs (30008ms)
+
+  normalizeTaskWeight
+    Ôťö should convert 0.1-1.0 scale to 1-10
+    Ôťö should clamp values >1 to 1-10
+    Ôťö should handle NaN
+    Ôťö should round decimal values
+
+  humanizeApiError
+    Ôťö should humanize ECONNREFUSED
+    Ôťö should humanize ENOTFOUND / DNS failure
+    Ôťö should humanize ETIMEDOUT
+    Ôťö should humanize socket hang up
+    Ôťö should humanize ECONNRESET
+    Ôťö should humanize model not found
+    Ôťö should humanize HTTP 500
+    Ôťö should humanize HTTP 404
+    Ôťö should pass through abort errors unchanged
+    Ôťö should pass through unknown errors unchanged
+    Ôťö should truncate very long error strings before regex matching (ReDoS prevention)
+    Ôťö should still humanize errors within the first 1000 chars
+
+  isTransientError
+    Ôťö should detect ECONNRESET
+    Ôťö should detect ETIMEDOUT
+    Ôťö should detect socket hang up
+    Ôťö should detect network timeout
+    Ôťö should detect HTTP 5xx
+    Ôťö should detect EPIPE
+    Ôťö should detect ECONNABORTED
+    Ôťö should NOT detect ECONNREFUSED (permanent)
+    Ôťö should NOT detect model not found
+    Ôťö should NOT detect unknown errors
+    Ôťö should handle Error objects with empty message
+
+  isSafeUrl
+    Ôťö should allow normal public URLs (59ms)
+    Ôťö should block localhost
+    Ôťö should block 127.x.x.x
+    Ôťö should block 10.x private range
+    Ôťö should block 192.168.x private range
+    Ôťö should block 172.16-31 private range
+    Ôťö should block cloud metadata endpoint
+    Ôťö should block non-http protocols
+    Ôťö should reject invalid URLs
+    Ôťö should block IPv6 loopback
+    Ôťö should fail-closed when DNS lookup throws
+    Ôťö should fail-closed when DNS lookup hangs beyond timeout (5008ms)
+    Ôťö should block IPv4-mapped IPv6 addresses resolving to private IPs
+    Ôťö should block IPv4-mapped IPv6 cloud metadata address
+
+  getNonce
+    Ôťö should return a non-empty string
+    Ôťö should return unique values on successive calls
+    Ôťö should be URL-safe base64 (no +, /, =)
+
+  surrogate pair safe truncation (pattern used in extension.ts)
+    Ôťö should not split a surrogate pair at the boundary
+    Ôťö should keep full string if no surrogate at boundary
+    Ôťö should handle string shorter than maxLen
+    Ôťö should handle string with surrogate pair well before boundary
+
+  SHA-256 hash for prompt comparison (pattern used in extension.ts)
+    Ôťö should produce deterministic 16-char hex output
+    Ôťö should produce different hashes for different inputs
+    Ôťö should normalize whitespace before hashing
+    Ôťö should be case-insensitive
+
+
+  100 passing (1m)
+

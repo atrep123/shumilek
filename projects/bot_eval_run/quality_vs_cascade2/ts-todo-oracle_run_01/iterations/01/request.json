@@ -1,0 +1,24 @@
+{
+  "model": "nemotron-cascade-2",
+  "baseUrl": "http://localhost:11434",
+  "transport": "generate",
+  "formatKind": "json",
+  "schemaUsed": false,
+  "fallbackUsed": true,
+  "fallbackReason": "Structured chat returned empty content",
+  "usedFormatJson": true,
+  "doneReason": "stop",
+  "evalCount": 2481,
+  "promptEvalCount": 2438,
+  "effectiveOptions": {
+    "num_predict": 6000,
+    "seed": 42,
+    "temperature": 0
+  },
+  "options": {
+    "temperature": 0.05,
+    "num_predict": 4800,
+    "seed": 42
+  },
+  "deterministicFallbackMode": "on-fail"
+}

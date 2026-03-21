@@ -1,0 +1,54 @@
+﻿
+
+  configResolver
+    parseServerUrl
+      Ôťö should parse a valid http URL
+      Ôťö should add http:// if missing
+      Ôťö should use fallback for undefined input
+      Ôťö should use fallback for empty string
+      Ôťö should use fallback for whitespace-only string
+      Ôťö should default to port 80 for http without explicit port
+      Ôťö should default to port 443 for https without explicit port
+      Ôťö should parse unusual but valid-ish URLs tolerantly
+    clampNumber
+      Ôťö should return the value when within range
+      Ôťö should clamp to min when below
+      Ôťö should clamp to max when above
+      Ôťö should use fallback for NaN
+      Ôťö should use fallback for non-number
+      Ôťö should use fallback for undefined
+    resolveModelPreset
+      Ôťö should return preset for known key
+      Ôťö should return undefined for unknown model
+      Ôťö should return undefined for undefined
+      Ôťö should resolve nvidia preset with nemotron model
+    MODEL_PRESETS
+      Ôťö should have at least one preset
+      Ôťö each preset should have required fields
+    resolveExecutionMode
+      Ôťö should return chat for chat mode
+      Ôťö should return editor for editor mode
+      Ôťö should return editor for hybrid when mutation required
+      Ôťö should return chat for hybrid when no mutation required
+    resolveChatConfig
+      Ôťö should return default config when no overrides
+      Ôťö should apply fast preset
+      Ôťö should apply quality preset
+      Ôťö should override all models for AirLLM backend
+      Ôťö should use AirLLM server URL when backend is airllm
+      Ôťö should clamp maxRetries to 5
+      Ôťö should default negative maxRetries to 2
+      Ôťö should resolve effectiveAutoSteps as min of toolsMaxIterations and maxAutoSteps
+      Ôťö should use custom baseUrl when backend is ollama
+      Ôťö should fallback pegasus-large summarizerModel to baseModel
+    resolveTimeoutMs
+      Ôťö should fallback on NaN
+      Ôťö should fallback on non-number
+      Ôťö should clamp negative to minimum 10
+      Ôťö should accept valid number
+    resolveStepTimeoutMs
+      Ôťö should use Number.isNaN consistently
+
+
+  39 passing (8ms)
+

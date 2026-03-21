@@ -1,0 +1,9 @@
+Usage:
+  node dist/cli.js parse --input <file>
+  node dist/cli.js stats --input <file>
+  node dist/cli.js --help
+
+Commands:
+  parse   Parse CSV file and output JSON array
+  stats   Show row count and column names
+  --help  Show this help message

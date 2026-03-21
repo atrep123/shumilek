@@ -1,0 +1,10 @@
+Todo CLI
+
+Usage:
+  node dist/cli.js --help
+  node dist/cli.js list --data <path>
+  node dist/cli.js add <title> --data <path>
+  node dist/cli.js done <id> --data <path>
+  node dist/cli.js remove <id> --data <path>
+
+All commands output JSON with an `ok` field.

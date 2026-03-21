@@ -1,0 +1,11 @@
+- Implement `CsvParser` in `src/csv.ts`
+- Implement `CsvFilter` methods in `src/csv.ts`
+- Write CLI logic in `src/cli.ts`
+- Create `README.md` with project description
+- Configure `tsconfig.json` for TypeScript compilation
+- Ensure no external dependencies are used
+- Test `CsvParser` and `CsvFilter` functionality
+- Test CLI commands: `--help`, `parse --input <file>`, `stats --input <file>`
+- Validate output formats in tests
+- Build project using `tsc`
+- Run all tests to ensure success

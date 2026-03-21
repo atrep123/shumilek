@@ -1,0 +1,9 @@
+- Create full project files: README.md, package.json, tsconfig.json, src/store.ts, src/cli.ts.
+- In src/store.ts, persist JSON as { tasks: [...] } and read with fallback for missing file.
+- Keep TaskStore constructor using provided filePath directly (no path join/resolve).
+- Export TaskStore as named export and include list/add/done/remove methods.
+- In src/cli.ts, parse process.argv manually and return JSON objects with ok=true/false.
+- Ensure --help exits 0 without requiring --data.
+- For list/add/done/remove, require --data path but do NOT require the file to already exist.
+- Keep package.json without dependencies/devDependencies and avoid type=module.
+- Verify with tsc build, oracle tests, and cli --help.

@@ -1,0 +1,1707 @@
+﻿
+
+  airllm
+    quoteForPowerShell
+      Ôťö wraps value in single quotes
+      Ôťö escapes embedded single quotes
+      Ôťö handles empty string
+      Ôťö escapes multiple single quotes
+    escapeForBashDoubleQuotes
+      Ôťö escapes backslashes
+      Ôťö escapes double quotes
+      Ôťö escapes dollar signs
+      Ôťö handles mixed characters
+    toWslPath
+      Ôťö converts Windows drive path to WSL mount path
+      Ôťö lowercases drive letter
+      Ôťö converts backslashes to forward slashes
+    expandAirllmCommandTemplate
+      Ôťö replaces placeholders
+      Ôťö replaces multiple occurrences of same key
+      Ôťö leaves unknown placeholders alone
+      Ôťö handles empty values
+    readAirLLMConfig
+      Ôťö reads all fields from config object
+      Ôťö falls back to defaults for missing config
+    buildAirLLMStartCommand
+      Ôťö builds PowerShell command for local mode
+      Ôťö includes KV cache flag when enabled
+      Ôťö omits KV cache flag when disabled
+      Ôťö uses custom command template when provided
+      Ôťö builds WSL command when runInWsl is true
+      Ôťö includes WSL user when provided
+      Ôťö sets HF_HOME env vars when cacheDir provided (local)
+      Ôťö sets HF_HOME env vars when cacheDir provided (WSL with Windows path)
+    isAirLLMHealthy
+      Ôťö returns true when health endpoint returns ok
+      Ôťö returns false when health endpoint reports ok but model is not loaded yet
+      Ôťö returns true when health endpoint reports ok and model is loaded
+      Ôťö returns false when health status is not ok
+      Ôťö returns false when fetch fails
+      Ôťö returns false when response is not OK
+
+  airllmRuntime
+    Ôťö builds the extension-scoped AirLLM command from the extension path
+    Ôťö reuses a single terminal and records the last start time
+    Ôťö returns false without starting when auto-start is disabled
+    Ôťö reuses in-flight startup and posts panel status once
+    Ôťö skips duplicate start command within the debounce window and times out cleanly
+
+  botEvalBaselinePromote
+    Ôťö rejects qualification when planner error rate or parse failures exceed guards
+    Ôťö promotes after reaching the required streak and persists state and report
+    Ôťö resets streak on unqualified candidate even when prior state was green
+    Ôťö recovers from invalid state file and skips copy when candidate equals stable dir
+    Ôťö fails with a clear error when promoted copy does not contain results.json
+
+  botEvalBatch argument parsing
+    Ôťö uses default scenarios when no scenario flags are provided
+    Ôťö treats --scenario as explicit scenario selection (replaces defaults)
+    Ôťö supports repeated --scenario values with de-duplication
+    Ôťö combines --scenarios and --scenario in explicit mode
+    Ôťö falls back to defaults when explicit scenario list is empty
+
+  botEvalBatch artifact persistence
+    Ôťö writes top-level artifacts for partial failed batches
+Running node-project-api-large (1/2)...
+  -> FAIL (1s) C:\Users\atrep\AppData\Local\Temp\bot-eval-batch-run-egQqAj\batch_2001\node-project-api-large_run_01
+Running node-project-api-large (2/2)...
+
+Summary:
+- node-project-api-large: 0/1 (0%) avg 1s | plannerErrRuns=0 jsonRepairErrRuns=0 jsonRepairErrFiles=0 schemaFailRuns=0 jsonParseRuns=0 placeholderRuns=0 fallbackActs=0 fallbackRecovers=0 rawPassRate=0% fallbackDependencyRate=0% rawRunPassRate=0% fallbackDependencyRunRate=0% topClusters=command_runtime:1
+Overall parse/schema: plannerErrRuns=0 jsonRepairErrRuns=0 jsonRepairErrFiles=0 schemaFailRuns=0 jsonParseRuns=0 placeholderRuns=0 fallbackRunCount=0 fallbackActs=0 fallbackRecovers=0 targetedActs=0 canonicalActs=0 rawPassRate=0% fallbackDependencyRate=0% rawRunPassRate=0% fallbackDependencyRunRate=0% topClusters=command_runtime:1
+
+Batch output: C:\Users\atrep\AppData\Local\Temp\bot-eval-batch-run-egQqAj\batch_2001
+    Ôťö persists top-level artifacts before rethrowing an unexpected batch error
+Running node-project-api-large (1/3)...
+  -> FAIL (1s) C:\Users\atrep\AppData\Local\Temp\bot-eval-batch-run-8yTBYZ\batch_2002\node-project-api-large_run_01
+node :   -> INFRA ABORT: ollama_unreachable (validation) cannot reach ollama
+At line:1 char:1
++ node --no-warnings=MODULE_TYPELESS_PACKAGE_JSON scripts/mocha-ts.js " ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (  -> INFRA ABOR...ot reach ollama 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+Summary:
+- node-project-api-large: 0/1 (0%) avg 1s | plannerErrRuns=0 jsonRepairErrRuns=0 jsonRepairErrFiles=0 schemaFailRuns=0 jsonParseRuns=0 placeholderRuns=0 fallbackActs=0 fallbackRecovers=0 rawPassRate=0% fallbackDependencyRate=0% rawRunPassRate=0% fallbackDependencyRunRate=0% topClusters=command_runtime:1
+Overall parse/schema: plannerErrRuns=0 jsonRepairErrRuns=0 jsonRepairErrFiles=0 schemaFailRuns=0 jsonParseRuns=0 placeholderRuns=0 fallbackRunCount=0 fallbackActs=0 fallbackRecovers=0 targetedActs=0 canonicalActs=0 rawPassRate=0% fallbackDependencyRate=0% rawRunPassRate=0% fallbackDependencyRunRate=0% topClusters=command_runtime:1
+Batch stopped early due to infra outage (ollama_unreachable); skippedRuns=2.
+
+Batch output: C:\Users\atrep\AppData\Local\Temp\bot-eval-batch-run-8yTBYZ\batch_2002
+    Ôťö writes infra_abort.json and preserves partial results when batch stops on infra failure
+
+  botEvalBatch infra outage handling
+    Ôťö defaults stopOnInfraFailure to true
+    Ôťö supports --continueOnInfraFailure switch
+    Ôťö supports explicit --stopOnInfraFailure false
+    Ôťö parses infra recovery options and ollama base url
+    Ôťö parses auto-restart options
+    Ôťö detects Ollama reachability outage from run log text
+    Ôťö detects missing model and includes pull hint
+    Ôťö detects network failure from Ollama generate request diagnostics
+    Ôťö returns null for non-infra failures
+    Ôťö classifies infra diagnostics into dedicated clusters
+    Ôťö aborts batch only when policy is enabled and infra signal exists
+    Ôťö decides auto-restart attempts only for continue mode and unreachable infra
+    Ôťö resolves default restart commands by platform
+    Ôťö waitForOllamaRecovery succeeds when probe eventually passes (414ms)
+    Ôťö waitForOllamaRecovery times out when probe never passes (1011ms)
+
+  botEvalBatch summary metrics
+    Ôťö aggregates raw-vs-recovered fallback metrics
+    Ôťö derives raw metrics from final outcome for scenarios without explicit raw instrumentation
+    Ôťö uses explicit raw instrumentation for ts-csv-oracle
+    Ôťö uses explicit raw instrumentation for repair scenarios in the same family
+
+  botEvalCheckpointManager
+    Ôťö parses benchmark manifest with split taxonomy and policy
+    Ôťö computes a finite 95% confidence interval
+    Ôťö builds split rollups and qualifies the latest checkpoint
+    Ôťö reports non-blocking repair scenarios without letting them gate checkpoint qualification
+    Ôťö ignores probe and smoke runs when selecting comparable checkpoint inputs
+    Ôťö records and activates a qualified checkpoint in the registry
+    Ôťö normalizes Windows-style latestRunDir when building checkpoint ids
+
+  botEvalCleanup
+    Ôťö parses explicit root, policy, dryRun, and out path
+    Ôťö reports missing root and returns null
+    Ôťö keeps newest matching directories on dryRun and writes report without deleting
+    Ôťö deletes only directories beyond keep limit for each policy
+
+  botEval compare and failure clustering helpers
+    Ôťö classifies common diagnostics into stable clusters
+    Ôťö aggregates run-level failure clusters from diagnostics and parse counters
+    Ôťö compares baseline and candidate summary rows with deltas
+    Ôťö limits compare output to candidate scenarios when scenarioIds are provided
+    Ôťö does not penalize missing non-candidate scenarios in gate evaluation
+    Ôťö evaluates acceptance gate with scenario and cluster thresholds
+    Ôťö applies scenario-specific threshold overrides
+    Ôťö enforces latency multiplier threshold
+    Ôťö skips latency check when baseline avgMs is zero (new scenario)
+    Ôťö applies per-scenario latency multiplier override
+    Ôťö keeps CI gate scenario overrides aligned with nightly overrides
+    Ôťö parses compare args for baseline, candidate, and gate options
+    Ôťö writes compare report and keeps exit code unset on passing gate
+    Ôťö sets exit code 2 and records violations when gate fails
+
+  botEval deterministic fallback helpers
+    Ôťö normalizes fallback mode with safe default
+    Ôťö detects TS fatal diagnostics for fast-fail
+    Ôťö detects Node fatal diagnostics for fast-fail
+    Ôťö normalizes ts-todo store path handling for absolute data paths
+    Ôťö normalizes ts-todo store crypto + existsSync compatibility pitfalls
+    Ôťö normalizes ts-todo store JSON.parse(data) || [] pattern to task-envelope read
+    Ôťö injects crypto require when store uses crypto.randomUUID without binding
+    Ôťö normalizes ts-todo store done/remove signatures to avoid strict null/undefined return errors
+    Ôťö normalizes ts catch blocks to avoid unknown catch type failures
+    Ôťö detects ts-csv CsvFilter return-type drift that requires canonical csv fallback
+    Ôťö recovers a raw ts-csv workspace through targeted csv fallback only (1266ms)
+    Ôťö replaces risky ts cli switch redeclare pattern with canonical fallback cli
+    Ôťö normalizes ts cli parser null inference and --help handling
+    Ôťö removes local process require shadowing while preserving single TS global declarations
+    Ôťö normalizes ts cli to not require existing --data file
+    Ôťö replaces ts cli parser/output shape mismatch with canonical fallback cli
+    Ôťö replaces ts cli destructive argv shift parser with canonical fallback cli
+    Ôťö normalizes ts package manifest to oracle policy
+    Ôťö applies scenario normalization only for ts-todo store file
+    Ôťö normalizes risky node-api server contract before write
+    Ôťö applies node-api normalization only for src/server.js
+    Ôťö normalizes risky ts-csv csv contract before write
+    Ôťö normalizes risky ts-csv cli and compiler scaffolding before write
+    Ôťö normalizes risky python oracle cli contract before write
+    Ôťö applies python cli normalization only for python scenarios
+
+  botEval large node-project scenario
+    Ôťö enables deterministic fallback for all scenarios including large
+    Ôťö fails validation when source files are below minimum (575ms)
+    Ôťö fails validation when a required domain module is missing (653ms)
+    Ôťö fails validation when README or package.json is missing (1306ms)
+    Ôťö fails preflight when required route signatures are missing and skips command checks (640ms)
+    Ôťö flags uuid package usage in sources (638ms)
+    Ôťö flags invalid module helper import path ../lib/* (634ms)
+    Ôťö flags ambiguous module helper import ../../lib (638ms)
+    Ôťö flags routes importing ../service instead of ./service (769ms)
+    Ôťö flags uncaught throw in route handlers (746ms)
+    Ôťö flags comments payload mismatch when using content instead of message (781ms)
+    Ôťö flags sendError helper export mismatch before oracle command checks (763ms)
+    Ôťö flags generateId helper export mismatch before oracle command checks (745ms)
+    Ôťö accepts generateId arrow-function export in id helper (4171ms)
+    Ôťö flags isolated local projects map in tasks service (747ms)
+    Ôťö flags invalid crypto randomUUID aliasing pattern (751ms)
+    Ôťö flags randomUUID() usage without node:crypto binding (748ms)
+    Ôťö flags missing project detail route signature in projects module (752ms)
+    Ôťö flags comments->tasks cross-module API mismatch (750ms)
+    Ôťö flags route-service mismatch when routes call non-exported service methods (817ms)
+    Ôťö does not report false route-service mismatch for module.exports method shorthand bodies (2331ms)
+    Ôťö does not report false route-service mismatch for module.exports identifier object alias (2515ms)
+    Ôťö flags POST create status mismatches for members/tasks/comments (751ms)
+    Ôťö flags tasks PATCH status contract when pending/open is allowed (765ms)
+    Ôťö maps oracle logs to actionable contract diagnostics
+    Ôťö parses route-service mismatch diagnostics into deterministic method map
+    Ôťö builds explicit route-service guidance only when mismatch diagnostics exist
+    Ôťö builds node-project contract fix guidance from structural diagnostics
+    Ôťö injects route-service export map into repair prompt only for large scenario mismatch
+    Ôťö injects node-project contract fix map into repair prompt when structural diagnostics are present
+    Ôťö injects route-service export map into reviewer prompt for large scenario mismatch
+    Ôťö injects node-project contract fix map into reviewer prompt when structural diagnostics are present
+    Ôťö deduplicates repeated file paths by keeping latest content
+    Ôťö adds route-service adapter wrappers when called methods have known aliases
+    Ôťö normalizes route service import ../service to ./service during adapter pass
+    Ôťö does not add route-service wrappers when no viable alias target exists
+    Ôťö bridges additional alias variants for tasks and members services
+    Ôťö bridges tasks updateTask route call to updateTaskStatus export
+    Ôťö synthesizes getAllProjects bridge from detected in-memory store
+    Ôťö synthesizes project list/name bridges from object-map stores
+    Ôťö adds duplicate-member guard bridge for members service exports
+    Ôťö adds duplicate-project guard bridge for projects service exports
+    Ôťö adds duplicate-project guard bridge for object-map project stores
+    Ôťö replaces unsupported ../repository service import with canonical in-memory template
+    Ôťö replaces projects service when exported create() expects payload object with name field
+    Ôťö replaces services that call sendError(null, ...) with canonical template
+    Ôťö replaces isolated members project-map service with route-compatible members store template
+    Ôťö replaces isolated members service even when map variable is not named "projects"
+    Ôťö replaces members service when addProject bootstrap exists but addMember writes into uninitialized project map
+    Ôťö replaces tasks service coupled to project.tasks object with canonical tasks store template
+    Ôťö replaces comments service when it persists content instead of message field
+    Ôťö replaces comments service when addComment destructures { message } and couples to tasks update
+    Ôťö replaces comments service when it couples via getProjectByTaskId lookup
+    Ôťö normalizes comments service addComment signature when code expects comment.message object arg
+    Ôťö auto-fix inserts missing GET /:projectId in projects routes
+    Ôťö auto-fix canonicalizes projects route when payload/validation contract is drifted
+    Ôťö auto-fix normalizes POST success status to 201 across domain routes
+    Ôťö auto-fix normalizes members/comments payload keys
+    Ôťö auto-fix canonicalizes members/comments routes when GET / list endpoints are missing
+    Ôťö auto-fix canonicalizes members route when POST payload guard is missing even if GET exists
+    Ôťö auto-fix canonicalizes comments route when POST message guard is missing even if GET exists
+    Ôťö auto-fix canonicalizes comments route when service calls omit projectId context
+    Ôťö second adapter pass adds service wrappers after auto-fix canonicalizes routes
+    Ôťö auto-fix injects duplicate guards for projects and members create routes
+    Ôťö auto-fix still injects project null duplicate guard when catch already contains duplicate branch
+    Ôťö auto-fix still injects members duplicate null guard when catch already contains MEMBER_DUPLICATE branch
+    Ôťö auto-fix normalizes members create response when route expects outcome.member
+    Ôťö auto-fix normalizes comments create response when service returns content instead of message
+    Ôťö auto-fix normalizes tasks PATCH/status filter contract
+    Ôťö auto-fix normalizes tasks create payload from description to title
+    Ôťö auto-fix normalizes tasks create payload from name to title
+    Ôťö auto-fix replaces syntactically invalid tasks route with canonical template
+    Ôťö auto-fix replaces syntactically invalid server entrypoint with canonical template
+    Ôťö auto-fix replaces syntactically invalid service module with canonical template
+    Ôťö auto-fix replaces isolated members array store with shared-project-compatible template
+    Ôťö adapter pass replaces service modules that call sendError(res, ...) with canonical template
+    Ôťö auto-fix replaces undefined BadRequestError/NotFoundError branches with sendError
+    Ôťö auto-fix normalizes nested route service imports to local ./service path
+    Ôťö auto-fix rewrites nested controller randomUUID imports to node:crypto
+    Ôťö auto-fix hydrates nested workspace service files and rewrites randomUUID imports there too
+    Ôťö auto-fix restores sendError binding when route calls sendError but imports only custom error classes
+    Ôťö auto-fix repairs src/lib/errors.js when routes use sendError but helper is not exported
+    Ôťö auto-fix repairs src/lib/id.js when services call generateId but helper is not exported
+    Ôťö auto-fix normalizes app route mounts to canonical required signatures
+    Ôťö promotes large-scenario patch output to full using workspace snapshot
+    Ôťö promotes patch->full even when workspace snapshot misses core files by synthesizing templates
+    Ôťö synthesizes missing large core files when workspace snapshot is incomplete
+    Ôťö uses workspace route files when patch contains only service files
+    Ôťö hydrates workspace service file when patch only changes routes and synthesizes missing methods
+    Ôťö injects node:crypto randomUUID binding into service when randomUUID() is unbound
+    Ôťö requires full mode after structural failures and ignores trivial reviewer notes
+    Ôťö caps reviewer timeout for large scenario to avoid long hangs
+    Ôťö caps primary generation timeout for large scenario to limit long single-call hangs
+    Ôťö selects timeout fallback model only for large scenario and avoids no-op fallback
+    Ôťö builds timeout fallback chain with dedupe and primary-model exclusion
+    Ôťö caps timeout-fallback generation call duration for large scenario
+    Ôťö stops early after generation timeout for large scenario
+    Ôťö flags listen() usage in app/server entrypoints (790ms)
+    Ôťö fails fast on invalid JS syntax with actionable diagnostics and skips oracle commands (785ms)
+    Ôťö for invalid package.json, reports root cause once and skips syntax-check spam
+    Ôťö flags ESM app/server module format drift before oracle execution (783ms)
+    Ôťö keeps oracle fixture assert density at least 20 asserts
+    Ôťö detects tasks field name drift (name instead of title)
+    Ôťö detects tasks single-param arity drift
+    Ôťö returns false for correct tasks service with projectId and title
+    Ôťö detects comments single-param arity drift
+    Ôťö returns false for correct comments service with 3 params
+    Ôťö bridge adapter replaces tasks service when field-name drift detected
+    Ôťö bridge adapter replaces comments service when arity drift detected
+    Ôťö bridge adapter normalizes non-string comment messages before returning contract payload
+    Ôťö detects spurious nested-module files when canonical module exists
+    Ôťö ignores nested modules when canonical module is absent
+    Ôťö returns empty for correct module structure
+    Ôťö autofix removes spurious nested-module files from array
+    Ôťö canonicalizes members route when createMember call is missing req.params.projectId
+    Ôťö canonicalizes comments route when createComment call is missing req.params args
+    Ôťö strips node-builtin dependencies from package.json
+    Ôťö replaces app.js with canonical template when listen() is called without require.main guard
+    Ôťö preserves app.js when listen() is guarded by require.main
+    Ôťö replaces projects service with canonical when it uses Express handler pattern (req, res)
+    Ôťö replaces comments service with canonical when it uses Express handler pattern (req, res)
+    Ôťö detects projects payload drift when createProject takes (req, res) handler params
+
+  botEvalNightlyCalibrate
+    Ôťö computes deterministic p95 percentile
+    Ôťö computes recommendation as round_up(p95 * 1.15, 0.01)
+    Ôťö builds calibration json/md from 10 nightly fixture runs (38ms)
+    Ôťö ignores incomplete newer nightly runs and uses only completed runs
+    Ôťö treats the newest pre-calibration nightly run as eligible when two prior nightly runs completed
+    Ôťö blocks readiness when one of the last three nightly runs failed before calibration completion
+    Ôťö fails with clear error when no completed nightly run directories exist
+    Ôťö fails with clear error when only compare and stability files are present
+    Ôťö tolerates partial stability aggregate schema by marking readiness not ready
+    Ôťö discovers local release_gate_<timestamp> dirs when includeLocalRuns is true
+    Ôťö extracts run ID from local release_gate_<timestamp> dir name
+    Ôťö skips scenarios with zero baseline avgMs instead of throwing
+
+  botEvalNightlyFull
+    Ôťö parses nightly full args and keeps unknown args for release gate passthrough
+    Ôťö passes promotion report to tuner, updates baseline pointer to stable nightly, and limits stability inputs to latest three release gates
+    Ôťö skips promotion and stability when no eligible gate directories exist
+    Ôťö keeps repair canary non-blocking when the repair batch fails
+
+  botEvalNightlySummary
+    Ôťö parses gateDir, repairDir, out and append flags
+    Ôťö builds markdown for gate and repair sections
+    Ôťö writes summary file and emits missing repair note when summary.json is absent
+    Ôťö tolerates partial aggregate schema without crashing
+Nightly summary written to C:\Users\atrep\AppData\Local\Temp\bot-eval-nightly-summary-alHbg3\job-summary.md
+    Ôťö renders an end-to-end nightly summary from gate and repair artifacts and appends to existing output
+
+  botEval Ollama retry classification
+    Ôťö marks transient network errors as retriable
+    Ôťö marks retriable HTTP statuses as retriable
+    Ôťö does not retry non-transient validation/protocol errors
+    Ôťö splits timeout budget across retry attempts to keep total wall-time bounded
+    Ôťö disables retries for long-generation calls to avoid retry amplification
+
+  botEval Ollama preflight helpers
+    Ôťö extracts model names from /api/tags payload
+    Ôťö matches models by exact name or base name
+
+  botEval parse stats helpers
+    Ôťö does not count planner parse failure when planner finished OK
+    Ôťö uses explicit planner finalErrorKind when final fail happened
+    Ôťö infers planner finalErrorKind from error text when missing
+    Ôťö does not count iteration parse failure when parsing eventually succeeded
+    Ôťö counts iteration parse failure only when parsing finally failed
+
+  botEval python cli Optional import normalization
+    Ôťö adds missing Optional typing import when Optional annotation is used
+
+  botEvalReleaseGate baseline pointer helpers
+    Ôťö parses baseline pointer and lock flag
+    Ôťö falls back to default scenarios when explicit list is empty
+    Ôťö prefers explicit baseline over pointer file
+    Ôťö uses baseline pointer when explicit baseline is missing
+    Ôťö throws clear error when neither baseline nor pointer is available
+
+  botEvalReleaseGate orchestration
+Running release benchmark batch -> C:\Users\atrep\AppData\Local\Temp\bot-eval-release-gate-repo-0zLmoZ\projects\bot_eval_run\release_gate_candidate
+Running release compare gate against baseline -> C:\Users\atrep\AppData\Local\Temp\bot-eval-release-gate-repo-0zLmoZ\projects\bot_eval_run\stable
+Baseline pointer updated: C:\Users\atrep\AppData\Local\Temp\bot-eval-release-gate-repo-0zLmoZ\projects\bot_eval_run\release_baseline.txt -> C:\Users\atrep\AppData\Local\Temp\bot-eval-release-gate-repo-0zLmoZ\projects\bot_eval_run\release_gate_candidate
+Release gate PASS. Candidate batch: C:\Users\atrep\AppData\Local\Temp\bot-eval-release-gate-repo-0zLmoZ\projects\bot_eval_run\release_gate_candidate
+    Ôťö locks baseline pointer only after successful batch and compare
+Running release benchmark batch -> C:\Users\atrep\AppData\Local\Temp\bot-eval-release-gate-repo-QjX4rl\projects\bot_eval_run\release_gate_candidate
+    Ôťö stops after batch failure without compare or baseline lock
+Running release benchmark batch -> C:\Users\atrep\AppData\Local\Temp\bot-eval-release-gate-repo-t0Witt\projects\bot_eval_run\release_gate_candidate
+Running release compare gate against baseline -> C:\Users\atrep\AppData\Local\Temp\bot-eval-release-gate-repo-t0Witt\projects\bot_eval_run\stable
+    Ôťö stops after compare failure without updating baseline pointer
+
+  botEval scenario catalog
+    Ôťö includes the ts-csv repair benchmark scenario
+    Ôťö includes the node-api repair benchmark scenario
+    Ôťö embeds existing broken files in the ts-csv repair prompt
+    Ôťö reuses ts-csv CLI normalization for the repair scenario
+    Ôťö embeds existing broken files in the node-api repair prompt
+    Ôťö reuses node-api server normalization for the repair scenario
+
+  botEvalStabilityAggregate
+    Ôťö parses explicit input and output arguments
+    Ôťö aggregates runs, records gate failures, and writes JSON plus markdown outputs
+    Ôťö skips inputs with a mismatched baseline and emits a warning
+
+  botEval ts-todo cli import normalization
+    Ôťö converts node builtin imports to require and strips .ts store suffix
+    Ôťö injects help guard when cli lacks --help branch
+
+  botEval ts-todo cli runtime globals
+    Ôťö deduplicates declarations and removes node:process shadow import
+
+  botEval ts-todo fallback cli template
+    Ôťö keeps require/process declarations when commander triggers fallback template
+    Ôťö keeps require/process declarations when parser-shape mismatch triggers fallback template
+
+  botEval ts-todo scenario canonicalization
+    Ôťö promotes interactive readline cli to canonical non-interactive contract
+    Ôťö promotes incomplete TaskStore to canonical CRUD template
+
+  botEval ts-todo store import normalization
+    Ôťö converts aliased node:crypto/path imports to require object pattern
+    Ôťö converts uuid v4 imports to node:crypto randomUUID
+    Ôťö normalizes JSON task shape and removes dummy fallback task objects
+
+  botEval ts-todo tsconfig normalization
+    Ôťö forces compilerOptions.types to empty array to avoid ambient node type drift
+
+  botEvalTuner
+    Ôťö accepts a qualified checkpoint when calibration is ready
+    Ôťö holds a qualified checkpoint when calibration is not ready
+    Ôťö rolls back to the active checkpoint when latest checkpoint fails
+    Ôťö persists tuner state and registry updates when applying a decision
+    Ôťö holds when promotion is qualified but not yet promoted and holdWhenPromotionPending is enabled
+    Ôťö accepts when promotion is qualified and already promoted with holdWhenPromotionPending enabled
+    Ôťö updates tuner state without changing accepted checkpoint on hold
+
+  ChatRequestConcurrencyGuard
+    Ôťö allows first top-level request and blocks concurrent top-level request
+    Ôťö allows retry while top-level request is active
+    Ôťö releases lock only on top-level release
+
+  chatPersistence
+    getLastAssistantMessage
+      Ôťö returns undefined for empty array
+      Ôťö returns undefined when no assistant messages
+      Ôťö returns last assistant message
+    extractPreferredFencedCodeBlock
+      Ôťö returns null for text without fenced blocks
+      Ôťö returns null for empty fenced blocks
+      Ôťö extracts first code block
+      Ôťö prefers arduino/cpp blocks
+      Ôťö returns code without lang tag
+    sanitizeChatMessages
+      Ôťö returns empty array for null/undefined
+      Ôťö returns empty array for non-object
+      Ôťö sanitizes valid messages
+      Ôťö filters invalid messages
+[ChatState] History truncated from 250 to 200 messages
+      Ôťö truncates to 200 messages
+[ChatState] History truncated from 210 to 200 messages
+      Ôťö keeps last 200 messages when truncating (preserves newest)
+      Ôťö logs warning when truncating history
+      Ôťö does not log warning when history fits within 200
+      Ôťö caps individual message content at 100KB
+    formatQualityReport
+      Ôťö returns empty string for empty results
+      Ôťö formats pass result
+      Ôťö formats fail result with score
+      Ôťö formats skipped result
+      Ôťö includes raw score when different
+    buildStructuredOutput
+      Ôťö returns response without checks or summary
+      Ôťö includes quality checks
+      Ôťö includes summary
+      Ôťö respects includeResponse=false
+      Ôťö returns header only when response is empty
+      Ôťö returns empty string when response is empty and includeResponse=false
+    normalizeExternalScore
+      Ôťö returns undefined score for non-number input
+      Ôťö passes through score <= 1
+      Ôťö normalizes score > 1 to 0-1 range when threshold <= 1
+      Ôťö keeps score as-is when threshold > 1
+      Ôťö normalizes score > 1 without threshold
+      Ôťö returns undefined score for NaN input
+
+  configResolver
+    parseServerUrl
+      Ôťö should parse a valid http URL
+      Ôťö should add http:// if missing
+      Ôťö should use fallback for undefined input
+      Ôťö should use fallback for empty string
+      Ôťö should use fallback for whitespace-only string
+      Ôťö should default to port 80 for http without explicit port
+      Ôťö should default to port 443 for https without explicit port
+      Ôťö should parse unusual but valid-ish URLs tolerantly
+    clampNumber
+      Ôťö should return the value when within range
+      Ôťö should clamp to min when below
+      Ôťö should clamp to max when above
+      Ôťö should use fallback for NaN
+      Ôťö should use fallback for non-number
+      Ôťö should use fallback for undefined
+    resolveModelPreset
+      Ôťö should return preset for known key
+      Ôťö should return undefined for unknown model
+      Ôťö should return undefined for undefined
+      Ôťö should resolve nvidia preset with nemotron model
+    MODEL_PRESETS
+      Ôťö should have at least one preset
+      Ôťö each preset should have required fields
+    resolveExecutionMode
+      Ôťö should return chat for chat mode
+      Ôťö should return editor for editor mode
+      Ôťö should return editor for hybrid when mutation required
+      Ôťö should return chat for hybrid when no mutation required
+    resolveChatConfig
+      Ôťö should return default config when no overrides
+      Ôťö should apply fast preset
+      Ôťö should apply quality preset
+      Ôťö should override all models for AirLLM backend
+      Ôťö should use AirLLM server URL when backend is airllm
+      Ôťö should clamp maxRetries to 5
+      Ôťö should default negative maxRetries to 2
+      Ôťö should resolve effectiveAutoSteps as min of toolsMaxIterations and maxAutoSteps
+      Ôťö should use custom baseUrl when backend is ollama
+      Ôťö should fallback pegasus-large summarizerModel to baseModel
+    resolveTimeoutMs
+      Ôťö should fallback on NaN
+      Ôťö should fallback on non-number
+      Ôťö should clamp negative to minimum 10
+      Ôťö should accept valid number
+    resolveStepTimeoutMs
+      Ôťö should use Number.isNaN consistently
+
+  contextBuilder
+    constants
+      Ôťö should export DEFAULT_EXCLUDE_GLOB
+      Ôťö should have sensible default limits
+    truncateTextByBytes
+      Ôťö should return text unchanged when within limit
+      Ôťö should truncate text exceeding byte limit
+      Ôťö should handle empty string
+      Ôťö should handle multibyte characters correctly
+      Ôťö should truncate multibyte without breaking
+      Ôťö should handle exact boundary
+    extractImportPaths
+      Ôťö should extract ES module imports
+      Ôťö should extract require calls
+      Ôťö should extract mixed imports and requires
+      Ôťö should deduplicate paths
+      Ôťö should return empty array for no imports
+      Ôťö should handle single-quoted and double-quoted paths
+    buildSimpleDiff
+      Ôťö should return empty diff for identical text
+      Ôťö should show added lines
+      Ôťö should show removed lines
+      Ôťö should show changed lines
+      Ôťö should truncate long diffs
+      Ôťö should include hunk header
+    isTestFileName
+      Ôťö should detect .test. files
+      Ôťö should detect .spec. files
+      Ôťö should be case-insensitive
+      Ôťö should reject non-test files
+    isWithinWorkspace
+      Ôťö should return false when no workspace folders
+      Ôťö should return false for empty folders array
+    isFileNotFoundError
+      Ôťö should detect FileNotFound code
+      Ôťö should return false for other errors
+      Ôťö should return false for null/undefined
+    getRelativePathForWorkspace
+      Ôťö should call asRelativePath
+    getOpenTextDocuments
+      Ôťö should return empty when no active editor and no visible editors
+      Ôťö should include active editor document first
+      Ôťö should deduplicate active and visible editor documents
+      Ôťö should include multiple visible editors
+    findFallbackRelatedFiles glob escaping
+      Ôťö should escape asterisks in file names
+      Ôťö should escape question marks
+      Ôťö should escape square brackets
+      Ôťö should escape curly braces
+      Ôťö should leave normal names unchanged
+      Ôťö should handle multiple metacharacters
+
+  contextMemory
+    estimateTokens
+      Ôťö should estimate ~chars/4
+      Ôťö should handle empty messages
+    extractSessionFacts
+      Ôťö should extract file paths
+      Ôťö should extract errors
+      Ôťö should extract decisions
+      Ôťö should limit file count to 20
+      Ôťö should deduplicate files
+      Ôťö should handle empty messages
+    compressConversation
+      Ôťö should NOT compress short conversations
+      Ôťö should compress long conversations exceeding budget
+      Ôťö should keep recent messages in full
+      Ôťö should produce a context block when compressed
+      Ôťö should report token savings
+      Ôťö should not compress when messages <= RECENT_PAIRS_FULL*2
+      Ôťö should exclude system messages from recentMessages
+      Ôťö should exclude system messages from non-compressed path too
+    buildCompressedMessages
+      Ôťö should pass through without compression for short conversations
+      Ôťö should inject context block into system prompt when compressed
+      Ôťö should always have system message as first
+      Ôťö should not produce duplicate system messages when history contains system role
+
+  contextProviders
+    DEFAULT_CONTEXT_PROVIDERS
+      Ôťö contains expected provider names
+      Ôťö has 7 providers
+    ContextProviderRegistry.collect
+      Ôťö returns empty string when all providers return null
+      Ôťö collects output from custom registered provider
+      Ôťö collects from multiple providers in order
+      Ôťö skips unknown provider names gracefully
+      Ôťö skips providers that return empty content
+      Ôťö truncates when output exceeds token budget
+      Ôťö falls back to DEFAULT_CONTEXT_PROVIDERS when enabled is empty
+      Ôťö stops collecting when budget is exhausted
+      Ôťö skips a provider that throws and continues to next
+      Ôťö returns empty when all providers throw
+      Ôťö gives last provider fair budget share (remaining-count division)
+    ContextProviderRegistry.register
+      Ôťö overrides a default provider
+    workspace provider (built-in)
+      Ôťö returns null when workspaceIndexEnabled is false
+    file provider (built-in)
+      Ôťö returns null when no active editor
+      Ôťö returns file context when editor is active
+    code provider (built-in)
+      Ôťö returns null when selection is empty
+      Ôťö returns selected code when selection exists
+    diff provider (built-in)
+      Ôťö returns null when document is not dirty
+      Ôťö returns diff context when document is dirty
+    provider error logging
+      Ôťö logs provider errors to the output channel
+      Ôťö does not crash when logger is not set
+
+  diffUtils
+    detectEol
+      Ôťö should detect CRLF
+      Ôťö should detect LF
+      Ôťö should default to LF for no newlines
+    splitLines
+      Ôťö should split LF
+      Ôťö should split CRLF
+      Ôťö should return [""] for empty string
+      Ôťö should handle single line
+    normalizePatchPath
+      Ôťö should strip a/ prefix
+      Ôťö should strip b/ prefix
+      Ôťö should return empty for /dev/null
+      Ôťö should handle paths without prefix
+    parseUnifiedDiff
+      Ôťö should parse a simple diff
+      Ôťö should parse multiple files
+      Ôťö should skip diff --git lines
+      Ôťö should return empty for empty input
+      Ôťö should skip hunks with oldStart or newStart of zero
+    applyUnifiedDiffToText
+      Ôťö should apply a simple replacement
+      Ôťö should apply addition
+      Ôťö should apply deletion
+      Ôťö should return error on context mismatch
+      Ôťö should handle empty original
+      Ôťö should return bounds error when context line index exceeds file length
+      Ôťö should return bounds error when delete line index exceeds file length
+
+  doctor
+    runDoctorChecks
+      Ôťö fails fast when Ollama connection is unavailable
+      Ôťö reports healthy local setup with available models and successful generation
+      Ôťö drains response body when listModels gets non-ok response
+      Ôťö drains response body when checkGeneration gets non-ok response
+      Ôťö adds remote backend warning without failing an otherwise healthy report
+
+  formatDoctorReport
+    Ôťö should format all-ok report
+    Ôťö should format report with failures
+    Ôťö should format report with warnings
+    Ôťö should include header
+    Ôťö should handle empty checks
+    Ôťö should include check details
+
+  eslint TypeScript project config
+    Ôťö uses a dedicated tsconfig that includes scripts and tests
+
+  evictStaleHashes algorithm
+    Ôťö does nothing when map size is within limit
+    Ôťö evicts expired entries first when over limit (120ms)
+    Ôťö force-evicts oldest entries when TTL alone is not enough
+    Ôťö handles empty map gracefully
+
+  markToolMutation cap
+    Ôťö adds tool name to mutationTools
+    Ôťö does not add duplicate tool name
+    Ôťö does nothing when session is undefined
+    Ôťö caps mutationTools at 50 entries
+    Ôťö still sets hadMutations even after cap
+
+  resolveWorkspaceUri path traversal rejection
+    Ôťö rejects path with ..
+    Ôťö rejects path with embedded ..
+    Ôťö rejects backslash traversal
+    Ôťö accepts normal relative path
+    Ôťö accepts path with .. in name (not as segment)
+    Ôťö rejects encoded traversal
+    Ôťö returns error for empty path
+
+  abortControllerRequestId race prevention
+    Ôťö clears controller when request is still current
+    Ôťö does not clear controller when newer request exists
+    Ôťö handles three sequential requests correctly
+
+  fetchUtils
+    Ôťö passes a managed abort signal to fetch and returns the response on success
+    Ôťö forwards caller aborts into the managed fetch signal
+    Ôťö aborts the managed fetch signal when the timeout elapses
+
+  fileUtils
+    asString
+      Ôťö should return string for string input
+      Ôťö should return undefined for number
+      Ôťö should return undefined for null
+      Ôťö should return empty string for empty string
+    getFirstStringArg
+      Ôťö should return first matching key value
+      Ôťö should skip non-string values
+      Ôťö should return undefined when no match
+    formatTimestampForName
+      Ôťö should format a known date
+      Ôťö should return string of expected length
+    sanitizeFileName
+      Ôťö should remove special characters
+      Ôťö should collapse spaces to hyphens
+      Ôťö should truncate long names
+      Ôťö should strip leading dots
+      Ôťö should handle unicode by normalizing
+    normalizeExtension
+      Ôťö should add dot if missing
+      Ôťö should keep dot if present
+      Ôťö should lowercase
+      Ôťö should return empty for undefined
+      Ôťö should return empty for empty string
+    extractExtensionFromName
+      Ôťö should extract .ts extension
+      Ôťö should return empty for no extension
+      Ôťö should return empty for undefined
+    inferExtensionFromTitle
+      Ôťö should infer .ts for typescript
+      Ôťö should infer .py for python
+      Ôťö should infer .ino for arduino
+      Ôťö should return empty for unknown
+      Ôťö should return empty for undefined
+    inferExtensionFromContent
+      Ôťö should detect JSON from brace
+      Ôťö should detect HTML
+      Ôťö should detect markdown from heading
+      Ôťö should return empty for unknown
+    inferNameFromContent
+      Ôťö should detect heading from markdown
+      Ôťö should detect title from front matter
+      Ôťö should detect class name
+      Ôťö should return empty for empty content
+    buildAutoFileName
+      Ôťö should use suggested name
+      Ôťö should use title
+      Ôťö should default to .txt extension
+      Ôťö should use provided extension
+      Ôťö should generate timestamp for default name
+    normalizeRouteText
+      Ôťö should lowercase and strip non-ascii
+      Ôťö should handle plain ascii
+    tokenizeRouteText
+      Ôťö should split into meaningful tokens
+      Ôťö should filter out short tokens
+    computeContentHash
+      Ôťö should return a 64-char hex string
+      Ôťö should be deterministic
+      Ôťö should differ for different inputs
+    BINARY_EXTENSIONS
+      Ôťö should contain common binary extensions
+      Ôťö should not contain text extensions
+    isBinaryExtension
+      Ôťö should return true for binary files
+      Ôťö should return false for text files
+    isProbablyBinary
+      Ôťö should detect null bytes as binary
+      Ôťö should detect text as not binary
+      Ôťö should return false for empty buffer
+      Ôťö should detect high ratio of control chars as binary
+
+  ResponseGuardian
+    Ôťö should detect empty response
+    Ôťö should detect too short response
+    Ôťö should distinguish empty from short in issue messages
+    Ôťö should accept valid response
+    Ôťö should detect repetition score correctly
+    Ôťö should detect loop patterns
+    Ôťö should trigger retry for medium loop with high repetition
+    Ôťö should detect character repetition
+    Ôťö should detect glued text without spaces
+    Ôťö should detect unclosed code blocks
+    Ôťö should detect empty markdown links
+    Ôťö should detect TODO/FIXME markers
+    Ôťö should not flag single example.com mention in normal explanation
+    Ôťö should flag repeated placeholder URL/domain usage
+    Ôťö should not flag single null/NaN mention in explanation
+    Ôťö should flag excessive null/NaN token dumps
+    Ôťö should not flag null/NaN inside code blocks as excessive
+    Ôťö should truncate very long responses
+    Ôťö should not split surrogate pairs when truncating long responses
+    Ôťö should reset history
+    Ôťö should trigger similar-response block for different prompt intent
+    Ôťö should not trigger similar-response block for repeated same prompt intent
+    Ôťö should not trigger similar-response block for short repeated replies
+    Ôťö should not flag TODO inside a code block
+    Ôťö should still flag TODO outside code blocks
+    Ôťö should not flag [object Object] inside a code block
+    Ôťö should not flag placeholder URLs inside code blocks
+    Ôťö should not flag lorem ipsum inside a code block
+    Ôťö should not flag (undefined) inside a code block
+    Ôťö should auto-close unclosed code fence
+    Ôťö should not modify response with matched code fences
+    Ôťö should detect mid-sentence truncation
+    Ôťö should not flag response ending with period as truncated
+    Ôťö should not flag response ending with code fence as truncated
+    Ôťö should not flag short responses for mid-sentence truncation
+    Ôťö should not flag response ending with closing bracket
+    Ôťö should track truncation repairs in stats
+    Ôťö should skip expensive loop detection for text > 50KB but still detect char repeats
+    Ôťö should handle large text without char repeats quickly
+
+  HallucinationDetector
+    Ôťö should detect no hallucination in clean response
+    Ôťö should detect self-reference hallucination
+    Ôťö should detect contextual hallucination (referencing non-existent previous)
+    Ôťö should not flag contextual reference when history exists
+    Ôťö should reduce contextual penalty when follow-up is explicitly requested by prompt
+    Ôťö should detect factual hallucination patterns
+    Ôťö should reduce factual confidence when uncertainty hedge is present
+    Ôťö should not flag code blocks as hallucination
+    Ôťö should detect suspicious URLs
+    Ôťö should not flag known host URL when host is requested by user
+    Ôťö should flag random-like long URL path even without explicit prompt URL
+    Ôťö should provide correct summary for no hallucination
+    Ôťö should provide correct summary for possible hallucination
+    Ôťö should provide correct summary for probable hallucination
+    Ôťö should detect suspicious URL with .ai TLD
+    Ôťö should detect suspicious URL with .app TLD
+    Ôťö should detect suspicious URL with .cloud TLD
+    Ôťö should not flag contextual ref when English followup intent is present
+    Ôťö should not flag contextual ref when "elaborate" is used
+    Ôťö should detect suspicious URL containing export/import path segments
+    Ôťö should not strip inline code from URL analysis
+    Ôťö should not double-count contextual hallucination weight
+    Ôťö should count contextual patterns from main loop when specialized check does not add extra
+    Ôťö should use snapshotted logger and not crash when logger changes during analyze
+    Ôťö guardian should use snapshotted logger without crash
+
+  HallucinationDetector
+    setHallucinationLogger
+      Ôťö accepts a logger function without error
+    clean responses
+      Ôťö clean code-only response returns no hallucination
+      Ôťö empty response returns no hallucination
+    self-reference patterns
+      Ôťö detects "jako AI" pattern
+      Ôťö detects "nem├ím p┼Ö├şstup" pattern
+      Ôťö self-reference only is capped at 0.4
+    factual patterns
+      Ôťö detects "podle m├Żch informac├ş z roku" pattern
+      Ôťö detects "je v┼íeobecn─Ť zn├ímo" pattern
+      Ôťö detects "nen├ş pochyb" pattern
+    contextual patterns
+      Ôťö detects back-reference with empty history Ôćĺ high weight
+      Ôťö contextual ref with long history does not get extra weight
+      Ôťö contextual ref with followup intent gets reduced weight
+    suspicious URLs
+      Ôťö flags URL with very long path
+      Ôťö does not flag URL that appears in user prompt
+      Ôťö flags URL with many path segments
+      Ôťö does not flag URL whose host is in prompt
+    uncertainty hedge
+      Ôťö reduces factual confidence when hedging language present
+    safe pattern stripping
+      Ôťö patterns inside code blocks are ignored
+    getSummary
+      Ôťö returns Ôťů for clean result
+      Ôťö returns ÔÜá´ŞĆ for borderline result
+      Ôťö returns ­čÜĘ for hallucination result
+    logging
+      Ôťö logs when confidence > 0.3
+
+  Logger
+    Ôťö creates output channel on initialize
+    Ôťö logs info messages with timestamp and level
+    Ôťö logs debug messages
+    Ôťö logs warn messages
+    Ôťö logs error messages
+    Ôťö appends Error.message to error log
+    Ôťö appends string error to error log
+    Ôťö includes ISO-format timestamp
+    Ôťö initialize with existing channel reuses it
+    Ôťö silently skips log when channel not initialized
+
+  lspSerializer
+    serializeRange
+      Ôťö should convert 0-based vscode Range to 1-based RangeInfo
+      Ôťö should handle single-character range
+      Ôťö should handle range at origin
+    serializeSymbolKind
+      Ôťö should return "Function" for SymbolKind.Function (11)
+      Ôťö should return "Class" for SymbolKind.Class (4)
+      Ôťö should return string number for unknown kind
+    serializeLocationInfo
+      Ôťö should serialize a Location with relative path
+      Ôťö should serialize a LocationLink
+    renderHoverContents
+      Ôťö should handle a single string
+      Ôťö should handle array of strings
+      Ôťö should handle MarkdownString with value
+      Ôťö should handle array of MarkdownStrings
+      Ôťö should handle mixed content (string + MarkdownString)
+      Ôťö should handle empty array
+    serializeDiagnosticSeverity
+      Ôťö should return Error for severity 0
+      Ôťö should return Warning for severity 1
+      Ôťö should return Information for severity 2
+      Ôťö should return Hint for severity 3
+      Ôťö should return string number for unknown severity
+    getPositionFromArgs
+      Ôťö should parse line and character
+      Ôťö should handle lineNumber alias
+      Ôťö should handle column alias
+      Ôťö should handle nested position object
+      Ôťö should return error when line is missing
+      Ôťö should return error when character is missing
+      Ôťö should clamp line to minimum 1
+      Ôťö should create Position with 0-based values
+    collectDocumentSymbols
+      Ôťö should collect flat symbols
+      Ôťö should collect nested symbols up to maxDepth
+      Ôťö should not recurse past maxDepth
+      Ôťö should truncate at maxResults
+      Ôťö should handle empty array
+    collectSymbolInformation
+      Ôťö should collect SymbolInformation items
+      Ôťö should truncate at maxResults
+      Ôťö should handle empty array
+
+  modelCall
+    Ôťö builds chat request with compressed messages and forceJson options
+    Ôťö throws on non-ok HTTP response or missing body
+    Ôťö concatenates streamed content and ignores malformed JSON lines
+    Ôťö logs malformed JSON lines via the log callback
+    Ôťö stops on stalled stream after partial output and logs the stall
+    Ôťö aborts on buffer overflow when no newlines in stream
+    Ôťö processes residual buffer content when last line has no trailing newline
+    Ôťö logs malformed residual buffer and does not crash
+    Ôťö destroys response body on stream stall early break
+    Ôťö destroys response body on buffer overflow early break
+    Ôťö destroys response body when stream throws an exception
+    Ôťö truncates response at 500KB and breaks out of stream
+    Ôťö skips non-string message.content values
+    Ôťö detects stream stall even with short response when elapsed time exceeds 2├Ś stall threshold
+
+  ModelRouter
+    constructor
+      Ôťö should initialize with given models
+      Ôťö should start with zero stats
+    pick
+      Ôťö should return first model when all healthy
+      Ôťö should skip backed-off model
+      Ôťö should return soonest-resuming model when all backed off
+    recordSuccess
+      Ôťö should increment counters
+      Ôťö should clear consecutive failures
+      Ôťö should compute rolling average latency
+      Ôťö should clear backoff on success
+      Ôťö should ignore unknown model
+    recordFailure
+      Ôťö should increment failure counters
+      Ôťö should trigger backoff after max failures
+      Ôťö should not backoff below threshold
+    isBackedOff
+      Ôťö should return false for healthy model
+      Ôťö should return false for unknown model
+    reset
+      Ôťö should clear all stats and backoffs
+    updateModels
+      Ôťö should add new models
+      Ôťö should keep existing stats
+      Ôťö should remove stale models from health and backoff maps
+    getHealthReport
+      Ôťö should return copies, not originals
+    failover integration
+      Ôťö should fail over through all models
+      Ôťö should recover model after successful call
+    edge cases
+      Ôťö should throw when models array is empty
+      Ôťö should guard NaN latency in recordSuccess
+      Ôťö should guard Infinity latency in recordSuccess
+
+  obsidianArchive
+    Ôťö builds archive markdown with frontmatter, summary and timeline
+    Ôťö groups timeline entries by day
+    Ôťö handles empty history safely
+    Ôťö summary section reflects overall stats
+    Ôťö builds archive index with newest entry first
+    Ôťö deduplicates existing index entry for same archive path
+    Ôťö aggregates by day across multiple archive entries
+    Ôťö groups archives by project
+    Ôťö limits top archives section to five items
+    Ôťö uses n/a for most active project when no project tags exist
+    Ôťö ignores malformed index lines in aggregate stats
+    Ôťö uses unknown-day bucket for non-ISO createdAt values
+    Ôťö counts archives exactly on 7-day boundary as this week
+
+  TurnOrchestrator
+    Ôťö starts at plan with one checkpoint
+    Ôťö stores initialMeta in the first checkpoint
+    canTransition
+      Ôťö plan -> act is valid
+      Ôťö plan -> error is valid
+      Ôťö plan -> verify is invalid
+      Ôťö plan -> publish is invalid
+      Ôťö plan -> plan is invalid
+    transition
+      Ôťö valid transitions return true and update current
+      Ôťö invalid transition returns false and keeps current
+      Ôťö transition to error from any active state
+      Ôťö publish is terminal ÔÇö no transitions allowed
+      Ôťö error is terminal ÔÇö no transitions allowed
+      Ôťö records meta in checkpoint on transition
+    force
+      Ôťö bypasses validation from plan to publish
+      Ôťö can force from terminal error to plan
+    getCheckpoints
+      Ôťö returns a copy (does not expose internal array)
+      Ôťö records full path through states
+      Ôťö checkpoint timestamps are monotonically non-decreasing
+      Ôťö should cap checkpoints at 500 to prevent memory leaks
+      Ôťö should truncate oversized meta to prevent memory leaks
+      Ôťö should handle unserializable meta gracefully
+
+  pixellabBridge
+    Ôťö reads pixellab MCP config from workspace .vscode/mcp.json
+    Ôťö normalizes structured and text MCP tool results
+    Ôťö starts a localhost bridge, proxies tool calls, and writes a runtime manifest
+
+  postEditVerification
+    Ôťö returns successful command result for a passing exec call
+    Ôťö returns empty success when there is no workspace or package.json
+    Ôťö runs lint, test, and build in order and stops on first failure
+    Ôťö ignores missing scripts and caps execution to the known lint/test/build commands
+    Ôťö defaults exitCode to 1 when error.code is not a number
+
+  projectMap
+    sanitizeMapSegment
+      Ôťö passes through simple ASCII
+      Ôťö replaces special characters with underscores
+      Ôťö strips diacritics
+      Ôťö returns root for empty string
+      Ôťö strips leading/trailing underscores
+      Ôťö allows hyphens
+    formatProjectMapMarkdown
+      Ôťö formats empty project map
+      Ôťö includes tree content
+      Ôťö lists key files
+      Ôťö lists modules with files
+      Ôťö includes all sections
+
+  responseStreaming
+    Ôťö streams response chunks and returns concatenated output
+    Ôťö throws on non-ok HTTP response
+    Ôťö ignores malformed JSON lines and continues streaming valid deltas
+    Ôťö stops on stall after partial output and logs guardian warning
+    Ôťö aborts on buffer overflow before parsing oversized buffered content
+    Ôťö detects real-time looping, posts guardian alert, and aborts generation
+    Ôťö logs malformed JSON lines instead of silently ignoring them
+    Ôťö calls abort() idempotently without checking signal.aborted first
+    Ôťö parses residual buffer when stream ends without trailing newline
+    Ôťö logs residual buffer that is not valid JSON
+    Ôťö enforces global line limit across multiple chunks
+    Ôťö destroys response body on stall early break
+    Ôťö destroys response body on buffer overflow early break
+    Ôťö destroys response body when stream throws an exception
+    Ôťö breaks outer for-await when earlyBreak is set by response truncation
+    Ôťö skips non-string message content without appending garbage
+    Ôťö skips residual buffer parsing after earlyBreak truncation
+    Ôťö validates typeof string on residual buffer content
+
+  computeRetryDecision
+    Ôťö returns no retry when everything passes
+    Ôťö retries on hallucination with high confidence
+    Ôťö does not retry on hallucination with low confidence
+    Ôťö retries on guardian shouldRetry
+    Ôťö retries on mini-model failure (fail-soft, shouldRetry true)
+    Ôťö retries on failed reward when enabled
+    Ôťö retries on failed HHEM when enabled
+    Ôťö retries on failed RAGAS when enabled
+    Ôťö retries on fail-closed unavailable reward
+    Ôťö sets retrySource to Reward (unavailable) on fail-closed unavailable reward only
+    Ôťö sets retrySource to HHEM (unavailable) on fail-closed unavailable HHEM only
+    Ôťö sets retrySource to RAGAS (unavailable) on fail-closed unavailable RAGAS only
+    Ôťö does not retry when retryCount >= maxRetries
+    Ôťö blocked by tool mutations
+    Ôťö hallucination takes priority over mini-model
+
+  buildRetryFeedbackMessage
+    Ôťö builds feedback with all components
+    Ôťö omits guardian when disabled
+
+  checkFailClosedBlock
+    Ôťö does not block in fail-soft mode
+    Ôťö does not block when all validators pass
+    Ôťö blocks on hallucination with high confidence
+    Ôťö does not block on hallucination with low confidence
+    Ôťö blocks on guardian shouldRetry
+    Ôťö blocks on mini-model low score
+    Ôťö blocks on mini-model unavailable
+    Ôťö does not block on mini-model passing score
+    Ôťö blocks on unavailable reward when enabled
+    Ôťö blocks on unavailable HHEM when enabled
+    Ôťö blocks on unavailable RAGAS when enabled
+    Ôťö blocks on failed reward when enabled
+    Ôťö hallucination takes priority over other failures
+    Ôťö combines multiple unavailable external validators in reason
+
+  Rozum
+    configuration
+      Ôťö should be enabled by default
+      Ôťö should store configuration
+    shouldTriggerPlanning
+      Ôťö should return false when disabled
+      Ôťö should return true for long prompts when enabled
+      Ôťö should return false for short prompts
+      Ôťö should return true when forcePlan is enabled regardless of length
+      Ôťö should return false for simple greeting "ahoj"
+      Ôťö should return false for simple greeting with punctuation
+      Ôťö should return false for thanks messages
+      Ôťö should return false for simple yes/no responses
+      Ôťö should return true for actual programming questions
+    getDefaultPlan
+      Ôťö should return default plan structure
+    parsePlan
+      Ôťö should parse complexity
+      Ôťö should parse new format with typed steps
+      Ôťö should parse old format (fallback)
+      Ôťö should parse warnings
+      Ôťö should not include "┼ż├ídn├ę" as warning
+      Ôťö should parse approach
+      Ôťö should parse estimated length
+      Ôťö should set shouldPlan based on steps
+      Ôťö should truncate plans to maximum 10 steps
+      Ôťö should not truncate plans with 10 or fewer steps
+    inferStepType
+      Ôťö should infer install type
+      Ôťö should infer code type
+      Ôťö should infer test type
+      Ôťö should infer debug type
+      Ôťö should return other for unknown
+    generateStepPrompt
+      Ôťö should generate prompt for step
+      Ôťö should include previous results
+    parseReviewResponse
+      Ôťö should parse approved response
+      Ôťö should parse rejected response
+      Ôťö should handle English format
+      Ôťö should default to approved when unclear
+      Ôťö should not retry when fix is "┼ż├ídn├í"
+    buildPlanningPrompt
+      Ôťö should build planning prompt
+      Ôťö should truncate long prompts
+      Ôťö should not coerce excessive step counts
+    executePlan - instruction mutation fix
+      Ôťö should not accumulate retry suffixes on step.instruction (3016ms)
+      Ôťö should not accumulate Rozum feedback on step.instruction (3012ms)
+      Ôťö should stop retrying when Svedomi repeats the same rejection for the same result (1007ms)
+      Ôťö should detect repeated rejection even with very large result strings (1010ms)
+      Ôťö should apply exponential backoff between retries (3004ms)
+    reviewStepResult error handling
+      Ôťö should reject step on HTTP 500
+      Ôťö should fail-open on network error (step already succeeded)
+      Ôťö should fail-open on timeout/abort (step already succeeded)
+      Ôťö clearTimeout fires even when fetch throws in plan()
+      Ôťö should return default plan when res.json() hangs indefinitely (30012ms)
+      Ôťö should fail-open review when res.json() hangs (30007ms)
+    instruction length cap
+      Ôťö generateStepPrompt caps step.instruction at 50000 chars
+    retry feedback truncation
+      Ôťö should cap svedomi reason to 500 chars in instruction
+      Ôťö should cap rozum feedback to 500 chars in instruction
+
+  shouldCompact
+    Ôťö should return false for short conversation
+    Ôťö should return false at threshold boundary
+    Ôťö should return true above threshold
+    Ôťö should return true for long conversation
+    Ôťö should not count system messages
+    Ôťö should return false for empty conversation
+
+  compactMessages
+    Ôťö should not compact short conversations
+    Ôťö should compact long conversations
+    Ôťö should keep recent messages intact
+    Ôťö should include summary system message
+    Ôťö should preserve system messages
+    Ôťö should extract file references
+    Ôťö should extract error mentions
+    Ôťö should include topic summary
+    Ôťö should report correct saved count
+    Ôťö should have timestamp on summary message
+    Ôťö should handle conversation with only user messages well
+
+  isSlashCommand
+    Ôťö should detect /help
+    Ôťö should detect /status with whitespace
+    Ôťö should detect /doctor
+    Ôťö should not detect regular text
+    Ôťö should not detect forward slash in path
+    Ôťö should not detect empty string
+    Ôťö should not detect plain number after slash
+    Ôťö should detect /new
+    Ôťö should detect /compact
+
+  executeSlashCommand
+    /help
+      Ôťö should return help text
+      Ôťö should work with /h alias
+    /status
+      Ôťö should include model info
+      Ôťö should include message count
+      Ôťö should work with /s alias
+    /stats
+      Ôťö should include guardian stats
+      Ôťö should include hallucination stats
+      Ôťö should include response history stats
+    /new
+      Ôťö should set clearHistory flag
+      Ôťö should work with /reset alias
+    /compact
+      Ôťö should call compactSession callback
+      Ôťö should handle no compaction needed
+    /doctor
+      Ôťö should call runDoctor callback
+      Ôťö should work with /doc alias
+    /tools
+      Ôťö should show tools runtime status
+    /instructions
+      Ôťö should show loaded instruction files
+      Ôťö should handle missing instruction files
+    unknown command
+      Ôťö should return error for unknown command
+    malformed input
+      Ôťö should not handle non-slash input
+      Ôťö should not handle empty string
+
+  statusMessages
+    PIPELINE_STATUS_ICONS
+      Ôťö has all expected keys
+      Ôťö all values are non-empty strings
+      Ôťö has exactly 5 icon entries
+    PIPELINE_STATUS_TEXT
+      Ôťö has all expected keys
+      Ôťö all values are non-empty strings
+      Ôťö has exactly 5 text entries
+
+  SvedomiValidator
+    parseValidationResponse
+      Ôťö should parse valid response with high score
+      Ôťö should parse invalid response with low score
+      Ôťö should handle English format
+      Ôťö should handle empty output
+      Ôťö should clamp score to 1-10 range
+      Ôťö should default validity based on score when not specified
+      Ôťö should set shouldRetry true for score <= 3
+      Ôťö should parse Czech diacritics format (SK├ôRE, VALIDN├Ź, D┼«VOD)
+      Ôťö should parse ASCII fallback format (SKORE, VALIDNI, DUVOD)
+    validateInputs
+      Ôťö should return disabled result when disabled
+      Ôťö should reject empty response
+      Ôťö should handle missing prompt gracefully
+      Ôťö should return null for valid inputs (proceed with validation)
+    configuration
+      Ôťö should store configuration
+      Ôťö should be enabled by default
+    caching
+      Ôťö should cache validation results
+      Ôťö should return null for uncached inputs
+      Ôťö should clear cache
+      Ôťö should not collide on similar but different inputs
+      Ôťö should evict expired entries on cache insert
+      Ôťö should delete expired entry on cache miss
+      Ôťö should produce full-length SHA256 cache keys (64 hex chars)
+    buildValidationPrompt
+      Ôťö should build prompt without tasks
+      Ôťö should include relevant tasks
+      Ôťö should truncate long inputs
+    validate network error handling
+      Ôťö should return shouldRetry=true on HTTP 500
+      Ôťö should return shouldRetry=true on HTTP 503
+      Ôťö should return shouldRetry=true on HTTP 429 (rate limit)
+      Ôťö should return shouldRetry=false on HTTP 400 (client error)
+      Ôťö should return shouldRetry=true on connection error
+      Ôťö should return shouldRetry=true on timeout
+      Ôťö should clear timeout even when fetch throws non-AbortError
+      Ôťö should return valid result on successful API call
+      Ôťö should return shouldRetry=true when res.json() hangs (body timeout) (30014ms)
+    eviction safety
+      Ôťö should use Array.from snapshot for overflow eviction
+    buildValidationPrompt tasks cap
+      Ôťö should include at most 20 tasks
+      Ôťö should include all tasks when under cap
+
+  toolExecution
+    Ôťö asks for permission on non-edit scopes and returns denied result when rejected
+    Ôťö dispatches to the correct handler and posts tool status messages
+    Ôťö routes browser_fetch_page through the fetch webpage handler
+    Ôťö returns unknown-tool and thrown-handler errors as tool results
+    Ôťö blocks run_terminal_command when confirmEdits=false and autoApprove.commands=false
+    Ôťö auto-approves run_terminal_command when autoApprove.commands=true
+    Ôťö shows exactly one dialog for run_terminal_command when confirmEdits=true and autoApprove.commands=false
+    Ôťö edit tools still respect confirmEdits flag independently of command approval
+    Ôťö TOOL_REGISTRY contains all expected tool names
+    Ôťö TOOL_REGISTRY dispatches via lookup instead of switch
+    Ôťö mutation tools receive confirmEdits and session via registry dispatch
+
+  toolGeneration integration
+    Ôťö self-corrects after diagnostics and returns corrected mutation message
+    Ôťö stops retrying after maxSelfCorrections and returns the capped correction note
+    Ôťö rejects fabricated mutation when all write operations fail
+    Ôťö returns mutation-required error when only non-mutating tools succeed
+    Ôťö respects pre-aborted abortSignal and throws AbortError
+    Ôťö respects abortSignal aborted mid-iteration
+    Ôťö tracks apply_patch as localMutation and in writes filter
+    Ôťö sets localMutation for successful apply_patch when session is undefined
+    Ôťö caps toolCallRecords at 200 entries
+    Ôťö truncates large args in toolCallRecords
+
+  handleReplaceLinesTool
+    Ôťö rejects when required args missing
+    Ôťö rejects when startLine/endLine invalid
+    Ôťö rejects file not found
+    Ôťö rejects invalid line range
+    Ôťö rejects out-of-range startLine
+    Ôťö rejects mismatched expected content
+    Ôťö succeeds with valid args and applies replacement
+    Ôťö rejects when hash changed since last read
+    Ôťö respects user rejection when confirmEdits=true
+    Ôťö falls back to active editor when no path given
+    Ôťö rejects when no file and no active editor
+    Ôťö records mutation in session
+
+  handleReadFileTool
+    Ôťö reads file content successfully
+    Ôťö fails when file not found
+    Ôťö fails when file cannot be read
+    Ôťö falls back to active editor when no path
+    Ôťö rejects when no path and no active editor
+    Ôťö truncates when range exceeds MAX_READ_LINES
+    Ôťö stores hash in lastReadHashes
+
+  handleListFilesTool
+    Ôťö lists files from workspace
+    Ôťö passes custom glob to findFiles
+
+  handleSearchInFilesTool
+    Ôťö rejects when query is missing
+    Ôťö finds matching lines
+    Ôťö supports regex search
+    Ôťö rejects invalid regex
+    Ôťö skips binary files
+
+  handleWriteFileTool
+    Ôťö rejects when text is missing
+    Ôťö rejects when content exceeds max write bytes
+    Ôťö rejects binary extension
+    Ôťö creates new file when it does not exist
+    Ôťö updates existing file
+    Ôťö rejects write when file changed during approval (TOCTOU)
+
+  handleRenameFileTool
+    Ôťö rejects when from or to missing
+    Ôťö renames file successfully
+
+  handleDeleteFileTool
+    Ôťö rejects when path missing
+    Ôťö deletes file successfully
+    Ôťö rejects when file not found
+
+  handleFetchWebpageTool
+    Ôťö rejects when url missing
+    Ôťö rejects unsafe URL (non-http)
+    Ôťö accepts href alias for browser-prefixed fetches
+
+  handleBrowserOpenPageTool
+    Ôťö rejects unsafe URL
+    Ôťö opens safe URL via injected dependency
+
+  handleGetDiagnosticsTool
+    Ôťö returns diagnostics for all files
+    Ôťö returns diagnostics for specific file
+
+  handleApplyPatchTool
+    Ôťö rejects write when file hash changed during approval
+    Ôťö applies patch when hash is stable during approval
+
+  toolHandlers extracted handlers
+    Ôťö route_file picks best matching existing file
+    Ôťö route_file can fallback to auto-save path when no candidates
+    Ôťö pick_save_path returns path, fileName and folder
+    Ôťö apply_patch rejects missing diff payload
+    Ôťö apply_patch rejects invalid parsed diff
+    Ôťö apply_patch updates existing file and records mutation
+
+  handleGetDefinitionTool
+    Ôťö returns definitions for a valid file and position
+    Ôťö returns error when no path and no active editor
+    Ôťö falls back to active editor when no path given
+    Ôťö returns error when file resolve fails
+    Ôťö returns error when position is missing
+    Ôťö resolves symbol name to position
+    Ôťö truncates definitions list when exceeding maxResults
+
+  handleGetSymbolsTool
+    Ôťö returns symbols for a file
+    Ôťö returns empty when no symbols
+    Ôťö returns error when no path and no active editor
+    Ôťö handles SymbolInformation (has .location)
+    Ôťö returns error when file resolve fails
+
+  handleGetWorkspaceSymbolsTool
+    Ôťö returns workspace symbols
+    Ôťö returns empty when no matches
+    Ôťö handles undefined result
+    Ôťö truncates results
+
+  handleGetReferencesTool
+    Ôťö returns references for a valid position
+    Ôťö returns error when no path and no active editor
+    Ôťö returns error when position missing
+    Ôťö passes includeDeclaration flag
+    Ôťö truncates references list
+
+  handleGetTypeInfoTool
+    Ôťö returns hover info for a valid position
+    Ôťö returns error when no path and no active editor
+    Ôťö returns error when position missing
+    Ôťö handles empty hover result
+    Ôťö returns error when file resolve fails
+
+  handleRunTerminalCommandTool
+    Ôťö returns error when command is missing
+    Ôťö runs a simple command successfully
+    Ôťö reports failure for bad command
+    Ôťö respects user denial when confirmEdits is true
+    Ôťö auto-approves when autoApprove.commands is true
+    Ôťö blocks dangerous rm -rf command
+    Ôťö blocks curl piped to shell
+    Ôťö allows safe commands like echo and ls
+    Ôťö blocks fork bomb pattern
+    Ôťö blocks shutdown and reboot commands
+
+  handleReplaceLinesTool ÔÇö TOCTOU guard
+    Ôťö rejects write when file changed between approval and write
+    Ôťö allows write when file unchanged between reads
+
+  toolingProtocol
+    resolveToolPermissionScope
+      Ôťö classifies route_file as read scope
+      Ôťö keeps unsupported pick_file_for_intent as commands scope
+      Ôťö classifies run_terminal_command as commands scope
+      Ôťö classifies browser and mcp prefixes into dedicated scopes
+      Ôťö normalizes tool names before scope resolution
+      Ôťö keeps run_terminal_command variants out of edit scope
+      Ôťö classifies edit tools as edit scope
+    parseToolCalls
+      Ôťö detects mixed text with tool_call blocks
+      Ôťö returns empty remainingText for pure tool_call payload
+      Ôťö parses plain JSON fallback responses
+      Ôťö parses fenced JSON fallback responses
+      Ôťö parses array JSON fallback responses
+      Ôťö ignores non-json code fences in fallback mode
+      Ôťö reports invalid json in fallback mode
+      Ôťö skips fallback items missing required name
+      Ôťö rejects array arguments (typeof array === object)
+      Ôťö does not treat arbitrary JSON with name field as tool call in fallback mode
+      Ôťö does not discard text when JSON lacks arguments in fallback mode
+      Ôťö caps errors array at 100 to prevent unbounded growth
+      Ôťö rejects empty or oversized tool names
+      Ôťö trims whitespace from tool names
+      Ôťö caps fallback candidates to prevent CPU exhaustion
+      Ôťö caps tagged tool_call blocks at 50
+
+  toolUtils
+    buildToolOnlyPrompt
+      Ôťö includes mutation requirement when requireMutation is true
+      Ôťö includes tool_call requirement when requireMutation is false
+      Ôťö lists available tools
+    buildEditorFirstInstructions
+      Ôťö returns EDITOR-FIRST MODE instructions
+      Ôťö mentions supported actions
+    sanitizeEditorAnswer
+      Ôťö returns empty for empty input
+      Ôťö filters build/lint/test lines
+      Ôťö filters error lines when all results ok
+      Ôťö keeps error lines when some results failed
+    buildEditorStateMessage
+      Ôťö returns undefined for undefined session
+      Ôťö returns undefined for empty session
+      Ôťö includes lastWritePath
+      Ôťö includes lastWriteAction
+    extractJsonPayload
+      Ôťö returns undefined for empty string
+      Ôťö returns raw JSON object
+      Ôťö returns raw JSON array
+      Ôťö extracts from fenced code block
+      Ôťö extracts from braces as fallback
+      Ôťö returns undefined for text without JSON
+    coerceEditorAction
+      Ôťö returns null for empty object
+      Ôťö extracts name from "name" key
+      Ôťö extracts name from "tool" key
+      Ôťö extracts name from "action" key
+      Ôťö collects remaining keys as arguments when no arguments key
+    parseEditorPlanResponse
+      Ôťö returns error for missing JSON
+      Ôťö returns error for invalid JSON
+      Ôťö parses array of actions
+      Ôťö parses object with answer and actions
+      Ôťö parses notes
+      Ôťö handles single tool call object
+      Ôťö recognizes alternative action keys (toolCalls, edits, calls)
+      Ôťö returns error for non-object JSON
+    getToolRequirements
+      Ôťö detects mutation for write/edit keywords
+      Ôťö detects tool call for read keywords
+      Ôťö detects tool call for search keywords
+      Ôťö returns false for simple questions
+      Ôťö mutation implies tool call
+    getStepToolRequirements
+      Ôťö does not force mutation for analyze steps even when original task implied edits
+      Ôťö forces mutation for code steps even with neutral instruction wording
+      Ôťö keeps debug steps flexible based on instruction content
+
+  normalizeTaskWeight
+    Ôťö should convert 0.1-1.0 scale to 1-10
+    Ôťö should clamp values >1 to 1-10
+    Ôťö should handle NaN
+    Ôťö should round decimal values
+
+  humanizeApiError
+    Ôťö should humanize ECONNREFUSED
+    Ôťö should humanize ENOTFOUND / DNS failure
+    Ôťö should humanize ETIMEDOUT
+    Ôťö should humanize socket hang up
+    Ôťö should humanize ECONNRESET
+    Ôťö should humanize model not found
+    Ôťö should humanize HTTP 500
+    Ôťö should humanize HTTP 404
+    Ôťö should pass through abort errors unchanged
+    Ôťö should pass through unknown errors unchanged
+    Ôťö should truncate very long error strings before regex matching (ReDoS prevention)
+    Ôťö should still humanize errors within the first 1000 chars
+
+  isTransientError
+    Ôťö should detect ECONNRESET
+    Ôťö should detect ETIMEDOUT
+    Ôťö should detect socket hang up
+    Ôťö should detect network timeout
+    Ôťö should detect HTTP 5xx
+    Ôťö should detect EPIPE
+    Ôťö should detect ECONNABORTED
+    Ôťö should NOT detect ECONNREFUSED (permanent)
+    Ôťö should NOT detect model not found
+    Ôťö should NOT detect unknown errors
+    Ôťö should handle Error objects with empty message
+
+  isSafeUrl
+    Ôťö should allow normal public URLs (75ms)
+    Ôťö should block localhost
+    Ôťö should block 127.x.x.x
+    Ôťö should block 10.x private range
+    Ôťö should block 192.168.x private range
+    Ôťö should block 172.16-31 private range
+    Ôťö should block cloud metadata endpoint
+    Ôťö should block non-http protocols
+    Ôťö should reject invalid URLs
+    Ôťö should block IPv6 loopback
+    Ôťö should fail-closed when DNS lookup throws
+    Ôťö should fail-closed when DNS lookup hangs beyond timeout (5005ms)
+    Ôťö should block IPv4-mapped IPv6 addresses resolving to private IPs
+    Ôťö should block IPv4-mapped IPv6 cloud metadata address
+
+  getNonce
+    Ôťö should return a non-empty string
+    Ôťö should return unique values on successive calls
+    Ôťö should be URL-safe base64 (no +, /, =)
+
+  surrogate pair safe truncation (pattern used in extension.ts)
+    Ôťö should not split a surrogate pair at the boundary
+    Ôťö should keep full string if no surrogate at boundary
+    Ôťö should handle string shorter than maxLen
+    Ôťö should handle string with surrogate pair well before boundary
+
+  SHA-256 hash for prompt comparison (pattern used in extension.ts)
+    Ôťö should produce deterministic 16-char hex output
+    Ôťö should produce different hashes for different inputs
+    Ôťö should normalize whitespace before hashing
+    Ôťö should be case-insensitive
+
+  validationPipeline
+    runValidationPipeline
+      Ôťö returns result with all quality checks for simple case
+      Ôťö includes Guardian check in qualityChecks
+      Ôťö includes HallucinationDetector check
+      Ôťö marks Guardian unavailable when disabled
+      Ôťö runs svedomi when miniModelEnabled
+      Ôťö skips svedomi when miniModelEnabled is false
+      Ôťö runs post-edit verification when mutations occurred
+      Ôťö skips post-edit verification when no mutations
+      Ôťö returns null on fail-closed verification failure (no tool auto-fix)
+      Ôťö appends verify warning on fail-soft verification failure
+      Ôťö detects hallucination and increments stats
+      Ôťö detects guardian issues and cleans response
+      Ôťö calls summarizer when enabled
+      Ôťö skips summarizer when disabled
+      Ôťö includes external validator results
+      Ôťö attempts self-correction when verification fails with tools enabled
+      Ôťö gracefully handles auto-fix crash without losing pipeline result
+      Ôťö gracefully handles external validator crash with fail-open defaults
+      Ôťö gracefully handles svedomi crash and marks result unavailable
+      Ôťö gracefully handles summarizer crash and returns null summary
+      Ôťö truncates long error messages in auto-fix crash log
+      Ôťö truncates long error messages in external validator crash log
+
+  isMiniAccepted
+    Ôťö should accept null result
+    Ôťö should accept score >= 5
+    Ôťö should reject score < 5
+    Ôťö should accept unavailable in fail-soft
+    Ôťö should reject unavailable in fail-closed
+
+  shouldRetryMiniValidation
+    Ôťö should not retry null result
+    Ôťö should retry when shouldRetry is true
+    Ôťö should retry unavailable in fail-closed
+    Ôťö should NOT retry unavailable in fail-soft
+
+  getMiniUnavailableMessage
+    Ôťö should return fail-closed message
+    Ôťö should return fail-soft message
+    Ôťö should include verb when requested
+
+  webviewContent
+    getMinimalWebviewContent
+      Ôťö should return valid HTML string
+      Ôťö should include CSP with nonce
+      Ôťö should include chat UI elements
+      Ôťö should include guardian button
+      Ôťö should include script tag with nonce
+    getWebviewContent
+      Ôťö should return valid HTML string with no initial messages
+      Ôťö should include CSP with nonce
+      Ôťö should initialize empty messages array in script
+      Ôťö should include chat container and input area
+      Ôťö should include guardian alert element
+      Ôťö should include undo snackbar
+      Ôťö should include pipeline CSS classes
+
+  WorkspaceIndexer
+    basic functionality
+      Ôťö should create instance
+      Ôťö should return null index initially
+      Ôťö should clear index
+    file extension mapping
+      Ôťö should identify source files by extension
+      Ôťö should map extensions to languages
+    ignore patterns
+      Ôťö should ignore node_modules
+      Ôťö should not ignore regular folders
+      Ôťö should ignore files matching wildcard patterns
+    symbol importance
+      Ôťö should have isImportantSymbol method
+    workspace summary
+      Ôťö should return message when not indexed
+    search
+      Ôťö should return empty array when no index
+      Ôťö should find files by name match
+      Ôťö should score path matches
+    scan depth limit
+      Ôťö should expose MAX_SCAN_DEPTH as a reasonable positive number
+
+  workspaceInstructions
+    loadWorkspaceInstructions
+      Ôťö returns empty string when no workspace folders
+      Ôťö returns empty string when workspaceFolders is empty array
+      Ôťö returns empty string when no instruction files exist
+      Ôťö loads .shumilek/AGENTS.md first
+      Ôťö falls back to AGENTS.md when .shumilek files missing
+      Ôťö skips files larger than 50KB
+      Ôťö skips directories
+      Ôťö skips empty files
+      Ôťö truncates content exceeding maxChars
+      Ôťö does not truncate content within maxChars
+      Ôťö wraps result in WORKSPACE INSTRUKCE header
+      Ôťö loads multiple instruction files in priority order within budget
+      Ôťö returns bundle metadata for included files
+    getInstructionFilePath
+      Ôťö returns null when no workspace folders
+      Ôťö returns null when no instruction file found
+      Ôťö returns first matching relative path
+      Ôťö falls back to later files
+    getInstructionFilePaths
+      Ôťö returns all matching relative paths in priority order
+    setWorkspaceInstructionsLogger
+      Ôťö calls logger when file loaded
+      Ôťö calls logger when no file found
+
+
+  1298 passing (2m)
+

@@ -1,0 +1,29 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "nemotron-cascade-2",
+      "ok": false,
+      "error": "Unterminated string in JSON at position 22859 (line 1 column 22860)",
+      "errorKind": "json_parse",
+      "transport": "generate",
+      "formatKind": "json",
+      "schemaUsed": false,
+      "fallbackUsed": true
+    },
+    {
+      "stage": "retry_truncation",
+      "model": "nemotron-cascade-2",
+      "ok": false,
+      "error": "Structured chat failed: The user aborted a request.",
+      "errorKind": "other"
+    }
+  ],
+  "finalOk": false,
+  "appliedFixes": [],
+  "skippedFixes": [],
+  "primaryError": "Unterminated string in JSON at position 22859 (line 1 column 22860)",
+  "primaryErrorKind": "json_parse",
+  "finalError": "Structured chat failed: The user aborted a request.",
+  "finalErrorKind": "other"
+}

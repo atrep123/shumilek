@@ -1,0 +1,12 @@
+- Vytvořit nový adresář pro projekt a inicializovat `package.json` s minimálními závislostmi.
+- Vytvořit `tsconfig.json` pro kompilaci do CommonJS.
+- Vytvořit `src/store.ts` s implementací `TaskStore` a typu `Task`.
+- Vytvořit `src/cli.ts` s implementací CLI parseru a volání `TaskStore`.
+- Vytvořit `README.md` s popisem použití.
+- Kompilovat kód pomocí `tsc -p tsconfig.json`.
+- Zkontrolovat, že jsou vytvořeny soubory v `dist/`.
+- Spustit Oracle testy z poskytnutého kódu.
+- Zajištění, že kód používá pouze Node.js vlastní moduly.
+- Použití `require` pro vnitřní moduly.
+- Generování ID pomocí `node:crypto`.
+- Zápis a čtení z JSON souboru v `TaskStore`.

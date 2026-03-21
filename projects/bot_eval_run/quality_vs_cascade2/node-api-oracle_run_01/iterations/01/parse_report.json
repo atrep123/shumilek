@@ -1,0 +1,29 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "nemotron-cascade-2",
+      "ok": false,
+      "error": "files[] items must have string \"path\" and \"content\"",
+      "errorKind": "schema",
+      "transport": "generate",
+      "formatKind": "json",
+      "schemaUsed": false,
+      "fallbackUsed": true
+    },
+    {
+      "stage": "repair_syntax",
+      "model": "qwen2.5:7b",
+      "ok": true,
+      "transport": "generate",
+      "formatKind": "json",
+      "schemaUsed": false,
+      "fallbackUsed": false
+    }
+  ],
+  "finalOk": true,
+  "appliedFixes": [],
+  "skippedFixes": [],
+  "primaryError": "files[] items must have string \"path\" and \"content\"",
+  "primaryErrorKind": "schema"
+}

@@ -1,0 +1,13 @@
+{
+  "name": "todo-cli",
+  "version": "1.0.0",
+  "description": "Simple CLI for managing tasks",
+  "main": "dist/cli.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "node tests/oracle.test.js"
+  },
+  "type": "commonjs",
+  "author": "",
+  "license": "MIT"
+}

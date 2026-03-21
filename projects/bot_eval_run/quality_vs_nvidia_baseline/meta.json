@@ -1,0 +1,28 @@
+{
+  "batchId": 1774097861923,
+  "startedAt": "2026-03-21T12:57:41.924Z",
+  "scenarios": [
+    "ts-todo-oracle",
+    "node-api-oracle",
+    "ts-csv-oracle"
+  ],
+  "runs": 2,
+  "model": "deepseek-coder-v2:16b",
+  "plannerModel": "deepseek-r1:8b",
+  "reviewerModel": "qwen2.5:3b",
+  "jsonRepairModel": "qwen2.5:7b",
+  "deterministicFallbackMode": "on-fail",
+  "timeoutSec": 600,
+  "maxIterations": 3,
+  "hardTimeoutSec": null,
+  "stopOnInfraFailure": true,
+  "autoRestartOnInfraFailure": false,
+  "maxInfraRestarts": 2,
+  "infraRestartTimeoutSec": 30,
+  "infraRestartCooldownSec": 5,
+  "infraRestartCommand": null,
+  "ollamaBaseUrl": "http://localhost:11434",
+  "infraRecoveryTimeoutSec": 90,
+  "infraRecoveryPollSec": 5,
+  "outDir": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\quality_vs_nvidia_baseline"
+}

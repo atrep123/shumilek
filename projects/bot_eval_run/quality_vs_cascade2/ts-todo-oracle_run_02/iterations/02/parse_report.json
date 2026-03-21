@@ -1,0 +1,16 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "nemotron-cascade-2",
+      "ok": true,
+      "transport": "generate",
+      "formatKind": "json",
+      "schemaUsed": false,
+      "fallbackUsed": true
+    }
+  ],
+  "finalOk": true,
+  "appliedFixes": [],
+  "skippedFixes": []
+}

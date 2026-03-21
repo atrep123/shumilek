@@ -1,0 +1,12 @@
+- src/server.js: Implement basic server setup
+- openapi.json: Define OpenAPI spec for /health, /openapi.json, /todos endpoints
+- package.json: Create minimal package with "type": "commonjs"
+- dataPath: Specify path for todo persistence
+- health endpoint: Respond 200 with { ok: true }
+- openapi.json endpoint: Return OpenAPI spec
+- GET /todos: List todos, return 200 with { ok: true, todos: [...] }
+- POST /todos: Create new todo, return 201 with { ok: true, todo }
+- GET /todos/:id: Retrieve single todo, return 200 or 404
+- PATCH /todos/:id: Update done status, return 200
+- DELETE /todos/:id: Delete todo, return 200
+- Persist changes to dataPath after each mutation

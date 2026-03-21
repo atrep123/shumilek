@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "diagnostics": [
+    "Ollama request failed: Structured chat failed: Ollama HTTP 500: {\"error\":\"model requires more system memory (72.4 GiB) than is available (52.0 GiB)\"}"
+  ]
+}

@@ -1,0 +1,20 @@
+﻿Running ts-todo-oracle (1/2)...
+  -> FAIL (25s) C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_nvidia_candidate\ts-todo-oracle_run_01
+Running ts-todo-oracle (2/2)...
+  -> FAIL (78s) C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_nvidia_candidate\ts-todo-oracle_run_02
+Running node-api-oracle (1/2)...
+  -> FAIL (107s) C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_nvidia_candidate\node-api-oracle_run_01
+Running node-api-oracle (2/2)...
+  -> FAIL (93s) C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_nvidia_candidate\node-api-oracle_run_02
+Running ts-csv-oracle (1/2)...
+  -> FAIL (85s) C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_nvidia_candidate\ts-csv-oracle_run_01
+Running ts-csv-oracle (2/2)...
+  -> FAIL (79s) C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_nvidia_candidate\ts-csv-oracle_run_02
+
+Summary:
+- ts-todo-oracle: 0/2 (0%) avg 52s | plannerErrRuns=0 jsonRepairErrRuns=0 jsonRepairErrFiles=0 schemaFailRuns=0 jsonParseRuns=0 placeholderRuns=0 fallbackActs=0 fallbackRecovers=0 rawPassRate=n/a fallbackDependencyRate=0% rawRunPassRate=0% fallbackDependencyRunRate=0% topClusters=other:6,ollama_infra:2
+- node-api-oracle: 0/2 (0%) avg 100s | plannerErrRuns=0 jsonRepairErrRuns=0 jsonRepairErrFiles=0 schemaFailRuns=0 jsonParseRuns=0 placeholderRuns=0 fallbackActs=0 fallbackRecovers=0 rawPassRate=n/a fallbackDependencyRate=0% rawRunPassRate=0% fallbackDependencyRunRate=0% topClusters=other:6,ollama_infra:2
+- ts-csv-oracle: 0/2 (0%) avg 82s | plannerErrRuns=0 jsonRepairErrRuns=0 jsonRepairErrFiles=0 schemaFailRuns=0 jsonParseRuns=0 placeholderRuns=0 fallbackActs=0 fallbackRecovers=0 rawPassRate=n/a fallbackDependencyRate=0% rawRunPassRate=0% fallbackDependencyRunRate=0% topClusters=other:6,ollama_infra:2
+Overall parse/schema: plannerErrRuns=0 jsonRepairErrRuns=0 jsonRepairErrFiles=0 schemaFailRuns=0 jsonParseRuns=0 placeholderRuns=0 fallbackRunCount=0 fallbackActs=0 fallbackRecovers=0 targetedActs=0 canonicalActs=0 rawPassRate=n/a fallbackDependencyRate=0% rawRunPassRate=0% fallbackDependencyRunRate=0% topClusters=other:18,ollama_infra:6
+
+Batch output: C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_nvidia_candidate

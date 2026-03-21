@@ -1,0 +1,4 @@
+Usage:
+  parse --input <file>   Parse CSV and output JSON
+  stats --input <file>   Show CSV statistics
+  --help                 Show this help

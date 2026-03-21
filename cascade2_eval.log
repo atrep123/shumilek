@@ -1,0 +1,20 @@
+﻿Running ts-todo-oracle (1/2)...
+  -> OK (610s) C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_cascade2\ts-todo-oracle_run_01
+Running ts-todo-oracle (2/2)...
+  -> OK (1186s) C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_cascade2\ts-todo-oracle_run_02
+Running node-api-oracle (1/2)...
+  -> OK (657s) C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_cascade2\node-api-oracle_run_01
+Running node-api-oracle (2/2)...
+  -> OK (2109s) C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_cascade2\node-api-oracle_run_02
+Running ts-csv-oracle (1/2)...
+  -> OK (520s) C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_cascade2\ts-csv-oracle_run_01
+Running ts-csv-oracle (2/2)...
+  -> OK (519s) C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_cascade2\ts-csv-oracle_run_02
+
+Summary:
+- ts-todo-oracle: 2/2 (100%) avg 898s | plannerErrRuns=0 jsonRepairErrRuns=1 jsonRepairErrFiles=1 schemaFailRuns=1 jsonParseRuns=0 placeholderRuns=0 fallbackActs=2 fallbackRecovers=2 rawPassRate=0% fallbackDependencyRate=100% rawRunPassRate=0% fallbackDependencyRunRate=100% topClusters=n/a
+- node-api-oracle: 2/2 (100%) avg 1383s | plannerErrRuns=0 jsonRepairErrRuns=1 jsonRepairErrFiles=1 schemaFailRuns=0 jsonParseRuns=0 placeholderRuns=0 fallbackActs=2 fallbackRecovers=2 rawPassRate=0% fallbackDependencyRate=100% rawRunPassRate=0% fallbackDependencyRunRate=100% topClusters=n/a
+- ts-csv-oracle: 2/2 (100%) avg 519s | plannerErrRuns=0 jsonRepairErrRuns=0 jsonRepairErrFiles=0 schemaFailRuns=0 jsonParseRuns=0 placeholderRuns=0 fallbackActs=1 fallbackRecovers=1 rawPassRate=50% fallbackDependencyRate=50% rawRunPassRate=50% fallbackDependencyRunRate=50% topClusters=n/a
+Overall parse/schema: plannerErrRuns=0 jsonRepairErrRuns=2 jsonRepairErrFiles=2 schemaFailRuns=1 jsonParseRuns=0 placeholderRuns=0 fallbackRunCount=5 fallbackActs=5 fallbackRecovers=5 targetedActs=3 canonicalActs=2 rawPassRate=17% fallbackDependencyRate=83% rawRunPassRate=17% fallbackDependencyRunRate=83% topClusters=n/a
+
+Batch output: C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_cascade2

@@ -1,0 +1,31 @@
+{
+  "mode": "full",
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# CSV CLI\n\nA simple command-line tool to parse CSV files and output JSON or statistics.\n\n## Usage\n\n```\nnode dist/cli.js parse --input data.csv\nnode dist/cli.js stats --input data.csv\nnode dist/cli.js --help\n```\n\n## Features\n\n- Parse CSV with quoted fields and escaped quotes\n- Select columns and sort rows\n- Count rows and list columns\n- No external dependencies\n",
+      "notes": ""
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"csv-cli\",\n  \"version\": \"1.0.0\",\n  \"description\": \"Simple CSV parser and CLI\",\n  \"main\": \"dist/cli.js\",\n  \"scripts\": {\n    \"build\": \"tsc\",\n    \"test\": \"node test.js\"\n  },\n  \"author\": \"\",\n  \"license\": \"MIT\"\n}\n",
+      "notes": ""
+    },
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"outDir\": \"dist\",\n    \"module\": \"commonjs\",\n    \"target\": \"es2020\",\n    \"strict\": true,\n    \"esModuleInterop\": true\n  },\n  \"include\": [\"src\"]\n}\n",
+      "notes": ""
+    },
+    {
+      "path": "src/csv.ts",
+      "content": "export class CsvParser {\n  private delimiter: string;\n\n  constructor(options?: { delimiter?: string }) {\n    this.delimiter = options?.delimiter ?? ',';\n  }\n\n  public parse(text: string): Record<string, string>[] {\n    const lines = text.split('\\n');\n    const rows: Record<string, string>[] = [];\n    let headers: string[] = [];\n    for (const line of lines) {\n      if (line.trim() === '') continue;\n      const cells = this.splitCsvLine(line);\n      if (headers.length === 0) {\n        headers = cells;\n      } else {\n        const row: Record<string, string> = {};\n        for (let i = 0; i < headers.length; i++) {\n          row[headers[i]] = cells[i] ?? '';\n        }\n        rows.push(row);\n      }\n    }\n    return rows;\n  }\n\n  public stringify(rows: Record<string, string>[]): string {\n    if (rows.length === 0) return '';\n    const headers = Object.keys(rows[0]);\n    const lines: string[] = [];\n    const headerLine = headers.map(h => this.escapeCsvCell(h)).join(this.delimiter);\n    lines.push(headerLine);\n    for (const row of rows) {\n      const line = headers.map(h => this.escapeCsvCell(row[h])).join(this.delimiter);\n      lines.push(line);\n    }\n    return lines.join('\\n');\n  }\n\n  private splitCsvLine(line: string): string[] {\n    const cells: string[] = [];\n    let cell = '';\n    let inQuotes = false;\n    for (let i = 0; i < line.length; i++) {\n      const ch = line[i];\n      if (ch === '\"') {\n        if (inQuotes && i + 1 < line.length && line[i + 1] === '\"') {\n          cell += '\"';\n          i++;\n        } else {\n          inQuotes = !inQuotes;\n        }\n      } else if (ch === this.delimiter && !inQuotes) {\n        cells.push(cell);\n        cell = '';\n      } else {\n        cell += ch;\n      }\n    }\n    cells.push(cell);\n    return cells;\n  }\n\n  private escapeCsvCell(cell: string): string {\n    if (cell.includes('\"') || cell.includes(',') || cell.includes('\\n')) {\n      const escaped = cell.replace(/\"/g, '\"\"');\n      return '\"' + escaped + '\"';\n    }\n    return cell;\n  }\n}\n\nexport class CsvFilter {\n  private rows: Record<string, string>[];\n  private columns: string[];\n\n  constructor(rows: Record<string, string>[]) {\n    this.rows = rows;\n    this.columns = rows.length > 0 ? Object.keys(rows[0]) : [];\n  }\n\n  public where(predicate: (row: Record<string, string>) => boolean): Record<string, string>[] {\n    return this.rows.filter(predicate);\n  }\n\n  public select(columns: string[]): Record<string, string>[] {\n    const selected = columns.map(c => c.trim());\n    return this.rows.map(row => {\n      const newRow: Record<string, string> = {};\n      for (const col of selected) {\n        if (col in row) {\n          newRow[col] = row[col];\n        }\n      }\n      return newRow;\n    });\n  }\n\n  public sortBy(column: string): Record<string, string>[] {\n    const col = column.trim();\n    const sorted = this.rows.slice();\n    sorted.sort((a, b) => {\n      const aVal = a[col] ?? '';\n      const bVal = b[col] ?? '';\n      return aVal.localeCompare(bVal);\n    });\n    return sorted;\n  }\n\n  public count(): number {\n    return this.rows.length;\n  }\n}\n",
+      "notes": ""
+    },
+    {
+      "path": "src/cli.ts",
+      "content": "declare const require: any;\ndeclare const process: any;\nconst fs = require('node:fs');\nconst { CsvParser } = require('./csv');\n\nfunction printHelp(): void {\n  console.log('Usage:');\n  console.log('  node dist/cli.js parse --input <file>');\n  console.log('  node dist/cli.js stats --input <file>');\n  console.log('  node dist/cli.js --help');\n}\n\nfunction parseCommand(inputPath: string): void {\n  const content = fs.readFileSync(inputPath, 'utf8');\n  const rows = CsvParser.parse(content);\n  const json = JSON.stringify(rows);\n  process.stdout.write(json + '\\n');\n}\n\nfunction statsCommand(inputPath: string): void {\n  const content = fs.readFileSync(inputPath, 'utf8');\n  const rows = CsvParser.parse(content);\n  const rowCount = rows.length;\n  const columnNames = rows.length > 0 ? Object.keys(rows[0]) : [];\n  console.log(`Rows: ${rowCount}`);\n  console.log(`Columns: ${columnNames.join(', ')}`);\n}\n\nfunction main(): void {\n  const args = process.argv.slice(2);\n  if (args.length === 0) {\n    printHelp();\n    process.exit(1);\n  }\n\n  const helpIdx = args.indexOf('--help');\n  if (helpIdx !== -1) {\n    printHelp();\n    process.exit(0);\n  }\n\n  const inputIdx = args.indexOf('--input');\n  if (inputIdx === -1 || inputIdx === args.length - 1) {\n    console.error('Error: --input <file> is required');\n    process.exit(1);\n  }\n\n  const command = args[0];\n  const inputPath = args[inputIdx + 1];\n\n  if (command === 'parse') {\n    parseCommand(inputPath);\n  } else if (command === 'stats') {\n    statsCommand(inputPath);\n  } else {\n    console.error(`Error: Unknown command '${command}'`);\n    process.exit(1);\n  }\n}\n\nmain();\n",
+      "notes": ""
+    }
+  ],
+  "notes": ""
+}

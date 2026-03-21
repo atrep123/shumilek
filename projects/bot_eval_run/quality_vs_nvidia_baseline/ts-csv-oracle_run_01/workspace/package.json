@@ -1,0 +1,12 @@
+{
+  "name": "csv-tool",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A simple CSV parser and filter tool",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "",
+  "license": "ISC"
+}

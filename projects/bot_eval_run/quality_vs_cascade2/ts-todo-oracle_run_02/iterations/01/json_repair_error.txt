@@ -1,0 +1,1 @@
+First iteration must use mode "full" with all core files. Missing: package.json, tsconfig.json, src/store.ts, src/cli.ts

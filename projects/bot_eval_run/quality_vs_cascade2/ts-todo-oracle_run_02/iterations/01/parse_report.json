@@ -1,0 +1,25 @@
+{
+  "attempts": [
+    {
+      "stage": "initial",
+      "model": "nemotron-cascade-2",
+      "ok": true,
+      "transport": "generate",
+      "formatKind": "json",
+      "schemaUsed": false,
+      "fallbackUsed": true
+    },
+    {
+      "stage": "scenario_contract",
+      "model": "nemotron-cascade-2",
+      "ok": false,
+      "error": "First iteration must use mode \"full\" with all core files. Missing: package.json, tsconfig.json, src/store.ts, src/cli.ts",
+      "errorKind": "schema"
+    }
+  ],
+  "finalOk": false,
+  "appliedFixes": [],
+  "skippedFixes": [],
+  "finalError": "First iteration must use mode \"full\" with all core files. Missing: package.json, tsconfig.json, src/store.ts, src/cli.ts",
+  "finalErrorKind": "schema"
+}

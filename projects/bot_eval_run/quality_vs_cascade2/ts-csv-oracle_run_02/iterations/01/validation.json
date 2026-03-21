@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "diagnostics": [],
+  "commands": [
+    {
+      "command": "node \"C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\node_modules\\typescript\\bin\\tsc\" -p tsconfig.json",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\quality_vs_cascade2\\ts-csv-oracle_run_02\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 353,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/oracle.test.js",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\quality_vs_cascade2\\ts-csv-oracle_run_02\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 257,
+      "stdout": "✔ CsvParser: parse simple CSV (1.6233ms)\n✔ CsvParser: parse CSV with quoted fields (0.1727ms)\n✔ CsvParser: parse empty CSV returns empty array (0.0848ms)\n✔ CsvParser: parse single header line returns empty array (0.6713ms)\n✔ CsvParser: stringify rows to CSV (0.2381ms)\n✔ CsvParser: stringify quotes fields with commas (0.1182ms)\n✔ CsvParser: custom delimiter (0.1045ms)\n✔ CsvFilter: filter rows by predicate (0.1151ms)\n✔ CsvFilter: select specific columns (0.5546ms)\n✔ CsvFilter: sort rows (0.1845ms)\n✔ CsvFilter: count rows (0.1095ms)\n✔ CLI: --help exits with code 0 (40.0702ms)\n✔ CLI: parse command reads file and outputs JSON (42.3504ms)\n✔ CLI: stats command (41.9696ms)\n✔ README.md exists (0.5046ms)\nℹ tests 15\nℹ suites 0\nℹ pass 15\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 192.3898\n",
+      "stderr": ""
+    },
+    {
+      "command": "node dist/cli.js --help",
+      "cwd": "C:\\Users\\atrep\\Desktop\\Test_AI_Code\\shumilek\\projects\\bot_eval_run\\quality_vs_cascade2\\ts-csv-oracle_run_02\\workspace",
+      "ok": true,
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 65,
+      "stdout": "Usage:\n  node dist/cli.js parse --input <file>\n  node dist/cli.js stats --input <file>\n  node dist/cli.js --help\n\nCommands:\n  parse   Parse CSV file and output JSON array\n  stats   Show row count and column names\n  --help  Show this help message\n",
+      "stderr": ""
+    }
+  ]
+}

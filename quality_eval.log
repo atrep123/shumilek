@@ -1,0 +1,20 @@
+﻿Running ts-todo-oracle (1/2)...
+  -> OK (37s) C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_nvidia_baseline\ts-todo-oracle_run_01
+Running ts-todo-oracle (2/2)...
+  -> OK (31s) C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_nvidia_baseline\ts-todo-oracle_run_02
+Running node-api-oracle (1/2)...
+  -> OK (39s) C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_nvidia_baseline\node-api-oracle_run_01
+Running node-api-oracle (2/2)...
+  -> OK (37s) C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_nvidia_baseline\node-api-oracle_run_02
+Running ts-csv-oracle (1/2)...
+  -> OK (22s) C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_nvidia_baseline\ts-csv-oracle_run_01
+Running ts-csv-oracle (2/2)...
+  -> OK (22s) C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_nvidia_baseline\ts-csv-oracle_run_02
+
+Summary:
+- ts-todo-oracle: 2/2 (100%) avg 34s | plannerErrRuns=0 jsonRepairErrRuns=0 jsonRepairErrFiles=0 schemaFailRuns=0 jsonParseRuns=0 placeholderRuns=0 fallbackActs=0 fallbackRecovers=0 rawPassRate=100% fallbackDependencyRate=0% rawRunPassRate=100% fallbackDependencyRunRate=0% topClusters=n/a
+- node-api-oracle: 2/2 (100%) avg 38s | plannerErrRuns=0 jsonRepairErrRuns=0 jsonRepairErrFiles=0 schemaFailRuns=0 jsonParseRuns=0 placeholderRuns=0 fallbackActs=2 fallbackRecovers=2 rawPassRate=0% fallbackDependencyRate=100% rawRunPassRate=0% fallbackDependencyRunRate=100% topClusters=n/a
+- ts-csv-oracle: 2/2 (100%) avg 22s | plannerErrRuns=0 jsonRepairErrRuns=0 jsonRepairErrFiles=0 schemaFailRuns=0 jsonParseRuns=0 placeholderRuns=0 fallbackActs=0 fallbackRecovers=0 rawPassRate=100% fallbackDependencyRate=0% rawRunPassRate=100% fallbackDependencyRunRate=0% topClusters=n/a
+Overall parse/schema: plannerErrRuns=0 jsonRepairErrRuns=0 jsonRepairErrFiles=0 schemaFailRuns=0 jsonParseRuns=0 placeholderRuns=0 fallbackRunCount=2 fallbackActs=2 fallbackRecovers=2 targetedActs=0 canonicalActs=2 rawPassRate=67% fallbackDependencyRate=33% rawRunPassRate=67% fallbackDependencyRunRate=33% topClusters=n/a
+
+Batch output: C:\Users\atrep\Desktop\Test_AI_Code\shumilek\projects\bot_eval_run\quality_vs_nvidia_baseline

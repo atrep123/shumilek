@@ -1,0 +1,27 @@
+{
+  "mode": "patch",
+  "files": [
+    {
+      "path": "README.md",
+      "content": "Todo CLI\n\nUsage:\n  node dist/cli.js --help\n  node dist/cli.js list --data <path>\n  node dist/cli.js add <title> --data <path>\n  node dist/cli.js done <id> --data <path>\n  node dist/cli.js remove <id> --data <path>\n\nAll commands output JSON with an `ok` field.\n"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"todo-cli\",\n  \"version\": \"1.0.0\",\n  \"description\": \"Simple CLI todo list\",\n  \"main\": \"dist/cli.js\",\n  \"scripts\": {\n    \"build\": \"tsc -p tsconfig.json\"\n  },\n  \"author\": \"\",\n  \"license\": \"MIT\"\n}\n"
+    },
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES2020\",\n    \"module\": \"commonjs\",\n    \"outDir\": \"dist\",\n    \"rootDir\": \"src\",\n    \"strict\": false,\n    \"esModuleInterop\": true,\n    \"forceConsistentCasingInFileNames\": true,\n    \"moduleResolution\": \"node\",\n    \"useUnknownInCatchVariables\": false,\n    \"noImplicitAny\": false,\n    \"skipLibCheck\": true,\n    \"types\": []\n  },\n  \"include\": [\n    \"src/**/*.ts\"\n  ]\n}\n"
+    },
+    {
+      "path": "src/store.ts",
+      "content": "declare const require: any;\ndeclare const process: any;\n\ninterface Task {\n  id: string;\n  title: string;\n  done: boolean;\n  createdAt: string;\n  doneAt?: string;\n}\n\nclass TaskStore {\n  private filePath: string;\n  private tasks: Task[] = [];\n\n  constructor(filePath: string) {\n    this.filePath = filePath;\n    this.load();\n  }\n\n  private load() {\n    try {\n      const data = require('node:fs').readFileSync(this.filePath, 'utf8');\n      const obj = JSON.parse(data);\n      this.tasks = obj.tasks || [];\n    } catch (error: any) {\n      if (error.code !== 'ENOENT') {\n        console.error(error);\n      }\n      this.tasks = [];\n    }\n  }\n\n  private save() {\n    const data = JSON.stringify({ tasks: this.tasks }, null, 2);\n    require('node:fs').writeFileSync(this.filePath, data, 'utf8');\n  }\n\n  list(): Task[] {\n    return this.tasks.slice();\n  }\n\n  add(title: string): Task {\n    const task: Task = {\n      id: require('node:crypto').randomUUID(),\n      title,\n      done: false,\n      createdAt: new Date().toISOString(),\n    };\n    this.tasks.push(task);\n    this.save();\n    return task;\n  }\n\n  done(id: string): Task | null {\n    const task = this.tasks.find(t => t.id === id);\n    if (!task) return null as any;\n    task.done = true;\n    task.doneAt = new Date().toISOString();\n    this.save();\n    return task;\n  }\n\n  remove(id: string): Task | null {\n    const index = this.tasks.findIndex(t => t.id === id);\n    if (index === -1) return null as any;\n    const removed = this.tasks.splice(index, 1)[0];\n    this.save();\n    return removed;\n  }\n}\n\nmodule.exports = { TaskStore };\n",
+      "notes": ""
+    },
+    {
+      "path": "src/cli.ts",
+      "content": "declare const require: any;\ndeclare const process: any;\n\nconst { TaskStore } = require('./store');\n\nfunction usage(): string {\n  return 'Usage:\\n  list --data <path>\\n  add <title> --data <path>\\n  done <id> --data <path>\\n  remove <id> --data <path>\\n  --help';\n}\n\nfunction parseDataPath(args: string[]): string | null {\n  const idx = args.indexOf('--data');\n  if (idx >= 0 && idx + 1 < args.length) return args[idx + 1];\n  return null;\n}\n\nfunction firstPositional(args: string[]): string | null {\n  for (const token of args) {\n    if (!token.startsWith('--')) return token;\n  }\n  return null;\n}\n\nfunction main(): number {\n  const argv = process.argv.slice(2);\n  const cmd = String(argv[0] || '');\n\n  if (cmd === '' || cmd === '--help') {\n    console.log(usage());\n    return 0;\n  }\n\n  const dataPath = parseDataPath(argv);\n  if (!dataPath) {\n    console.error('Missing --data <path>');\n    return 1;\n  }\n\n  const value = firstPositional(argv.slice(1));\n  const store = new TaskStore(dataPath);\n\n  try {\n    if (cmd === 'list') {\n      console.log(JSON.stringify({ ok: true, tasks: store.list() }));\n      return 0;\n    }\n    if (cmd === 'add') {\n      if (!value) throw new Error('Missing title');\n      console.log(JSON.stringify({ ok: true, task: store.add(value) }));\n      return 0;\n    }\n    if (cmd === 'done') {\n      if (!value) throw new Error('Missing id');\n      console.log(JSON.stringify({ ok: true, task: store.done(value) }));\n      return 0;\n    }\n    if (cmd === 'remove') {\n      if (!value) throw new Error('Missing id');\n      console.log(JSON.stringify({ ok: true, task: store.remove(value) }));\n      return 0;\n    }\n    console.error('Unknown command');\n    return 1;\n  } catch (error: any) {\n    console.error(JSON.stringify({ ok: false, error: String(error?.message || error) }));\n    return 1;\n  }\n}\n\nconst exitCode = main();\nif (typeof process?.exit === \"function\") process.exit(exitCode);\n"
+    }
+  ],
+  "notes": "All core files added with minimal content. No external dependencies. CLI handles --help without --data and requires --data for other commands. Store persists tasks to JSON file. Build with tsc -p tsconfig.json."
+}
