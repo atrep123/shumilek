@@ -229,7 +229,8 @@ export async function findFallbackRelatedFiles(
   doc: vscode.TextDocument,
   maxResults: number
 ): Promise<vscode.Uri[]> {
-  const baseName = path.parse(doc.uri.fsPath).name;
+  const rawName = path.parse(doc.uri.fsPath).name;
+  const baseName = rawName.replace(/[*?[\]{}]/g, '\\$&');
   const patterns = [
     `**/*${baseName}.test.*`,
     `**/*${baseName}.spec.*`,

@@ -309,5 +309,75 @@ class KeywordExtractionTests(unittest.TestCase):
         self.assertEqual(kw, [])
 
 
+class InlineHtmlXssTests(unittest.TestCase):
+    """Tests for _inline_html wikilink XSS prevention (R49)."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        # Extract _escape_html and _inline_html methods as standalone functions
+        import textwrap
+        esc_start = source.index("    def _escape_html(self, text: str) -> str:")
+        inline_end_marker = "    def _on_editor_click"
+        inline_end = source.index(inline_end_marker)
+        block = source[esc_start:inline_end]
+        block = textwrap.dedent(block)
+        # Convert methods to standalone functions for testing
+        block = block.replace("def _escape_html(self, text: str)", "def _escape_html(text)")
+        block = block.replace("def _inline_html(self, text: str)", "def _inline_html(text)")
+        block = block.replace("self._escape_html(", "_escape_html(")
+        ns: dict = {"re": re}
+        exec(block, ns)  # noqa: S102 — test-only, trusted source
+        cls._inline_html = staticmethod(ns["_inline_html"])
+
+    def test_normal_wikilink_produces_anchor(self):
+        result = self._inline_html("see [[MyPage]] for details")
+        self.assertIn('<a href="MyPage.html">MyPage</a>', result)
+
+    def test_javascript_uri_blocked(self):
+        result = self._inline_html("click [[javascript:alert(1)]]")
+        self.assertNotIn("<a ", result)
+        self.assertIn('<span class="wikilink">', result)
+
+    def test_data_uri_blocked(self):
+        result = self._inline_html("click [[data:text/html,<h1>xss</h1>]]")
+        self.assertNotIn("<a ", result)
+        self.assertIn('<span class="wikilink">', result)
+
+    def test_colon_in_target_blocked(self):
+        result = self._inline_html("[[vbscript:run]]")
+        self.assertNotIn("<a ", result)
+
+    def test_normal_page_no_colon_allowed(self):
+        result = self._inline_html("[[DailyNotes]]")
+        self.assertIn('<a href="DailyNotes.html">', result)
+
+
+class EventLogCapTests(unittest.TestCase):
+    """Tests for PipelineSimulator event_log cap at 200 (R49)."""
+
+    def test_event_log_capped_at_200(self):
+        """Replicated logic: after many appends + trimming, list stays <= 200."""
+        event_log: list[str] = []
+        for i in range(500):
+            event_log.append(f"[{i}.0s] >> Node{i} — processing...")
+            if len(event_log) > 200:
+                event_log = event_log[-200:]
+        self.assertLessEqual(len(event_log), 200)
+        self.assertEqual(len(event_log), 200)
+        # Newest entry is last
+        self.assertIn("Node499", event_log[-1])
+
+    def test_event_log_not_trimmed_below_threshold(self):
+        """Under 200 entries, nothing is trimmed."""
+        event_log: list[str] = []
+        for i in range(50):
+            event_log.append(f"event-{i}")
+            if len(event_log) > 200:
+                event_log = event_log[-200:]
+        self.assertEqual(len(event_log), 50)
+
+
 if __name__ == "__main__":
     unittest.main()

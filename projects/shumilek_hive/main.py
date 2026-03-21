@@ -440,6 +440,8 @@ class PipelineSimulator:
                     node_label = lbl.replace("\n", " ")
                     break
             self.event_log.append(f"[{self.elapsed_time:.1f}s] >> {node_label} — processing...")
+            if len(self.event_log) > 200:
+                self.event_log = self.event_log[-200:]
 
         # Check if duration elapsed
         if self.tick >= current["duration"]:
@@ -2500,7 +2502,12 @@ class ShumilekHive:
         text = self._escape_html(text)
         text = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)
         text = re.sub(r'`([^`]+)`', r'<code>\1</code>', text)
-        text = re.sub(r'\[\[([^\]]+)\]\]', r'<a href="\1.html">\1</a>', text)
+        def _safe_wikilink(m: re.Match) -> str:
+            target = m.group(1)
+            if ':' in target:
+                return f'<span class="wikilink">{target}</span>'
+            return f'<a href="{target}.html">{target}</a>'
+        text = re.sub(r'\[\[([^\]]+)\]\]', _safe_wikilink, text)
         text = re.sub(r'(?<!\w)#(\w[\w-]*)', r'<span class="tag">#\1</span>', text)
         return text
 

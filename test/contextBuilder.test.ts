@@ -276,4 +276,35 @@ describe('contextBuilder', () => {
       vscodeMock.window.visibleTextEditors = origVisibleEditors;
     });
   });
+
+  // ── glob metachar escaping (replicated logic) ─────────────
+  describe('findFallbackRelatedFiles glob escaping', () => {
+    function escapeGlob(raw: string): string {
+      return raw.replace(/[*?[\]{}]/g, '\\$&');
+    }
+
+    it('should escape asterisks in file names', () => {
+      expect(escapeGlob('file*name')).to.equal('file\\*name');
+    });
+
+    it('should escape question marks', () => {
+      expect(escapeGlob('file?name')).to.equal('file\\?name');
+    });
+
+    it('should escape square brackets', () => {
+      expect(escapeGlob('file[0]')).to.equal('file\\[0\\]');
+    });
+
+    it('should escape curly braces', () => {
+      expect(escapeGlob('file{a,b}')).to.equal('file\\{a,b\\}');
+    });
+
+    it('should leave normal names unchanged', () => {
+      expect(escapeGlob('myComponent')).to.equal('myComponent');
+    });
+
+    it('should handle multiple metacharacters', () => {
+      expect(escapeGlob('*?[]{}')).to.equal('\\*\\?\\[\\]\\{\\}');
+    });
+  });
 });
