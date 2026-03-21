@@ -188,7 +188,7 @@ class ParticleSystem:
         for _ in range(count):
             if len(self.particles) < self.max_particles:
                 c = random.choice(self._colors)
-                s = random.choice([1, 2, 2, 3])
+                s = random.choice([2, 2, 3, 3, 4])
                 self.particles.append(Particle(x, y, c, s))
 
     def update(self):
@@ -221,7 +221,7 @@ class FlowParticle:
     def update(self) -> bool:
         self.trail.append((self.sx + (self.ex - self.sx) * self.t,
                            self.sy + (self.ey - self.sy) * self.t))
-        if len(self.trail) > 6:
+        if len(self.trail) > 12:
             self.trail.pop(0)
         self.t += self.speed
         return self.t < 1.0
@@ -235,16 +235,25 @@ class FlowParticle:
         return self.sy + (self.ey - self.sy) * self.t
 
     def draw(self, canvas: tk.Canvas):
-        # Trail (fading dots)
+        # Trail (fading dots — growing toward head)
         base = self.color.lstrip("#")
         r0, g0, b0 = int(base[:2], 16), int(base[2:4], 16), int(base[4:6], 16)
+        n = len(self.trail)
         for i, (tx, ty) in enumerate(self.trail):
-            frac = (i + 1) / (len(self.trail) + 1) * 0.4
+            frac = (i + 1) / (n + 1) * 0.5
             cr = int(r0 * frac)
             cg = int(g0 * frac)
             cb = int(b0 * frac)
-            canvas.create_rectangle(tx - 1, ty - 1, tx + 1, ty + 1,
+            ts = 1 + i * 2 // max(n, 1)  # trail dots grow toward head
+            canvas.create_rectangle(tx - ts, ty - ts, tx + ts, ty + ts,
                                     fill=f"#{cr:02x}{cg:02x}{cb:02x}", outline="", tags="flow")
+        # Head glow halo
+        gs = self.size + 3
+        gr = int(r0 * 0.25)
+        gg = int(g0 * 0.25)
+        gb = int(b0 * 0.25)
+        canvas.create_oval(self.x - gs, self.y - gs, self.x + gs, self.y + gs,
+                           fill=f"#{gr:02x}{gg:02x}{gb:02x}", outline="", tags="flow")
         # Head (bright dot)
         canvas.create_oval(self.x - self.size, self.y - self.size,
                            self.x + self.size, self.y + self.size,
@@ -254,13 +263,22 @@ class FlowParticle:
         """Draw with a custom tag (for graph vs schema)."""
         base = self.color.lstrip("#")
         r0, g0, b0 = int(base[:2], 16), int(base[2:4], 16), int(base[4:6], 16)
+        n = len(self.trail)
         for i, (tx, ty) in enumerate(self.trail):
-            frac = (i + 1) / (len(self.trail) + 1) * 0.4
+            frac = (i + 1) / (n + 1) * 0.5
             cr = int(r0 * frac)
             cg = int(g0 * frac)
             cb = int(b0 * frac)
-            canvas.create_rectangle(tx - 1, ty - 1, tx + 1, ty + 1,
+            ts = 1 + i * 2 // max(n, 1)
+            canvas.create_rectangle(tx - ts, ty - ts, tx + ts, ty + ts,
                                     fill=f"#{cr:02x}{cg:02x}{cb:02x}", outline="", tags=tag)
+        # Head glow halo
+        gs = self.size + 3
+        gr = int(r0 * 0.25)
+        gg = int(g0 * 0.25)
+        gb = int(b0 * 0.25)
+        canvas.create_oval(self.x - gs, self.y - gs, self.x + gs, self.y + gs,
+                           fill=f"#{gr:02x}{gg:02x}{gb:02x}", outline="", tags=tag)
         canvas.create_oval(self.x - self.size, self.y - self.size,
                            self.x + self.size, self.y + self.size,
                            fill=self.color, outline="", tags=tag)
@@ -529,7 +547,7 @@ class ShumilekHive:
         self._graph_press_xy: tuple[int, int] | None = None  # initial mouse-down position on graph
         self._graph_dragged = False  # whether current graph press turned into a drag
         self._graph_custom_positions: dict[str, tuple[float, float]] = {}  # custom graph layout
-        self._graph_starfield = StarField(60)  # starfield for graph background
+        self._graph_starfield = StarField(120)  # starfield for graph background
         self._graph_flow_particles: list[FlowParticle] = []  # animated edge particles
         self._graph_anim_phase: float = 0.0  # animation phase counter
         self._selected_pipeline_node: str | None = None  # clicked schema node
@@ -595,14 +613,14 @@ class ShumilekHive:
         self.pipeline = PipelineSimulator()
 
         # Particle systems
-        self.particles_schema = ParticleSystem(40)
+        self.particles_schema = ParticleSystem(80)
 
         # Flow particles (data flowing between pipeline nodes)
         self._flow_particles: list[FlowParticle] = []
         self._schema_positions: dict = {}
 
         # Starfield for schema background
-        self._starfield = StarField(90)
+        self._starfield = StarField(150)
 
         # Build UI
         self._build_titlebar()
@@ -4470,7 +4488,6 @@ class ShumilekHive:
         """Draw the neural network visualization on the hive canvas."""
         c = self.hive_canvas
         c.delete("all")
-        c.update_idletasks()
         w = max(c.winfo_width(), 600)
         h = max(c.winfo_height(), 400)
 
@@ -4499,13 +4516,13 @@ class ShumilekHive:
         # Constellation stars (twinkling idle dots between neurons)
         if not self._ai_processing_task:
             # Spawn new stars occasionally
-            if self._hive_ambient_tick % 40 == 0 and len(self._hive_constellations) < 20:
+            if self._hive_ambient_tick % 20 == 0 and len(self._hive_constellations) < 40:
                 self._hive_constellations.append({
                     "x": random.uniform(0.05, 0.95),
                     "y": random.uniform(0.05, 0.85),
                     "phase": random.uniform(0, math.pi * 2),
                     "speed": random.uniform(0.8, 2.5),
-                    "size": random.choice([1, 1, 2]),
+                    "size": random.choice([1, 2, 2, 3]),
                     "color": random.choice([P["cyan_dim"], P["amethyst_dim"],
                                            P["border_glow"], P["ice"]]),
                     "life": 0,
@@ -4588,6 +4605,15 @@ class ShumilekHive:
                 r0 = int(base_col[:2], 16)
                 g0 = int(base_col[2:4], 16)
                 b0 = int(base_col[4:6], 16)
+                # Outer halo (large, faint)
+                halo_size = size + int(act * 14) + int(pulse * 6)
+                hr = max(0, min(255, int(r0 * 0.15 * act)))
+                hg = max(0, min(255, int(g0 * 0.15 * act)))
+                hb = max(0, min(255, int(b0 * 0.15 * act)))
+                c.create_oval(x - halo_size, y - halo_size,
+                             x + halo_size, y + halo_size,
+                             fill=f"#{hr:02x}{hg:02x}{hb:02x}", outline="")
+                # Inner glow
                 glow_size = size + int(act * 8) + int(pulse * 4)
                 gr = int(r0 * 0.3 * act)
                 gg = int(g0 * 0.3 * act)
@@ -4809,7 +4835,6 @@ class ShumilekHive:
         """Render the knowledge score bar and label."""
         c = self.ks_bar_canvas
         c.delete("all")
-        c.update_idletasks()
         w = max(c.winfo_width(), 200)
 
         # Background bar
@@ -4983,7 +5008,6 @@ class ShumilekHive:
         """Draw a visual timeline of vault notes by modification date."""
         c = self.timeline_canvas
         c.delete("all")
-        c.update_idletasks()
         w = max(c.winfo_width(), 600)
         h = max(c.winfo_height(), 400)
 
@@ -5641,7 +5665,6 @@ class ShumilekHive:
     def _update_minimap(self):
         mc = self.minimap_canvas
         mc.delete("all")
-        mc.update_idletasks()
         mw = mc.winfo_width()
         mh = mc.winfo_height()
         if mw < 5 or mh < 5:
@@ -5907,8 +5930,6 @@ class ShumilekHive:
         if not nodes:
             c.create_text(200, 150, text="no linked notes yet", font=F_TITLE, fill=P["text_dim"])
             return
-
-        c.update_idletasks()
         w = max(c.winfo_width(), 400)
         h = max(c.winfo_height(), 300)
         cx, cy = w // 2, h // 2
@@ -6539,7 +6560,6 @@ class ShumilekHive:
     def _draw_schema(self):
         c = self.schema_canvas
         c.delete("all")
-        c.update_idletasks()
         w = max(c.winfo_width(), 600)
         h = max(c.winfo_height(), 400)
 
@@ -7050,7 +7070,6 @@ class ShumilekHive:
     def _draw_cards(self):
         c = self.cards_canvas
         c.delete("all")
-        c.update_idletasks()
         w = max(c.winfo_width(), 400)
         h = max(c.winfo_height(), 300)
         self._card_rects.clear()
@@ -7399,7 +7418,6 @@ class ShumilekHive:
         """Draw visual weighted tag cloud on the tag_cloud_canvas."""
         cc = self.tag_cloud_canvas
         cc.delete("all")
-        cc.update_idletasks()
         cw = max(cc.winfo_width(), 100)
 
         # Collect tag frequencies
@@ -8536,15 +8554,15 @@ class ShumilekHive:
     def _animate(self):
         self._anim_tick += 1
 
-        # Pomodoro tick (~once per second, every 8th frame at 120ms)
-        if self._anim_tick % 8 == 0:
+        # Pomodoro tick (~once per second, every 26th frame at 38ms)
+        if self._anim_tick % 26 == 0:
             self._pomo_tick()
 
         # ── Graph ambient animation ──
         if self.view_mode == "graph":
             self._graph_anim_phase += 0.12
             # Emit flow particles along graph edges periodically
-            if self._anim_tick % 6 == 0 and self._graph_node_positions:
+            if self._anim_tick % 16 == 0 and self._graph_node_positions:
                 for src, tgts in self.notes_graph.items():
                     if src not in self._graph_node_positions:
                         continue
@@ -8560,8 +8578,8 @@ class ShumilekHive:
                             FlowParticle(sx, sy, tx, ty, color, speed=0.03))
             # Update graph flow particles
             self._graph_flow_particles = [fp for fp in self._graph_flow_particles if fp.update()]
-            if len(self._graph_flow_particles) > 40:
-                self._graph_flow_particles = self._graph_flow_particles[-40:]
+            if len(self._graph_flow_particles) > 80:
+                self._graph_flow_particles = self._graph_flow_particles[-80:]
             # Redraw flow particles on canvas (lightweight — only tagged items)
             self.graph_canvas.delete("graph_flow")
             for fp in self._graph_flow_particles:
@@ -8628,7 +8646,7 @@ class ShumilekHive:
 
         # Data flow particles between pipeline nodes
         if self.view_mode == "schema" and self.pipeline.is_running:
-            if self._anim_tick % 4 == 0:
+            if self._anim_tick % 10 == 0:
                 for src_id, dst_id in self._get_node_connections():
                     src_state = self.pipeline.node_states.get(src_id, "idle")
                     dst_state = self.pipeline.node_states.get(dst_id, "idle")
@@ -8642,8 +8660,8 @@ class ShumilekHive:
 
         # Update and draw flow particles
         self._flow_particles = [fp for fp in self._flow_particles if fp.update()]
-        if len(self._flow_particles) > 50:
-            self._flow_particles = self._flow_particles[-50:]
+        if len(self._flow_particles) > 100:
+            self._flow_particles = self._flow_particles[-100:]
         if self.view_mode == "schema":
             self.schema_canvas.delete("flow")
             for fp in self._flow_particles:
@@ -8660,15 +8678,15 @@ class ShumilekHive:
             # Ambient idle animation — gentle random neuron breathing + occasional pulse
             if not self._ai_processing_task and self._ai_hive_initialized:
                 self._hive_ambient_tick += 1
-                if self._hive_ambient_tick % 25 == 0:
-                    # Gentle breathing: randomly light up 1-2 neurons slightly
-                    for _ in range(random.randint(1, 2)):
+                if self._hive_ambient_tick % 50 == 0:
+                    # Gentle breathing: randomly light up 1-3 neurons slightly
+                    for _ in range(random.randint(1, 3)):
                         idx = random.randint(0, len(self._ai_neurons) - 1)
                         self._ai_neurons[idx]["activation"] = max(
                             self._ai_neurons[idx]["activation"],
-                            random.uniform(0.15, 0.35)
+                            random.uniform(0.15, 0.45)
                         )
-                if self._hive_ambient_tick % 60 == 0 and self._ai_synapses:
+                if self._hive_ambient_tick % 100 == 0 and self._ai_synapses:
                     # Occasional ambient pulse traveling along a random synapse
                     syn = random.choice(self._ai_synapses)
                     self._ai_pulses.append({
@@ -8678,7 +8696,7 @@ class ShumilekHive:
                     })
 
         if not self._closing:
-            self.root.after(120, self._animate)
+            self.root.after(38, self._animate)
 
 
 # ═══════════════════════════════════════════════════════════════════
