@@ -4366,6 +4366,19 @@ class ShumilekHive:
         al.config(state="disabled")
         al.see("end")
 
+    # Task kind → pipeline scenario mapping
+    _TASK_PIPELINE_MAP = {
+        "vault-health": "retry",
+        "vault-quality": "retry",
+        "vault-links": "hallucination",
+        "smart-links": "hallucination",
+        "note-analysis": "success",
+        "vault-stats": "success",
+        "tags": "success",
+        "summary": "success",
+        "title": "success",
+    }
+
     def _hive_start_next_task(self):
         for task in self._ai_tasks:
             if task["status"] == "pending":
@@ -4375,6 +4388,11 @@ class ShumilekHive:
                 self._ai_process_tick = 0
                 self._ai_log("info", f"Starting task #{task['id']}")
                 self._hive_plan_task(task)
+                # Start pipeline alongside the task
+                scenario = self._TASK_PIPELINE_MAP.get(
+                    task.get("kind", ""), "default")
+                self.pipeline.start_scenario(scenario)
+                self._ai_log("info", f"Pipeline scenario: {scenario}")
                 self._hive_set_output(f"Task #{task['id']} starting", task["text"], f"kind: {task.get('kind', 'task')}")
                 self._hive_set_actions([])
                 return
@@ -4556,6 +4574,14 @@ class ShumilekHive:
         task["result"], task["detail"], task["actions"] = self._hive_execute_task(task)
         self._ai_log("ok", f"Task #{task['id']} complete: {task['result'][:60]}")
         self._ai_processing_task = None
+        # Finish pipeline if still running
+        if self.pipeline.is_running:
+            for nid in list(self.pipeline.node_states):
+                if self.pipeline.node_states[nid] in ("idle", "active"):
+                    self.pipeline.node_states[nid] = "done"
+            self.pipeline.is_running = False
+            self.pipeline.event_log.append(
+                f"[{self.pipeline.elapsed_time:.1f}s] pipeline finished with task")
         self._hive_update_task_list()
         self._hive_set_output(
             f"Task #{task['id']}",
