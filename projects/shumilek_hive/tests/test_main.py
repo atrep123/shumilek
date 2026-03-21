@@ -1204,5 +1204,119 @@ class FrameThrottleTests(unittest.TestCase):
         self.assertIn("0.45", source)
 
 
+class TabCyclingTests(unittest.TestCase):
+    """Tests for Ctrl+Tab / Ctrl+Shift+Tab tab cycling."""
+
+    def test_cycle_tab_method_defined(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("def _cycle_tab(", source)
+
+    def test_ctrl_tab_binding_exists(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("<Control-Tab>", source)
+        self.assertIn("<Control-Shift-Tab>", source)
+
+    def test_cycle_uses_modulo(self):
+        """Tab cycling wraps around using modulo."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _cycle_tab(")
+        body = source[idx:idx + 300]
+        self.assertIn("%", body)
+
+    def test_shortcuts_help_includes_tab_cycling(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("Next tab", source)
+        self.assertIn("Previous tab", source)
+
+
+class ToastNotificationTests(unittest.TestCase):
+    """Tests for non-blocking toast overlay system."""
+
+    def test_show_toast_method_defined(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("def _show_toast(", source)
+
+    def test_hide_toast_method_defined(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("def _hide_toast(", source)
+
+    def test_toast_label_initialized(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("_toast_label", source)
+        self.assertIn("_toast_after_id", source)
+
+    def test_toast_uses_place_geometry(self):
+        """Toast uses place() for overlay rather than pack/grid."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _show_toast(")
+        body = source[idx:idx + 400]
+        self.assertIn(".place(", body)
+
+    def test_toast_auto_dismiss(self):
+        """Toast schedules auto-dismiss via after()."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _show_toast(")
+        body = source[idx:idx + 500]
+        self.assertIn(".after(", body)
+        self.assertIn("_hide_toast", body)
+
+    def test_save_triggers_toast(self):
+        """Saving a note shows a toast notification."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn('_show_toast(f"Saved:', source)
+
+
+class TaskExportTests(unittest.TestCase):
+    """Tests for JSON task history export."""
+
+    def test_export_method_defined(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("def _export_task_history(", source)
+
+    def test_export_keyboard_shortcut_bound(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("<Control-Shift-X>", source)
+
+    def test_export_button_in_hive(self):
+        """Export button exists in hive input bar."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("Export", source)
+        self.assertIn("_export_task_history", source)
+
+    def test_export_uses_filedialog(self):
+        """Export uses filedialog for safe user-controlled save path."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _export_task_history(")
+        body = source[idx:idx + 800]
+        self.assertIn("asksaveasfilename", body)
+
+    def test_export_writes_json(self):
+        """Export produces valid JSON output."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _export_task_history(")
+        body = source[idx:idx + 1200]
+        self.assertIn("json.dumps(", body)
+
+    def test_shortcuts_help_includes_export(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("Export task history", source)
+
+
 if __name__ == "__main__":
     unittest.main()

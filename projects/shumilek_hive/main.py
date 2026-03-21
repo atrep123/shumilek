@@ -734,6 +734,16 @@ class ShumilekHive:
         self.root.bind("<Control-MouseWheel>", self._on_ctrl_scroll)
         self.root.bind("<Control-Shift-P>", lambda e: self._show_command_palette())
         self.root.bind("<Control-w>", lambda e: self._close_active_tab())
+        self.root.bind("<Control-Tab>", lambda e: self._cycle_tab(1))
+        self.root.bind("<Control-Shift-Tab>", lambda e: self._cycle_tab(-1))
+        self.root.bind("<Control-Shift-X>", lambda e: self._export_task_history())
+
+        # Toast overlay label (hidden until _show_toast is called)
+        self._toast_label = tk.Label(
+            self.root, text="", font=F_SMALL, fg=P["ice"],
+            bg=P["surface"], padx=14, pady=6, relief="solid", bd=1,
+        )
+        self._toast_after_id: str | None = None
 
         # Open Welcome
         welcome = self.vault_path / "Welcome.md"
@@ -1950,6 +1960,62 @@ class ShumilekHive:
             self._save_tab_state()
             self._close_tab(self._active_tab_idx)
 
+    def _cycle_tab(self, direction: int = 1):
+        """Cycle through open tabs. direction=1 forward, -1 backward."""
+        if len(self._open_tabs) < 2:
+            return
+        self._save_tab_state()
+        self._active_tab_idx = (self._active_tab_idx + direction) % len(self._open_tabs)
+        self._load_tab(self._active_tab_idx)
+
+    # ─── TOAST NOTIFICATIONS ────────────────────────────────────────
+    def _show_toast(self, message: str, duration_ms: int = 3000):
+        """Show a non-blocking auto-dismissing toast overlay."""
+        if self._toast_after_id is not None:
+            self.root.after_cancel(self._toast_after_id)
+            self._toast_after_id = None
+        self._toast_label.config(text=message)
+        self._toast_label.place(relx=0.5, rely=0.0, anchor="n", y=8)
+        self._toast_label.lift()
+        self._toast_after_id = self.root.after(duration_ms, self._hide_toast)
+
+    def _hide_toast(self):
+        """Hide the toast overlay."""
+        self._toast_label.place_forget()
+        self._toast_after_id = None
+
+    # ─── TASK HISTORY EXPORT ────────────────────────────────────────
+    def _export_task_history(self):
+        """Export task history as JSON file (Ctrl+Shift+X)."""
+        history_path = self.vault_path / "Hive Reports" / "task_history.json"
+        if not history_path.exists():
+            self._show_toast("No task history to export.")
+            return
+        try:
+            raw = history_path.read_text(encoding="utf-8")
+            history = json.loads(raw) if raw.strip() else []
+        except Exception:
+            self._show_toast("Failed to read task history.")
+            return
+        if not history:
+            self._show_toast("Task history is empty.")
+            return
+        save_path = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            filetypes=[("JSON", "*.json"), ("All", "*.*")],
+            initialfile="task_history_export.json",
+            title="Export Task History",
+        )
+        if not save_path:
+            return
+        try:
+            Path(save_path).write_text(
+                json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8"
+            )
+            self._show_toast(f"Exported {len(history)} tasks to {Path(save_path).name}")
+        except OSError as e:
+            self._show_toast(f"Export failed: {e}")
+
     # ─── BREADCRUMB ──────────────────────────────────────────────
     def _update_breadcrumb(self):
         """Update breadcrumb path display for current file."""
@@ -2276,6 +2342,7 @@ class ShumilekHive:
                 self._open_tabs[self._active_tab_idx]["content"] = content
                 self._rebuild_tab_bar()
             self.status_left.config(text=f"saved: {self.current_file.stem}")
+            self._show_toast(f"Saved: {self.current_file.stem}")
             self._invalidate_cache(self.current_file)
             self._importance_cache.clear()
             self._rebuild_graph_data()
@@ -2595,6 +2662,7 @@ class ShumilekHive:
             try:
                 Path(save_path).write_text(html_content, encoding="utf-8")
                 self.status_left.config(text=f"exported: {Path(save_path).name}")
+                self._show_toast(f"Exported: {Path(save_path).name}")
             except OSError as e:
                 messagebox.showerror("Export Error", f"Cannot export:\n{e}")
 
@@ -3431,6 +3499,14 @@ class ShumilekHive:
                   activebackground=P["hover"], activeforeground=P["ice"],
                   bd=0, padx=6, cursor="hand2",
                   command=self._hive_show_history
+                  ).pack(side="right", padx=2, pady=6)
+
+        # Export task history button
+        tk.Button(input_bar, text="\U0001F4E4 Export", font=F_PIXEL,
+                  fg=P["emerald"], bg=P["surface"],
+                  activebackground=P["hover"], activeforeground=P["ice"],
+                  bd=0, padx=6, cursor="hand2",
+                  command=self._export_task_history
                   ).pack(side="right", padx=2, pady=6)
 
         # Bottom: task list + activity log + output
@@ -5984,6 +6060,9 @@ class ShumilekHive:
             ("Ctrl+Shift+Z", "Focus mode (distraction-free)"),
             ("Ctrl+Shift+P", "Command palette"),
             ("Ctrl+W", "Close active tab"),
+            ("Ctrl+Tab", "Next tab"),
+            ("Ctrl+Shift+Tab", "Previous tab"),
+            ("Ctrl+Shift+X", "Export task history"),
             ("Ctrl+/Ctrl-", "Zoom in / out"),
             ("Ctrl+0", "Reset zoom"),
             ("Ctrl+Click", "Follow [[wiki-link]]"),
