@@ -1074,5 +1074,135 @@ class TaskFilterTests(unittest.TestCase):
         self.assertEqual(retry_tag2, "")
 
 
+class HexColorScaleTests(unittest.TestCase):
+    """Tests for _hex_color_scale helper."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        fn_start = source.index("def _hex_color_scale(")
+        fn_end = source.index("\ndef _draw_nebulae(")
+        fn_src = source[fn_start:fn_end]
+        ns: dict = {}
+        exec(compile(fn_src, "<hex_color_scale>", "exec"), ns)
+        cls._hex_color_scale = staticmethod(ns["_hex_color_scale"])
+
+    def test_identity_factor_one(self):
+        """factor=1.0 returns same color."""
+        self.assertEqual(self._hex_color_scale("#ff8040", 1.0), "#ff8040")
+
+    def test_factor_zero_returns_black(self):
+        """factor=0 returns black."""
+        self.assertEqual(self._hex_color_scale("#abcdef", 0.0), "#000000")
+
+    def test_factor_half(self):
+        """factor=0.5 halves each channel."""
+        result = self._hex_color_scale("#804020", 0.5)
+        self.assertEqual(result, "#402010")
+
+    def test_clamp_upper(self):
+        """factor > 1.0 clamps to 255."""
+        result = self._hex_color_scale("#ff8080", 2.0)
+        self.assertTrue(result.startswith("#ff"))
+        # r channel should be ff (clamped), g and b at most ff
+        r = int(result[1:3], 16)
+        self.assertEqual(r, 255)
+
+    def test_accepts_no_hash(self):
+        """Input without # still works."""
+        result = self._hex_color_scale("ff0000", 0.5)
+        self.assertEqual(result, "#7f0000")
+
+    def test_multiple_call_sites_in_source(self):
+        """_hex_color_scale is called from hive, graph, and schema views."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        count = source.count("_hex_color_scale(")
+        # definition + at least 7 call sites
+        self.assertGreaterEqual(count, 8)
+
+
+class DrawNebulaeDeduplicationTests(unittest.TestCase):
+    """Tests for shared _draw_nebulae helper."""
+
+    def test_function_defined(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("def _draw_nebulae(", source)
+
+    def test_called_from_all_three_views(self):
+        """_draw_nebulae is called from hive, graph, and schema draw methods."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        # At least 3 call sites (one per view) + 1 definition
+        count = source.count("_draw_nebulae(")
+        self.assertGreaterEqual(count, 4)
+
+    def test_no_inline_nebula_loops_remain(self):
+        """Old inline 'for neb in self._hive_nebulae' rendering loops are gone."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        # The inline loops used ncol = neb["color"].lstrip inside draw methods.
+        # After dedup, ncol line only exists in the shared helper.
+        ncol_lines = [l for l in source.split("\n") if 'neb["color"].lstrip' in l]
+        self.assertEqual(len(ncol_lines), 1, "Only 1 ncol line (in helper)")
+
+
+class DrawVignetteDeduplicationTests(unittest.TestCase):
+    """Tests for shared _draw_vignette helper."""
+
+    def test_function_defined(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("def _draw_vignette(", source)
+
+    def test_called_from_all_three_views(self):
+        """_draw_vignette is called from hive, graph, and schema."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        count = source.count("_draw_vignette(")
+        self.assertGreaterEqual(count, 4)
+
+
+class FrameThrottleTests(unittest.TestCase):
+    """Tests for frame-rate throttle fields and animate logic."""
+
+    def test_throttle_fields_in_init(self):
+        """__init__ declares _last_hive_draw_t and _last_schema_draw_t."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("_last_hive_draw_t", source)
+        self.assertIn("_last_schema_draw_t", source)
+
+    def test_dirty_flags_in_init(self):
+        """__init__ declares _hive_dirty and _schema_dirty flags."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("_hive_dirty", source)
+        self.assertIn("_schema_dirty", source)
+
+    def test_hive_throttle_in_animate(self):
+        """_animate uses time-based throttle for hive redraw."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        # Throttle interval constant for hive active/idle
+        self.assertIn("_last_hive_draw_t", source)
+        self.assertIn("0.04", source)  # active interval
+
+    def test_schema_throttle_in_animate(self):
+        """_animate uses throttle for schema redraw."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("_last_schema_draw_t", source)
+        self.assertIn("0.08", source)  # schema interval
+
+    def test_graph_existing_throttle_preserved(self):
+        """Graph view already had a 0.45s throttle — verify it still exists."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("0.45", source)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -516,6 +516,56 @@ def _safe_stat(p: Path, attr: str, default=0):
         return default
 
 
+def _hex_color_scale(hex_color: str, factor: float) -> str:
+    """Scale a hex color (#RRGGBB) by factor, clamping to 0-255."""
+    h = hex_color.lstrip("#")
+    r = max(0, min(255, int(int(h[:2], 16) * factor)))
+    g = max(0, min(255, int(int(h[2:4], 16) * factor)))
+    b = max(0, min(255, int(int(h[4:6], 16) * factor)))
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
+def _draw_nebulae(c, w: int, h: int, nebulae: list, rings: int, opacity: float, t: float):
+    """Draw nebula clouds on canvas. Shared by hive/graph/schema views."""
+    for neb in nebulae:
+        nx = int(neb["x"] * w)
+        ny = int(neb["y"] * h)
+        nr = neb["r"]
+        breath = 0.5 + 0.5 * abs(math.sin(t * 0.3 + neb["phase"]))
+        ncol = neb["color"].lstrip("#")
+        for ri in range(rings):
+            frac = 1.0 - ri / rings
+            cr = int(nr * frac * (0.8 + 0.2 * breath))
+            if cr < 1:
+                continue
+            scale = opacity * frac * breath
+            br = max(0, min(255, int(int(ncol[:2], 16) * scale)))
+            bg = max(0, min(255, int(int(ncol[2:4], 16) * scale)))
+            bb = max(0, min(255, int(int(ncol[4:6], 16) * scale)))
+            c.create_oval(nx - cr, ny - cr, nx + cr, ny + cr,
+                         fill=f"#{br:02x}{bg:02x}{bb:02x}", outline="")
+
+
+def _draw_vignette(c, w: int, h: int, size: int = 30):
+    """Draw top+bottom vignette overlay on canvas."""
+    for vi in range(size):
+        frac = 1.0 - vi / size
+        vr = max(0, min(255, int(8 * frac)))
+        vgc = max(0, min(255, int(6 * frac)))
+        vb = max(0, min(255, int(16 * frac)))
+        if vr + vgc + vb > 0:
+            col = f"#{vr:02x}{vgc:02x}{vb:02x}"
+            c.create_line(0, vi, w, vi, fill=col, width=1)
+    for vi in range(size):
+        frac = vi / size
+        vr = max(0, min(255, int(8 * frac)))
+        vgc = max(0, min(255, int(6 * frac)))
+        vb = max(0, min(255, int(16 * frac)))
+        if vr + vgc + vb > 0:
+            col = f"#{vr:02x}{vgc:02x}{vb:02x}"
+            c.create_line(0, h - size + vi, w, h - size + vi, fill=col, width=1)
+
+
 class ShumilekHive:
     """Living AI knowledge hub with pipeline visualization and task management."""
 
@@ -577,6 +627,10 @@ class ShumilekHive:
         self._graph_ai_stage: str = ""  # current pipeline stage label
         self._graph_ai_stage_color: str = P["text_dim"]  # current stage color
         self._last_graph_draw_t: float = 0.0  # throttle graph redraws
+        self._hive_dirty: bool = True  # dirty-bit for hive view redraw
+        self._schema_dirty: bool = True  # dirty-bit for schema view redraw
+        self._last_hive_draw_t: float = 0.0  # throttle hive redraws
+        self._last_schema_draw_t: float = 0.0  # throttle schema redraws
         self._importance_cache: dict[str, float] = {}  # cached importance scores
         self._importance_cache_time: float = 0.0  # timestamp of last computation
         _IMPORTANCE_CACHE_MAX = 500  # max entries before trim
@@ -4855,22 +4909,7 @@ class ShumilekHive:
                     "color": random.choice(neb_colors),
                     "phase": random.uniform(0, math.pi * 2),
                 })
-        for neb in self._hive_nebulae:
-            nx = int(neb["x"] * w)
-            ny = int(neb["y"] * h)
-            nr = neb["r"]
-            breath = 0.5 + 0.5 * abs(math.sin(t * 0.3 + neb["phase"]))
-            ncol = neb["color"].lstrip("#")
-            for ri in range(4):
-                frac = 1.0 - ri / 4.0
-                cr = int(nr * frac * (0.8 + 0.2 * breath))
-                if cr < 1:
-                    continue
-                br = max(0, min(255, int(int(ncol[:2], 16) * 0.04 * frac * breath)))
-                bg = max(0, min(255, int(int(ncol[2:4], 16) * 0.04 * frac * breath)))
-                bb = max(0, min(255, int(int(ncol[4:6], 16) * 0.04 * frac * breath)))
-                c.create_oval(nx - cr, ny - cr, nx + cr, ny + cr,
-                             fill=f"#{br:02x}{bg:02x}{bb:02x}", outline="")
+        _draw_nebulae(c, w, h, self._hive_nebulae, rings=4, opacity=0.04, t=t)
 
         # Subtle grid
         for gx in range(0, w, 40):
@@ -5055,12 +5094,8 @@ class ShumilekHive:
         for i, (ln, lc) in enumerate(layers_info):
             lx = margin_x + i * ls
             # Glow text layer (offset)
-            lcol = lc.lstrip("#")
-            lr = max(0, int(int(lcol[:2], 16) * 0.3))
-            lg = max(0, int(int(lcol[2:4], 16) * 0.3))
-            lb = max(0, int(int(lcol[4:6], 16) * 0.3))
             c.create_text(lx + 1, 21, text=ln, font=F_SMALL,
-                         fill=f"#{lr:02x}{lg:02x}{lb:02x}")
+                         fill=_hex_color_scale(lc, 0.3))
             c.create_text(lx, 20, text=ln, font=F_SMALL, fill=lc)
 
         # Status overlay
@@ -5208,14 +5243,8 @@ class ShumilekHive:
                 by = int(tb["y"] * h) - int(tb["life"] * 0.3)
                 fade = 1.0 - tb["life"] / tb["max_life"]
                 if fade > 0.1:
-                    base_col = tb["color"].lstrip("#")
-                    r0 = int(int(base_col[:2], 16) * fade)
-                    g0 = int(int(base_col[2:4], 16) * fade)
-                    b0 = int(int(base_col[4:6], 16) * fade)
-                    col = f"#{r0:02x}{g0:02x}{b0:02x}"
-                    # Glow behind bubble
-                    gr = max(0, r0 // 4); gg = max(0, g0 // 4); gb = max(0, b0 // 4)
-                    gcol = f"#{gr:02x}{gg:02x}{gb:02x}"
+                    col = _hex_color_scale(tb["color"], fade)
+                    gcol = _hex_color_scale(tb["color"], fade * 0.25)
                     tw = len(tb["text"]) * 5 + 12
                     c.create_rectangle(bx - tw // 2 - 2, by - 10,
                                       bx + tw // 2 + 2, by + 10,
@@ -5236,26 +5265,7 @@ class ShumilekHive:
                          font=F_PIXEL, fill=ks_col, anchor="w")
 
         # Vignette overlay — dark edges for cinematic depth
-        vg = P["void"]
-        vg_size = 40
-        # Top vignette
-        for vi in range(vg_size):
-            frac = 1.0 - vi / vg_size
-            vr = max(0, min(255, int(8 * frac)))
-            vgc = max(0, min(255, int(6 * frac)))
-            vb = max(0, min(255, int(16 * frac)))
-            if vr + vgc + vb > 0:
-                c.create_line(0, vi, w, vi,
-                             fill=f"#{vr:02x}{vgc:02x}{vb:02x}", width=1)
-        # Bottom vignette
-        for vi in range(vg_size):
-            frac = vi / vg_size
-            vr = max(0, min(255, int(8 * frac)))
-            vgc = max(0, min(255, int(6 * frac)))
-            vb = max(0, min(255, int(16 * frac)))
-            if vr + vgc + vb > 0:
-                c.create_line(0, h - vg_size + vi, w, h - vg_size + vi,
-                             fill=f"#{vr:02x}{vgc:02x}{vb:02x}", width=1)
+        _draw_vignette(c, w, h, size=40)
 
     def _show_hive(self):
         """Switch to Hive view."""
@@ -6513,30 +6523,11 @@ class ShumilekHive:
                     "color": random.choice(neb_colors),
                     "phase": random.uniform(0, math.pi * 2),
                 })
-        for neb in self._graph_nebulae:
-            nx = int(neb["x"] * w)
-            ny = int(neb["y"] * h)
-            nr = neb["r"]
-            breath = 0.5 + 0.5 * abs(math.sin(t * 0.25 + neb["phase"]))
-            ncol = neb["color"].lstrip("#")
-            for ri in range(3):
-                frac = 1.0 - ri / 3.0
-                cr = int(nr * frac * (0.8 + 0.2 * breath))
-                if cr < 1:
-                    continue
-                br = max(0, min(255, int(int(ncol[:2], 16) * 0.03 * frac * breath)))
-                bg = max(0, min(255, int(int(ncol[2:4], 16) * 0.03 * frac * breath)))
-                bb = max(0, min(255, int(int(ncol[4:6], 16) * 0.03 * frac * breath)))
-                c.create_oval(nx - cr, ny - cr, nx + cr, ny + cr,
-                             fill=f"#{br:02x}{bg:02x}{bb:02x}", outline="")
+        _draw_nebulae(c, w, h, self._graph_nebulae, rings=3, opacity=0.03, t=t)
 
         # ── Breathing hex grid overlay ──
         grid_pulse = 0.4 + 0.6 * abs(math.sin(t * 0.5))
-        base_col = P["border"].lstrip("#")
-        gr = max(0, min(255, int(int(base_col[:2], 16) * grid_pulse)))
-        gg = max(0, min(255, int(int(base_col[2:4], 16) * grid_pulse)))
-        gb = max(0, min(255, int(int(base_col[4:6], 16) * grid_pulse)))
-        grid_color = f"#{gr:02x}{gg:02x}{gb:02x}"
+        grid_color = _hex_color_scale(P["border"], grid_pulse)
         for gx in range(0, w, 40):
             for gy in range(0, h, 40):
                 offset = 20 if (gy // 40) % 2 else 0
@@ -6610,11 +6601,7 @@ class ShumilekHive:
                     mx, my = mx_raw, my_raw
 
                 # Neon glow behind edge
-                ec_hex = ec.lstrip("#")
-                glr = max(0, min(255, int(int(ec_hex[:2], 16) * 0.3)))
-                glg = max(0, min(255, int(int(ec_hex[2:4], 16) * 0.3)))
-                glb = max(0, min(255, int(int(ec_hex[4:6], 16) * 0.3)))
-                glow_ec = f"#{glr:02x}{glg:02x}{glb:02x}"
+                glow_ec = _hex_color_scale(ec, 0.3)
                 c.create_line(sx, sy, mx, my, tx, ty,
                              fill=glow_ec, width=ew + 4, smooth=True)
                 c.create_line(sx, sy, mx, my, tx, ty,
@@ -6692,15 +6679,11 @@ class ShumilekHive:
                              fill="", outline=glow, width=2, dash=(3, 3))
 
             # Soft multi-ring glow halo
-            glow_col = glow.lstrip("#")
             for ri in range(4):
                 frac = 1.0 - ri / 4.0
                 gr = r + 5 + ri * 4
-                hr = max(0, min(255, int(int(glow_col[:2], 16) * 0.15 * frac)))
-                hg = max(0, min(255, int(int(glow_col[2:4], 16) * 0.15 * frac)))
-                hb = max(0, min(255, int(int(glow_col[4:6], 16) * 0.15 * frac)))
                 c.create_oval(x - gr, y - gr, x + gr, y + gr,
-                             fill=f"#{hr:02x}{hg:02x}{hb:02x}", outline="")
+                             fill=_hex_color_scale(glow, 0.15 * frac), outline="")
 
             # Orphan dashed ring
             if is_orphan and not is_active:
@@ -6915,23 +6898,7 @@ class ShumilekHive:
                              fill=P["text_dim"], anchor="nw")
 
         # ── Vignette overlay — dark edges for cinematic depth ──
-        vg_size = 30
-        for vi in range(vg_size):
-            frac = 1.0 - vi / vg_size
-            vr = max(0, min(255, int(8 * frac)))
-            vgc = max(0, min(255, int(6 * frac)))
-            vb = max(0, min(255, int(16 * frac)))
-            if vr + vgc + vb > 0:
-                c.create_line(0, vi, w, vi,
-                             fill=f"#{vr:02x}{vgc:02x}{vb:02x}", width=1)
-        for vi in range(vg_size):
-            frac = vi / vg_size
-            vr = max(0, min(255, int(8 * frac)))
-            vgc = max(0, min(255, int(6 * frac)))
-            vb = max(0, min(255, int(16 * frac)))
-            if vr + vgc + vb > 0:
-                c.create_line(0, h - vg_size + vi, w, h - vg_size + vi,
-                             fill=f"#{vr:02x}{vgc:02x}{vb:02x}", width=1)
+        _draw_vignette(c, w, h, size=30)
 
         # ── Graph stats panel (bottom-right) ──
         self._draw_graph_stats(c, w, h, nodes, importance, conn_count, orphans)
@@ -7226,23 +7193,7 @@ class ShumilekHive:
                     "color": random.choice(neb_colors),
                     "phase": random.uniform(0, math.pi * 2),
                 })
-        t_neb = time.time()
-        for neb in self._schema_nebulae:
-            nx = int(neb["x"] * w)
-            ny = int(neb["y"] * h)
-            nr = neb["r"]
-            breath = 0.5 + 0.5 * abs(math.sin(t_neb * 0.3 + neb["phase"]))
-            ncol = neb["color"].lstrip("#")
-            for ri in range(3):
-                frac = 1.0 - ri / 3.0
-                cr = int(nr * frac * (0.8 + 0.2 * breath))
-                if cr < 1:
-                    continue
-                br = max(0, min(255, int(int(ncol[:2], 16) * 0.03 * frac * breath)))
-                bg = max(0, min(255, int(int(ncol[2:4], 16) * 0.03 * frac * breath)))
-                bb = max(0, min(255, int(int(ncol[4:6], 16) * 0.03 * frac * breath)))
-                c.create_oval(nx - cr, ny - cr, nx + cr, ny + cr,
-                             fill=f"#{br:02x}{bg:02x}{bb:02x}", outline="")
+        _draw_nebulae(c, w, h, self._schema_nebulae, rings=3, opacity=0.03, t=time.time())
 
         # Subtle hex grid overlay
         for gx in range(0, w, 32):
@@ -7521,23 +7472,7 @@ class ShumilekHive:
                               fill=border_c, outline="")
 
         # Vignette overlay — dark edges for cinematic depth
-        vg_size = 30
-        for vi in range(vg_size):
-            frac = 1.0 - vi / vg_size
-            vr = max(0, min(255, int(8 * frac)))
-            vgc = max(0, min(255, int(6 * frac)))
-            vb = max(0, min(255, int(16 * frac)))
-            if vr + vgc + vb > 0:
-                c.create_line(0, vi, w, vi,
-                             fill=f"#{vr:02x}{vgc:02x}{vb:02x}", width=1)
-        for vi in range(vg_size):
-            frac = vi / vg_size
-            vr = max(0, min(255, int(8 * frac)))
-            vgc = max(0, min(255, int(6 * frac)))
-            vb = max(0, min(255, int(16 * frac)))
-            if vr + vgc + vb > 0:
-                c.create_line(0, h - vg_size + vi, w, h - vg_size + vi,
-                             fill=f"#{vr:02x}{vgc:02x}{vb:02x}", width=1)
+        _draw_vignette(c, w, h, size=30)
 
         # Metrics panel
         self._draw_schema_metrics(c, w, h)
@@ -7653,15 +7588,11 @@ class ShumilekHive:
         if state == "active":
             pulse = abs(math.sin(time.time() * 3))
             # Multi-ring soft glow
-            glow_hex = color.lstrip("#")
             for ri in range(4):
                 frac = 1.0 - ri / 4.0
                 expand = 3 + ri * 3 + int(pulse * 4)
-                hr = max(0, min(255, int(int(glow_hex[:2], 16) * 0.12 * frac)))
-                hg = max(0, min(255, int(int(glow_hex[2:4], 16) * 0.12 * frac)))
-                hb = max(0, min(255, int(int(glow_hex[4:6], 16) * 0.12 * frac)))
                 c.create_rectangle(x - expand, y - expand, x + w + expand, y + h + expand,
-                                  fill=f"#{hr:02x}{hg:02x}{hb:02x}", outline="")
+                                  fill=_hex_color_scale(color, 0.12 * frac), outline="")
             # Outer animated glow ring
             expand = int(pulse * 6) + 3
             c.create_rectangle(x - expand, y - expand, x + w + expand, y + h + expand,
@@ -7681,15 +7612,11 @@ class ShumilekHive:
                               fill=P["void"], outline="")
         elif state == "done":
             # Soft completed glow halo
-            ok_hex = P["ok"].lstrip("#")
             for ri in range(3):
                 frac = 1.0 - ri / 3.0
                 expand = 2 + ri * 3
-                hr = max(0, min(255, int(int(ok_hex[:2], 16) * 0.08 * frac)))
-                hg = max(0, min(255, int(int(ok_hex[2:4], 16) * 0.08 * frac)))
-                hb = max(0, min(255, int(int(ok_hex[4:6], 16) * 0.08 * frac)))
                 c.create_rectangle(x - expand, y - expand, x + w + expand, y + h + expand,
-                                  fill=f"#{hr:02x}{hg:02x}{hb:02x}", outline="")
+                                  fill=_hex_color_scale(P["ok"], 0.08 * frac), outline="")
             c.create_rectangle(x - 2, y - 2, x + w + 2, y + h + 2,
                               fill="", outline=P["ok"], width=1, dash=(1, 4))
 
@@ -9343,7 +9270,10 @@ class ShumilekHive:
         if self.pipeline.is_running:
             still_running = self.pipeline.step()
             if self.view_mode == "schema":
-                self._draw_schema()
+                _now_s = time.time()
+                if _now_s - self._last_schema_draw_t > 0.08:
+                    self._last_schema_draw_t = _now_s
+                    self._draw_schema()
                 self._update_schema_log()
             if self.view_mode == "graph":
                 self._graph_ai_tick()
@@ -9439,7 +9369,13 @@ class ShumilekHive:
         if self.pipeline.is_running and self._ai_hive_initialized:
             self._hive_pipeline_sync()
         if self.view_mode == "hive":
-            self._hive_draw()
+            # Throttle idle hive redraws to every 3rd frame (~9 FPS idle)
+            is_active = self._ai_processing_task or self.pipeline.is_running
+            _now_h = time.time()
+            _hive_interval = 0.04 if is_active else 0.12
+            if _now_h - self._last_hive_draw_t > _hive_interval:
+                self._last_hive_draw_t = _now_h
+                self._hive_draw()
             # Slowly decay neuron activations (slower in idle for sustained glow)
             is_active = self._ai_processing_task or self.pipeline.is_running
             decay = 0.985 if not is_active else 0.97
