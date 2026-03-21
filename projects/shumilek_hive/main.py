@@ -508,6 +508,14 @@ def _is_safe_note_name(name: str) -> bool:
     return True
 
 
+def _safe_stat(p: Path, attr: str, default=0):
+    """Get a stat attribute safely, returning default on OSError."""
+    try:
+        return getattr(p.stat(), attr)
+    except OSError:
+        return default
+
+
 class ShumilekHive:
     """Living AI knowledge hub with pipeline visualization and task management."""
 
@@ -571,6 +579,7 @@ class ShumilekHive:
         self._last_graph_draw_t: float = 0.0  # throttle graph redraws
         self._importance_cache: dict[str, float] = {}  # cached importance scores
         self._importance_cache_time: float = 0.0  # timestamp of last computation
+        _IMPORTANCE_CACHE_MAX = 500  # max entries before trim
         self._hive_constellations: list[dict] = []  # twinkling idle stars
         self._zoom_level = 0  # zoom offset: -4..+8 from base size 11
         self._last_canvas_size: dict[str, tuple[int, int]] = {}  # track resize
@@ -1593,11 +1602,14 @@ class ShumilekHive:
 
     def _refresh_file_tree_now(self):
         self._file_tree_after_id = None
-        all_md = [p for p in self.vault_path.glob("**/*.md") if p.exists()]
+        try:
+            all_md = [p for p in self.vault_path.glob("**/*.md") if p.exists()]
+        except OSError:
+            all_md = []
         if self._sort_mode == "date":
-            all_md.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+            all_md.sort(key=lambda p: _safe_stat(p, "st_mtime", 0.0), reverse=True)
         elif self._sort_mode == "size":
-            all_md.sort(key=lambda p: p.stat().st_size, reverse=True)
+            all_md.sort(key=lambda p: _safe_stat(p, "st_size", 0), reverse=True)
         else:
             all_md.sort(key=lambda p: p.name.lower())
         self._all_files = all_md
@@ -3509,14 +3521,15 @@ class ShumilekHive:
             "steps": [],
         }
         self._ai_tasks.append(task)
-        # Cap task list — remove oldest done tasks beyond 100
+        # Cap task list — remove oldest finished tasks beyond 100
         if len(self._ai_tasks) > 100:
+            _active = ["pending", "running"]
             self._ai_tasks = [
                 t for t in self._ai_tasks
-                if t["status"] != "done"
+                if t["status"] in _active
             ] + [
                 t for t in self._ai_tasks
-                if t["status"] == "done"
+                if t["status"] not in _active
             ][-50:]
         self._ai_log("info", f"Task #{task['id']} queued: {text[:50]}")
         self._hive_set_output(f"Task #{task['id']} queued", text, f"kind: {task['kind']}")
@@ -5759,6 +5772,11 @@ class ShumilekHive:
             for k in importance:
                 importance[k] /= max_score
 
+        # Cap cache size for large vaults
+        if len(importance) > self._IMPORTANCE_CACHE_MAX:
+            # Keep top entries by score
+            sorted_keys = sorted(importance, key=importance.get, reverse=True)
+            importance = {k: importance[k] for k in sorted_keys[:self._IMPORTANCE_CACHE_MAX]}
         self._importance_cache = importance
         self._importance_cache_time = now
         return importance
@@ -6345,14 +6363,21 @@ class ShumilekHive:
     # ─── GRAPH VIEW ──────────────────────────────────────────────
     def _rebuild_graph_data(self):
         self.notes_graph.clear()
-        for fp in self.vault_path.glob("**/*.md"):
-            name = fp.stem
-            content = self._read_cached(fp)
-            for link in re.findall(r'\[\[([^\]|#]+)', content):
-                link = link.strip()
-                if link and link != name:
-                    self.notes_graph[name].add(link)
-                    self.notes_graph[link]  # ensure exists
+        try:
+            md_files = list(self.vault_path.glob("**/*.md"))
+        except OSError:
+            md_files = []
+        for fp in md_files:
+            try:
+                name = fp.stem
+                content = self._read_cached(fp)
+                for link in re.findall(r'\[\[([^\]|#]+)', content):
+                    link = link.strip()
+                    if link and link != name:
+                        self.notes_graph[name].add(link)
+                        self.notes_graph[link]  # ensure exists
+            except Exception:
+                continue  # skip malformed files
 
     def _draw_graph(self):
         c = self.graph_canvas

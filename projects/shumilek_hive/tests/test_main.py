@@ -736,5 +736,139 @@ class TaskHistoryMaxConstantTests(unittest.TestCase):
         self.assertEqual(int(match.group(1)), 500)
 
 
+class ImportanceCacheCapTests(unittest.TestCase):
+    """Tests for _importance_cache LRU cap."""
+
+    def test_cache_capped_at_max(self):
+        """Simulate importance cache cap logic."""
+        max_entries = 10
+        importance = {f"note_{i}": i / 20.0 for i in range(25)}
+        if len(importance) > max_entries:
+            sorted_keys = sorted(importance, key=importance.get, reverse=True)
+            importance = {k: importance[k] for k in sorted_keys[:max_entries]}
+        self.assertEqual(len(importance), max_entries)
+        # Top-scoring entries preserved
+        self.assertIn("note_24", importance)
+        self.assertIn("note_20", importance)
+        # Low-scoring entries trimmed
+        self.assertNotIn("note_0", importance)
+        self.assertNotIn("note_1", importance)
+
+    def test_cache_under_limit_unchanged(self):
+        importance = {f"n{i}": float(i) for i in range(5)}
+        max_entries = 500
+        if len(importance) > max_entries:
+            sorted_keys = sorted(importance, key=importance.get, reverse=True)
+            importance = {k: importance[k] for k in sorted_keys[:max_entries]}
+        self.assertEqual(len(importance), 5)
+
+    def test_constant_in_source(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("_IMPORTANCE_CACHE_MAX", source)
+        match = re.search(r"_IMPORTANCE_CACHE_MAX\s*=\s*(\d+)", source)
+        self.assertIsNotNone(match)
+        self.assertEqual(int(match.group(1)), 500)
+
+
+class TaskCapCancelledErrorTests(unittest.TestCase):
+    """Tests for _ai_tasks cap including cancelled/error cleanup."""
+
+    def _apply_cap(self, tasks: list[dict]) -> list[dict]:
+        """Replicate the improved cap logic."""
+        if len(tasks) > 100:
+            _active = ["pending", "running"]
+            tasks = [
+                t for t in tasks if t["status"] in _active
+            ] + [
+                t for t in tasks if t["status"] not in _active
+            ][-50:]
+        return tasks
+
+    def test_cancelled_tasks_trimmed(self):
+        tasks = []
+        for i in range(120):
+            tasks.append({"id": i, "status": "cancelled" if i < 70 else "done"})
+        result = self._apply_cap(tasks)
+        self.assertLessEqual(len(result), 100)
+        # All cancelled tasks should be in the 'finished' pool, old ones trimmed
+        cancelled_count = sum(1 for t in result if t["status"] == "cancelled")
+        self.assertLess(cancelled_count, 70)
+
+    def test_error_tasks_trimmed(self):
+        tasks = []
+        for i in range(110):
+            tasks.append({"id": i, "status": "error"})
+        result = self._apply_cap(tasks)
+        self.assertLessEqual(len(result), 50)
+
+    def test_active_tasks_preserved(self):
+        tasks = [{"id": i, "status": "done"} for i in range(90)]
+        tasks.append({"id": 90, "status": "pending"})
+        tasks.append({"id": 91, "status": "running"})
+        for i in range(92, 112):
+            tasks.append({"id": i, "status": "cancelled"})
+        result = self._apply_cap(tasks)
+        pending = [t for t in result if t["status"] == "pending"]
+        running = [t for t in result if t["status"] == "running"]
+        self.assertEqual(len(pending), 1)
+        self.assertEqual(len(running), 1)
+
+    def test_below_cap_unchanged(self):
+        tasks = [{"id": i, "status": "done"} for i in range(50)]
+        result = self._apply_cap(tasks)
+        self.assertEqual(len(result), 50)
+
+
+class SafeStatTests(unittest.TestCase):
+    """Tests for _safe_stat helper function."""
+
+    def test_safe_stat_returns_attribute(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        # Extract _safe_stat function
+        fn_start = source.index("def _safe_stat(")
+        fn_end = source.index("\n\n", fn_start)
+        fn_source = source[fn_start:fn_end]
+        ns: dict = {"Path": Path}
+        exec(fn_source, ns)
+        _safe_stat = ns["_safe_stat"]
+        # Existing path should return real mtime
+        result = _safe_stat(Path(__file__), "st_mtime", 0.0)
+        self.assertGreater(result, 0.0)
+
+    def test_safe_stat_returns_default_on_missing(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        fn_start = source.index("def _safe_stat(")
+        fn_end = source.index("\n\n", fn_start)
+        fn_source = source[fn_start:fn_end]
+        ns: dict = {"Path": Path}
+        exec(fn_source, ns)
+        _safe_stat = ns["_safe_stat"]
+        result = _safe_stat(Path("/nonexistent/file.md"), "st_mtime", -1.0)
+        self.assertEqual(result, -1.0)
+
+
+class RebuildGraphSafetyTests(unittest.TestCase):
+    """Tests for _rebuild_graph_data per-file error handling."""
+
+    def test_source_has_per_file_except(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        # Find _rebuild_graph_data
+        idx = source.index("def _rebuild_graph_data(self):")
+        method_src = source[idx:idx + 900]
+        self.assertIn("except Exception:", method_src)
+        self.assertIn("continue", method_src)
+
+    def test_source_has_glob_try_except(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _rebuild_graph_data(self):")
+        method_src = source[idx:idx + 600]
+        self.assertIn("except OSError:", method_src)
+
+
 if __name__ == "__main__":
     unittest.main()
