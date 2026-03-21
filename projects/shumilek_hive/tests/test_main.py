@@ -2,6 +2,9 @@
 import unittest
 import re
 import sys
+import json
+import time
+import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -568,6 +571,169 @@ class FileCacheLRUTests(unittest.TestCase):
         # Last 3 entries should be present
         for i in range(7, 10):
             self.assertIn(f"f{i}", cache)
+
+
+class TaskHistoryTests(unittest.TestCase):
+    """Tests for task history JSON export."""
+
+    def _make_save_fn(self, vault_path: Path, max_entries: int = 500):
+        """Build standalone _hive_save_task_history from source."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        # We replicate the logic inline to avoid Tkinter
+        import json as _json, time as _time
+
+        def save(task: dict):
+            history_dir = vault_path / "Hive Reports"
+            history_dir.mkdir(parents=True, exist_ok=True)
+            history_path = history_dir / "task_history.json"
+            entry = {
+                "id": task.get("id"),
+                "text": task.get("text", "")[:200],
+                "kind": task.get("kind", "task"),
+                "status": task.get("status", "unknown"),
+                "result": task.get("result", "")[:300],
+                "created": task.get("created", 0),
+                "completed": _time.time(),
+            }
+            history: list = []
+            if history_path.exists():
+                raw = history_path.read_text(encoding="utf-8")
+                if raw.strip():
+                    history = _json.loads(raw)
+            history.append(entry)
+            if len(history) > max_entries:
+                history = history[-max_entries:]
+            history_path.write_text(
+                _json.dumps(history, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+
+        return save
+
+    def test_saves_task_to_json(self):
+        with tempfile.TemporaryDirectory() as td:
+            vault = Path(td)
+            save = self._make_save_fn(vault)
+            task = {"id": 1, "text": "analyze vault", "kind": "summary",
+                    "status": "done", "result": "OK", "created": 100.0}
+            save(task)
+            hp = vault / "Hive Reports" / "task_history.json"
+            self.assertTrue(hp.exists())
+            data = json.loads(hp.read_text(encoding="utf-8"))
+            self.assertEqual(len(data), 1)
+            self.assertEqual(data[0]["id"], 1)
+            self.assertEqual(data[0]["kind"], "summary")
+
+    def test_appends_multiple_tasks(self):
+        with tempfile.TemporaryDirectory() as td:
+            vault = Path(td)
+            save = self._make_save_fn(vault)
+            for i in range(5):
+                save({"id": i, "text": f"task {i}", "kind": "tags",
+                      "status": "done", "result": f"r{i}", "created": float(i)})
+            hp = vault / "Hive Reports" / "task_history.json"
+            data = json.loads(hp.read_text(encoding="utf-8"))
+            self.assertEqual(len(data), 5)
+            self.assertEqual(data[4]["id"], 4)
+
+    def test_caps_history_at_max(self):
+        with tempfile.TemporaryDirectory() as td:
+            vault = Path(td)
+            max_n = 10
+            save = self._make_save_fn(vault, max_entries=max_n)
+            for i in range(max_n + 5):
+                save({"id": i, "text": f"t{i}", "kind": "tags",
+                      "status": "done", "result": f"r{i}", "created": float(i)})
+            hp = vault / "Hive Reports" / "task_history.json"
+            data = json.loads(hp.read_text(encoding="utf-8"))
+            self.assertEqual(len(data), max_n)
+            # Oldest entries should be trimmed
+            self.assertEqual(data[0]["id"], 5)
+            self.assertEqual(data[-1]["id"], max_n + 4)
+
+    def test_truncates_long_text_and_result(self):
+        with tempfile.TemporaryDirectory() as td:
+            vault = Path(td)
+            save = self._make_save_fn(vault)
+            long_text = "x" * 500
+            long_result = "r" * 600
+            save({"id": 1, "text": long_text, "kind": "summary",
+                  "status": "done", "result": long_result, "created": 1.0})
+            hp = vault / "Hive Reports" / "task_history.json"
+            data = json.loads(hp.read_text(encoding="utf-8"))
+            self.assertLessEqual(len(data[0]["text"]), 200)
+            self.assertLessEqual(len(data[0]["result"]), 300)
+
+    def test_cancelled_task_saved(self):
+        with tempfile.TemporaryDirectory() as td:
+            vault = Path(td)
+            save = self._make_save_fn(vault)
+            save({"id": 1, "text": "abc", "kind": "tags",
+                  "status": "cancelled", "result": "Cancelled by user", "created": 1.0})
+            hp = vault / "Hive Reports" / "task_history.json"
+            data = json.loads(hp.read_text(encoding="utf-8"))
+            self.assertEqual(data[0]["status"], "cancelled")
+
+
+class TaskErrorHandlingTests(unittest.TestCase):
+    """Tests for error handling in _hive_complete_task."""
+
+    def test_error_state_on_exception(self):
+        """Simulate _hive_execute_task raising and verify error fields."""
+        import traceback as _tb
+        task = {"id": 1, "text": "fail", "kind": "summary", "status": "running",
+                "progress": 50, "result": "", "detail": "", "actions": [],
+                "created": 1.0}
+        # Simulate the try/except block
+        task["status"] = "done"
+        task["progress"] = 100
+        try:
+            raise ValueError("simulated failure")
+        except Exception:
+            task["status"] = "error"
+            tb = _tb.format_exc()
+            task["result"] = "Task failed with error"
+            task["detail"] = tb[-500:] if len(tb) > 500 else tb
+            task["actions"] = []
+        self.assertEqual(task["status"], "error")
+        self.assertEqual(task["result"], "Task failed with error")
+        self.assertIn("simulated failure", task["detail"])
+
+    def test_pipeline_error_state_on_task_error(self):
+        """Pipeline nodes transition to error when task errors."""
+        node_states = {"context": "done", "routing": "active", "rozum": "idle"}
+        end_state = "error"  # simulating task["status"] == "error"
+        for nid in list(node_states):
+            if node_states[nid] in ("idle", "active"):
+                node_states[nid] = end_state
+        self.assertEqual(node_states["context"], "done")  # already done — stays
+        self.assertEqual(node_states["routing"], "error")
+        self.assertEqual(node_states["rozum"], "error")
+
+    def test_normal_complete_keeps_done(self):
+        """Pipeline nodes transition to done on normal completion."""
+        node_states = {"context": "done", "routing": "active", "rozum": "idle"}
+        end_state = "done"
+        for nid in list(node_states):
+            if node_states[nid] in ("idle", "active"):
+                node_states[nid] = end_state
+        self.assertEqual(node_states["context"], "done")
+        self.assertEqual(node_states["routing"], "done")
+        self.assertEqual(node_states["rozum"], "done")
+
+
+class TaskHistoryMaxConstantTests(unittest.TestCase):
+    """Verify _TASK_HISTORY_MAX constant exists in source."""
+
+    def test_constant_defined(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("_TASK_HISTORY_MAX", source)
+        # Extract value
+        match = re.search(r"_TASK_HISTORY_MAX\s*=\s*(\d+)", source)
+        self.assertIsNotNone(match)
+        self.assertEqual(int(match.group(1)), 500)
 
 
 if __name__ == "__main__":

@@ -10,6 +10,8 @@ import math
 import random
 import time
 import datetime
+import json
+import traceback
 from pathlib import Path
 from collections import defaultdict
 
@@ -3536,6 +3538,7 @@ class ShumilekHive:
             task["progress"] = task.get("progress", 0)
             task["result"] = "Cancelled by user"
             self._ai_log("warn", f"Task #{task['id']} cancelled")
+            self._hive_save_task_history(task)
             self._ai_processing_task = None
             # Stop pipeline
             if self.pipeline.is_running:
@@ -3552,6 +3555,7 @@ class ShumilekHive:
         elif task["status"] == "pending":
             task["status"] = "cancelled"
             task["result"] = "Cancelled before start"
+            self._hive_save_task_history(task)
             self._ai_log("warn", f"Task #{task['id']} cancelled (pending)")
             self._hive_update_task_list()
 
@@ -4636,25 +4640,68 @@ class ShumilekHive:
                     self._ai_add_thought(_stage_thoughts[nid])
                     break
 
+    _TASK_HISTORY_MAX = 500
+
+    def _hive_save_task_history(self, task: dict):
+        """Append completed/cancelled task to vault JSON history."""
+        history_dir = self.vault_path / "Hive Reports"
+        history_dir.mkdir(parents=True, exist_ok=True)
+        history_path = history_dir / "task_history.json"
+        entry = {
+            "id": task.get("id"),
+            "text": task.get("text", "")[:200],
+            "kind": task.get("kind", "task"),
+            "status": task.get("status", "unknown"),
+            "result": task.get("result", "")[:300],
+            "created": task.get("created", 0),
+            "completed": time.time(),
+        }
+        try:
+            history: list = []
+            if history_path.exists():
+                raw = history_path.read_text(encoding="utf-8")
+                if raw.strip():
+                    history = json.loads(raw)
+            history.append(entry)
+            if len(history) > self._TASK_HISTORY_MAX:
+                history = history[-self._TASK_HISTORY_MAX:]
+            history_path.write_text(
+                json.dumps(history, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+        except Exception:
+            self._ai_log("warn", "Failed to save task history")
+
     def _hive_complete_task(self, task: dict):
         task["status"] = "done"
         task["progress"] = 100
-        task["result"], task["detail"], task["actions"] = self._hive_execute_task(task)
-        self._ai_log("ok", f"Task #{task['id']} complete: {task['result'][:60]}")
+        try:
+            task["result"], task["detail"], task["actions"] = self._hive_execute_task(task)
+        except Exception:
+            task["status"] = "error"
+            tb = traceback.format_exc()
+            task["result"] = "Task failed with error"
+            task["detail"] = tb[-500:] if len(tb) > 500 else tb
+            task["actions"] = []
+            self._ai_log("err", f"Task #{task['id']} error: {tb.splitlines()[-1][:80]}")
+        self._hive_save_task_history(task)
+        if task["status"] != "error":
+            self._ai_log("ok", f"Task #{task['id']} complete: {task.get('result', '')[:60]}")
         self._ai_processing_task = None
         # Finish pipeline if still running
         if self.pipeline.is_running:
+            end_state = "error" if task["status"] == "error" else "done"
             for nid in list(self.pipeline.node_states):
                 if self.pipeline.node_states[nid] in ("idle", "active"):
-                    self.pipeline.node_states[nid] = "done"
+                    self.pipeline.node_states[nid] = end_state
             self.pipeline.is_running = False
             self.pipeline.event_log.append(
                 f"[{self.pipeline.elapsed_time:.1f}s] pipeline finished with task")
         self._hive_update_task_list()
         self._hive_set_output(
-            f"Task #{task['id']}",
+            f"Task #{task['id']}{' \u2718 ERROR' if task['status'] == 'error' else ''}",
             task["detail"],
-            f"status: done  |  kind: {task.get('kind', 'task')}  |  summary: {task['result']}",
+            f"status: {task['status']}  |  kind: {task.get('kind', 'task')}  |  summary: {task['result']}",
         )
         self._hive_set_actions(task.get("actions"))
         self._update_vault_stats()
@@ -6653,7 +6700,7 @@ class ShumilekHive:
 
         # ── AI Live Status Panel (top-right) ──
         if self.pipeline.is_running or self._graph_ai_stage:
-            ai_pw, ai_ph = 240, 70
+            ai_pw, ai_ph = 240, 90
             ai_px = w - ai_pw - 10
             ai_py = 6
             is_live = self.pipeline.is_running
@@ -6722,6 +6769,18 @@ class ShumilekHive:
             c.create_text(ai_px + ai_pw - 10, ai_py + 10,
                          text=f"{active_n} nodes", font=F_PIXEL,
                          fill=P["text_dim"], anchor="ne")
+
+            # Active Hive task kind
+            if self._ai_processing_task:
+                task_kind = self._ai_processing_task.get("kind", "task").upper()
+                task_prog = self._ai_processing_task.get("progress", 0)
+                c.create_text(ai_px + 10, ai_py + 62,
+                             text=f"\u25B6 {task_kind} [{task_prog}%]",
+                             font=F_PIXEL, fill=P["cyan"], anchor="nw")
+                task_txt = self._ai_processing_task.get("text", "")[:28]
+                c.create_text(ai_px + 10, ai_py + 76,
+                             text=task_txt, font=F_PIXEL,
+                             fill=P["text_dim"], anchor="nw")
 
         # ── Vignette overlay — dark edges for cinematic depth ──
         vg_size = 30
@@ -7290,6 +7349,44 @@ class ShumilekHive:
                          font=F_SMALL, fill=P["text_bright"])
             c.create_line(ox, oy + node_h // 2, ox, oy + node_h // 2 + 10,
                          fill=P["text_dim"], width=2, arrow="last", arrowshape=(6, 8, 3))
+
+        # ── Active Hive Task Overlay (bottom-left) ──
+        active_task = self._ai_processing_task
+        if active_task:
+            tp_w, tp_h = 280, 52
+            tp_x, tp_y = 10, h - 90
+            border_c = P["cyan"] if active_task["status"] == "running" else P["warn"]
+            c.create_rectangle(tp_x, tp_y, tp_x + tp_w, tp_y + tp_h,
+                              fill=P["panel"], outline=border_c, width=2)
+            # Corner accents
+            for (cx_, cy_) in [(tp_x, tp_y), (tp_x + tp_w - 4, tp_y),
+                               (tp_x, tp_y + tp_h - 4), (tp_x + tp_w - 4, tp_y + tp_h - 4)]:
+                c.create_rectangle(cx_, cy_, cx_ + 4, cy_ + 4,
+                                  fill=border_c, outline="")
+            # Pulsing dot
+            pulse_dot = abs(math.sin(time.time() * 4))
+            dot_r = 3 + int(pulse_dot * 2)
+            c.create_oval(tp_x + 12 - dot_r, tp_y + 14 - dot_r,
+                         tp_x + 12 + dot_r, tp_y + 14 + dot_r,
+                         fill=P["emerald"], outline="")
+            # Task kind & truncated text
+            kind_label = active_task.get("kind", "task").upper()
+            c.create_text(tp_x + 22, tp_y + 10,
+                         text=f"\u25B6 {kind_label}", font=F_SMALL,
+                         fill=border_c, anchor="nw")
+            task_text = active_task.get("text", "")[:40]
+            c.create_text(tp_x + 10, tp_y + 28,
+                         text=task_text, font=F_PIXEL,
+                         fill=P["text"], anchor="nw", width=tp_w - 20)
+            # Progress bar
+            prog = active_task.get("progress", 0) / 100
+            bar_x = tp_x + 10
+            bar_y = tp_y + tp_h - 8
+            bar_w = tp_w - 20
+            c.create_rectangle(bar_x, bar_y, bar_x + bar_w, bar_y + 4,
+                              fill=P["panel_alt"], outline=P["border"])
+            c.create_rectangle(bar_x, bar_y, bar_x + int(bar_w * prog), bar_y + 4,
+                              fill=border_c, outline="")
 
         # Vignette overlay — dark edges for cinematic depth
         vg_size = 30
