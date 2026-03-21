@@ -99,6 +99,14 @@ describe('configResolver', () => {
       const preset = resolveModelPreset(undefined);
       expect(preset).to.be.undefined;
     });
+
+    it('should resolve nvidia preset with nemotron model', () => {
+      const preset = resolveModelPreset('nvidia');
+      expect(preset).to.exist;
+      expect(preset!.model).to.equal('nemotron-3-super');
+      expect(preset!.rozumModel).to.equal('nemotron-3-super');
+      expect(preset!.miniModel).to.equal('qwen2.5:3b');
+    });
   });
 
   describe('MODEL_PRESETS', () => {

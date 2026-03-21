@@ -146,6 +146,14 @@ export const MODEL_PRESETS: Record<string, ModelPresetConfig> = {
     miniModel: 'qwen2.5:3b',
     summarizerModel: 'qwen2.5:3b',
     brainModels: ['deepseek-coder-v2:16b', 'qwen2.5-coder:7b']
+  },
+  nvidia: {
+    model: 'nemotron-3-super',
+    writerModel: 'nemotron-3-super',
+    rozumModel: 'nemotron-3-super',
+    miniModel: 'qwen2.5:3b',
+    summarizerModel: 'qwen2.5:3b',
+    brainModels: ['nemotron-3-super', 'deepseek-coder-v2:16b']
   }
 };
 
