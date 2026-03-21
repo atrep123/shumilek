@@ -6076,12 +6076,47 @@ class ShumilekHive:
         # ── Starfield background ──
         self._graph_starfield.draw(c, w, h, t)
 
-        # ── Subtle hex grid overlay ──
+        # ── Nebula clouds ──
+        if not hasattr(self, '_graph_nebulae'):
+            self._graph_nebulae = []
+            neb_colors = [P["cyan_dim"], P["amethyst_dim"], P["rose_dim"]]
+            for _ in range(4):
+                self._graph_nebulae.append({
+                    "x": random.uniform(0.15, 0.85),
+                    "y": random.uniform(0.15, 0.85),
+                    "r": random.uniform(50, 100),
+                    "color": random.choice(neb_colors),
+                    "phase": random.uniform(0, math.pi * 2),
+                })
+        for neb in self._graph_nebulae:
+            nx = int(neb["x"] * w)
+            ny = int(neb["y"] * h)
+            nr = neb["r"]
+            breath = 0.5 + 0.5 * abs(math.sin(t * 0.25 + neb["phase"]))
+            ncol = neb["color"].lstrip("#")
+            for ri in range(3):
+                frac = 1.0 - ri / 3.0
+                cr = int(nr * frac * (0.8 + 0.2 * breath))
+                if cr < 1:
+                    continue
+                br = max(0, min(255, int(int(ncol[:2], 16) * 0.03 * frac * breath)))
+                bg = max(0, min(255, int(int(ncol[2:4], 16) * 0.03 * frac * breath)))
+                bb = max(0, min(255, int(int(ncol[4:6], 16) * 0.03 * frac * breath)))
+                c.create_oval(nx - cr, ny - cr, nx + cr, ny + cr,
+                             fill=f"#{br:02x}{bg:02x}{bb:02x}", outline="")
+
+        # ── Breathing hex grid overlay ──
+        grid_pulse = 0.4 + 0.6 * abs(math.sin(t * 0.5))
+        base_col = P["border"].lstrip("#")
+        gr = max(0, min(255, int(int(base_col[:2], 16) * grid_pulse)))
+        gg = max(0, min(255, int(int(base_col[2:4], 16) * grid_pulse)))
+        gb = max(0, min(255, int(int(base_col[4:6], 16) * grid_pulse)))
+        grid_color = f"#{gr:02x}{gg:02x}{gb:02x}"
         for gx in range(0, w, 40):
             for gy in range(0, h, 40):
                 offset = 20 if (gy // 40) % 2 else 0
                 c.create_text(gx + offset, gy, text="\u00b7", font=(FONT, 5),
-                             fill=P["border"], anchor="center")
+                             fill=grid_color, anchor="center")
 
         # Heat map importance
         importance = self._compute_note_importance()
@@ -6149,6 +6184,14 @@ class ShumilekHive:
                 else:
                     mx, my = mx_raw, my_raw
 
+                # Neon glow behind edge
+                ec_hex = ec.lstrip("#")
+                glr = max(0, min(255, int(int(ec_hex[:2], 16) * 0.3)))
+                glg = max(0, min(255, int(int(ec_hex[2:4], 16) * 0.3)))
+                glb = max(0, min(255, int(int(ec_hex[4:6], 16) * 0.3)))
+                glow_ec = f"#{glr:02x}{glg:02x}{glb:02x}"
+                c.create_line(sx, sy, mx, my, tx, ty,
+                             fill=glow_ec, width=ew + 4, smooth=True)
                 c.create_line(sx, sy, mx, my, tx, ty,
                              fill=ec, width=ew, smooth=True)
 
@@ -6222,6 +6265,17 @@ class ShumilekHive:
                 glow_r = r + 4 + int(imp * 6)
                 c.create_oval(x - glow_r, y - glow_r, x + glow_r, y + glow_r,
                              fill="", outline=glow, width=2, dash=(3, 3))
+
+            # Soft multi-ring glow halo
+            glow_col = glow.lstrip("#")
+            for ri in range(4):
+                frac = 1.0 - ri / 4.0
+                gr = r + 5 + ri * 4
+                hr = max(0, min(255, int(int(glow_col[:2], 16) * 0.15 * frac)))
+                hg = max(0, min(255, int(int(glow_col[2:4], 16) * 0.15 * frac)))
+                hb = max(0, min(255, int(int(glow_col[4:6], 16) * 0.15 * frac)))
+                c.create_oval(x - gr, y - gr, x + gr, y + gr,
+                             fill=f"#{hr:02x}{hg:02x}{hb:02x}", outline="")
 
             # Orphan dashed ring
             if is_orphan and not is_active:
@@ -6422,6 +6476,25 @@ class ShumilekHive:
             c.create_text(ai_px + ai_pw - 10, ai_py + 10,
                          text=f"{active_n} nodes", font=F_PIXEL,
                          fill=P["text_dim"], anchor="ne")
+
+        # ── Vignette overlay — dark edges for cinematic depth ──
+        vg_size = 30
+        for vi in range(vg_size):
+            frac = 1.0 - vi / vg_size
+            vr = max(0, min(255, int(8 * frac)))
+            vgc = max(0, min(255, int(6 * frac)))
+            vb = max(0, min(255, int(16 * frac)))
+            if vr + vgc + vb > 0:
+                c.create_line(0, vi, w, vi,
+                             fill=f"#{vr:02x}{vgc:02x}{vb:02x}", width=1)
+        for vi in range(vg_size):
+            frac = vi / vg_size
+            vr = max(0, min(255, int(8 * frac)))
+            vgc = max(0, min(255, int(6 * frac)))
+            vb = max(0, min(255, int(16 * frac)))
+            if vr + vgc + vb > 0:
+                c.create_line(0, h - vg_size + vi, w, h - vg_size + vi,
+                             fill=f"#{vr:02x}{vgc:02x}{vb:02x}", width=1)
 
         # ── Graph stats panel (bottom-right) ──
         self._draw_graph_stats(c, w, h, nodes, importance, conn_count, orphans)
@@ -6704,6 +6777,36 @@ class ShumilekHive:
         # Starfield background (twinkling pixel stars)
         self._starfield.draw(c, w, h, time.time())
 
+        # Nebula clouds — colored blobs in schema background
+        if not hasattr(self, '_schema_nebulae'):
+            self._schema_nebulae = []
+            neb_colors = [P["cyan_dim"], P["amethyst_dim"], P["rose_dim"]]
+            for _ in range(3):
+                self._schema_nebulae.append({
+                    "x": random.uniform(0.2, 0.8),
+                    "y": random.uniform(0.2, 0.8),
+                    "r": random.uniform(60, 100),
+                    "color": random.choice(neb_colors),
+                    "phase": random.uniform(0, math.pi * 2),
+                })
+        t_neb = time.time()
+        for neb in self._schema_nebulae:
+            nx = int(neb["x"] * w)
+            ny = int(neb["y"] * h)
+            nr = neb["r"]
+            breath = 0.5 + 0.5 * abs(math.sin(t_neb * 0.3 + neb["phase"]))
+            ncol = neb["color"].lstrip("#")
+            for ri in range(3):
+                frac = 1.0 - ri / 3.0
+                cr = int(nr * frac * (0.8 + 0.2 * breath))
+                if cr < 1:
+                    continue
+                br = max(0, min(255, int(int(ncol[:2], 16) * 0.03 * frac * breath)))
+                bg = max(0, min(255, int(int(ncol[2:4], 16) * 0.03 * frac * breath)))
+                bb = max(0, min(255, int(int(ncol[4:6], 16) * 0.03 * frac * breath)))
+                c.create_oval(nx - cr, ny - cr, nx + cr, ny + cr,
+                             fill=f"#{br:02x}{bg:02x}{bb:02x}", outline="")
+
         # Subtle hex grid overlay
         for gx in range(0, w, 32):
             for gy in range(0, h, 32):
@@ -6942,6 +7045,25 @@ class ShumilekHive:
             c.create_line(ox, oy + node_h // 2, ox, oy + node_h // 2 + 10,
                          fill=P["text_dim"], width=2, arrow="last", arrowshape=(6, 8, 3))
 
+        # Vignette overlay — dark edges for cinematic depth
+        vg_size = 30
+        for vi in range(vg_size):
+            frac = 1.0 - vi / vg_size
+            vr = max(0, min(255, int(8 * frac)))
+            vgc = max(0, min(255, int(6 * frac)))
+            vb = max(0, min(255, int(16 * frac)))
+            if vr + vgc + vb > 0:
+                c.create_line(0, vi, w, vi,
+                             fill=f"#{vr:02x}{vgc:02x}{vb:02x}", width=1)
+        for vi in range(vg_size):
+            frac = vi / vg_size
+            vr = max(0, min(255, int(8 * frac)))
+            vgc = max(0, min(255, int(6 * frac)))
+            vb = max(0, min(255, int(16 * frac)))
+            if vr + vgc + vb > 0:
+                c.create_line(0, h - vg_size + vi, w, h - vg_size + vi,
+                             fill=f"#{vr:02x}{vgc:02x}{vb:02x}", width=1)
+
         # Metrics panel
         self._draw_schema_metrics(c, w, h)
 
@@ -7055,6 +7177,16 @@ class ShumilekHive:
         # Pulsing glow rings for active node
         if state == "active":
             pulse = abs(math.sin(time.time() * 3))
+            # Multi-ring soft glow
+            glow_hex = color.lstrip("#")
+            for ri in range(4):
+                frac = 1.0 - ri / 4.0
+                expand = 3 + ri * 3 + int(pulse * 4)
+                hr = max(0, min(255, int(int(glow_hex[:2], 16) * 0.12 * frac)))
+                hg = max(0, min(255, int(int(glow_hex[2:4], 16) * 0.12 * frac)))
+                hb = max(0, min(255, int(int(glow_hex[4:6], 16) * 0.12 * frac)))
+                c.create_rectangle(x - expand, y - expand, x + w + expand, y + h + expand,
+                                  fill=f"#{hr:02x}{hg:02x}{hb:02x}", outline="")
             # Outer animated glow ring
             expand = int(pulse * 6) + 3
             c.create_rectangle(x - expand, y - expand, x + w + expand, y + h + expand,
@@ -7073,7 +7205,16 @@ class ShumilekHive:
             c.create_rectangle(x + 3, y + h + 2, x + w - 3, y + h + 5,
                               fill=P["void"], outline="")
         elif state == "done":
-            # Subtle completed glow
+            # Soft completed glow halo
+            ok_hex = P["ok"].lstrip("#")
+            for ri in range(3):
+                frac = 1.0 - ri / 3.0
+                expand = 2 + ri * 3
+                hr = max(0, min(255, int(int(ok_hex[:2], 16) * 0.08 * frac)))
+                hg = max(0, min(255, int(int(ok_hex[2:4], 16) * 0.08 * frac)))
+                hb = max(0, min(255, int(int(ok_hex[4:6], 16) * 0.08 * frac)))
+                c.create_rectangle(x - expand, y - expand, x + w + expand, y + h + expand,
+                                  fill=f"#{hr:02x}{hg:02x}{hb:02x}", outline="")
             c.create_rectangle(x - 2, y - 2, x + w + 2, y + h + 2,
                               fill="", outline=P["ok"], width=1, dash=(1, 4))
 
@@ -8777,6 +8918,17 @@ class ShumilekHive:
                         rx + random.randint(0, rw),
                         ry + random.randint(0, rh)
                     )
+        # Ambient idle particles — sparse floating motes when pipeline idle
+        if self.view_mode == "schema" and not self.pipeline.is_running:
+            if self._anim_tick % 45 == 0:
+                try:
+                    sw = max(self.schema_canvas.winfo_width(), 400)
+                    sh = max(self.schema_canvas.winfo_height(), 300)
+                    self.particles_schema.emit(
+                        random.randint(40, sw - 40),
+                        random.randint(40, sh - 40), count=1)
+                except tk.TclError:
+                    pass
         self.particles_schema.update()
         if self.view_mode == "schema":
             self.schema_canvas.delete("particle")
