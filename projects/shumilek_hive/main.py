@@ -616,6 +616,7 @@ class ShumilekHive:
         self._graph_press_xy: tuple[int, int] | None = None  # initial mouse-down position on graph
         self._graph_dragged = False  # whether current graph press turned into a drag
         self._graph_custom_positions: dict[str, tuple[float, float]] = {}  # custom graph layout
+        self._graph_layout_mode: str = "circular"  # circular | force | radial
         self._graph_starfield = StarField(120)  # starfield for graph background
         self._graph_flow_particles: list[FlowParticle] = []  # animated edge particles
         self._graph_anim_phase: float = 0.0  # animation phase counter
@@ -647,6 +648,7 @@ class ShumilekHive:
         self._split_active = False
         self._split_file: Path | None = None  # file shown in split pane
         self._outline_lines: list[int] = []  # outline listbox index -> editor line number
+        self._bookmarks: dict[str, list[int]] = {}  # stem → [line_numbers]
 
         # Reading Time + Word Goal
         self._word_goal: int = 0  # 0 = no goal
@@ -737,6 +739,7 @@ class ShumilekHive:
         self.root.bind("<Control-Tab>", lambda e: self._cycle_tab(1))
         self.root.bind("<Control-Shift-Tab>", lambda e: self._cycle_tab(-1))
         self.root.bind("<Control-Shift-X>", lambda e: self._export_task_history())
+        self.root.bind("<Control-m>", lambda e: self._toggle_bookmark())
 
         # Toast overlay label (hidden until _show_toast is called)
         self._toast_label = tk.Label(
@@ -1197,6 +1200,22 @@ class ShumilekHive:
         self.tag_cloud_canvas.bind("<Button-1>", self._on_tag_cloud_click)
         self._tag_cloud_items: list[tuple[str, int, int, int, int]] = []  # (tag, x1, y1, x2, y2)
 
+        # Bookmarks section
+        bm_header = tk.Canvas(self.sidebar, height=20, bg=P["surface"],
+                               highlightthickness=0)
+        bm_header.pack(fill="x")
+        bm_header.create_text(10, 10, text="\U0001f516 BOOKMARKS", font=F_PIXEL,
+                               fill=P["amethyst"], anchor="w")
+        self.bookmark_listbox = tk.Listbox(
+            self.sidebar, height=4, font=F_SMALL,
+            bg=P["panel"], fg=P["text"],
+            selectbackground=P["hover"], selectforeground=P["cyan"],
+            activestyle="none", bd=0, highlightthickness=0,
+            relief="flat", cursor="hand2"
+        )
+        self.bookmark_listbox.pack(fill="x", padx=4, pady=(2, 4))
+        self.bookmark_listbox.bind("<<ListboxSelect>>", self._on_bookmark_select)
+
         # Decorative honeycomb at sidebar bottom
         sidebar_deco = _load_icon("deco_honeycomb", (20, 60))
         if sidebar_deco:
@@ -1437,6 +1456,24 @@ class ShumilekHive:
 
         # Graph canvas (hidden)
         self.graph_frame = tk.Frame(self.center_frame, bg=P["void"])
+        # Graph layout toolbar
+        self.graph_layout_bar = tk.Frame(self.graph_frame, bg=P["panel"], height=26)
+        self.graph_layout_bar.pack(fill="x", side="top")
+        self.graph_layout_bar.pack_propagate(False)
+        tk.Label(self.graph_layout_bar, text="LAYOUT:", font=F_PIXEL,
+                 bg=P["panel"], fg=P["text_dim"]).pack(side="left", padx=(6, 2))
+        self._layout_buttons: dict[str, tk.Button] = {}
+        for mode, lbl in [("circular", "\u25EF Circular"),
+                           ("force", "\u2B24 Force"),
+                           ("radial", "\u2738 Radial")]:
+            btn = tk.Button(self.graph_layout_bar, text=lbl, font=F_PIXEL,
+                            bg=P["surface"], fg=P["text"], bd=0,
+                            activebackground=P["hover"],
+                            activeforeground=P["text_bright"],
+                            command=lambda m=mode: self._set_graph_layout(m))
+            btn.pack(side="left", padx=2, pady=2)
+            self._layout_buttons[mode] = btn
+        self._layout_buttons["circular"].config(fg=P["cyan"])
         # Canvas area
         self.graph_canvas = tk.Canvas(self.graph_frame, bg=P["void"],
                                       highlightthickness=0, cursor="crosshair")
@@ -2734,6 +2771,68 @@ class ShumilekHive:
         self._open_file(path)
         self.editor.see(f"{line}.0")
         self.editor.mark_set("insert", f"{line}.0")
+        # Highlight vault-search query in opened file
+        if hasattr(self, 'vault_search_var'):
+            q = self.vault_search_var.get().strip()
+            if q:
+                self.editor.tag_remove("search_match", "1.0", "end")
+                line_text = self.editor.get(f"{line}.0", f"{line}.end")
+                pos_in_line = line_text.lower().find(q.lower())
+                if pos_in_line >= 0:
+                    start = f"{line}.{pos_in_line}"
+                    end = f"{line}.{pos_in_line + len(q)}"
+                    self.editor.tag_add("search_match", start, end)
+
+    # ─── GRAPH LAYOUT ────────────────────────────────────────────
+    def _set_graph_layout(self, mode: str):
+        """Switch graph layout mode and redraw."""
+        self._graph_layout_mode = mode
+        self._graph_custom_positions.clear()
+        for m, btn in self._layout_buttons.items():
+            btn.config(fg=P["cyan"] if m == mode else P["text"])
+        self._draw_graph()
+        self._show_toast(f"Layout: {mode}")
+
+    # ─── BOOKMARKS ───────────────────────────────────────────────
+    def _toggle_bookmark(self):
+        """Toggle bookmark on current editor line."""
+        if not self.current_file:
+            return
+        stem = self.current_file.stem
+        idx = self.editor.index("insert")
+        line_no = int(idx.split(".")[0])
+        bm_list = self._bookmarks.setdefault(stem, [])
+        if line_no in bm_list:
+            bm_list.remove(line_no)
+            self._show_toast(f"Bookmark removed: L{line_no}")
+        else:
+            bm_list.append(line_no)
+            bm_list.sort()
+            self._show_toast(f"Bookmark set: L{line_no}")
+        self._refresh_bookmark_list()
+
+    def _refresh_bookmark_list(self):
+        """Refresh sidebar bookmark listbox."""
+        self.bookmark_listbox.delete(0, "end")
+        for stem, lines in sorted(self._bookmarks.items()):
+            for ln in lines:
+                self.bookmark_listbox.insert("end", f"{stem}:L{ln}")
+
+    def _on_bookmark_select(self, event):
+        """Jump to selected bookmark."""
+        sel = self.bookmark_listbox.curselection()
+        if not sel:
+            return
+        text = self.bookmark_listbox.get(sel[0])
+        if ":L" not in text:
+            return
+        stem, line_str = text.rsplit(":L", 1)
+        line_no = int(line_str)
+        # Find matching file
+        for fp in self._all_files:
+            if fp.stem == stem:
+                self._maybe_save_then(lambda p=fp, ln=line_no: self._open_file_at_line(p, ln))
+                break
 
     def _export_html(self):
         if not self.current_file:
@@ -6998,14 +7097,91 @@ class ShumilekHive:
 
         # Layout
         n = len(nodes)
-        radius = min(w, h) * 0.33
         positions = {}
-        for i, node in enumerate(nodes):
-            if node in self._graph_custom_positions:
-                positions[node] = self._graph_custom_positions[node]
-            else:
+        layout = self._graph_layout_mode
+
+        if layout == "force":
+            # Force-directed: repulsion between all nodes, attraction on edges
+            # Initialize positions in circle, then iterate
+            radius = min(w, h) * 0.35
+            for i, node in enumerate(nodes):
+                a = 2 * math.pi * i / n - math.pi / 2
+                positions[node] = [cx + radius * math.cos(a), cy + radius * math.sin(a)]
+            # Simple iterative force computation (30 iterations for perf)
+            for _ in range(30):
+                forces: dict[str, list[float]] = {nd: [0.0, 0.0] for nd in nodes}
+                # Repulsion (Coulomb)
+                for i_n in range(n):
+                    for j_n in range(i_n + 1, n):
+                        na, nb = nodes[i_n], nodes[j_n]
+                        dx = positions[na][0] - positions[nb][0]
+                        dy = positions[na][1] - positions[nb][1]
+                        d = max(math.hypot(dx, dy), 1.0)
+                        rep = 8000.0 / (d * d)
+                        fx, fy = rep * dx / d, rep * dy / d
+                        forces[na][0] += fx
+                        forces[na][1] += fy
+                        forces[nb][0] -= fx
+                        forces[nb][1] -= fy
+                    # Attraction (Hooke) for edges
+                for src_node, tgts in self.notes_graph.items():
+                    if src_node not in positions:
+                        continue
+                    for tgt in tgts:
+                        if tgt not in positions:
+                            continue
+                        dx = positions[tgt][0] - positions[src_node][0]
+                        dy = positions[tgt][1] - positions[src_node][1]
+                        d = max(math.hypot(dx, dy), 1.0)
+                        attr = d * 0.01
+                        fx, fy = attr * dx / d, attr * dy / d
+                        forces[src_node][0] += fx
+                        forces[src_node][1] += fy
+                        forces[tgt][0] -= fx
+                        forces[tgt][1] -= fy
+                # Apply forces with damping
+                for nd in nodes:
+                    positions[nd][0] = max(30, min(w - 30, positions[nd][0] + forces[nd][0] * 0.1))
+                    positions[nd][1] = max(30, min(h - 30, positions[nd][1] + forces[nd][1] * 0.1))
+            # Convert to tuple
+            positions = {nd: (p[0], p[1]) for nd, p in positions.items()}
+
+        elif layout == "radial":
+            # Radial: most-connected node at center, layers by distance
+            conn_tmp: dict[str, int] = {}
+            for nd in nodes:
+                out_c = len(self.notes_graph.get(nd, set()))
+                in_c = sum(1 for tgts in self.notes_graph.values() if nd in tgts)
+                conn_tmp[nd] = out_c + in_c
+            sorted_nodes = sorted(nodes, key=lambda x: conn_tmp.get(x, 0), reverse=True)
+            if sorted_nodes:
+                positions[sorted_nodes[0]] = (cx, cy)
+            ring_spacing = min(w, h) * 0.15
+            ring_idx = 1
+            ring_capacity = 6
+            placed = 1
+            while placed < n:
+                ring_r = ring_spacing * ring_idx
+                count_in_ring = min(ring_capacity, n - placed)
+                for j in range(count_in_ring):
+                    a = 2 * math.pi * j / count_in_ring - math.pi / 2
+                    nd = sorted_nodes[placed]
+                    positions[nd] = (cx + ring_r * math.cos(a), cy + ring_r * math.sin(a))
+                    placed += 1
+                ring_idx += 1
+                ring_capacity = int(ring_capacity * 1.5)
+
+        else:
+            # Circular (default)
+            radius = min(w, h) * 0.33
+            for i, node in enumerate(nodes):
                 a = 2 * math.pi * i / n - math.pi / 2
                 positions[node] = (cx + radius * math.cos(a), cy + radius * math.sin(a))
+
+        # Apply custom position overrides
+        for node in nodes:
+            if node in self._graph_custom_positions:
+                positions[node] = self._graph_custom_positions[node]
 
         # ── Pre-compute connection counts ──
         incoming: dict[str, int] = {}

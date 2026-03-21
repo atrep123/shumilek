@@ -1617,5 +1617,166 @@ class SearchReplaceTests(unittest.TestCase):
         self.assertIn("replace_bar.pack", body)
 
 
+
+# ── Tier 9 ──────────────────────────────────────────────────────────────
+
+class GraphLayoutPresetTests(unittest.TestCase):
+    """Tests for graph layout presets (circular/force/radial)."""
+
+    def test_graph_layout_mode_state(self):
+        """_graph_layout_mode state variable exists."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("_graph_layout_mode", source)
+        self.assertIn('"circular"', source)
+
+    def test_layout_toolbar_exists(self):
+        """Graph layout toolbar with 3 buttons exists."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("graph_layout_bar", source)
+        self.assertIn("_layout_buttons", source)
+
+    def test_layout_buttons_labels(self):
+        """Toolbar has Circular, Force, Radial buttons."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("graph_layout_bar")
+        block = source[idx:idx + 1500]
+        self.assertIn("Circular", block)
+        self.assertIn("Force", block)
+        self.assertIn("Radial", block)
+
+    def test_set_graph_layout_method(self):
+        """_set_graph_layout method clears custom positions and redraws."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _set_graph_layout(")
+        body = source[idx:idx + 800]
+        self.assertIn("_graph_layout_mode", body)
+        self.assertIn("_graph_custom_positions", body)
+        self.assertIn("_draw_graph", body)
+
+    def test_draw_graph_force_layout(self):
+        """_draw_graph implements force-directed layout."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _draw_graph(")
+        body = source[idx:idx + 5000]
+        self.assertIn('"force"', body)
+        self.assertIn("repulsion", body.lower().replace("# ", "").lower())
+
+    def test_draw_graph_radial_layout(self):
+        """_draw_graph implements radial layout."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _draw_graph(")
+        body = source[idx:idx + 5000]
+        self.assertIn('"radial"', body)
+        self.assertIn("ring", body)
+
+    def test_draw_graph_circular_default(self):
+        """_draw_graph uses circular as default layout."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("# Circular (default)")
+        self.assertGreater(idx, 0)
+
+    def test_layout_button_highlight(self):
+        """Active layout button is highlighted via cyan color."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _set_graph_layout(")
+        body = source[idx:idx + 800]
+        self.assertIn("cyan", body)
+
+    def test_force_layout_iterations(self):
+        """Force layout runs iterative settling."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _draw_graph(")
+        body = source[idx:idx + 5000]
+        self.assertIn("range(30)", body)
+
+
+class VaultSearchJumpTests(unittest.TestCase):
+    """Tests for vault-wide search jump with query highlighting."""
+
+    def test_open_file_at_line_highlights_query(self):
+        """_open_file_at_line highlights search query matches."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _open_file_at_line(")
+        body = source[idx:idx + 1200]
+        self.assertIn("search_match", body)
+
+    def test_open_file_at_line_uses_vault_search(self):
+        """_open_file_at_line reads vault_search_var for highlighting."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _open_file_at_line(")
+        body = source[idx:idx + 1200]
+        self.assertIn("vault_search_var", body)
+
+    def test_search_match_tag_add(self):
+        """search_match tag is added to matching text."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _open_file_at_line(")
+        body = source[idx:idx + 1200]
+        self.assertIn("tag_add", body)
+        self.assertIn("search_match", body)
+
+
+class BookmarkTests(unittest.TestCase):
+    """Tests for bookmark system (Ctrl+M toggle, sidebar, jump)."""
+
+    def test_bookmarks_state(self):
+        """_bookmarks dict state variable exists."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("_bookmarks: dict[str, list[int]]", source)
+
+    def test_ctrl_m_binding(self):
+        """Ctrl+M binding for bookmark toggle exists."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("<Control-m>", source)
+        self.assertIn("_toggle_bookmark", source)
+
+    def test_toggle_bookmark_method(self):
+        """_toggle_bookmark adds/removes bookmarks."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _toggle_bookmark(")
+        body = source[idx:idx + 800]
+        self.assertIn("_bookmarks", body)
+        self.assertIn("_refresh_bookmark_list", body)
+
+    def test_bookmark_listbox_exists(self):
+        """Bookmark sidebar listbox exists."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("bookmark_listbox", source)
+        self.assertIn("BOOKMARKS", source)
+
+    def test_refresh_bookmark_list(self):
+        """_refresh_bookmark_list updates sidebar display."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _refresh_bookmark_list(")
+        body = source[idx:idx + 600]
+        self.assertIn("bookmark_listbox", body)
+        self.assertIn("delete", body)
+
+    def test_on_bookmark_select_jumps(self):
+        """_on_bookmark_select opens file at bookmarked line."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _on_bookmark_select(")
+        body = source[idx:idx + 600]
+        self.assertIn("_open_file_at_line", body)
+
+
 if __name__ == "__main__":
     unittest.main()
