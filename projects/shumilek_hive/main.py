@@ -1130,6 +1130,20 @@ class ShumilekHive:
         self.file_ctx_menu.add_command(label="\u231b Snapshots", command=self._show_snapshots)
         self.file_ctx_menu.add_command(label="\U0001f5d1 View Trash", command=self._show_trash)
 
+        # Graph context menu
+        self.graph_ctx_menu = tk.Menu(self.root, tearoff=0,
+                                       bg=P["surface"], fg=P["text"],
+                                       activebackground=P["hover"],
+                                       activeforeground=P["cyan"],
+                                       font=F_SMALL, bd=1,
+                                       relief="solid")
+        self.graph_ctx_menu.add_command(label="Open", command=self._graph_ctx_open)
+        self.graph_ctx_menu.add_command(label="\u2605 Pin/Unpin", command=self._graph_ctx_pin)
+        self.graph_ctx_menu.add_command(label="Rename", command=self._graph_ctx_rename)
+        self.graph_ctx_menu.add_separator()
+        self.graph_ctx_menu.add_command(label="\U0001f517 Show Links", command=self._graph_ctx_links)
+        self._graph_ctx_node: str | None = None
+
         # Tags
         tag_canvas = tk.Canvas(self.sidebar, height=24, bg=P["surface"],
                                highlightthickness=0)
@@ -1366,6 +1380,7 @@ class ShumilekHive:
         self.graph_canvas.bind("<ButtonRelease-1>", self._on_graph_release)
         self.graph_canvas.bind("<Configure>", lambda e: self._on_canvas_resize("graph"))
         self.graph_canvas.bind("<Motion>", self._on_graph_hover)
+        self.graph_canvas.bind("<Button-3>", self._on_graph_right_click)
         # AI scenario controls bar
         self.graph_controls = tk.Frame(self.graph_frame, bg=P["panel"], height=28)
         self.graph_controls.pack(fill="x", side="bottom")
@@ -2353,27 +2368,80 @@ class ShumilekHive:
             messagebox.showerror("Error", str(exc))
 
     def _new_note(self):
-        name = simpledialog.askstring("New Note", "Note name:", parent=self.root)
-        if not name:
-            return
-        if not name.endswith(".md"):
-            name += ".md"
-        if not _is_safe_note_name(name):
-            messagebox.showwarning("Invalid", "Name cannot contain path separators or '..'")
-            return
-        path = self.vault_path / name
-        if path.exists():
-            messagebox.showwarning("exists", f"'{name}' already exists")
-            return
-        try:
-            path.write_text(f"# {Path(name).stem}\n\n", encoding="utf-8")
-        except OSError as e:
-            messagebox.showerror("Error", f"Cannot create note:\n{e}")
-            return
-        self._importance_cache.clear()
-        self._refresh_file_tree()
-        self._rebuild_graph_data()
-        self._open_file(path)
+        # Note template selection
+        _TEMPLATES = {
+            "Blank": "# {name}\n\n",
+            "Meeting": "# {name}\n\n## Attendees\n\n- \n\n## Agenda\n\n1. \n\n## Notes\n\n\n\n## Action Items\n\n- [ ] \n",
+            "Daily": "# {name}\n\n## Tasks\n\n- [ ] \n\n## Notes\n\n\n\n## Reflections\n\n",
+            "Project": "# {name}\n\n## Goal\n\n\n\n## Tasks\n\n- [ ] \n\n## Resources\n\n- \n\n## Timeline\n\n| Date | Milestone |\n|------|-----------|\n|      |           |\n",
+        }
+        win = tk.Toplevel(self.root)
+        win.title("New Note")
+        win.geometry("320x260")
+        win.configure(bg=P["panel"])
+        self._prepare_modal(win)
+        tk.Label(win, text="NOTE NAME", font=F_SMALL,
+                 fg=P["heading"], bg=P["panel"]).pack(pady=(12, 4))
+        name_var = tk.StringVar()
+        entry = tk.Entry(win, textvariable=name_var, font=F_SMALL,
+                         bg=P["surface"], fg=P["text"],
+                         insertbackground=P["cyan"], bd=1, relief="solid")
+        entry.pack(fill="x", padx=20, pady=(0, 8))
+        entry.focus_set()
+        tk.Label(win, text="TEMPLATE", font=F_SMALL,
+                 fg=P["heading"], bg=P["panel"]).pack(pady=(4, 4))
+        tpl_var = tk.StringVar(value="Blank")
+        tpl_frame = tk.Frame(win, bg=P["panel"])
+        tpl_frame.pack(fill="x", padx=20)
+        for tpl_name in _TEMPLATES:
+            tk.Radiobutton(tpl_frame, text=tpl_name, variable=tpl_var,
+                           value=tpl_name, font=F_PIXEL,
+                           fg=P["text"], bg=P["panel"],
+                           selectcolor=P["surface"],
+                           activebackground=P["panel"],
+                           activeforeground=P["cyan"]
+                           ).pack(side="left", padx=4)
+
+        def _do_create():
+            name = name_var.get().strip()
+            if not name:
+                return
+            if not name.endswith(".md"):
+                name += ".md"
+            if not _is_safe_note_name(name):
+                messagebox.showwarning("Invalid", "Name cannot contain path separators or '..'")
+                return
+            path = self.vault_path / name
+            if path.exists():
+                messagebox.showwarning("exists", f"'{name}' already exists")
+                return
+            tpl = _TEMPLATES.get(tpl_var.get(), _TEMPLATES["Blank"])
+            content = tpl.replace("{name}", Path(name).stem)
+            try:
+                path.write_text(content, encoding="utf-8")
+            except OSError as e:
+                messagebox.showerror("Error", f"Cannot create note:\n{e}")
+                return
+            self._importance_cache.clear()
+            self._refresh_file_tree()
+            self._rebuild_graph_data()
+            self._open_file(path)
+            self._show_toast(f"Created: {Path(name).stem} ({tpl_var.get()})")
+            win.destroy()
+
+        entry.bind("<Return>", lambda e: _do_create())
+        btn_frame = tk.Frame(win, bg=P["panel"])
+        btn_frame.pack(pady=12)
+        tk.Button(btn_frame, text="Create", font=F_SMALL,
+                  fg=P["cyan"], bg=P["surface"],
+                  activebackground=P["hover"], bd=0, padx=12, pady=4,
+                  cursor="hand2", command=_do_create
+                  ).pack(side="left", padx=6)
+        tk.Button(btn_frame, text="Cancel", font=F_SMALL,
+                  fg=P["text_dim"], bg=P["surface"],
+                  activebackground=P["hover"], bd=0, padx=12, pady=4,
+                  cursor="hand2", command=win.destroy
+                  ).pack(side="left", padx=6)
 
     def _delete_note(self):
         if not self.current_file or not self.current_file.exists():
@@ -5921,6 +5989,56 @@ class ShumilekHive:
                 return
         self.graph_tooltip.place_forget()
 
+    def _on_graph_right_click(self, event):
+        """Show context menu on graph node right-click."""
+        for node, (nx, ny, r) in self._graph_node_positions.items():
+            if (event.x - nx)**2 + (event.y - ny)**2 <= (r + 6)**2:
+                self._graph_ctx_node = node
+                self.graph_ctx_menu.tk_popup(event.x_root, event.y_root)
+                return
+
+    def _graph_ctx_open(self):
+        """Open the right-clicked graph node in editor."""
+        if not self._graph_ctx_node:
+            return
+        target = self.vault_path / f"{self._graph_ctx_node}.md"
+        if target.exists():
+            self._show_editor()
+            self._open_file(target)
+
+    def _graph_ctx_pin(self):
+        """Toggle pin for right-clicked graph node."""
+        if not self._graph_ctx_node:
+            return
+        stem = self._graph_ctx_node
+        if stem in self._pinned_notes:
+            self._pinned_notes.discard(stem)
+            self._show_toast(f"Unpinned: {stem}")
+        else:
+            self._pinned_notes.add(stem)
+            self._show_toast(f"\u2605 Pinned: {stem}")
+        self._save_pinned()
+        self._refresh_file_tree()
+
+    def _graph_ctx_rename(self):
+        """Rename right-clicked graph node."""
+        if not self._graph_ctx_node:
+            return
+        target = self.vault_path / f"{self._graph_ctx_node}.md"
+        if target.exists():
+            self._open_file(target)
+            self._rename_note()
+
+    def _graph_ctx_links(self):
+        """Show link info for right-clicked graph node via toast."""
+        if not self._graph_ctx_node:
+            return
+        node = self._graph_ctx_node
+        out = self.notes_graph.get(node, set())
+        inc = {n for n, tgts in self.notes_graph.items() if node in tgts}
+        msg = f"{node}: {len(out)} outgoing, {len(inc)} incoming links"
+        self._show_toast(msg, duration_ms=4000)
+
     # ─── ENHANCED GRAPH VIEW (HEAT MAP) ──────────────────────────
 
     def _compute_note_importance(self) -> dict[str, float]:
@@ -6288,7 +6406,9 @@ class ShumilekHive:
         words = len(content.split())
         chars = len(content)
         lines = content.count("\n") + 1
-        self.status_right.config(text=f"{words}w  {chars}c  {lines}L")
+        links = len(re.findall(r'\[\[[^\]]+\]\]', content))
+        link_info = f"  {links}\U0001f517" if links > 0 else ""
+        self.status_right.config(text=f"{words}w  {chars}c  {lines}L{link_info}")
         self._update_cursor_pos()
         # Reading time (avg 200 wpm)
         minutes = max(1, round(words / 200)) if words > 0 else 0

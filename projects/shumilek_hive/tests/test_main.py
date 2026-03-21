@@ -1318,5 +1318,121 @@ class TaskExportTests(unittest.TestCase):
         self.assertIn("Export task history", source)
 
 
+class GraphContextMenuTests(unittest.TestCase):
+    """Tests for graph canvas right-click context menu."""
+
+    def test_graph_ctx_menu_created(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("graph_ctx_menu", source)
+
+    def test_button3_bound_on_graph(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn('<Button-3>', source)
+        self.assertIn('_on_graph_right_click', source)
+
+    def test_ctx_open_method(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("def _graph_ctx_open(", source)
+
+    def test_ctx_pin_method(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("def _graph_ctx_pin(", source)
+
+    def test_ctx_rename_method(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("def _graph_ctx_rename(", source)
+
+    def test_ctx_links_method(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("def _graph_ctx_links(", source)
+
+    def test_menu_has_open_pin_rename_links(self):
+        """Menu contains all 4 commands."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("graph_ctx_menu = tk.Menu")
+        block = source[idx:idx + 900]
+        self.assertIn('"Open"', block)
+        self.assertIn('Pin/Unpin', block)
+        self.assertIn('"Rename"', block)
+        self.assertIn('Show Links', block)
+
+
+class NoteTemplateTests(unittest.TestCase):
+    """Tests for note creation template system."""
+
+    def test_templates_defined(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        for tpl in ["Blank", "Meeting", "Daily", "Project"]:
+            self.assertIn(f'"{tpl}"', source)
+
+    def test_new_note_has_template_selection(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _new_note(")
+        body = source[idx:idx + 2000]
+        self.assertIn("Radiobutton", body)
+        self.assertIn("tpl_var", body)
+
+    def test_template_placeholder_replacement(self):
+        """Templates use {name} placeholder replaced with actual note name."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _new_note(")
+        body = source[idx:idx + 3000]
+        self.assertIn("{name}", body)
+        self.assertIn('.replace("{name}"', body)
+
+    def test_meeting_template_has_sections(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        self.assertIn("Attendees", source)
+        self.assertIn("Agenda", source)
+        self.assertIn("Action Items", source)
+
+    def test_create_button_exists(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _new_note(")
+        body = source[idx:idx + 3500]
+        self.assertIn('"Create"', body)
+        self.assertIn('"Cancel"', body)
+
+
+class StatusBarLinkCountTests(unittest.TestCase):
+    """Tests for wiki-link count in status bar."""
+
+    def test_link_count_in_word_count(self):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _update_word_count(")
+        body = source[idx:idx + 500]
+        self.assertIn("links", body)
+        self.assertIn("re.findall", body)
+
+    def test_link_regex_pattern(self):
+        """Link count uses [[...]] wiki-link regex."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _update_word_count(")
+        body = source[idx:idx + 500]
+        self.assertIn("[[", body)
+
+    def test_link_count_displayed_conditionally(self):
+        """Link count only shown when links > 0."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _update_word_count(")
+        body = source[idx:idx + 500]
+        self.assertIn("if links > 0", body)
+
+
 if __name__ == "__main__":
     unittest.main()
