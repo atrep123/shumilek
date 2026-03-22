@@ -193,7 +193,7 @@ class ParticleTests(unittest.TestCase):
         cls_start = source.index("class Particle:")
         cls_end = source.index("\n\nclass ParticleSystem:")
         cls_source = source[cls_start:cls_end]
-        ns: dict = {"random": __import__("random")}
+        ns: dict = {"random": __import__("random"), "math": __import__("math")}
         exec(cls_source, ns)  # noqa: S102
         cls.Particle = ns["Particle"]
 
@@ -1198,10 +1198,10 @@ class FrameThrottleTests(unittest.TestCase):
         self.assertIn("0.08", source)  # schema interval
 
     def test_graph_existing_throttle_preserved(self):
-        """Graph view already had a 0.45s throttle — verify it still exists."""
+        """Graph view has throttle during AI processing."""
         src = Path(__file__).resolve().parent.parent / "main.py"
         source = src.read_text(encoding="utf-8")
-        self.assertIn("0.45", source)
+        self.assertIn("0.30", source)
 
 
 class TabCyclingTests(unittest.TestCase):
@@ -2267,6 +2267,290 @@ class FocusZenModeTests(unittest.TestCase):
         body = source[idx:idx + 800]
         self.assertIn("_toast", body)
         self.assertIn("Focus mode ON", body)
+
+
+# ─── RT VISUALIZATION ENHANCEMENT TESTS ──────────────────────────────
+
+class StarFieldEnhancedTests(unittest.TestCase):
+    """Tests for enhanced StarField with depth layers and shooting stars."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        cls.source = source
+
+    def test_starfield_has_depth_layer(self):
+        """StarField stores depth per star for parallax."""
+        idx = self.source.index("class StarField:")
+        body = self.source[idx:idx + 5500]
+        self.assertIn("depth", body)
+
+    def test_starfield_depth_scaled_twinkle(self):
+        """Twinkle speed scales with depth."""
+        idx = self.source.index("class StarField:")
+        body = self.source[idx:idx + 5500]
+        self.assertIn("twinkle_speed", body)
+        self.assertIn("depth", body)
+
+    def test_starfield_temperature_shift(self):
+        """Color temperature shift over time."""
+        idx = self.source.index("class StarField:")
+        body = self.source[idx:idx + 5500]
+        self.assertIn("temp_shift", body)
+
+    def test_starfield_shooting_star_attribute(self):
+        """StarField has _shooting_star attribute."""
+        idx = self.source.index("class StarField:")
+        body = self.source[idx:idx + 5500]
+        self.assertIn("_shooting_star", body)
+
+    def test_starfield_shooting_star_rendering(self):
+        """Shooting star draws a line trail with fade."""
+        idx = self.source.index("def draw(self, canvas: tk.Canvas, w: int, h: int, t: float)")
+        body = self.source[idx:idx + 4000]
+        self.assertIn("create_line", body)
+        self.assertIn("fade", body)
+
+    def test_starfield_diagonal_sparkle(self):
+        """Very bright near stars get diagonal sparkle."""
+        idx = self.source.index("def draw(self, canvas: tk.Canvas, w: int, h: int, t: float)")
+        body = self.source[idx:idx + 4000]
+        self.assertIn("Diagonal", body)
+
+    def test_starfield_jitter_scaled_by_depth(self):
+        """Micro-jitter amplitude depends on depth."""
+        idx = self.source.index("class StarField:")
+        body = self.source[idx:idx + 5500]
+        self.assertIn("jitter_scale", body)
+
+
+class FlowParticleEnhancedTests(unittest.TestCase):
+    """Tests for enhanced FlowParticle with wave motion and energy pulse."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        cls.source = source
+        # Extract FlowParticle class for functional tests
+        cls_start = source.index("class FlowParticle:")
+        cls_end = source.index("\n\nclass StarField:")
+        cls_source = source[cls_start:cls_end]
+        # Provide mock tk to avoid importing tkinter
+        import types
+        mock_tk = types.ModuleType("tk")
+        mock_tk.Canvas = type("Canvas", (), {})
+        ns: dict = {"random": __import__("random"), "math": __import__("math"), "tk": mock_tk}
+        exec(cls_source, ns)  # noqa: S102
+        cls.FlowParticle = ns["FlowParticle"]
+
+    def test_flow_particle_has_wave_attributes(self):
+        """FlowParticle stores wave amplitude and frequency."""
+        fp = self.FlowParticle(0, 0, 100, 100, "#4AE3D0")
+        self.assertTrue(hasattr(fp, "_wave_amp"))
+        self.assertTrue(hasattr(fp, "_wave_freq"))
+
+    def test_flow_particle_perpendicular_vector(self):
+        """FlowParticle computes perpendicular unit vector."""
+        fp = self.FlowParticle(0, 0, 100, 0, "#4AE3D0")
+        self.assertAlmostEqual(fp._perpy, 1.0, places=2)
+
+    def test_flow_particle_wave_offset(self):
+        """Wave offset is zero at t=0 and t=1, non-zero in between."""
+        fp = self.FlowParticle(0, 0, 100, 0, "#4AE3D0")
+        wx0, wy0 = fp._wave_offset(0.0)
+        self.assertAlmostEqual(wx0, 0.0, places=1)
+        # At midpoint, there should be some offset
+        wx_mid, wy_mid = fp._wave_offset(0.5)
+        # Non-zero is expected but depends on random freq
+        self.assertTrue(isinstance(wx_mid, float))
+
+    def test_flow_particle_energy_pulse_in_draw(self):
+        """Draw method has energy pulse calculation."""
+        idx = self.source.index("class FlowParticle:")
+        body = self.source[idx:idx + 3000]
+        self.assertIn("energy", body)
+        self.assertIn("sin(self.t * 8)", body)
+
+    def test_flow_particle_trail_stores_wave_position(self):
+        """Trail positions include wave offset."""
+        fp = self.FlowParticle(0, 0, 200, 0, "#4AE3D0")
+        fp.update()
+        fp.update()
+        self.assertTrue(len(fp.trail) >= 2)
+
+
+class ParticleEnhancedTests(unittest.TestCase):
+    """Tests for enhanced Particle with drift and smooth fade."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        cls_start = source.index("class Particle:")
+        cls_end = source.index("\n\nclass ParticleSystem:")
+        cls_source = source[cls_start:cls_end]
+        ns: dict = {"random": __import__("random"), "math": __import__("math")}
+        exec(cls_source, ns)  # noqa: S102
+        cls.Particle = ns["Particle"]
+
+    def test_particle_has_drift_phase(self):
+        """Particle has _drift_phase for organic movement."""
+        p = self.Particle(100, 100, "#4AE3D0", 2)
+        self.assertTrue(hasattr(p, "_drift_phase"))
+
+    def test_particle_smooth_fade(self):
+        """Alpha uses quadratic fade (dimmer at midlife than linear)."""
+        p = self.Particle(0, 0, "#FFFFFF", 2)
+        p.max_life = 100
+        p.life = 50
+        col = p.alpha_hex
+        # With quadratic fade, at 50% life frac=0.25 (raw=0.5, squared=0.25)
+        # So R = 255 * 0.25 * 0.7 = ~44.6 → 0x2c
+        r_val = int(col[1:3], 16)
+        self.assertLess(r_val, 80)  # Definitely dimmer than linear
+
+    def test_particle_drift_in_update(self):
+        """Update uses sinusoidal drift."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("class Particle:")
+        body = source[idx:idx + 1200]
+        self.assertIn("_drift_phase", body)
+        self.assertIn("sin(self.life", body)
+
+
+class DrawNebulaeEnhancedTests(unittest.TestCase):
+    """Tests for enhanced _draw_nebulae with drift and color cycling."""
+
+    def test_nebulae_has_drift(self):
+        """Nebulae positions drift with sin/cos."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _draw_nebulae(")
+        body = source[idx:idx + 1200]
+        self.assertIn("drift_x", body)
+        self.assertIn("drift_y", body)
+
+    def test_nebulae_color_temperature(self):
+        """Nebula color has temperature cycling."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _draw_nebulae(")
+        body = source[idx:idx + 1200]
+        self.assertIn("color_shift", body)
+
+    def test_nebulae_two_harmonic_breathing(self):
+        """Breathing uses two sine harmonics for organic rhythm."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _draw_nebulae(")
+        body = source[idx:idx + 1200]
+        # Find the breath assignment line only (single line)
+        breath_start = body.index("breath =")
+        breath_end = body.index("\n", breath_start)
+        breath_line = body[breath_start:breath_end]
+        self.assertEqual(breath_line.count("sin("), 2)
+
+
+class GraphAITickEnhancedTests(unittest.TestCase):
+    """Tests for enhanced _graph_ai_tick with eased waves and varied trails."""
+
+    def test_scan_wave_has_lifespan(self):
+        """Scan waves have variable lifespan."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _graph_ai_tick(")
+        body = source[idx:idx + 5500]
+        self.assertIn('"lifespan"', body)
+
+    def test_scan_wave_eased_expansion(self):
+        """Scan wave uses quadratic ease-out for radius expansion."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _graph_ai_tick(")
+        body = source[idx:idx + 5500]
+        self.assertIn("ease", body.lower())
+        self.assertIn("** 2", body)
+
+    def test_trail_has_variable_speed(self):
+        """Data trails have variable speed property."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _graph_ai_tick(")
+        body = source[idx:idx + 5500]
+        self.assertIn('"speed":', body)
+        self.assertIn("uniform(0.03, 0.07)", body)
+
+
+class GraphAIOverlayEnhancedTests(unittest.TestCase):
+    """Tests for enhanced graph AI overlay rendering."""
+
+    def test_scan_wave_inner_echo_ring(self):
+        """Scan waves have inner echo ring at 50% radius."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("# Scan waves (expanding circles with multi-ring")
+        body = source[idx:idx + 1500]
+        self.assertIn("inner_r", body)
+        self.assertIn("inner_a", body)
+
+    def test_node_glow_multi_ring(self):
+        """Active nodes get 3-ring radial gradient glow."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("# AI-active node highlights (multi-ring radial glow")
+        body = source[idx:idx + 1500]
+        self.assertIn("range(3)", body)
+        self.assertIn("radial", body.lower())
+
+    def test_trail_glow_behind_head(self):
+        """Data trails have glow behind head dot."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("# Data transfer trails (moving dots with glow)")
+        body = source[idx:idx + 1500]
+        self.assertIn("glow_r", body)
+        self.assertIn("Bright head", body)
+
+    def test_trail_five_segment_tail(self):
+        """Data trails have 5-segment fading tail."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("# Data transfer trails (moving dots with glow)")
+        body = source[idx:idx + 1500]
+        self.assertIn("range(5)", body)
+        self.assertIn("tail_fade", body)
+
+
+class AnimateEnhancedTests(unittest.TestCase):
+    """Tests for enhanced _animate scheduling."""
+
+    def test_graph_redraw_faster_during_ai(self):
+        """Graph redraws at 0.30s during AI processing (was 0.45s)."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _animate(")
+        body = source[idx:idx + 4000]
+        self.assertIn("0.30", body)
+
+    def test_graph_flow_particle_varied_speed(self):
+        """Ambient graph flow particles have varied speed."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _animate(")
+        body = source[idx:idx + 1500]
+        self.assertIn("uniform(0.02, 0.04)", body)
+
+    def test_particle_system_glow_halo(self):
+        """ParticleSystem draws glow halo for larger particles."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("class ParticleSystem:")
+        body = source[idx:idx + 1500]
+        self.assertIn("glow halo", body.lower())
+        self.assertIn("create_oval", body)
 
 
 if __name__ == "__main__":

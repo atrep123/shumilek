@@ -151,7 +151,7 @@ _STOP_WORDS: frozenset[str] = frozenset({
 
 # ─── PARTICLE SYSTEM ────────────────────────────────────────────────
 class Particle:
-    __slots__ = ("x", "y", "vx", "vy", "life", "max_life", "color", "size")
+    __slots__ = ("x", "y", "vx", "vy", "life", "max_life", "color", "size", "_drift_phase")
     def __init__(self, x, y, color, size=2):
         self.x = x
         self.y = y
@@ -161,22 +161,28 @@ class Particle:
         self.max_life = random.randint(40, 120)
         self.color = color
         self.size = size
+        self._drift_phase = random.uniform(0, math.pi * 2)
 
     def update(self) -> bool:
         self.x += self.vx
         self.y += self.vy
-        self.vx += random.uniform(-0.05, 0.05)
+        # Organic drift: sinusoidal horizontal wobble
+        self.vx += random.uniform(-0.05, 0.05) + math.sin(self.life * 0.15 + self._drift_phase) * 0.02
+        # Gentle deceleration for floaty feel
+        self.vy *= 0.998
         self.life += 1
         return self.life < self.max_life
 
     @property
     def alpha_hex(self) -> str:
-        frac = 1.0 - self.life / self.max_life
+        # Smooth ease-out fade (starts bright, fades slowly then quickly)
+        raw = 1.0 - self.life / self.max_life
+        frac = raw * raw  # quadratic for smoother fade
         base = self.color.lstrip("#")
         r, g, b = int(base[:2], 16), int(base[2:4], 16), int(base[4:6], 16)
-        r = int(r * frac * 0.6)
-        g = int(g * frac * 0.6)
-        b = int(b * frac * 0.6)
+        r = max(0, min(255, int(r * frac * 0.7)))
+        g = max(0, min(255, int(g * frac * 0.7)))
+        b = max(0, min(255, int(b * frac * 0.7)))
         return f"#{r:02x}{g:02x}{b:02x}"
 
 
@@ -200,6 +206,17 @@ class ParticleSystem:
         for p in self.particles:
             try:
                 col = p.alpha_hex
+                # Subtle glow halo for larger particles
+                if p.size >= 3 and p.life < p.max_life * 0.7:
+                    base = p.color.lstrip("#")
+                    frac_raw = 1.0 - p.life / p.max_life
+                    gr = max(0, min(255, int(int(base[:2], 16) * frac_raw * 0.12)))
+                    gg = max(0, min(255, int(int(base[2:4], 16) * frac_raw * 0.12)))
+                    gb = max(0, min(255, int(int(base[4:6], 16) * frac_raw * 0.12)))
+                    gs = p.size + 3
+                    canvas.create_oval(
+                        p.x - gs, p.y - gs, p.x + gs + p.size, p.y + gs + p.size,
+                        fill=f"#{gr:02x}{gg:02x}{gb:02x}", outline="", tags="particle")
                 canvas.create_rectangle(
                     p.x, p.y, p.x + p.size, p.y + p.size,
                     fill=col, outline="", tags="particle")
@@ -209,8 +226,9 @@ class ParticleSystem:
 
 # ─── FLOW PARTICLES (travel along pipeline arrows) ──────────────────
 class FlowParticle:
-    """A particle that travels along a line from src to dst."""
-    __slots__ = ("sx", "sy", "ex", "ey", "t", "speed", "color", "size", "trail")
+    """A particle that travels along a line from src to dst with wave motion."""
+    __slots__ = ("sx", "sy", "ex", "ey", "t", "speed", "color", "size", "trail",
+                 "_wave_amp", "_wave_freq", "_perpx", "_perpy")
     def __init__(self, sx, sy, ex, ey, color, speed=0.025):
         self.sx, self.sy = sx, sy
         self.ex, self.ey = ex, ey
@@ -219,10 +237,26 @@ class FlowParticle:
         self.color = color
         self.size = random.choice([2, 2, 3])
         self.trail: list[tuple[float, float]] = []
+        # Wave motion perpendicular to travel path
+        dx = ex - sx
+        dy = ey - sy
+        length = max(1.0, math.sqrt(dx * dx + dy * dy))
+        self._perpx = -dy / length  # perpendicular unit vector
+        self._perpy = dx / length
+        self._wave_amp = random.uniform(2.0, 6.0)  # wave amplitude
+        self._wave_freq = random.uniform(3.0, 6.0)  # wave frequency
+
+    def _wave_offset(self, progress: float) -> tuple[float, float]:
+        """Calculate sinusoidal perpendicular offset at given progress."""
+        offset = math.sin(progress * self._wave_freq * math.pi) * self._wave_amp * (1.0 - abs(progress - 0.5) * 1.2)
+        return self._perpx * offset, self._perpy * offset
 
     def update(self) -> bool:
-        self.trail.append((self.sx + (self.ex - self.sx) * self.t,
-                           self.sy + (self.ey - self.sy) * self.t))
+        # Store trail position with wave offset
+        base_x = self.sx + (self.ex - self.sx) * self.t
+        base_y = self.sy + (self.ey - self.sy) * self.t
+        wx, wy = self._wave_offset(self.t)
+        self.trail.append((base_x + wx, base_y + wy))
         if len(self.trail) > 12:
             self.trail.pop(0)
         self.t += self.speed
@@ -230,14 +264,18 @@ class FlowParticle:
 
     @property
     def x(self):
-        return self.sx + (self.ex - self.sx) * self.t
+        base = self.sx + (self.ex - self.sx) * self.t
+        wx, _ = self._wave_offset(self.t)
+        return base + wx
 
     @property
     def y(self):
-        return self.sy + (self.ey - self.sy) * self.t
+        base = self.sy + (self.ey - self.sy) * self.t
+        _, wy = self._wave_offset(self.t)
+        return base + wy
 
     def draw(self, canvas: tk.Canvas):
-        # Trail (fading dots — growing toward head)
+        # Trail (fading dots — growing toward head, with energy glow)
         base = self.color.lstrip("#")
         r0, g0, b0 = int(base[:2], 16), int(base[2:4], 16), int(base[4:6], 16)
         n = len(self.trail)
@@ -249,11 +287,12 @@ class FlowParticle:
             ts = 1 + i * 2 // max(n, 1)  # trail dots grow toward head
             canvas.create_rectangle(tx - ts, ty - ts, tx + ts, ty + ts,
                                     fill=f"#{cr:02x}{cg:02x}{cb:02x}", outline="", tags="flow")
-        # Head glow halo
-        gs = self.size + 3
-        gr = int(r0 * 0.25)
-        gg = int(g0 * 0.25)
-        gb = int(b0 * 0.25)
+        # Head glow halo — with energy pulse
+        energy = 0.25 + 0.15 * abs(math.sin(self.t * 8))
+        gs = self.size + 3 + int(energy * 4)
+        gr = max(0, min(255, int(r0 * energy)))
+        gg = max(0, min(255, int(g0 * energy)))
+        gb = max(0, min(255, int(b0 * energy)))
         canvas.create_oval(self.x - gs, self.y - gs, self.x + gs, self.y + gs,
                            fill=f"#{gr:02x}{gg:02x}{gb:02x}", outline="", tags="flow")
         # Head (bright dot)
@@ -274,11 +313,12 @@ class FlowParticle:
             ts = 1 + i * 2 // max(n, 1)
             canvas.create_rectangle(tx - ts, ty - ts, tx + ts, ty + ts,
                                     fill=f"#{cr:02x}{cg:02x}{cb:02x}", outline="", tags=tag)
-        # Head glow halo
-        gs = self.size + 3
-        gr = int(r0 * 0.25)
-        gg = int(g0 * 0.25)
-        gb = int(b0 * 0.25)
+        # Head glow halo — energy pulse
+        energy = 0.25 + 0.15 * abs(math.sin(self.t * 8))
+        gs = self.size + 3 + int(energy * 4)
+        gr = max(0, min(255, int(r0 * energy)))
+        gg = max(0, min(255, int(g0 * energy)))
+        gb = max(0, min(255, int(b0 * energy)))
         canvas.create_oval(self.x - gs, self.y - gs, self.x + gs, self.y + gs,
                            fill=f"#{gr:02x}{gg:02x}{gb:02x}", outline="", tags=tag)
         canvas.create_oval(self.x - self.size, self.y - self.size,
@@ -287,12 +327,13 @@ class FlowParticle:
 
 
 class StarField:
-    """Twinkling pixel star background with micro-jitter."""
+    """Twinkling pixel star background with depth layers and shooting stars."""
     _BRIGHT_STEPS = 8  # pre-computed brightness levels per color
 
     def __init__(self, count=80):
-        # Stars now store (x, y, phase, color, jitter_phase)
-        self.stars: list[tuple[float, float, float, str, float]] = []
+        # Stars: (x, y, phase, color, jitter_phase, depth)
+        # depth 0.0-1.0: 0=far/slow twinkle, 1=near/fast twinkle
+        self.stars: list[tuple[float, float, float, str, float, float]] = []
         colors = [P["text_dim"], P["amethyst_dim"], P["cyan_dim"], P["ice"]]
         # Pre-compute color lookup: color → [hex at brightness 0..7]
         self._color_lut: dict[str, list[str]] = {}
@@ -313,28 +354,76 @@ class StarField:
             phase = random.uniform(0, math.pi * 2)
             color = random.choice(colors)
             jitter_phase = random.uniform(0, math.pi * 2)
-            self.stars.append((x, y, phase, color, jitter_phase))
+            depth = random.random()  # parallax depth 0=far, 1=near
+            self.stars.append((x, y, phase, color, jitter_phase, depth))
+        # Shooting star state
+        self._shooting_star: tuple | None = None
 
     def draw(self, canvas: tk.Canvas, w: int, h: int, t: float):
         steps_m1 = self._BRIGHT_STEPS - 1
-        for sx, sy, phase, color, jp in self.stars:
-            brightness = 0.3 + 0.7 * abs(math.sin(t * 0.8 + phase))
+        # Global slow color temperature shift (warm↔cool)
+        temp_shift = math.sin(t * 0.05) * 0.15
+        for sx, sy, phase, color, jp, depth in self.stars:
+            # Depth-scaled twinkle speed: near stars shimmer faster
+            twinkle_speed = 0.5 + depth * 0.8
+            brightness = 0.3 + 0.7 * abs(math.sin(t * twinkle_speed + phase))
             if brightness < 0.35:
                 continue
-            # Micro-jitter: stars wobble ±1px for organic feel
-            jx = math.sin(t * 1.2 + jp) * 1.2
-            jy = math.cos(t * 0.9 + jp * 1.7) * 1.2
+            # Micro-jitter scaled by depth (near → more wobble)
+            jitter_scale = 0.6 + depth * 0.8
+            jx = math.sin(t * 1.2 + jp) * 1.2 * jitter_scale
+            jy = math.cos(t * 0.9 + jp * 1.7) * 1.2 * jitter_scale
             px = int(sx * w + jx)
             py = int(sy * h + jy)
-            idx = min(steps_m1, int((brightness - 0.3) / 0.7 * steps_m1))
+            # Temperature-shifted brightness index
+            raw_idx = (brightness - 0.3) / 0.7 * steps_m1
+            idx = min(steps_m1, max(0, int(raw_idx + temp_shift * steps_m1 * 0.2)))
             col = self._color_lut[color][idx]
-            size = 1 if brightness < 0.6 else 2
+            size = 1 if brightness < 0.6 else (3 if depth > 0.85 and brightness > 0.9 else 2)
             canvas.create_rectangle(px, py, px + size, py + size,
                                     fill=col, outline="", tags="stars")
-            # Cross sparkle on brightest stars
+            # Cross sparkle on brightest near stars
             if brightness > 0.85 and size >= 2:
-                canvas.create_line(px - 3, py, px + 4, py, fill=col, width=1, tags="stars")
-                canvas.create_line(px, py - 3, px + 1, py + 4, fill=col, width=1, tags="stars")
+                sparkle_len = 3 + int(depth * 3)
+                canvas.create_line(px - sparkle_len, py, px + sparkle_len + 1, py,
+                                   fill=col, width=1, tags="stars")
+                canvas.create_line(px, py - sparkle_len, px + 1, py + sparkle_len + 1,
+                                   fill=col, width=1, tags="stars")
+                # Diagonal sparkle for very bright near stars
+                if depth > 0.7 and brightness > 0.92:
+                    dl = sparkle_len - 1
+                    canvas.create_line(px - dl, py - dl, px + dl + 1, py + dl + 1,
+                                       fill=col, width=1, tags="stars")
+
+        # Shooting star — rare bright streak across the sky
+        if self._shooting_star is None:
+            if random.random() < 0.002:
+                self._shooting_star = (
+                    t, random.uniform(0.1, 0.9) * w, random.uniform(0.05, 0.4) * h,
+                    random.uniform(-0.5, 0.5), random.choice([P["cyan"], P["ice"], P["amethyst"]]),
+                    random.uniform(4.0, 8.0),
+                )
+        if self._shooting_star is not None:
+            st_time, ssx, ssy, angle, scol, spd = self._shooting_star
+            elapsed = t - st_time
+            if elapsed > 0.8:
+                self._shooting_star = None
+            else:
+                cx = ssx + math.cos(angle) * spd * elapsed * 120
+                cy = ssy + math.sin(angle) * spd * elapsed * 120
+                trail_len = int(spd * 12)
+                tx = cx - math.cos(angle) * trail_len
+                ty = cy - math.sin(angle) * trail_len
+                fade = max(0.0, 1.0 - elapsed / 0.8)
+                base_c = scol.lstrip("#")
+                sr = max(0, min(255, int(int(base_c[:2], 16) * fade)))
+                sg = max(0, min(255, int(int(base_c[2:4], 16) * fade)))
+                sb = max(0, min(255, int(int(base_c[4:6], 16) * fade)))
+                if sr + sg + sb > 0:
+                    canvas.create_line(int(tx), int(ty), int(cx), int(cy),
+                                       fill=f"#{sr:02x}{sg:02x}{sb:02x}", width=1, tags="stars")
+                    canvas.create_rectangle(int(cx) - 1, int(cy) - 1, int(cx) + 1, int(cy) + 1,
+                                            fill=scol, outline="", tags="stars")
 
 
 # ─── PIPELINE SIMULATION ────────────────────────────────────────────
@@ -526,22 +615,32 @@ def _hex_color_scale(hex_color: str, factor: float) -> str:
 
 
 def _draw_nebulae(c, w: int, h: int, nebulae: list, rings: int, opacity: float, t: float):
-    """Draw nebula clouds on canvas. Shared by hive/graph/schema views."""
+    """Draw nebula clouds with drift and color cycling. Shared by hive/graph/schema views."""
     for neb in nebulae:
-        nx = int(neb["x"] * w)
-        ny = int(neb["y"] * h)
+        # Slow drift: nebulae wander slightly over time
+        drift_x = math.sin(t * 0.08 + neb["phase"]) * 12
+        drift_y = math.cos(t * 0.06 + neb["phase"] * 1.3) * 8
+        nx = int(neb["x"] * w + drift_x)
+        ny = int(neb["y"] * h + drift_y)
         nr = neb["r"]
-        breath = 0.5 + 0.5 * abs(math.sin(t * 0.3 + neb["phase"]))
+        # Organic breathing with two harmonics
+        breath = 0.5 + 0.35 * abs(math.sin(t * 0.3 + neb["phase"])) + 0.15 * abs(math.sin(t * 0.7 + neb["phase"] * 2.1))
+        # Slow color temperature cycling
+        color_shift = math.sin(t * 0.04 + neb["phase"]) * 0.12
         ncol = neb["color"].lstrip("#")
+        base_r = int(ncol[:2], 16)
+        base_g = int(ncol[2:4], 16)
+        base_b = int(ncol[4:6], 16)
         for ri in range(rings):
             frac = 1.0 - ri / rings
             cr = int(nr * frac * (0.8 + 0.2 * breath))
             if cr < 1:
                 continue
             scale = opacity * frac * breath
-            br = max(0, min(255, int(int(ncol[:2], 16) * scale)))
-            bg = max(0, min(255, int(int(ncol[2:4], 16) * scale)))
-            bb = max(0, min(255, int(int(ncol[4:6], 16) * scale)))
+            # Apply color temperature shift (warm↔cool)
+            br = max(0, min(255, int(base_r * scale * (1 + color_shift))))
+            bg = max(0, min(255, int(base_g * scale)))
+            bb = max(0, min(255, int(base_b * scale * (1 - color_shift))))
             c.create_oval(nx - cr, ny - cr, nx + cr, ny + cr,
                          fill=f"#{br:02x}{bg:02x}{bb:02x}", outline="")
 
@@ -7529,19 +7628,34 @@ class ShumilekHive:
         if self.pipeline.is_running or self._graph_ai_active_nodes:
             t2 = time.time()
 
-            # Scan waves (expanding circles from processed nodes)
+            # Scan waves (expanding circles with multi-ring gradient)
             for wave in self._graph_ai_scan_waves:
                 wr = wave["r"]
-                if wr > 0:
+                if wr > 2:
                     alpha_frac = max(0, 1.0 - wr / wave["max_r"])
-                    # Approximate alpha by using dashes
+                    wcol = wave["color"].lstrip("#")
+                    wr0 = int(wcol[:2], 16)
+                    wg0 = int(wcol[2:4], 16)
+                    wb0 = int(wcol[4:6], 16)
+                    # Outer fading ring
                     dash_gap = max(1, int(8 * (1 - alpha_frac)))
                     c.create_oval(wave["x"] - wr, wave["y"] - wr,
                                  wave["x"] + wr, wave["y"] + wr,
                                  fill="", outline=wave["color"], width=1,
                                  dash=(2, dash_gap))
+                    # Inner echo ring (50% radius, brighter)
+                    inner_r = int(wr * 0.5)
+                    if inner_r > 3:
+                        inner_a = min(1.0, alpha_frac * 1.5)
+                        ir = max(0, min(255, int(wr0 * inner_a * 0.3)))
+                        ig = max(0, min(255, int(wg0 * inner_a * 0.3)))
+                        ib = max(0, min(255, int(wb0 * inner_a * 0.3)))
+                        if ir + ig + ib > 0:
+                            c.create_oval(wave["x"] - inner_r, wave["y"] - inner_r,
+                                         wave["x"] + inner_r, wave["y"] + inner_r,
+                                         fill=f"#{ir:02x}{ig:02x}{ib:02x}", outline="")
 
-            # AI-active node highlights (pulsing glow overlay)
+            # AI-active node highlights (multi-ring radial glow overlay)
             for node_stem, info in self._graph_ai_active_nodes.items():
                 if node_stem not in self._graph_node_positions:
                     continue
@@ -7549,16 +7663,35 @@ class ShumilekHive:
                 intensity = info["intensity"]
                 stage = info["stage"]
 
-                # Stage-colored pulsing ring
+                # Stage-colored pulsing multi-ring glow
                 pulse = abs(math.sin(t2 * 4 + hash(node_stem) % 10))
-                ring_r = nr + 4 + int(pulse * 6 * intensity)
                 stage_color_key = "border_glow"
                 for nid, _, ck, _ in PipelineSimulator.NODES:
                     if nid == stage:
                         stage_color_key = ck
                         break
                 sc = P.get(stage_color_key, P["cyan"])
+                sc_base = sc.lstrip("#")
+                sr0 = int(sc_base[:2], 16)
+                sg0 = int(sc_base[2:4], 16)
+                sb0 = int(sc_base[4:6], 16)
 
+                # 3-ring radial gradient glow (outermost to innermost)
+                max_ring = nr + 6 + int(pulse * 8 * intensity)
+                for gi in range(3):
+                    gfrac = 1.0 - gi / 3.0  # 1.0, 0.67, 0.33
+                    gr = int(max_ring * gfrac)
+                    if gr < 1:
+                        continue
+                    gbr = 0.06 + gi * 0.04  # 0.06, 0.10, 0.14
+                    grr = max(0, min(255, int(sr0 * gbr * intensity)))
+                    ggr = max(0, min(255, int(sg0 * gbr * intensity)))
+                    gbr2 = max(0, min(255, int(sb0 * gbr * intensity)))
+                    c.create_oval(nx - gr, ny - gr, nx + gr, ny + gr,
+                                 fill=f"#{grr:02x}{ggr:02x}{gbr2:02x}", outline="")
+
+                # Outer pulse ring
+                ring_r = nr + 4 + int(pulse * 6 * intensity)
                 c.create_oval(nx - ring_r, ny - ring_r,
                              nx + ring_r, ny + ring_r,
                              fill="", outline=sc, width=2)
@@ -7582,22 +7715,38 @@ class ShumilekHive:
                                  text=stage_short, font=(FONT, 6),
                                  fill=sc)
 
-            # Data transfer trails (moving dots between connected nodes)
+            # Data transfer trails (moving dots with glow)
             for trail in self._graph_ai_trails:
                 p = trail["progress"]
                 tx = trail["x1"] + (trail["x2"] - trail["x1"]) * p
                 ty = trail["y1"] + (trail["y2"] - trail["y1"]) * p
+                tcol = trail["color"].lstrip("#")
+                tr0 = int(tcol[:2], 16)
+                tg0 = int(tcol[2:4], 16)
+                tb0 = int(tcol[4:6], 16)
+                # Soft glow behind head
+                glow_r = 6
+                tgr = max(0, min(255, int(tr0 * 0.15)))
+                tgg = max(0, min(255, int(tg0 * 0.15)))
+                tgb = max(0, min(255, int(tb0 * 0.15)))
+                c.create_oval(tx - glow_r, ty - glow_r, tx + glow_r, ty + glow_r,
+                             fill=f"#{tgr:02x}{tgg:02x}{tgb:02x}", outline="")
+                # Bright head
                 c.create_oval(tx - 3, ty - 3, tx + 3, ty + 3,
                              fill=trail["color"], outline=P["text_bright"])
-                # Fading tail
-                for tail_i in range(3):
-                    tp = max(0, p - (tail_i + 1) * 0.06)
+                # Fading tail with 5 segments
+                for tail_i in range(5):
+                    tp = max(0.0, p - (tail_i + 1) * 0.04)
                     ttx = trail["x1"] + (trail["x2"] - trail["x1"]) * tp
                     tty = trail["y1"] + (trail["y2"] - trail["y1"]) * tp
-                    tail_s = max(1, 2 - tail_i)
+                    tail_fade = 1.0 - (tail_i + 1) / 6.0
+                    tail_s = max(1, 3 - tail_i)
+                    tfr = max(0, min(255, int(tr0 * tail_fade * 0.5)))
+                    tfg = max(0, min(255, int(tg0 * tail_fade * 0.5)))
+                    tfb = max(0, min(255, int(tb0 * tail_fade * 0.5)))
                     c.create_oval(ttx - tail_s, tty - tail_s,
                                  ttx + tail_s, tty + tail_s,
-                                 fill=trail["color"], outline="")
+                                 fill=f"#{tfr:02x}{tfg:02x}{tfb:02x}", outline="")
 
         # ── Title ──
         total_links = sum(len(v) for v in self.notes_graph.values())
@@ -7826,8 +7975,10 @@ class ShumilekHive:
                     if node in self._graph_node_positions:
                         nx, ny, nr = self._graph_node_positions[node]
                         self._graph_ai_scan_waves.append({
-                            "x": nx, "y": ny, "r": 0, "max_r": 60 + nr * 2,
-                            "color": color, "t_start": t
+                            "x": nx, "y": ny, "r": 0,
+                            "max_r": 50 + nr * 2 + random.randint(0, 30),
+                            "color": color, "t_start": t,
+                            "lifespan": random.uniform(1.0, 1.6),
                         })
                 entry = self._graph_ai_active_nodes[node]
                 entry["intensity"] = min(1.0, entry["intensity"] + 0.15)
@@ -7839,16 +7990,20 @@ class ShumilekHive:
                     if entry["intensity"] <= 0:
                         del self._graph_ai_active_nodes[node]
 
-        # Update scan waves
+        # Update scan waves (eased expansion with variable lifespan)
         self._graph_ai_scan_waves = [
             w for w in self._graph_ai_scan_waves
-            if t - w["t_start"] < 1.2
+            if t - w["t_start"] < w.get("lifespan", 1.2)
         ]
         for w in self._graph_ai_scan_waves:
+            lifespan = w.get("lifespan", 1.2)
             elapsed = t - w["t_start"]
-            w["r"] = w["max_r"] * (elapsed / 1.2)
+            # Ease-out expansion: fast at start, decelerating
+            progress = min(1.0, elapsed / lifespan)
+            eased = 1.0 - (1.0 - progress) ** 2  # quadratic ease-out
+            w["r"] = w["max_r"] * eased
 
-        # Emit data trails between connected active nodes
+        # Emit data trails between connected active nodes (varied speeds)
         if self._anim_tick % 8 == 0:
             active_set = set(self._graph_ai_active_nodes.keys())
             for src, tgts in self.notes_graph.items():
@@ -7862,13 +8017,14 @@ class ShumilekHive:
                         tx, ty, _ = self._graph_node_positions[tgt]
                         self._graph_ai_trails.append({
                             "x1": sx, "y1": sy, "x2": tx, "y2": ty,
-                            "progress": 0.0, "color": color
+                            "progress": 0.0, "color": color,
+                            "speed": random.uniform(0.03, 0.07),
                         })
 
-        # Update trails
+        # Update trails (variable speed)
         new_trails = []
         for trail in self._graph_ai_trails:
-            trail["progress"] += 0.05
+            trail["progress"] += trail.get("speed", 0.05)
             if trail["progress"] < 1.0:
                 new_trails.append(trail)
         self._graph_ai_trails = new_trails[-30:]  # cap
@@ -10334,7 +10490,7 @@ class ShumilekHive:
         # ── Graph ambient animation ──
         if self.view_mode == "graph":
             self._graph_anim_phase += 0.12
-            # Emit flow particles along graph edges periodically
+            # Emit flow particles along graph edges with varied speeds
             if self._anim_tick % 16 == 0 and self._graph_node_positions:
                 for src, tgts in self.notes_graph.items():
                     if src not in self._graph_node_positions:
@@ -10347,8 +10503,9 @@ class ShumilekHive:
                         sx, sy, _ = self._graph_node_positions[src]
                         tx, ty, _ = self._graph_node_positions[tgt]
                         color = random.choice([P["cyan_dim"], P["amethyst_dim"], P["ice"]])
+                        speed = random.uniform(0.02, 0.04)
                         self._graph_flow_particles.append(
-                            FlowParticle(sx, sy, tx, ty, color, speed=0.03))
+                            FlowParticle(sx, sy, tx, ty, color, speed=speed))
             # Update graph flow particles
             self._graph_flow_particles = [fp for fp in self._graph_flow_particles if fp.update()]
             if len(self._graph_flow_particles) > 80:
@@ -10370,7 +10527,7 @@ class ShumilekHive:
             if self.view_mode == "graph":
                 self._graph_ai_tick()
                 _now = time.time()
-                if _now - self._last_graph_draw_t > 0.45:
+                if _now - self._last_graph_draw_t > 0.30:
                     self._last_graph_draw_t = _now
                     self._draw_graph()
             if not still_running:
@@ -10396,11 +10553,12 @@ class ShumilekHive:
                 del self._graph_ai_active_nodes[k]
             # Also decay scan waves and trails
             self._graph_ai_scan_waves = [
-                w for w in self._graph_ai_scan_waves if time.time() - w["t_start"] < 1.2
+                w for w in self._graph_ai_scan_waves
+                if time.time() - w["t_start"] < w.get("lifespan", 1.2)
             ]
             self._graph_ai_trails = [t for t in self._graph_ai_trails if t["progress"] < 1.0]
             for trail in self._graph_ai_trails:
-                trail["progress"] += 0.05
+                trail["progress"] += trail.get("speed", 0.05)
             self._draw_graph()
             # Clear stage label when fully faded
             if not self._graph_ai_active_nodes:
