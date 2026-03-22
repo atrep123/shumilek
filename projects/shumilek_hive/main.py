@@ -627,7 +627,7 @@ def _hex_color_scale(hex_color: str, factor: float) -> str:
 
 
 def _draw_nebulae(c, w: int, h: int, nebulae: list, rings: int, opacity: float, t: float):
-    """Draw nebula clouds with drift and color cycling. Shared by hive/graph/schema views."""
+    """Draw nebula clouds as subtle glowing outlines. Shared by hive/graph/schema views."""
     for neb in nebulae:
         # Slow drift: nebulae wander slightly over time
         drift_x = math.sin(t * 0.08 + neb["phase"]) * 12
@@ -643,32 +643,34 @@ def _draw_nebulae(c, w: int, h: int, nebulae: list, rings: int, opacity: float, 
         base_r = int(ncol[:2], 16)
         base_g = int(ncol[2:4], 16)
         base_b = int(ncol[4:6], 16)
+        # Render as outline-only rings (no filled dark circles)
         for ri in range(rings):
             frac = 1.0 - ri / rings
             cr = int(nr * frac * (0.8 + 0.2 * breath))
-            if cr < 1:
+            if cr < 3:
                 continue
-            scale = opacity * frac * breath
+            scale = opacity * 3.0 * frac * breath
             # Apply color temperature shift (warm↔cool)
             br = max(0, min(255, int(base_r * scale * (1 + color_shift))))
             bg = max(0, min(255, int(base_g * scale)))
             bb = max(0, min(255, int(base_b * scale * (1 - color_shift))))
-            c.create_oval(nx - cr, ny - cr, nx + cr, ny + cr,
-                         fill=f"#{br:02x}{bg:02x}{bb:02x}", outline="")
+            if br + bg + bb > 3:
+                c.create_oval(nx - cr, ny - cr, nx + cr, ny + cr,
+                             fill="", outline=f"#{br:02x}{bg:02x}{bb:02x}", width=1)
         # ── NEBULA TENDRILS ── wispy extensions radiating outward
         for tendril_i in range(3):
             ta = neb["phase"] + tendril_i * 2.0 + t * 0.05
             t_len = nr * 0.6 + int(math.sin(t * 0.2 + tendril_i) * nr * 0.2)
             tx = nx + int(math.cos(ta) * t_len)
             ty = ny + int(math.sin(ta) * t_len)
-            t_r = int(nr * 0.3 * breath)
-            t_scale = opacity * 0.5 * breath
+            t_r = int(nr * 0.2 * breath)
+            t_scale = opacity * 2.0 * breath
             tr = max(0, min(255, int(base_r * t_scale)))
             tg = max(0, min(255, int(base_g * t_scale)))
             tb = max(0, min(255, int(base_b * t_scale)))
-            if t_r > 1:
+            if t_r > 1 and tr + tg + tb > 3:
                 c.create_oval(tx - t_r, ty - t_r, tx + t_r, ty + t_r,
-                             fill=f"#{tr:02x}{tg:02x}{tb:02x}", outline="")
+                             fill="", outline=f"#{tr:02x}{tg:02x}{tb:02x}", width=1)
 
 
 def _draw_vignette(c, w: int, h: int, size: int = 30):
@@ -5520,7 +5522,7 @@ class ShumilekHive:
                 self._hive_nebulae.append({
                     "x": random.uniform(0.1, 0.9),
                     "y": random.uniform(0.1, 0.8),
-                    "r": random.uniform(60, 120),
+                    "r": random.uniform(25, 50),
                     "color": random.choice(neb_colors),
                     "phase": random.uniform(0, math.pi * 2),
                 })
@@ -7324,7 +7326,7 @@ class ShumilekHive:
                 self._graph_nebulae.append({
                     "x": random.uniform(0.15, 0.85),
                     "y": random.uniform(0.15, 0.85),
-                    "r": random.uniform(50, 100),
+                    "r": random.uniform(25, 45),
                     "color": random.choice(neb_colors),
                     "phase": random.uniform(0, math.pi * 2),
                 })
@@ -8320,7 +8322,7 @@ class ShumilekHive:
                 self._schema_nebulae.append({
                     "x": random.uniform(0.2, 0.8),
                     "y": random.uniform(0.2, 0.8),
-                    "r": random.uniform(60, 100),
+                    "r": random.uniform(25, 45),
                     "color": random.choice(neb_colors),
                     "phase": random.uniform(0, math.pi * 2),
                 })
