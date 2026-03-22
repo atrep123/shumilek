@@ -1098,7 +1098,7 @@ class ShumilekHive:
         _icon_btn(bar, "icon_search", "Search", self._toggle_search)
         _icon_btn(bar, "icon_save", "Export", self._export_html)
         _icon_btn(bar, "icon_new", "New", self._new_note)
-        _icon_btn(bar, "icon_ai_star", "AI", self._show_ai_palette,
+        _icon_btn(bar, "icon_ai_star", "AI", self._show_schema,
                   fg=P["cyan"])
         _icon_btn(bar, "icon_hive", "Hive", self._show_hive,
                   fg=P["emerald"])
@@ -8328,7 +8328,7 @@ class ShumilekHive:
 
         # ── DYSTOPIAN CIRCUIT TRACES ──
         # Fractal circuit veins radiating from center hub
-        cx_hub, cy_hub = w // 2, 165
+        cx_hub, cy_hub = w // 2, 30
         circuit_breath = 0.4 + 0.6 * abs(math.sin(t * 0.8))
         for branch_i in range(12):
             angle = branch_i * math.pi / 6 + math.sin(t * 0.3) * 0.1
@@ -8385,28 +8385,28 @@ class ShumilekHive:
                      width=1, dash=(1, 8))
 
         # ── CENTRAL INTELLIGENCE HUB ──
-        # Pulsating brain core at center of pipeline
+        # Subtle pulsating brain core behind title
         hub_pulse = abs(math.sin(t * 2.0))
-        hub_r_base = 18
-        hub_r = hub_r_base + int(hub_pulse * 8)
-        # Multi-ring emanation
-        for ring_i in range(4):
-            ring_r = hub_r + ring_i * 12 + int(math.sin(t * 1.5 + ring_i * 0.8) * 4)
-            ring_alpha = 0.08 * (4 - ring_i) / 4
+        hub_r_base = 10
+        hub_r = hub_r_base + int(hub_pulse * 3)
+        # Subtle ring emanation
+        for ring_i in range(3):
+            ring_r = hub_r + ring_i * 6 + int(math.sin(t * 1.5 + ring_i * 0.8) * 2)
+            ring_alpha = 0.04 * (3 - ring_i) / 3
             rr = max(0, min(255, int(74 * ring_alpha)))
             rg = max(0, min(255, int(227 * ring_alpha)))
             rb = max(0, min(255, int(208 * ring_alpha)))
             c.create_oval(cx_hub - ring_r, cy_hub - ring_r, cx_hub + ring_r, cy_hub + ring_r,
                          fill=f"#{rr:02x}{rg:02x}{rb:02x}", outline="")
         # Core glow
-        core_bright = 0.3 + 0.2 * hub_pulse
+        core_bright = 0.12 + 0.08 * hub_pulse
         cr_v = max(0, min(255, int(74 * core_bright)))
         cg_v = max(0, min(255, int(227 * core_bright)))
         cb_v = max(0, min(255, int(208 * core_bright)))
         c.create_oval(cx_hub - hub_r, cy_hub - hub_r, cx_hub + hub_r, cy_hub + hub_r,
                      fill=f"#{cr_v:02x}{cg_v:02x}{cb_v:02x}", outline=P["cyan_dim"], width=1)
         # Hub label
-        c.create_text(cx_hub, cy_hub, text="\u25C9", font=(FONT, 8), fill=P["cyan"])
+        c.create_text(cx_hub, cy_hub, text="\u25C9", font=(FONT, 6), fill=P["cyan"])
 
         # Title with glow effect — DRAMATIC
         title_pulse = 0.8 + 0.2 * abs(math.sin(t * 1.5))
@@ -8424,20 +8424,23 @@ class ShumilekHive:
         c.create_text(w // 2, 42, text=elapsed_txt,
                      font=F_SMALL, fill=_hex_color_scale(P["text_dim"], title_pulse))
 
-        # Node layout — two rows with flow
+        # Node layout — two rows with flow, responsive sizing
         nodes = PipelineSimulator.NODES
         top_row = nodes[:5]   # context → routing → rozum → generate → guardian
         bot_row = nodes[5:]   # halluc → svedomi → decision → output
 
-        node_w, node_h = 120, 60
-        gap = 20
+        gap = 16
+        # Adaptive node width: fit 5 nodes + 4 gaps into ~90% of canvas
+        max_node_w = min(120, (int(w * 0.9) - (len(top_row) - 1) * gap) // len(top_row))
+        node_w = max(80, max_node_w)
+        node_h = 55
         total_top = len(top_row) * node_w + (len(top_row) - 1) * gap
         total_bot = len(bot_row) * node_w + (len(bot_row) - 1) * gap
         start_x_top = (w - total_top) // 2
         start_x_bot = (w - total_bot) // 2
 
-        y_top = 90
-        y_bot = 240
+        y_top = 80
+        y_bot = 220
         self._schema_positions = {}
 
         # ── TREE TRUNK — central intelligence spine ──

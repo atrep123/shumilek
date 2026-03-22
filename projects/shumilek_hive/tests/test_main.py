@@ -3068,8 +3068,8 @@ class CentralIntelligenceHubTests(unittest.TestCase):
         self.assertIn("hub_r", self.body)
 
     def test_multi_ring_emanation(self):
-        """4 concentric rings emanate from hub."""
-        self.assertIn("range(4)", self.body)
+        """3 concentric rings emanate from hub."""
+        self.assertIn("range(3)", self.body)
         self.assertIn("ring_alpha", self.body)
 
     def test_core_glow(self):
