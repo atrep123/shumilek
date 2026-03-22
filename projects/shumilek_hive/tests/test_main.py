@@ -1671,7 +1671,7 @@ class GraphLayoutPresetTests(unittest.TestCase):
         src = Path(__file__).resolve().parent.parent / "main.py"
         source = src.read_text(encoding="utf-8")
         idx = source.index("def _draw_graph(")
-        body = source[idx:idx + 5000]
+        body = source[idx:idx + 7000]
         self.assertIn('"radial"', body)
         self.assertIn("ring", body)
 
@@ -2118,7 +2118,7 @@ class GraphMinimapTests(unittest.TestCase):
         src = Path(__file__).resolve().parent.parent / "main.py"
         source = src.read_text(encoding="utf-8")
         idx = source.index("def _draw_graph_minimap(")
-        body = source[idx:idx + 1800]
+        body = source[idx:idx + 4000]
         self.assertIn("MINIMAP", body)
         self.assertIn("create_rectangle", body)
         self.assertIn("create_oval", body)
@@ -2128,7 +2128,7 @@ class GraphMinimapTests(unittest.TestCase):
         src = Path(__file__).resolve().parent.parent / "main.py"
         source = src.read_text(encoding="utf-8")
         idx = source.index("def _draw_graph_minimap(")
-        body = source[idx:idx + 2200]
+        body = source[idx:idx + 4000]
         self.assertIn("viewport", body.lower())
         self.assertIn("dash", body)
 
@@ -2551,6 +2551,220 @@ class AnimateEnhancedTests(unittest.TestCase):
         body = source[idx:idx + 1500]
         self.assertIn("glow halo", body.lower())
         self.assertIn("create_oval", body)
+
+
+# ─── RT VIZ WAVE 2 TESTS ─────────────────────────────────────
+
+class VignetteEnhancedTests(unittest.TestCase):
+    """Tests for _draw_vignette enhancements: breathing opacity and color temperature shift."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("def _draw_vignette(")
+        cls.body = cls.source[idx:idx + 2000]
+
+    def test_breathing_opacity(self):
+        """Vignette has time-based breathing intensity."""
+        self.assertIn("breath", self.body)
+        self.assertIn("math.sin", self.body)
+
+    def test_color_temperature_shift(self):
+        """Vignette color temperature shifts warm/cool over time."""
+        self.assertIn("temp_shift", self.body)
+
+    def test_warm_cool_applied(self):
+        """Temperature shift modifies red and blue channels."""
+        self.assertIn("1.0 + temp_shift", self.body)
+        self.assertIn("1.0 - temp_shift", self.body)
+
+    def test_time_used(self):
+        """Vignette uses time.time() for animation."""
+        self.assertIn("time.time()", self.body)
+
+
+class HexGridEnhancedTests(unittest.TestCase):
+    """Tests for hex grid wave distortion in _draw_graph."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("Breathing hex grid overlay")
+        cls.body = cls.source[idx:idx + 1500]
+
+    def test_wave_distortion(self):
+        """Grid dots have radial wave distortion."""
+        self.assertIn("wave_val", self.body)
+
+    def test_radial_wave_from_center(self):
+        """Wave uses distance from center."""
+        self.assertIn("dist_c", self.body)
+        self.assertIn("math.hypot", self.body)
+
+    def test_position_jitter(self):
+        """Grid dots have subtle position jitter from wave."""
+        self.assertIn("jx", self.body)
+        self.assertIn("jy", self.body)
+
+    def test_row_phase_stagger(self):
+        """Each grid row has a staggered phase for organic feel."""
+        self.assertIn("row_phase", self.body)
+
+    def test_local_pulse_per_dot(self):
+        """Each dot gets individual brightness based on wave position."""
+        self.assertIn("local_pulse", self.body)
+
+
+class SchemaMetricsEnhancedTests(unittest.TestCase):
+    """Tests for _draw_schema_metrics enhancements."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("def _draw_schema_metrics(")
+        cls.body = cls.source[idx:idx + 3500]
+
+    def test_error_pulse_panel(self):
+        """Panel background pulses red when errors exist."""
+        self.assertIn("err_pulse", self.body)
+        self.assertIn('P["err"]', self.body)
+
+    def test_sequential_corner_accents(self):
+        """Corner accents light up in sequence."""
+        self.assertIn("corner_phase", self.body)
+        self.assertIn("corner_bright", self.body)
+
+    def test_cascade_segment_animation(self):
+        """Progress bar segments animate in with cascade timing."""
+        self.assertIn("seg_phase", self.body)
+        self.assertIn("seg_bright", self.body)
+
+    def test_shimmer_highlight(self):
+        """Filled progress bar has a shimmer highlight line."""
+        self.assertIn("shimmer_x", self.body)
+        self.assertIn("text_bright", self.body)
+
+
+class PipelineNodeEnhancedTests(unittest.TestCase):
+    """Tests for _draw_pipeline_node active state enhancements."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("def _draw_pipeline_node(")
+        cls.body = cls.source[idx:idx + 5000]
+
+    def test_rotating_corner_sparks(self):
+        """Active node has rotating corner sparks with math.cos/sin."""
+        self.assertIn("rot_angle", self.body)
+        self.assertIn("math.cos(a)", self.body)
+        self.assertIn("math.sin(a)", self.body)
+
+    def test_secondary_spark(self):
+        """Each corner has a secondary shorter spark at perpendicular angle."""
+        self.assertIn("math.pi / 3", self.body)
+        self.assertIn("spark_len * 0.6", self.body)
+
+    def test_wave_propagation_glow(self):
+        """Multi-ring glow has wave propagation with staggered phases."""
+        self.assertIn("wave_phase", self.body)
+
+    def test_shadow_sway(self):
+        """Ground shadow sways with sine oscillation."""
+        self.assertIn("shadow_off", self.body)
+
+    def test_progress_bar_highlight(self):
+        """Active progress bar has sweeping highlight."""
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        source = src.read_text(encoding="utf-8")
+        idx = source.index("def _draw_pipeline_node(")
+        body = source[idx:idx + 7000]
+        self.assertIn("highlight_x", body)
+
+
+class DrawArrowEnhancedTests(unittest.TestCase):
+    """Tests for _draw_arrow flow enhancements."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("def _draw_arrow(")
+        cls.body = cls.source[idx:idx + 3500]
+
+    def test_smoothstep_easing(self):
+        """Energy dots use smoothstep for acceleration/deceleration."""
+        self.assertIn("3.0 - 2.0 *", self.body)
+
+    def test_fading_trail(self):
+        """Primary dot has fading trail segments behind it."""
+        self.assertIn("range(3)", self.body)
+        self.assertIn("trail_alpha", self.body)
+
+    def test_arrow_head_pulse(self):
+        """Active arrow has pulsing head glow."""
+        self.assertIn("head_pulse", self.body)
+        self.assertIn("head_glow_r", self.body)
+
+    def test_trail_eased(self):
+        """Trail segments also use smoothstep easing."""
+        self.assertIn("tf_smooth", self.body)
+
+
+class GraphMinimapEnhancedTests(unittest.TestCase):
+    """Tests for _draw_graph_minimap enhancements."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("def _draw_graph_minimap(")
+        cls.body = cls.source[idx:idx + 4000]
+
+    def test_mini_edges(self):
+        """Minimap draws mini edges (connections between nodes)."""
+        self.assertIn("mini edges", self.body.lower())
+        self.assertIn("create_line", self.body)
+
+    def test_active_node_pulse(self):
+        """AI-active nodes pulse brighter in minimap."""
+        self.assertIn("is_ai_active", self.body)
+        self.assertIn("mr_pulse", self.body)
+
+    def test_viewport_glow_animation(self):
+        """Viewport rectangle has animated glow."""
+        self.assertIn("vp_pulse", self.body)
+        self.assertIn("vp_col", self.body)
+
+
+class GraphStatsEnhancedTests(unittest.TestCase):
+    """Tests for _draw_graph_stats enhancements."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("def _draw_graph_stats(")
+        cls.body = cls.source[idx:idx + 3500]
+
+    def test_sequential_corner_lighting(self):
+        """Corner accents light up in sequence."""
+        self.assertIn("corner_phase", self.body)
+        self.assertIn("corner_bright", self.body)
+
+    def test_color_reactive_bar(self):
+        """Density bar uses different colors based on density threshold."""
+        self.assertIn("density < 0.3", self.body)
+        self.assertIn("density < 0.6", self.body)
+
+    def test_shimmer_on_bar(self):
+        """Density bar has shimmer highlight."""
+        self.assertIn("shimmer_pos", self.body)
+        self.assertIn("text_bright", self.body)
 
 
 if __name__ == "__main__":

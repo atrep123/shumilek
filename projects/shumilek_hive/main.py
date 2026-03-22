@@ -647,19 +647,31 @@ def _draw_nebulae(c, w: int, h: int, nebulae: list, rings: int, opacity: float, 
 
 def _draw_vignette(c, w: int, h: int, size: int = 30):
     """Draw top+bottom vignette overlay on canvas."""
+    t = time.time()
+    # Breathing opacity: subtle oscillation between 0.8x and 1.2x base intensity
+    breath = 1.0 + 0.2 * math.sin(t * 0.4)
+    # Color temperature shift: warm ↔ cool over time
+    temp_shift = math.sin(t * 0.06) * 0.15
     for vi in range(size):
         frac = 1.0 - vi / size
-        vr = max(0, min(255, int(8 * frac)))
-        vgc = max(0, min(255, int(6 * frac)))
-        vb = max(0, min(255, int(16 * frac)))
+        base_r = 8 * frac * breath
+        base_g = 6 * frac * breath
+        base_b = 16 * frac * breath
+        # Apply warm/cool shift: positive = warmer (more red), negative = cooler (more blue)
+        vr = max(0, min(255, int(base_r * (1.0 + temp_shift))))
+        vgc = max(0, min(255, int(base_g)))
+        vb = max(0, min(255, int(base_b * (1.0 - temp_shift))))
         if vr + vgc + vb > 0:
             col = f"#{vr:02x}{vgc:02x}{vb:02x}"
             c.create_line(0, vi, w, vi, fill=col, width=1)
     for vi in range(size):
         frac = vi / size
-        vr = max(0, min(255, int(8 * frac)))
-        vgc = max(0, min(255, int(6 * frac)))
-        vb = max(0, min(255, int(16 * frac)))
+        base_r = 8 * frac * breath
+        base_g = 6 * frac * breath
+        base_b = 16 * frac * breath
+        vr = max(0, min(255, int(base_r * (1.0 + temp_shift))))
+        vgc = max(0, min(255, int(base_g)))
+        vb = max(0, min(255, int(base_b * (1.0 - temp_shift))))
         if vr + vgc + vb > 0:
             col = f"#{vr:02x}{vgc:02x}{vb:02x}"
             c.create_line(0, h - size + vi, w, h - size + vi, fill=col, width=1)
@@ -7269,13 +7281,27 @@ class ShumilekHive:
                 })
         _draw_nebulae(c, w, h, self._graph_nebulae, rings=3, opacity=0.03, t=t)
 
-        # ── Breathing hex grid overlay ──
+        # ── Breathing hex grid overlay with wave distortion ──
         grid_pulse = 0.4 + 0.6 * abs(math.sin(t * 0.5))
-        grid_color = _hex_color_scale(P["border"], grid_pulse)
+        # Ripple wave emanating from center
+        wave_speed = t * 60  # pixels per second outward
         for gx in range(0, w, 40):
             for gy in range(0, h, 40):
                 offset = 20 if (gy // 40) % 2 else 0
-                c.create_text(gx + offset, gy, text="\u00b7", font=(FONT, 5),
+                px = gx + offset
+                # Distance from center for radial wave
+                dist_c = math.hypot(px - cx, gy - cy)
+                # Radial wave: brighter dots where wave crest passes
+                wave_val = math.sin((dist_c - wave_speed) * 0.04) * 0.5 + 0.5
+                # Staggered phase per row for organic feel
+                row_phase = math.sin(gy * 0.02 + t * 0.3) * 0.15
+                local_pulse = grid_pulse * (0.7 + 0.3 * wave_val) + row_phase
+                local_pulse = max(0.1, min(1.0, local_pulse))
+                grid_color = _hex_color_scale(P["border"], local_pulse)
+                # Subtle position jitter from wave
+                jx = int(math.sin(dist_c * 0.03 + t * 0.5) * 1.5)
+                jy = int(math.cos(dist_c * 0.03 + t * 0.4) * 1.5)
+                c.create_text(px + jx, gy + jy, text="\u00b7", font=(FONT, 5),
                              fill=grid_color, anchor="center")
 
         # Heat map importance
@@ -7866,12 +7892,17 @@ class ShumilekHive:
         pw, ph = 200, 80
         mx = w - pw - 10
         my = h - ph - 10
+        t = time.time()
         c.create_rectangle(mx, my, mx + pw, my + ph,
                           fill=P["surface"], outline=P["border"], width=1)
-        # Corner accents
-        for (cx_, cy_) in [(mx, my), (mx + pw, my), (mx, my + ph), (mx + pw, my + ph)]:
+        # Corner accents with sequential lighting
+        corners = [(mx, my), (mx + pw, my), (mx, my + ph), (mx + pw, my + ph)]
+        for ci, (cx_, cy_) in enumerate(corners):
+            corner_phase = (t * 1.5 + ci * 0.6) % 4.0
+            corner_bright = 1.0 if corner_phase < 0.4 else 0.4
+            corner_col = _hex_color_scale(P["border_glow"], corner_bright)
             c.create_rectangle(cx_ - 2, cy_ - 2, cx_ + 2, cy_ + 2,
-                              fill=P["border_glow"], outline="")
+                              fill=corner_col, outline="")
 
         c.create_text(mx + 8, my + 8, text="\u25C8 Stats", font=F_SMALL,
                      fill=P["heading"], anchor="nw")
@@ -7897,7 +7928,7 @@ class ShumilekHive:
         c.create_text(mx + 8, my + 54, text=f"Avg imp: {avg_imp:.0%}",
                      font=F_PIXEL, fill=P["text_dim"], anchor="nw")
 
-        # Mini density bar
+        # Mini density bar with color thresholds and shimmer
         bar_x = mx + 8
         bar_y = my + 68
         bar_w = pw - 16
@@ -7905,8 +7936,20 @@ class ShumilekHive:
                           fill=P["panel"], outline=P["border"])
         fill_w = int(bar_w * min(1, density))
         if fill_w > 0:
+            # Color reactive: green sparse, cyan medium, amethyst dense
+            if density < 0.3:
+                bar_col = P["emerald"]
+            elif density < 0.6:
+                bar_col = P["cyan"]
+            else:
+                bar_col = P["amethyst"]
             c.create_rectangle(bar_x, bar_y, bar_x + fill_w, bar_y + 6,
-                              fill=P["emerald"], outline="")
+                              fill=bar_col, outline="")
+            # Shimmer highlight across density bar
+            shimmer_pos = bar_x + int((t * 30) % max(1, fill_w))
+            if shimmer_pos < bar_x + fill_w:
+                c.create_line(shimmer_pos, bar_y + 1, shimmer_pos, bar_y + 5,
+                             fill=P["text_bright"], width=1)
 
     def _graph_ai_tick(self):
         """Update graph AI activity state based on current pipeline stage."""
@@ -8213,20 +8256,44 @@ class ShumilekHive:
                 c.create_line(x1, y1, x2, y2,
                              fill=P["cyan_dim"], width=6, arrow="last",
                              arrowshape=(8, 10, 4))
+                # Pulsing arrow head highlight
+                t_arr = time.time()
+                head_pulse = abs(math.sin(t_arr * 4))
+                head_glow_r = 5 + int(head_pulse * 4)
+                c.create_oval(x2 - head_glow_r, y2 - head_glow_r,
+                             x2 + head_glow_r, y2 + head_glow_r,
+                             fill=_hex_color_scale(P["cyan"], 0.15 + head_pulse * 0.1), outline="")
             c.create_line(x1, y1, x2, y2,
                          fill=acol, width=3 if is_active else 2,
                          arrow="last", arrowshape=(6, 8, 3))
-            # Animated energy dots on active arrows
+            # Animated energy dots on active arrows with trails
             if is_active:
                 seg_len = math.hypot(x2 - x1, y2 - y1)
                 if seg_len > 5:
-                    frac = (time.time() * 2) % 1.0
+                    t_dot = time.time()
+                    # Primary dot with ease-in-out (acceleration/deceleration)
+                    raw_frac = (t_dot * 2) % 1.0
+                    # Smoothstep for acceleration at start, deceleration at end
+                    frac = raw_frac * raw_frac * (3.0 - 2.0 * raw_frac)
                     dx = x1 + (x2 - x1) * frac
                     dy = y1 + (y2 - y1) * frac
                     c.create_oval(dx - 3, dy - 3, dx + 3, dy + 3,
                                  fill=P["cyan"], outline=P["text_bright"], width=1)
-                    # Second dot offset
-                    frac2 = (frac + 0.5) % 1.0
+                    # Fading trail behind primary dot (3 segments)
+                    for ti in range(3):
+                        tf = max(0.0, raw_frac - (ti + 1) * 0.06)
+                        tf_smooth = tf * tf * (3.0 - 2.0 * tf)
+                        ttx = x1 + (x2 - x1) * tf_smooth
+                        tty = y1 + (y2 - y1) * tf_smooth
+                        trail_s = max(1, 3 - ti)
+                        trail_alpha = 1.0 - (ti + 1) / 4.0
+                        trail_col = _hex_color_scale(P["cyan"], trail_alpha * 0.5)
+                        c.create_oval(ttx - trail_s, tty - trail_s,
+                                     ttx + trail_s, tty + trail_s,
+                                     fill=trail_col, outline="")
+                    # Second dot offset with same easing
+                    raw_frac2 = (raw_frac + 0.5) % 1.0
+                    frac2 = raw_frac2 * raw_frac2 * (3.0 - 2.0 * raw_frac2)
                     dx2 = x1 + (x2 - x1) * frac2
                     dy2 = y1 + (y2 - y1) * frac2
                     c.create_oval(dx2 - 2, dy2 - 2, dx2 + 2, dy2 + 2,
@@ -8539,11 +8606,14 @@ class ShumilekHive:
 
         # Pulsing glow rings for active node
         if state == "active":
-            pulse = abs(math.sin(time.time() * 3))
-            # Multi-ring soft glow
+            t_now = time.time()
+            pulse = abs(math.sin(t_now * 3))
+            # Multi-ring soft glow with wave propagation
             for ri in range(4):
                 frac = 1.0 - ri / 4.0
-                expand = 3 + ri * 3 + int(pulse * 4)
+                # Wave crest: each ring expands at slightly different phase
+                wave_phase = math.sin(t_now * 2.5 + ri * 0.7) * 0.5 + 0.5
+                expand = 3 + ri * 3 + int(pulse * 4) + int(wave_phase * 2)
                 c.create_rectangle(x - expand, y - expand, x + w + expand, y + h + expand,
                                   fill=_hex_color_scale(color, 0.12 * frac), outline="")
             # Outer animated glow ring
@@ -8554,14 +8624,24 @@ class ShumilekHive:
             expand2 = int(pulse * 3) + 1
             c.create_rectangle(x - expand2, y - expand2, x + w + expand2, y + h + expand2,
                               fill="", outline=color, width=2)
-            # Corner energy sparks
+            # Rotating corner energy sparks (orbit around corners)
             spark_len = int(pulse * 8) + 4
-            for (cx_, cy_, dx, dy) in [(x, y, -1, -1), (x+w, y, 1, -1),
-                                       (x, y+h, -1, 1), (x+w, y+h, 1, 1)]:
-                c.create_line(cx_, cy_, cx_ + dx * spark_len, cy_ + dy * spark_len,
+            rot_angle = t_now * 3  # rotation speed
+            for ci, (cx_, cy_) in enumerate([(x, y), (x+w, y), (x, y+h), (x+w, y+h)]):
+                # Each corner has a different rotation phase
+                a = rot_angle + ci * math.pi / 2
+                sdx = math.cos(a) * spark_len
+                sdy = math.sin(a) * spark_len
+                c.create_line(cx_, cy_, cx_ + sdx, cy_ + sdy,
                              fill=color, width=1)
-            # Ground shadow
-            c.create_rectangle(x + 3, y + h + 2, x + w - 3, y + h + 5,
+                # Secondary shorter spark at perpendicular angle
+                sdx2 = math.cos(a + math.pi / 3) * (spark_len * 0.6)
+                sdy2 = math.sin(a + math.pi / 3) * (spark_len * 0.6)
+                c.create_line(cx_, cy_, cx_ + sdx2, cy_ + sdy2,
+                             fill=_hex_color_scale(color, 0.5), width=1)
+            # Ground shadow with subtle sway
+            shadow_off = int(math.sin(t_now * 1.2) * 2)
+            c.create_rectangle(x + 3 + shadow_off, y + h + 2, x + w - 3 + shadow_off, y + h + 5,
                               fill=P["void"], outline="")
         elif state == "done":
             # Soft completed glow halo
@@ -8600,15 +8680,21 @@ class ShumilekHive:
 
         # State indicator
         if state == "active":
-            # Animated progress bar inside node
+            t_bar = time.time()
+            # Animated progress bar inside node with sweeping highlight
             bar_y = y + h - 8
             bar_w = w - 10
             c.create_rectangle(x + 5, bar_y, x + 5 + bar_w, bar_y + 4,
                               fill=P["panel"], outline=P["border"])
-            # Animated fill
-            progress = abs(math.sin(time.time() * 2)) * bar_w
+            # Smooth sweeping fill (ping-pong)
+            progress = abs(math.sin(t_bar * 2)) * bar_w
             c.create_rectangle(x + 5, bar_y, x + 5 + int(progress), bar_y + 4,
                               fill=color, outline="")
+            # Bright highlight sweeping across the bar
+            highlight_x = x + 5 + int((t_bar * 50) % max(1, bar_w))
+            if highlight_x < x + 5 + int(progress):
+                c.create_line(highlight_x, bar_y + 1, highlight_x, bar_y + 3,
+                             fill=P["text_bright"], width=1)
         elif state == "done":
             c.create_text(x + w - 12, y + 8, text="\u2713", font=F_SMALL, fill=P["ok"])
         elif state == "error":
@@ -8636,12 +8722,27 @@ class ShumilekHive:
         my = h - 80
         pw = 320
         ph = 74
+        t = time.time()
+
+        # Error state pulsing: subtle red tint on panel when errors exist
+        err_count_pre = sum(1 for s in self.pipeline.node_states.values() if s in ("error", "retry"))
+        if err_count_pre > 0:
+            err_pulse = abs(math.sin(t * 3)) * 0.15
+            panel_bg = _hex_color_scale(P["err"], err_pulse)
+        else:
+            panel_bg = P["surface"]
+
         c.create_rectangle(mx, my, mx + pw, my + ph,
-                          fill=P["surface"], outline=P["border"], width=1)
-        # Corner accents
-        for (cx, cy) in [(mx, my), (mx + pw, my), (mx, my + ph), (mx + pw, my + ph)]:
+                          fill=panel_bg, outline=P["border"], width=1)
+        # Corner accents with sequential pulse
+        corners = [(mx, my), (mx + pw, my), (mx, my + ph), (mx + pw, my + ph)]
+        for ci, (cx, cy) in enumerate(corners):
+            # Each corner lights up in sequence (clockwise)
+            corner_phase = (t * 2 + ci * 0.5) % 4.0
+            corner_bright = 1.0 if corner_phase < 0.5 else 0.4
+            corner_col = _hex_color_scale(P["border_glow"], corner_bright)
             c.create_rectangle(cx - 2, cy - 2, cx + 2, cy + 2,
-                              fill=P["border_glow"], outline="")
+                              fill=corner_col, outline="")
 
         c.create_text(mx + 8, my + 8, text="◈ Pipeline Stats", font=F_SMALL,
                      fill=P["heading"], anchor="nw")
@@ -8663,16 +8764,25 @@ class ShumilekHive:
             frac = done_count / total
             fill_w = int(bar_w * frac)
             if fill_w > 0:
-                # Gradient-like segmented fill
+                # Gradient-like segmented fill with cascade animation
                 seg = max(1, fill_w // max(1, done_count))
                 for i in range(done_count):
                     sx = bar_x + i * seg
+                    # Cascade: each segment fades in sequentially
+                    seg_phase = max(0.0, min(1.0, (t * 1.5 - i * 0.3) % (total * 0.3 + 2) / 1.0))
+                    seg_bright = min(1.0, 0.5 + 0.5 * seg_phase)
                     color = P["ok"] if err_count == 0 else P["emerald"]
+                    seg_col = _hex_color_scale(color, seg_bright)
                     c.create_rectangle(sx, bar_y + 1, sx + seg - 1, bar_y + bar_h - 1,
-                                      fill=color, outline="")
+                                      fill=seg_col, outline="")
+                # Shimmer highlight: bright moving line across filled segments
+                shimmer_x = bar_x + int((t * 40) % max(1, fill_w))
+                if shimmer_x < bar_x + fill_w:
+                    c.create_line(shimmer_x, bar_y + 1, shimmer_x, bar_y + bar_h - 1,
+                                fill=P["text_bright"], width=1)
             # Active pulse segment
             if active_count > 0 and fill_w < bar_w:
-                pulse = abs(math.sin(time.time() * 4)) * 0.5 + 0.5
+                pulse = abs(math.sin(t * 4)) * 0.5 + 0.5
                 aw = max(4, seg if done_count > 0 else int(bar_w / total))
                 ac = P["cyan"] if pulse > 0.5 else P["cyan_dim"]
                 c.create_rectangle(bar_x + fill_w, bar_y + 1,
@@ -8977,6 +9087,7 @@ class ShumilekHive:
         ms = self._graph_minimap_size
         margin = 8
         mx, my = margin, h - ms - margin - 30  # above heat map legend
+        t = time.time()
 
         # Minimap background
         c.create_rectangle(mx, my, mx + ms, my + ms,
@@ -8997,15 +9108,41 @@ class ShumilekHive:
         inner = ms - pad * 2
         scale = min(inner / span_x, inner / span_y)
 
-        # Draw mini nodes
+        # Draw mini edges (connections)
+        for src, tgts in self.notes_graph.items():
+            if src not in self._graph_node_positions:
+                continue
+            snx, sny, _ = self._graph_node_positions[src]
+            ssx = mx + pad + (snx - min_x) * scale
+            ssy = my + pad + (sny - min_y) * scale
+            for tgt in tgts:
+                if tgt not in self._graph_node_positions:
+                    continue
+                tnx, tny, _ = self._graph_node_positions[tgt]
+                tsx = mx + pad + (tnx - min_x) * scale
+                tsy = my + pad + (tny - min_y) * scale
+                c.create_line(ssx, ssy, tsx, tsy,
+                             fill=P["border"], width=1)
+
+        # Draw mini nodes with activity-based pulsing
         for node, (nx, ny, r) in self._graph_node_positions.items():
             sx = mx + pad + (nx - min_x) * scale
             sy = my + pad + (ny - min_y) * scale
             mr = max(2, r * scale * 0.3)
+            # Active nodes pulse brighter
+            is_ai_active = node in self._graph_ai_active_nodes
+            if is_ai_active:
+                pulse = abs(math.sin(t * 4 + hash(node) % 10))
+                mr_pulse = mr + pulse * 2
+                c.create_oval(sx - mr_pulse, sy - mr_pulse, sx + mr_pulse, sy + mr_pulse,
+                             fill=_hex_color_scale(P["cyan"], 0.2), outline="")
+                node_fill = P["cyan"]
+            else:
+                node_fill = P["cyan_dim"]
             c.create_oval(sx - mr, sy - mr, sx + mr, sy + mr,
-                         fill=P["cyan_dim"], outline="")
+                         fill=node_fill, outline="")
 
-        # Draw viewport rectangle showing visible area
+        # Draw viewport rectangle showing visible area with animated glow
         vp_x1 = mx + pad + (0 - min_x) * scale
         vp_y1 = my + pad + (0 - min_y) * scale
         vp_x2 = mx + pad + (w - min_x) * scale
@@ -9015,8 +9152,11 @@ class ShumilekHive:
         vp_y1 = max(my, min(my + ms, vp_y1))
         vp_x2 = max(mx, min(mx + ms, vp_x2))
         vp_y2 = max(my, min(my + ms, vp_y2))
+        # Animated viewport glow
+        vp_pulse = 0.5 + 0.5 * abs(math.sin(t * 1.5))
+        vp_col = _hex_color_scale(P["cyan"], vp_pulse)
         c.create_rectangle(vp_x1, vp_y1, vp_x2, vp_y2,
-                          fill="", outline=P["cyan"], width=1, dash=(3, 2))
+                          fill="", outline=vp_col, width=1, dash=(3, 2))
 
     # ─── TAG CLOUD FULL VIEW ─────────────────────────────────────
     def _show_tag_cloud_view(self):
