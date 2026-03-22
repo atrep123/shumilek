@@ -331,6 +331,8 @@ class StarField:
     _BRIGHT_STEPS = 8  # pre-computed brightness levels per color
 
     def __init__(self, count=80):
+        # More stars for denser field (120 base)
+        count = max(count, 120)
         # Stars: (x, y, phase, color, jitter_phase, depth)
         # depth 0.0-1.0: 0=far/slow twinkle, 1=near/fast twinkle
         self.stars: list[tuple[float, float, float, str, float, float]] = []
@@ -356,8 +358,8 @@ class StarField:
             jitter_phase = random.uniform(0, math.pi * 2)
             depth = random.random()  # parallax depth 0=far, 1=near
             self.stars.append((x, y, phase, color, jitter_phase, depth))
-        # Shooting star state
-        self._shooting_star: tuple | None = None
+        # Shooting star state — support for multiple concurrent
+        self._shooting_stars: list[tuple] = []
 
     def draw(self, canvas: tk.Canvas, w: int, h: int, t: float):
         steps_m1 = self._BRIGHT_STEPS - 1
@@ -395,35 +397,45 @@ class StarField:
                     canvas.create_line(px - dl, py - dl, px + dl + 1, py + dl + 1,
                                        fill=col, width=1, tags="stars")
 
-        # Shooting star — rare bright streak across the sky
-        if self._shooting_star is None:
-            if random.random() < 0.002:
-                self._shooting_star = (
-                    t, random.uniform(0.1, 0.9) * w, random.uniform(0.05, 0.4) * h,
-                    random.uniform(-0.5, 0.5), random.choice([P["cyan"], P["ice"], P["amethyst"]]),
-                    random.uniform(4.0, 8.0),
-                )
-        if self._shooting_star is not None:
-            st_time, ssx, ssy, angle, scol, spd = self._shooting_star
+        # Shooting stars — multiple concurrent meteors
+        if len(self._shooting_stars) < 3 and random.random() < 0.003:
+            self._shooting_stars.append((
+                t, random.uniform(0.1, 0.9) * w, random.uniform(0.05, 0.4) * h,
+                random.uniform(-0.5, 0.5), random.choice([P["cyan"], P["ice"], P["amethyst"]]),
+                random.uniform(4.0, 8.0),
+            ))
+        remaining_stars = []
+        for star_data in self._shooting_stars:
+            st_time, ssx, ssy, angle, scol, spd = star_data
             elapsed = t - st_time
             if elapsed > 0.8:
-                self._shooting_star = None
-            else:
-                cx = ssx + math.cos(angle) * spd * elapsed * 120
-                cy = ssy + math.sin(angle) * spd * elapsed * 120
-                trail_len = int(spd * 12)
-                tx = cx - math.cos(angle) * trail_len
-                ty = cy - math.sin(angle) * trail_len
-                fade = max(0.0, 1.0 - elapsed / 0.8)
-                base_c = scol.lstrip("#")
-                sr = max(0, min(255, int(int(base_c[:2], 16) * fade)))
-                sg = max(0, min(255, int(int(base_c[2:4], 16) * fade)))
-                sb = max(0, min(255, int(int(base_c[4:6], 16) * fade)))
-                if sr + sg + sb > 0:
-                    canvas.create_line(int(tx), int(ty), int(cx), int(cy),
-                                       fill=f"#{sr:02x}{sg:02x}{sb:02x}", width=1, tags="stars")
-                    canvas.create_rectangle(int(cx) - 1, int(cy) - 1, int(cx) + 1, int(cy) + 1,
-                                            fill=scol, outline="", tags="stars")
+                continue
+            remaining_stars.append(star_data)
+            cx = ssx + math.cos(angle) * spd * elapsed * 120
+            cy = ssy + math.sin(angle) * spd * elapsed * 120
+            trail_len = int(spd * 14)
+            tx = cx - math.cos(angle) * trail_len
+            ty = cy - math.sin(angle) * trail_len
+            fade = max(0.0, 1.0 - elapsed / 0.8)
+            base_c = scol.lstrip("#")
+            sr = max(0, min(255, int(int(base_c[:2], 16) * fade)))
+            sg = max(0, min(255, int(int(base_c[2:4], 16) * fade)))
+            sb = max(0, min(255, int(int(base_c[4:6], 16) * fade)))
+            if sr + sg + sb > 0:
+                canvas.create_line(int(tx), int(ty), int(cx), int(cy),
+                                   fill=f"#{sr:02x}{sg:02x}{sb:02x}", width=1, tags="stars")
+                # Brighter trail head
+                canvas.create_rectangle(int(cx) - 1, int(cy) - 1, int(cx) + 2, int(cy) + 2,
+                                        fill=scol, outline="", tags="stars")
+                # Glow behind head
+                glow_r = 3 + int(fade * 3)
+                gr = max(0, min(255, int(int(base_c[:2], 16) * fade * 0.2)))
+                gg = max(0, min(255, int(int(base_c[2:4], 16) * fade * 0.2)))
+                gb = max(0, min(255, int(int(base_c[4:6], 16) * fade * 0.2)))
+                canvas.create_oval(int(cx) - glow_r, int(cy) - glow_r,
+                                   int(cx) + glow_r, int(cy) + glow_r,
+                                   fill=f"#{gr:02x}{gg:02x}{gb:02x}", outline="", tags="stars")
+        self._shooting_stars = remaining_stars
 
 
 # ─── PIPELINE SIMULATION ────────────────────────────────────────────
@@ -643,10 +655,24 @@ def _draw_nebulae(c, w: int, h: int, nebulae: list, rings: int, opacity: float, 
             bb = max(0, min(255, int(base_b * scale * (1 - color_shift))))
             c.create_oval(nx - cr, ny - cr, nx + cr, ny + cr,
                          fill=f"#{br:02x}{bg:02x}{bb:02x}", outline="")
+        # ── NEBULA TENDRILS ── wispy extensions radiating outward
+        for tendril_i in range(3):
+            ta = neb["phase"] + tendril_i * 2.0 + t * 0.05
+            t_len = nr * 0.6 + int(math.sin(t * 0.2 + tendril_i) * nr * 0.2)
+            tx = nx + int(math.cos(ta) * t_len)
+            ty = ny + int(math.sin(ta) * t_len)
+            t_r = int(nr * 0.3 * breath)
+            t_scale = opacity * 0.5 * breath
+            tr = max(0, min(255, int(base_r * t_scale)))
+            tg = max(0, min(255, int(base_g * t_scale)))
+            tb = max(0, min(255, int(base_b * t_scale)))
+            if t_r > 1:
+                c.create_oval(tx - t_r, ty - t_r, tx + t_r, ty + t_r,
+                             fill=f"#{tr:02x}{tg:02x}{tb:02x}", outline="")
 
 
 def _draw_vignette(c, w: int, h: int, size: int = 30):
-    """Draw top+bottom vignette overlay on canvas."""
+    """Draw top+bottom vignette overlay on canvas with side edges."""
     t = time.time()
     # Breathing opacity: subtle oscillation between 0.8x and 1.2x base intensity
     breath = 1.0 + 0.2 * math.sin(t * 0.4)
@@ -675,6 +701,17 @@ def _draw_vignette(c, w: int, h: int, size: int = 30):
         if vr + vgc + vb > 0:
             col = f"#{vr:02x}{vgc:02x}{vb:02x}"
             c.create_line(0, h - size + vi, w, h - size + vi, fill=col, width=1)
+    # ── SIDE VIGNETTES ── dystopian cinematic edges
+    side_size = size // 2
+    for si in range(side_size):
+        sfrac = 1.0 - si / side_size
+        sr = max(0, min(255, int(6 * sfrac * breath)))
+        sg = max(0, min(255, int(4 * sfrac * breath)))
+        sb = max(0, min(255, int(12 * sfrac * breath)))
+        if sr + sg + sb > 0:
+            scol = f"#{sr:02x}{sg:02x}{sb:02x}"
+            c.create_line(si, 0, si, h, fill=scol, width=1)
+            c.create_line(w - si, 0, w - si, h, fill=scol, width=1)
 
 
 class ShumilekHive:
@@ -7696,7 +7733,7 @@ class ShumilekHive:
         if self.pipeline.is_running or self._graph_ai_active_nodes:
             t2 = time.time()
 
-            # Scan waves (expanding circles with multi-ring gradient)
+            # Scan waves (expanding circles with multi-ring gradient + interference)
             for wave in self._graph_ai_scan_waves:
                 wr = wave["r"]
                 if wr > 2:
@@ -7705,7 +7742,7 @@ class ShumilekHive:
                     wr0 = int(wcol[:2], 16)
                     wg0 = int(wcol[2:4], 16)
                     wb0 = int(wcol[4:6], 16)
-                    # Outer fading ring
+                    # Outer fading ring with interference pattern
                     dash_gap = max(1, int(8 * (1 - alpha_frac)))
                     c.create_oval(wave["x"] - wr, wave["y"] - wr,
                                  wave["x"] + wr, wave["y"] + wr,
@@ -7722,6 +7759,25 @@ class ShumilekHive:
                             c.create_oval(wave["x"] - inner_r, wave["y"] - inner_r,
                                          wave["x"] + inner_r, wave["y"] + inner_r,
                                          fill=f"#{ir:02x}{ig:02x}{ib:02x}", outline="")
+                    # ── INTERFERENCE RING ── third ring at 75% radius
+                    mid_r = int(wr * 0.75)
+                    if mid_r > 5:
+                        mid_a = alpha_frac * 0.4
+                        mr = max(0, min(255, int(wr0 * mid_a)))
+                        mg = max(0, min(255, int(wg0 * mid_a)))
+                        mb = max(0, min(255, int(wb0 * mid_a)))
+                        c.create_oval(wave["x"] - mid_r, wave["y"] - mid_r,
+                                     wave["x"] + mid_r, wave["y"] + mid_r,
+                                     fill="", outline=f"#{mr:02x}{mg:02x}{mb:02x}",
+                                     width=1, dash=(1, 6))
+                    # Crosshair at wave center
+                    if alpha_frac > 0.5:
+                        ch_len = 6
+                        ch_col = _hex_color_scale(wave["color"], alpha_frac * 0.4)
+                        c.create_line(wave["x"] - ch_len, wave["y"],
+                                     wave["x"] + ch_len, wave["y"], fill=ch_col, width=1)
+                        c.create_line(wave["x"], wave["y"] - ch_len,
+                                     wave["x"], wave["y"] + ch_len, fill=ch_col, width=1)
 
             # AI-active node highlights (multi-ring radial glow overlay)
             for node_stem, info in self._graph_ai_active_nodes.items():
@@ -8251,9 +8307,10 @@ class ShumilekHive:
         c.delete("all")
         w = max(c.winfo_width(), 600)
         h = max(c.winfo_height(), 400)
+        t = time.time()
 
         # Starfield background (twinkling pixel stars)
-        self._starfield.draw(c, w, h, time.time())
+        self._starfield.draw(c, w, h, t)
 
         # Nebula clouds — colored blobs in schema background
         if not hasattr(self, '_schema_nebulae'):
@@ -8267,31 +8324,105 @@ class ShumilekHive:
                     "color": random.choice(neb_colors),
                     "phase": random.uniform(0, math.pi * 2),
                 })
-        _draw_nebulae(c, w, h, self._schema_nebulae, rings=3, opacity=0.03, t=time.time())
+        _draw_nebulae(c, w, h, self._schema_nebulae, rings=3, opacity=0.03, t=t)
 
-        # Subtle hex grid overlay
+        # ── DYSTOPIAN CIRCUIT TRACES ──
+        # Fractal circuit veins radiating from center hub
+        cx_hub, cy_hub = w // 2, 165
+        circuit_breath = 0.4 + 0.6 * abs(math.sin(t * 0.8))
+        for branch_i in range(12):
+            angle = branch_i * math.pi / 6 + math.sin(t * 0.3) * 0.1
+            branch_len = 80 + int(math.sin(t * 0.5 + branch_i) * 20)
+            bx = cx_hub + int(math.cos(angle) * branch_len)
+            by = cy_hub + int(math.sin(angle) * branch_len)
+            vein_bright = 0.08 + 0.06 * abs(math.sin(t * 1.5 + branch_i * 0.5))
+            vein_col = _hex_color_scale(P["cyan_dim"], vein_bright * circuit_breath)
+            c.create_line(cx_hub, cy_hub, bx, by, fill=vein_col, width=1, dash=(1, 4))
+            # Secondary sub-branches
+            for sub_i in range(2):
+                sub_angle = angle + (sub_i - 0.5) * 0.6
+                sub_len = branch_len * 0.4
+                sx2 = bx + int(math.cos(sub_angle) * sub_len)
+                sy2 = by + int(math.sin(sub_angle) * sub_len)
+                c.create_line(bx, by, sx2, sy2, fill=vein_col, width=1, dash=(1, 6))
+
+        # ── DIGITAL RAIN COLUMNS ──
+        # Sparse falling data streams across background
+        for col_i in range(8):
+            col_x = int(w * (col_i + 0.5) / 8)
+            rain_phase = (t * 1.5 + col_i * 1.7) % 4.0
+            rain_y = int(rain_phase / 4.0 * (h + 40)) - 20
+            for drop_j in range(6):
+                dy_drop = rain_y - drop_j * 14
+                if 0 <= dy_drop < h:
+                    drop_fade = max(0.0, 1.0 - drop_j / 6.0)
+                    dr = max(0, min(255, int(20 * drop_fade)))
+                    dg = max(0, min(255, int(60 * drop_fade)))
+                    db = max(0, min(255, int(40 * drop_fade)))
+                    if dr + dg + db > 0:
+                        c.create_text(col_x, dy_drop, text=chr(0x30 + (col_i + drop_j + int(t * 3)) % 10),
+                                     font=(FONT, 5), fill=f"#{dr:02x}{dg:02x}{db:02x}")
+
+        # Subtle hex grid overlay with pulse
+        grid_pulse = 0.5 + 0.5 * abs(math.sin(t * 0.3))
         for gx in range(0, w, 32):
             for gy in range(0, h, 32):
                 offset = 16 if (gy // 32) % 2 else 0
+                dist_center = math.hypot(gx + offset - cx_hub, gy - cy_hub)
+                prox = max(0.3, 1.0 - dist_center / (max(w, h) * 0.5))
                 c.create_text(gx + offset, gy, text="·", font=(FONT, 6),
-                             fill=P["border"], anchor="nw")
+                             fill=_hex_color_scale(P["border"], prox * grid_pulse * 0.5), anchor="nw")
 
-        # Ambient energy lines (horizontal scan lines)
-        scan_y = int((time.time() * 30) % h)
+        # ── MULTI-LAYER SCAN LINES ──
+        scan_y = int((t * 30) % h)
         c.create_line(0, scan_y, w, scan_y, fill=P["border"], width=1, dash=(2, 8))
         c.create_line(0, (scan_y + h // 3) % h, w, (scan_y + h // 3) % h,
                      fill=P["border"], width=1, dash=(1, 12))
+        # Vertical scan line (slower)
+        scan_x = int((t * 15) % w)
+        scan_x_bright = 0.05 + 0.03 * abs(math.sin(t * 2))
+        c.create_line(scan_x, 0, scan_x, h, fill=_hex_color_scale(P["cyan_dim"], scan_x_bright),
+                     width=1, dash=(1, 8))
 
-        # Title with glow effect
+        # ── CENTRAL INTELLIGENCE HUB ──
+        # Pulsating brain core at center of pipeline
+        hub_pulse = abs(math.sin(t * 2.0))
+        hub_r_base = 18
+        hub_r = hub_r_base + int(hub_pulse * 8)
+        # Multi-ring emanation
+        for ring_i in range(4):
+            ring_r = hub_r + ring_i * 12 + int(math.sin(t * 1.5 + ring_i * 0.8) * 4)
+            ring_alpha = 0.08 * (4 - ring_i) / 4
+            rr = max(0, min(255, int(74 * ring_alpha)))
+            rg = max(0, min(255, int(227 * ring_alpha)))
+            rb = max(0, min(255, int(208 * ring_alpha)))
+            c.create_oval(cx_hub - ring_r, cy_hub - ring_r, cx_hub + ring_r, cy_hub + ring_r,
+                         fill=f"#{rr:02x}{rg:02x}{rb:02x}", outline="")
+        # Core glow
+        core_bright = 0.3 + 0.2 * hub_pulse
+        cr_v = max(0, min(255, int(74 * core_bright)))
+        cg_v = max(0, min(255, int(227 * core_bright)))
+        cb_v = max(0, min(255, int(208 * core_bright)))
+        c.create_oval(cx_hub - hub_r, cy_hub - hub_r, cx_hub + hub_r, cy_hub + hub_r,
+                     fill=f"#{cr_v:02x}{cg_v:02x}{cb_v:02x}", outline=P["cyan_dim"], width=1)
+        # Hub label
+        c.create_text(cx_hub, cy_hub, text="\u25C9", font=(FONT, 8), fill=P["cyan"])
+
+        # Title with glow effect — DRAMATIC
+        title_pulse = 0.8 + 0.2 * abs(math.sin(t * 1.5))
         c.create_text(w // 2 + 1, 21, text="SHUMILEK AI PIPELINE",
                      font=F_BIG, fill=P["amethyst_dim"])
         c.create_text(w // 2, 20, text="SHUMILEK AI PIPELINE",
                      font=F_BIG, fill=P["heading"])
-        elapsed_txt = f"real-time workflow visualization"
+        # Subtitle with typewriter flicker
+        elapsed_txt = f"DYSTOPIAN INTELLIGENCE TREE \u25C8 real-time workflow"
         if self.pipeline.is_running:
-            elapsed_txt += f"  |  elapsed: {self.pipeline.elapsed_time:.1f}s"
+            elapsed_txt += f"  |  {self.pipeline.elapsed_time:.1f}s"
+            # Running indicator dots
+            dot_count = 1 + int(t * 3) % 3
+            elapsed_txt += " " + "\u25CF" * dot_count
         c.create_text(w // 2, 42, text=elapsed_txt,
-                     font=F_SMALL, fill=P["text_dim"])
+                     font=F_SMALL, fill=_hex_color_scale(P["text_dim"], title_pulse))
 
         # Node layout — two rows with flow
         nodes = PipelineSimulator.NODES
@@ -8308,6 +8439,51 @@ class ShumilekHive:
         y_top = 90
         y_bot = 240
         self._schema_positions = {}
+
+        # ── TREE TRUNK — central intelligence spine ──
+        spine_x = w // 2
+        spine_top = y_top - 20
+        spine_bot = y_bot + node_h + 50
+        spine_breath = 0.5 + 0.5 * abs(math.sin(t * 0.7))
+        # Main trunk line
+        trunk_col = _hex_color_scale(P["border_glow"], spine_breath * 0.5)
+        c.create_line(spine_x, spine_top, spine_x, spine_bot,
+                     fill=trunk_col, width=2, dash=(6, 4))
+        # Trunk glow behind
+        glow_trunk_col = _hex_color_scale(P["amethyst_dim"], spine_breath * 0.15)
+        c.create_line(spine_x, spine_top, spine_x, spine_bot,
+                     fill=glow_trunk_col, width=8)
+        # Branch lines to top row nodes
+        for i in range(len(top_row)):
+            bx = start_x_top + i * (node_w + gap) + node_w // 2
+            branch_phase = math.sin(t * 1.2 + i * 0.9)
+            branch_bright = 0.15 + 0.1 * abs(branch_phase)
+            bc = _hex_color_scale(P["border_glow"], branch_bright)
+            c.create_line(spine_x, y_top + node_h // 2, bx, y_top + node_h // 2,
+                         fill=bc, width=1, dash=(2, 6))
+        # Branch lines to bottom row nodes
+        for i in range(len(bot_row)):
+            bx = start_x_bot + i * (node_w + gap) + node_w // 2
+            branch_phase = math.sin(t * 1.2 + i * 0.9 + math.pi)
+            branch_bright = 0.15 + 0.1 * abs(branch_phase)
+            bc = _hex_color_scale(P["border_glow"], branch_bright)
+            c.create_line(spine_x, y_bot + node_h // 2, bx, y_bot + node_h // 2,
+                         fill=bc, width=1, dash=(2, 6))
+        # Root system below tree
+        for root_i in range(5):
+            root_angle = (root_i - 2) * 0.35 + math.sin(t * 0.4 + root_i) * 0.1
+            root_len = 25 + int(math.sin(t * 0.6 + root_i * 1.3) * 8)
+            rx = spine_x + int(math.sin(root_angle) * root_len)
+            ry = spine_bot + int(math.cos(root_angle) * root_len * 0.4)
+            root_bright = 0.12 + 0.06 * abs(math.sin(t * 0.8 + root_i))
+            rc = _hex_color_scale(P["amethyst_dim"], root_bright)
+            c.create_line(spine_x, spine_bot, rx, ry, fill=rc, width=1, dash=(1, 4))
+        # Energy pulse traveling down spine
+        spine_len = spine_bot - spine_top
+        spine_frac = (t * 0.8) % 1.0
+        spine_dot_y = spine_top + int(spine_frac * spine_len)
+        c.create_oval(spine_x - 3, spine_dot_y - 3, spine_x + 3, spine_dot_y + 3,
+                     fill=P["amethyst_dim"], outline="")
 
         # Helper: choose arrow color based on node states
         def _arrow_color(src_id, dst_id):
@@ -8537,62 +8713,130 @@ class ShumilekHive:
                          text="RETRY LOOP (max 3x)", font=F_PIXEL,
                          fill=f"#{rl_r:02x}{rl_g:02x}{rl_b:02x}")
 
-        # User input (top)
+        # User input (top) — epic data intake port
         ux = start_x_top + node_w // 2
+        input_breath = 0.6 + 0.4 * abs(math.sin(t * 2))
+        # Outer glow frame
+        c.create_rectangle(ux - 54, y_top - 44, ux + 54, y_top - 8,
+                          fill=_hex_color_scale(P["cyan_dim"], 0.08 * input_breath), outline="")
         c.create_rectangle(ux - 50, y_top - 40, ux + 50, y_top - 12,
                           fill=P["surface"], outline=P["border_glow"], width=2)
-        c.create_text(ux, y_top - 26, text="USER INPUT",
+        # Corner brackets
+        for bx_, by_, dx_, dy_ in [(ux-50, y_top-40, 8, 0), (ux-50, y_top-40, 0, 8),
+                                    (ux+50, y_top-40, -8, 0), (ux+50, y_top-40, 0, 8),
+                                    (ux-50, y_top-12, 8, 0), (ux-50, y_top-12, 0, -8),
+                                    (ux+50, y_top-12, -8, 0), (ux+50, y_top-12, 0, -8)]:
+            c.create_line(bx_, by_, bx_ + dx_, by_ + dy_, fill=P["cyan_dim"], width=1)
+        c.create_text(ux, y_top - 30, text="\u25B7 USER INPUT",
                      font=F_SMALL, fill=P["text_bright"])
+        c.create_text(ux, y_top - 20, text="\u2588" * (3 + int(t * 2) % 4),
+                     font=(FONT, 4), fill=_hex_color_scale(P["cyan_dim"], 0.3))
         c.create_line(ux, y_top - 12, ux, y_top,
-                     fill=P["text_dim"], width=2, arrow="last", arrowshape=(6, 8, 3))
+                     fill=P["cyan_dim"], width=2, arrow="last", arrowshape=(6, 8, 3))
+        # Data stream dots on input connector
+        for ds_i in range(3):
+            ds_frac = ((t * 3 + ds_i * 0.3) % 1.0)
+            ds_y = y_top - 12 + ds_frac * 12
+            ds_r = max(1, 2 - ds_i)
+            c.create_oval(ux - ds_r, ds_y - ds_r, ux + ds_r, ds_y + ds_r,
+                         fill=P["cyan_dim"], outline="")
 
-        # Output (bottom right)
+        # Output (bottom right) — epic final answer terminal
         if "output" in self._schema_positions:
             ox, oy = self._schema_positions["output"]
+            out_breath = 0.6 + 0.4 * abs(math.sin(t * 1.8 + 1.0))
+            # Outer glow
+            c.create_rectangle(ox - 59, oy + node_h // 2 + 6, ox + 59, oy + node_h // 2 + 42,
+                              fill=_hex_color_scale(P["emerald"], 0.06 * out_breath), outline="")
             c.create_rectangle(ox - 55, oy + node_h // 2 + 10, ox + 55, oy + node_h // 2 + 38,
                               fill=P["surface"], outline=P["border_glow"], width=2)
-            c.create_text(ox, oy + node_h // 2 + 24, text="FINAL ANSWER",
+            # Corner brackets
+            obx1, oby1 = ox - 55, oy + node_h // 2 + 10
+            obx2, oby2 = ox + 55, oy + node_h // 2 + 38
+            for bx_, by_, dx_, dy_ in [(obx1, oby1, 8, 0), (obx1, oby1, 0, 8),
+                                        (obx2, oby1, -8, 0), (obx2, oby1, 0, 8),
+                                        (obx1, oby2, 8, 0), (obx1, oby2, 0, -8),
+                                        (obx2, oby2, -8, 0), (obx2, oby2, 0, -8)]:
+                c.create_line(bx_, by_, bx_ + dx_, by_ + dy_, fill=P["emerald"], width=1)
+            c.create_text(ox, oy + node_h // 2 + 20, text="\u25C6 FINAL ANSWER",
                          font=F_SMALL, fill=P["text_bright"])
+            # Status bar below
+            out_state = self.pipeline.node_states.get("output", "idle")
+            bar_col = P["ok"] if out_state == "done" else P["text_dim"]
+            bar_fill = 1.0 if out_state == "done" else (abs(math.sin(t * 2)) if out_state == "active" else 0.2)
+            c.create_rectangle(ox - 40, oy + node_h // 2 + 30, ox + 40, oy + node_h // 2 + 34,
+                              fill=P["panel_alt"], outline=P["border"])
+            c.create_rectangle(ox - 40, oy + node_h // 2 + 30,
+                              ox - 40 + int(80 * bar_fill), oy + node_h // 2 + 34,
+                              fill=bar_col, outline="")
             c.create_line(ox, oy + node_h // 2, ox, oy + node_h // 2 + 10,
-                         fill=P["text_dim"], width=2, arrow="last", arrowshape=(6, 8, 3))
+                         fill=P["emerald"], width=2, arrow="last", arrowshape=(6, 8, 3))
 
-        # ── Active Hive Task Overlay (bottom-left) ──
+        # ── Active Hive Task Overlay (bottom-left) — dystopian terminal ──
         active_task = self._ai_processing_task
         if active_task:
-            tp_w, tp_h = 280, 52
-            tp_x, tp_y = 10, h - 90
+            tp_w, tp_h = 300, 62
+            tp_x, tp_y = 10, h - 100
             border_c = P["cyan"] if active_task["status"] == "running" else P["warn"]
+            # Outer glow frame
+            task_breath = abs(math.sin(t * 2.5))
+            c.create_rectangle(tp_x - 3, tp_y - 3, tp_x + tp_w + 3, tp_y + tp_h + 3,
+                              fill=_hex_color_scale(border_c, 0.05 * task_breath), outline="")
             c.create_rectangle(tp_x, tp_y, tp_x + tp_w, tp_y + tp_h,
                               fill=P["panel"], outline=border_c, width=2)
-            # Corner accents
+            # Corner accents with brackets
             for (cx_, cy_) in [(tp_x, tp_y), (tp_x + tp_w - 4, tp_y),
                                (tp_x, tp_y + tp_h - 4), (tp_x + tp_w - 4, tp_y + tp_h - 4)]:
                 c.create_rectangle(cx_, cy_, cx_ + 4, cy_ + 4,
                                   fill=border_c, outline="")
-            # Pulsing dot
-            pulse_dot = abs(math.sin(time.time() * 4))
+            # Bracket corners
+            for bx_, by_, dx_, dy_ in [(tp_x, tp_y, 10, 0), (tp_x, tp_y, 0, 10),
+                                        (tp_x + tp_w, tp_y, -10, 0), (tp_x + tp_w, tp_y, 0, 10),
+                                        (tp_x, tp_y + tp_h, 10, 0), (tp_x, tp_y + tp_h, 0, -10),
+                                        (tp_x + tp_w, tp_y + tp_h, -10, 0), (tp_x + tp_w, tp_y + tp_h, 0, -10)]:
+                c.create_line(bx_, by_, bx_ + dx_, by_ + dy_,
+                             fill=_hex_color_scale(border_c, 0.5), width=1)
+            # Pulsing dot with ring
+            pulse_dot = abs(math.sin(t * 4))
             dot_r = 3 + int(pulse_dot * 2)
             c.create_oval(tp_x + 12 - dot_r, tp_y + 14 - dot_r,
                          tp_x + 12 + dot_r, tp_y + 14 + dot_r,
                          fill=P["emerald"], outline="")
+            # Outer ring on dot
+            c.create_oval(tp_x + 12 - dot_r - 3, tp_y + 14 - dot_r - 3,
+                         tp_x + 12 + dot_r + 3, tp_y + 14 + dot_r + 3,
+                         fill="", outline=_hex_color_scale(P["emerald"], 0.3), width=1)
             # Task kind & truncated text
             kind_label = active_task.get("kind", "task").upper()
             c.create_text(tp_x + 22, tp_y + 10,
                          text=f"\u25B6 {kind_label}", font=F_SMALL,
                          fill=border_c, anchor="nw")
-            task_text = active_task.get("text", "")[:40]
+            # Timestamp
+            c.create_text(tp_x + tp_w - 8, tp_y + 10,
+                         text=f"T+{t % 1000:.0f}", font=(FONT, 5),
+                         fill=P["text_dim"], anchor="ne")
+            task_text = active_task.get("text", "")[:45]
             c.create_text(tp_x + 10, tp_y + 28,
                          text=task_text, font=F_PIXEL,
                          fill=P["text"], anchor="nw", width=tp_w - 20)
-            # Progress bar
+            # Progress bar with sweeping highlight
             prog = active_task.get("progress", 0) / 100
             bar_x = tp_x + 10
-            bar_y = tp_y + tp_h - 8
+            bar_y = tp_y + tp_h - 10
             bar_w = tp_w - 20
             c.create_rectangle(bar_x, bar_y, bar_x + bar_w, bar_y + 4,
                               fill=P["panel_alt"], outline=P["border"])
             c.create_rectangle(bar_x, bar_y, bar_x + int(bar_w * prog), bar_y + 4,
                               fill=border_c, outline="")
+            # Sweeping highlight on progress bar
+            sweep_x = bar_x + int((t * 40) % max(1, bar_w))
+            if sweep_x < bar_x + int(bar_w * prog):
+                c.create_line(sweep_x, bar_y, sweep_x, bar_y + 4,
+                             fill=P["text_bright"], width=1)
+            # Percentage text
+            c.create_text(bar_x + bar_w + 2, bar_y + 2,
+                         text=f"{int(prog * 100)}%", font=(FONT, 5),
+                         fill=P["text_dim"], anchor="w")
 
         # Vignette overlay — dark edges for cinematic depth
         _draw_vignette(c, w, h, size=30)
@@ -8671,6 +8915,7 @@ class ShumilekHive:
         state = self.pipeline.node_states.get(node_id, "idle")
         color = P[color_key]
         self._schema_node_rects[node_id] = (x, y, w, h)
+        t_node = time.time()
 
         # Node icons
         _node_icons = {
@@ -8709,13 +8954,12 @@ class ShumilekHive:
 
         # Pulsing glow rings for active node
         if state == "active":
-            t_now = time.time()
-            pulse = abs(math.sin(t_now * 3))
+            pulse = abs(math.sin(t_node * 3))
             # Multi-ring soft glow with wave propagation
             for ri in range(4):
                 frac = 1.0 - ri / 4.0
                 # Wave crest: each ring expands at slightly different phase
-                wave_phase = math.sin(t_now * 2.5 + ri * 0.7) * 0.5 + 0.5
+                wave_phase = math.sin(t_node * 2.5 + ri * 0.7) * 0.5 + 0.5
                 expand = 3 + ri * 3 + int(pulse * 4) + int(wave_phase * 2)
                 c.create_rectangle(x - expand, y - expand, x + w + expand, y + h + expand,
                                   fill=_hex_color_scale(color, 0.12 * frac), outline="")
@@ -8729,7 +8973,7 @@ class ShumilekHive:
                               fill="", outline=color, width=2)
             # Rotating corner energy sparks (orbit around corners)
             spark_len = int(pulse * 8) + 4
-            rot_angle = t_now * 3  # rotation speed
+            rot_angle = t_node * 3  # rotation speed
             for ci, (cx_, cy_) in enumerate([(x, y), (x+w, y), (x, y+h), (x+w, y+h)]):
                 # Each corner has a different rotation phase
                 a = rot_angle + ci * math.pi / 2
@@ -8743,9 +8987,19 @@ class ShumilekHive:
                 c.create_line(cx_, cy_, cx_ + sdx2, cy_ + sdy2,
                              fill=_hex_color_scale(color, 0.5), width=1)
             # Ground shadow with subtle sway
-            shadow_off = int(math.sin(t_now * 1.2) * 2)
+            shadow_off = int(math.sin(t_node * 1.2) * 2)
             c.create_rectangle(x + 3 + shadow_off, y + h + 2, x + w - 3 + shadow_off, y + h + 5,
                               fill=P["void"], outline="")
+            # ── NEURAL SIGNAL BURST ──
+            # Concentric signal waves emanating from active node
+            for wave_i in range(3):
+                wave_r = 10 + int(((t_node * 1.5 + wave_i * 0.7) % 2.0) * 30)
+                wave_alpha = max(0, 0.12 - wave_r * 0.003)
+                if wave_alpha > 0:
+                    cx_n = x + w // 2
+                    cy_n = y + h // 2
+                    c.create_oval(cx_n - wave_r, cy_n - wave_r, cx_n + wave_r, cy_n + wave_r,
+                                 fill="", outline=_hex_color_scale(color, wave_alpha), width=1)
         elif state == "done":
             # Soft completed glow halo
             for ri in range(3):
@@ -8755,6 +9009,10 @@ class ShumilekHive:
                                   fill=_hex_color_scale(P["ok"], 0.08 * frac), outline="")
             c.create_rectangle(x - 2, y - 2, x + w + 2, y + h + 2,
                               fill="", outline=P["ok"], width=1, dash=(1, 4))
+            # ── DONE COMPLETION FLASH ──
+            done_fade = abs(math.sin(t_node * 0.5))
+            c.create_rectangle(x, y, x + w, y + h,
+                              fill=_hex_color_scale(P["ok"], 0.03 * done_fade), outline="")
 
         # Main rectangle with gradient-like fill
         c.create_rectangle(x, y, x+w, y+h,
@@ -8772,36 +9030,74 @@ class ShumilekHive:
             c.create_rectangle(cx_, cy_, cx_+s, cy_+s,
                               fill=border_c, outline="")
 
+        # ── HEARTBEAT MONITOR ── mini EKG line inside node
+        if state in ("active", "done"):
+            hb_y = y + h - 14
+            hb_x_start = x + 30
+            hb_width = w - 40
+            hb_points = []
+            for hbi in range(12):
+                hb_px = hb_x_start + int(hbi * hb_width / 11)
+                if state == "active":
+                    # Active: regular heartbeat with spike
+                    if hbi == 4 or hbi == 7:
+                        hb_py = hb_y - 6 - int(abs(math.sin(t_node * 4 + hbi)) * 4)
+                    elif hbi == 5 or hbi == 8:
+                        hb_py = hb_y + 3
+                    else:
+                        hb_py = hb_y + int(math.sin(t_node * 2 + hbi * 0.5) * 1)
+                else:
+                    # Done: flatline with tiny wobble
+                    hb_py = hb_y + int(math.sin(t_node * 0.5 + hbi * 0.3) * 1)
+                hb_points.extend([hb_px, hb_py])
+            if len(hb_points) >= 4:
+                hb_col = color if state == "active" else _hex_color_scale(P["ok"], 0.5)
+                c.create_line(*hb_points, fill=hb_col, width=1, smooth=True)
+
         # Node icon (left side)
-        c.create_text(x + 14, y + h // 2,
+        c.create_text(x + 14, y + h // 2 - 4,
                      text=node_icon, font=(FONT, 12),
                      fill=color if state in ("active", "idle") else text_c)
 
         # Label (right of icon)
-        c.create_text(x + w // 2 + 8, y + h // 2 - 4,
+        c.create_text(x + w // 2 + 8, y + h // 2 - 8,
                      text=label, font=F_SMALL, fill=text_c, justify="center")
+
+        # ── NODE INDEX TAG ── tiny identifier
+        node_ids = [n[0] for n in PipelineSimulator.NODES]
+        n_idx = node_ids.index(node_id) if node_id in node_ids else 0
+        c.create_text(x + w - 10, y + h - 8, text=f"#{n_idx+1}",
+                     font=(FONT, 5), fill=_hex_color_scale(P["text_dim"], 0.6))
 
         # State indicator
         if state == "active":
-            t_bar = time.time()
             # Animated progress bar inside node with sweeping highlight
             bar_y = y + h - 8
             bar_w = w - 10
             c.create_rectangle(x + 5, bar_y, x + 5 + bar_w, bar_y + 4,
                               fill=P["panel"], outline=P["border"])
             # Smooth sweeping fill (ping-pong)
-            progress = abs(math.sin(t_bar * 2)) * bar_w
+            progress = abs(math.sin(t_node * 2)) * bar_w
             c.create_rectangle(x + 5, bar_y, x + 5 + int(progress), bar_y + 4,
                               fill=color, outline="")
             # Bright highlight sweeping across the bar
-            highlight_x = x + 5 + int((t_bar * 50) % max(1, bar_w))
+            highlight_x = x + 5 + int((t_node * 50) % max(1, bar_w))
             if highlight_x < x + 5 + int(progress):
                 c.create_line(highlight_x, bar_y + 1, highlight_x, bar_y + 3,
                              fill=P["text_bright"], width=1)
+            # ── PROCESSING PERCENTAGE ──
+            pct = int(abs(math.sin(t_node * 2)) * 100)
+            c.create_text(x + w - 20, bar_y + 2, text=f"{pct}%",
+                         font=(FONT, 5), fill=color)
         elif state == "done":
             c.create_text(x + w - 12, y + 8, text="\u2713", font=F_SMALL, fill=P["ok"])
         elif state == "error":
             c.create_text(x + w - 12, y + 8, text="\u2717", font=F_SMALL, fill=P["err"])
+            # Error pulse ring
+            err_pulse_r = 4 + int(abs(math.sin(t_node * 5)) * 3)
+            c.create_oval(x + w - 12 - err_pulse_r, y + 8 - err_pulse_r,
+                         x + w - 12 + err_pulse_r, y + 8 + err_pulse_r,
+                         fill="", outline=_hex_color_scale(P["err"], 0.3), width=1)
         elif state == "retry":
             c.create_text(x + w - 12, y + 8, text="\u21BB", font=F_SMALL, fill=P["warn"])
 
@@ -10825,7 +11121,7 @@ class ShumilekHive:
             if not self._graph_ai_active_nodes:
                 self._graph_ai_stage = ""
 
-        # Schema particles (emit from active nodes)
+        # Schema particles (emit from active nodes) — more energetic
         if self.view_mode == "schema" and self.pipeline.is_running:
             for nid, state in self.pipeline.node_states.items():
                 if state == "active" and nid in self._schema_node_rects:
@@ -10834,9 +11130,14 @@ class ShumilekHive:
                         rx + random.randint(0, rw),
                         ry + random.randint(0, rh)
                     )
+                    # Extra burst from active nodes every 8th tick
+                    if self._anim_tick % 8 == 0:
+                        self.particles_schema.emit(
+                            rx + rw // 2 + random.randint(-10, 10),
+                            ry + rh // 2 + random.randint(-10, 10), count=2)
         # Ambient idle particles — sparse floating motes when pipeline idle
         if self.view_mode == "schema" and not self.pipeline.is_running:
-            if self._anim_tick % 45 == 0:
+            if self._anim_tick % 30 == 0:
                 try:
                     sw = max(self.schema_canvas.winfo_width(), 400)
                     sh = max(self.schema_canvas.winfo_height(), 300)
@@ -10850,9 +11151,9 @@ class ShumilekHive:
             self.schema_canvas.delete("particle")
             self.particles_schema.draw(self.schema_canvas)
 
-        # Data flow particles between pipeline nodes
+        # Data flow particles between pipeline nodes — accelerated emission
         if self.view_mode == "schema" and self.pipeline.is_running:
-            if self._anim_tick % 10 == 0:
+            if self._anim_tick % 6 == 0:
                 for src_id, dst_id in self._get_node_connections():
                     src_state = self.pipeline.node_states.get(src_id, "idle")
                     dst_state = self.pipeline.node_states.get(dst_id, "idle")
@@ -10862,12 +11163,13 @@ class ShumilekHive:
                             ex, ey = self._schema_positions[dst_id]
                             node_colors = {n[0]: P[n[2]] for n in PipelineSimulator.NODES}
                             color = node_colors.get(src_id, P["cyan"])
-                            self._flow_particles.append(FlowParticle(sx, sy, ex, ey, color))
+                            speed = random.uniform(0.03, 0.06)
+                            self._flow_particles.append(FlowParticle(sx, sy, ex, ey, color, speed=speed))
 
         # Update and draw flow particles
         self._flow_particles = [fp for fp in self._flow_particles if fp.update()]
-        if len(self._flow_particles) > 100:
-            self._flow_particles = self._flow_particles[-100:]
+        if len(self._flow_particles) > 150:
+            self._flow_particles = self._flow_particles[-150:]
         if self.view_mode == "schema":
             self.schema_canvas.delete("flow")
             for fp in self._flow_particles:

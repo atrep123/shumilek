@@ -2682,7 +2682,7 @@ class PipelineNodeEnhancedTests(unittest.TestCase):
         src = Path(__file__).resolve().parent.parent / "main.py"
         source = src.read_text(encoding="utf-8")
         idx = source.index("def _draw_pipeline_node(")
-        body = source[idx:idx + 7000]
+        body = source[idx:idx + 10000]
         self.assertIn("highlight_x", body)
 
 
@@ -2994,6 +2994,326 @@ class RetryLoopEnhancedTests(unittest.TestCase):
         """Retry label text color pulses."""
         self.assertIn("label_pulse", self.body)
         self.assertIn("rl_r", self.body)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# WAVE 4: DYSTOPIAN INTELLIGENCE TREE TESTS
+# ═══════════════════════════════════════════════════════════════════
+
+class DystopianCircuitTracesTests(unittest.TestCase):
+    """Tests for fractal circuit veins radiating from center hub."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("DYSTOPIAN CIRCUIT TRACES")
+        cls.body = cls.source[idx:idx + 2000]
+
+    def test_circuit_breath(self):
+        """Circuit veins breathe with oscillating brightness."""
+        self.assertIn("circuit_breath", self.body)
+
+    def test_twelve_branches(self):
+        """12 radial branches emerge from center hub."""
+        self.assertIn("range(12)", self.body)
+
+    def test_sub_branches(self):
+        """Each branch has secondary sub-branches."""
+        self.assertIn("sub_angle", self.body)
+        self.assertIn("sub_len", self.body)
+
+    def test_vein_color_scale(self):
+        """Vein brightness scales with circuit_breath."""
+        self.assertIn("vein_bright", self.body)
+        self.assertIn("vein_col", self.body)
+
+
+class DigitalRainTests(unittest.TestCase):
+    """Tests for sparse digital rain columns in schema background."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("DIGITAL RAIN COLUMNS")
+        cls.body = cls.source[idx:idx + 1500]
+
+    def test_eight_columns(self):
+        """8 rain columns across the background."""
+        self.assertIn("range(8)", self.body)
+
+    def test_drop_fade(self):
+        """Rain drops fade as they trail."""
+        self.assertIn("drop_fade", self.body)
+
+    def test_six_drops(self):
+        """Each column has 6 drop characters."""
+        self.assertIn("range(6)", self.body)
+
+
+class CentralIntelligenceHubTests(unittest.TestCase):
+    """Tests for pulsating brain core at center of pipeline."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("CENTRAL INTELLIGENCE HUB")
+        cls.body = cls.source[idx:idx + 2000]
+
+    def test_hub_pulse(self):
+        """Hub core pulses with sine oscillation."""
+        self.assertIn("hub_pulse", self.body)
+        self.assertIn("hub_r", self.body)
+
+    def test_multi_ring_emanation(self):
+        """4 concentric rings emanate from hub."""
+        self.assertIn("range(4)", self.body)
+        self.assertIn("ring_alpha", self.body)
+
+    def test_core_glow(self):
+        """Core has brightness-dependent glow fill."""
+        self.assertIn("core_bright", self.body)
+
+    def test_hub_label(self):
+        """Hub displays a centered symbol."""
+        self.assertIn("\\u25C9", self.body)
+
+
+class TreeTrunkSpineTests(unittest.TestCase):
+    """Tests for central intelligence spine connecting node rows."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("TREE TRUNK")
+        cls.body = cls.source[idx:idx + 3000]
+
+    def test_spine_breath(self):
+        """Spine trunk line breathes."""
+        self.assertIn("spine_breath", self.body)
+
+    def test_branch_lines_top(self):
+        """Branch lines connect spine to top row nodes."""
+        self.assertIn("top_row", self.body)
+        self.assertIn("branch_bright", self.body)
+
+    def test_branch_lines_bottom(self):
+        """Branch lines connect spine to bottom row nodes."""
+        self.assertIn("bot_row", self.body)
+
+    def test_root_system(self):
+        """Root system extends below tree."""
+        self.assertIn("root_angle", self.body)
+        self.assertIn("root_len", self.body)
+
+    def test_spine_energy_pulse(self):
+        """Energy dot travels down spine."""
+        self.assertIn("spine_frac", self.body)
+        self.assertIn("spine_dot_y", self.body)
+
+
+class SideVignetteTests(unittest.TestCase):
+    """Tests for side-edge vignette overlays."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("def _draw_vignette(")
+        cls.body = cls.source[idx:idx + 3000]
+
+    def test_side_vignettes_exist(self):
+        """Side vignette edges are drawn for cinematic framing."""
+        self.assertIn("SIDE VIGNETTES", self.body)
+        self.assertIn("side_size", self.body)
+
+    def test_left_right_edges(self):
+        """Both left and right edges get vignette lines."""
+        self.assertIn("w - si", self.body)
+
+
+class NebulaTendrilTests(unittest.TestCase):
+    """Tests for nebula tendril extensions."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("def _draw_nebulae(")
+        cls.body = cls.source[idx:idx + 3000]
+
+    def test_tendrils_exist(self):
+        """Nebulae have wispy tendril extensions."""
+        self.assertIn("NEBULA TENDRILS", self.body)
+
+    def test_three_tendrils(self):
+        """Each nebula has 3 tendrils."""
+        self.assertIn("range(3)", self.body)
+
+    def test_tendril_length(self):
+        """Tendril length varies with time."""
+        self.assertIn("t_len", self.body)
+
+
+class NeuralSignalBurstTests(unittest.TestCase):
+    """Tests for concentric signal waves on active pipeline nodes."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("NEURAL SIGNAL BURST")
+        cls.body = cls.source[idx:idx + 1500]
+
+    def test_wave_rings(self):
+        """3 concentric signal waves emanate from active node."""
+        self.assertIn("range(3)", self.body)
+        self.assertIn("wave_r", self.body)
+
+    def test_wave_alpha_fade(self):
+        """Signal waves fade based on radius."""
+        self.assertIn("wave_alpha", self.body)
+
+
+class HeartbeatMonitorTests(unittest.TestCase):
+    """Tests for mini EKG heartbeat monitor inside pipeline nodes."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("HEARTBEAT MONITOR")
+        cls.body = cls.source[idx:idx + 2000]
+
+    def test_ekg_points(self):
+        """12-point EKG line is drawn."""
+        self.assertIn("range(12)", self.body)
+        self.assertIn("hb_points", self.body)
+
+    def test_spike_pattern(self):
+        """Active heartbeat has spike at specific points."""
+        self.assertIn("hbi == 4", self.body)
+        self.assertIn("hbi == 7", self.body)
+
+    def test_flatline_done(self):
+        """Done state shows flatline with tiny wobble."""
+        self.assertIn("flatline", self.body)
+
+    def test_smooth_line(self):
+        """EKG uses smooth line rendering."""
+        self.assertIn("smooth=True", self.body)
+
+
+class MultipleShootingStarsTests(unittest.TestCase):
+    """Tests for multiple concurrent shooting stars."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("class StarField")
+        cls.body = cls.source[idx:idx + 7000]
+
+    def test_multiple_stars_list(self):
+        """Shooting stars stored as list for multiple concurrent."""
+        self.assertIn("_shooting_stars", self.body)
+
+    def test_max_three(self):
+        """Maximum 3 concurrent shooting stars."""
+        self.assertIn("< 3", self.body)
+
+    def test_glow_behind_head(self):
+        """Shooting star head has glow behind it."""
+        self.assertIn("glow_r", self.body)
+
+    def test_denser_star_count(self):
+        """Star count defaults to at least 120."""
+        self.assertIn("120", self.body)
+
+
+class ScanWaveInterferenceTests(unittest.TestCase):
+    """Tests for enhanced scan wave rendering with interference patterns."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("INTERFERENCE RING")
+        cls.body = cls.source[idx:idx + 1500]
+
+    def test_interference_ring(self):
+        """Third interference ring at 75% radius."""
+        self.assertIn("mid_r", self.body)
+        self.assertIn("0.75", self.body)
+
+    def test_crosshair(self):
+        """Crosshair drawn at wave center when strong."""
+        self.assertIn("ch_len", self.body)
+
+
+class EpicInputOutputBoxTests(unittest.TestCase):
+    """Tests for enhanced User Input and Final Answer boxes."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("epic data intake port")
+        cls.body = cls.source[idx:idx + 4000]
+
+    def test_input_breath(self):
+        """Input box has breathing glow frame."""
+        self.assertIn("input_breath", self.body)
+
+    def test_corner_brackets(self):
+        """Input box has corner bracket decorations."""
+        self.assertIn("Corner brackets", self.body)
+
+    def test_data_stream_dots(self):
+        """Data stream dots flow on input connector."""
+        self.assertIn("ds_frac", self.body)
+
+    def test_output_breath(self):
+        """Output box has breathing glow."""
+        self.assertIn("out_breath", self.body)
+
+    def test_output_status_bar(self):
+        """Output box has status bar below."""
+        self.assertIn("bar_fill", self.body)
+
+
+class DystopianTaskOverlayTests(unittest.TestCase):
+    """Tests for enhanced task overlay with dystopian terminal aesthetic."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("dystopian terminal")
+        cls.body = cls.source[idx:idx + 4500]
+
+    def test_task_breath(self):
+        """Task overlay has breathing glow frame."""
+        self.assertIn("task_breath", self.body)
+
+    def test_bracket_corners(self):
+        """Task overlay has bracket corner decorations."""
+        self.assertIn("Bracket corners", self.body)
+
+    def test_sweep_highlight(self):
+        """Progress bar has sweeping highlight."""
+        self.assertIn("sweep_x", self.body)
+
+    def test_percentage_text(self):
+        """Progress bar shows percentage text."""
+        self.assertIn("Percentage text", self.body)
+
+    def test_timestamp(self):
+        """Task overlay shows timestamp."""
+        self.assertIn("Timestamp", self.body)
 
 
 if __name__ == "__main__":
