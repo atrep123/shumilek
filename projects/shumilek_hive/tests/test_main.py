@@ -2767,5 +2767,234 @@ class GraphStatsEnhancedTests(unittest.TestCase):
         self.assertIn("text_bright", self.body)
 
 
+# ═══════════════════════════════════════════════════════════════
+# ─── WAVE 3 RT VISUALIZATION TESTS ───────────────────────────
+# ═══════════════════════════════════════════════════════════════
+
+class EdgeRenderingEnhancedTests(unittest.TestCase):
+    """Tests for edge rendering enhancements in _draw_graph."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("Edges: curved lines with directional arrows")
+        cls.body = cls.source[idx:idx + 3500]
+
+    def test_edge_glow_breathing_pulse(self):
+        """Edge glow width pulses with time."""
+        self.assertIn("edge_pulse", self.body)
+        self.assertIn("t_edge", self.body)
+
+    def test_shimmer_sweep_dot(self):
+        """High-importance edges have a shimmer sweep dot."""
+        self.assertIn("shimmer_frac", self.body)
+        self.assertIn("edge_imp >= 0.5", self.body)
+
+    def test_arrow_head_pulse(self):
+        """Arrow head size pulses for breathing effect."""
+        self.assertIn("arr_pulse", self.body)
+        self.assertIn("asize_p", self.body)
+
+    def test_glow_width_variation(self):
+        """Glow width varies with time for breathing effect."""
+        self.assertIn("glow_w", self.body)
+        self.assertIn("math.sin", self.body)
+
+
+class AIStatusPanelEnhancedTests(unittest.TestCase):
+    """Tests for AI Status Panel animation enhancements in _draw_graph."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("AI Live Status Panel (top-right)")
+        cls.body = cls.source[idx:idx + 3500]
+
+    def test_panel_glow_aura(self):
+        """Panel has outer glow aura that breathes."""
+        self.assertIn("panel_breath", self.body)
+        self.assertIn("aura_bright", self.body)
+
+    def test_border_width_breathing(self):
+        """Panel border width changes with time."""
+        self.assertIn("border_w", self.body)
+        self.assertIn("panel_breath", self.body)
+
+    def test_corner_sequential_pulse(self):
+        """Corner accents pulse sequentially."""
+        self.assertIn("corner_phase", self.body)
+        self.assertIn("corner_bright", self.body)
+        self.assertIn("ci_a", self.body)
+
+    def test_aura_layers(self):
+        """Three aura layers surround the panel."""
+        self.assertIn("aura_off", self.body)
+        self.assertIn("range(3)", self.body)
+
+
+class TagCloudEnhancedTests(unittest.TestCase):
+    """Tests for tag cloud view animation enhancements."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("def _draw_tag_cloud_view(")
+        cls.body = cls.source[idx:idx + 4000]
+
+    def test_pill_glow_pulse(self):
+        """Tag pills pulse glow based on frequency."""
+        self.assertIn("tag_phase", self.body)
+        self.assertIn("tag_glow", self.body)
+
+    def test_frequency_bar_indicator(self):
+        """Frequency bar at bottom of each pill shows tag prevalence."""
+        self.assertIn("freq_bar_w", self.body)
+        self.assertIn("fb_r", self.body)
+
+    def test_outline_width_varies(self):
+        """Outline width varies for high-frequency tags."""
+        self.assertIn("outline_w", self.body)
+        self.assertIn("ratio < 0.5", self.body)
+
+    def test_time_variable(self):
+        """Tag cloud uses time for animation."""
+        self.assertIn("t_cloud", self.body)
+
+
+class TimelineEnhancedTests(unittest.TestCase):
+    """Tests for timeline event animation enhancements."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("def _draw_timeline(")
+        cls.body = cls.source[idx:idx + 4500]
+
+    def test_cascade_drop_line(self):
+        """Drop lines have cascading dash offset animation."""
+        self.assertIn("drop_phase", self.body)
+        self.assertIn("drop_dash_off", self.body)
+        self.assertIn("dashoffset", self.body)
+
+    def test_dot_pulse_animation(self):
+        """Event dots pulse with cascading phase."""
+        self.assertIn("dot_phase", self.body)
+        self.assertIn("dot_pulse", self.body)
+        self.assertIn("pulse_r", self.body)
+
+    def test_time_variable(self):
+        """Timeline uses time for animation."""
+        self.assertIn("t_tl", self.body)
+
+    def test_glow_outer_breathing(self):
+        """Glow ring outer radius responds to pulse."""
+        self.assertIn("glow_outer", self.body)
+
+
+class NodeLabelsEnhancedTests(unittest.TestCase):
+    """Tests for node label and badge animation enhancements in _draw_graph."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("Connection count badge (top-right)")
+        cls.body = cls.source[idx:idx + 2500]
+
+    def test_badge_pulse_animation(self):
+        """Badge radius pulses over time."""
+        self.assertIn("badge_pulse", self.body)
+        self.assertIn("badge_phase", self.body)
+        self.assertIn("bp_r", self.body)
+
+    def test_active_label_glow_aura(self):
+        """Active node label has glow aura."""
+        self.assertIn("lbl_glow", self.body)
+        self.assertIn("lbl_glow_off", self.body)
+
+    def test_label_glow_color_calculation(self):
+        """Label glow uses color calculation from cyan_dim."""
+        self.assertIn("lgr", self.body)
+        self.assertIn("lgg", self.body)
+        self.assertIn("lgb", self.body)
+
+
+class HeatMapLegendEnhancedTests(unittest.TestCase):
+    """Tests for heat map legend animation enhancements."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("Heat map legend (bottom-left)")
+        cls.body = cls.source[idx:idx + 2000]
+
+    def test_shimmer_sweep(self):
+        """Legend has shimmer highlight sweeping across."""
+        self.assertIn("legend_shimmer", self.body)
+
+    def test_breathing_swatches(self):
+        """Legend color swatches breathe with phase offset."""
+        self.assertIn("swatch_breath", self.body)
+        self.assertIn("lphase", self.body)
+
+    def test_legend_items_list(self):
+        """Legend defines items with phase offsets."""
+        self.assertIn("legend_items", self.body)
+
+    def test_time_variable(self):
+        """Legend uses time for animation."""
+        self.assertIn("t_legend", self.body)
+
+
+class RetryLoopEnhancedTests(unittest.TestCase):
+    """Tests for retry feedback loop animation enhancements."""
+
+    @classmethod
+    def setUpClass(cls):
+        src = Path(__file__).resolve().parent.parent / "main.py"
+        cls.source = src.read_text(encoding="utf-8")
+        idx = cls.source.index("Retry feedback loop arrow")
+        cls.body = cls.source[idx:idx + 4500]
+
+    def test_pulsing_glow_width(self):
+        """Retry glow width pulses when active."""
+        self.assertIn("retry_breath", self.body)
+        self.assertIn("glow_w_retry", self.body)
+
+    def test_marching_ants_dash(self):
+        """Dash offset animates for marching ants effect."""
+        self.assertIn("dash_off_retry", self.body)
+        self.assertIn("dashoffset", self.body)
+
+    def test_corner_bounce(self):
+        """Corner dots bounce when retry is active."""
+        self.assertIn("corner_bounce", self.body)
+
+    def test_arrow_head_breathing(self):
+        """Arrow head size breathes with pulse."""
+        self.assertIn("arr_pulse_retry", self.body)
+        self.assertIn("arr_s", self.body)
+
+    def test_three_energy_dots(self):
+        """Three energy dots (instead of two) traverse the path."""
+        self.assertIn("0.33", self.body)
+        self.assertIn("0.66", self.body)
+
+    def test_dot_trailing_glow(self):
+        """Energy dots have trailing fade glow."""
+        self.assertIn("dot_glow_r", self.body)
+        self.assertIn("dgr", self.body)
+
+    def test_label_pulse(self):
+        """Retry label text color pulses."""
+        self.assertIn("label_pulse", self.body)
+        self.assertIn("rl_r", self.body)
+
+
 if __name__ == "__main__":
     unittest.main()

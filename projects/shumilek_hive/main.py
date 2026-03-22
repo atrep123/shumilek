@@ -6207,15 +6207,20 @@ class ShumilekHive:
         # Plot notes as events
         self._timeline_positions = {}
         lane_h = max((axis_y - 60) // max(len(entries), 1), 18)
+        t_tl = time.time()
         for i, (fp, mtime, size) in enumerate(entries):
             frac = (mtime - t_min) / t_range if t_range > 1 else 0.5
             x = margin_x + int(axis_w * frac)
             y = 55 + (i % max(1, (axis_y - 60) // 22)) * 22
 
-            # Drop line to axis
-            c.create_line(x, y + 6, x, axis_y, fill=P["border"], width=1, dash=(2, 4))
+            # Cascading drop-line trace animation
+            drop_phase = (t_tl * 1.8 + i * 0.3) % (2 * math.pi)
+            drop_alpha = 0.4 + 0.6 * abs(math.sin(drop_phase))
+            drop_dash_off = int((t_tl * 10 + i * 3) % 6)
+            c.create_line(x, y + 6, x, axis_y, fill=P["border"], width=1,
+                         dash=(2, 4), dashoffset=drop_dash_off)
 
-            # Event dot — size by file size
+            # Event dot — size by file size with cascade pulse
             dot_r = max(4, min(10, int(size / 200)))
             words = size // 5  # rough estimate
             if words > 200:
@@ -6225,18 +6230,25 @@ class ShumilekHive:
             else:
                 col = P["amethyst_dim"]
 
-            # Glow
-            c.create_oval(x - dot_r - 3, y - dot_r - 3,
-                         x + dot_r + 3, y + dot_r + 3,
+            # Cascading dot pulse — sequential grow/shrink
+            dot_phase = (t_tl * 2.5 + i * 0.5) % (2 * math.pi)
+            dot_pulse = 1.0 + 0.3 * math.sin(dot_phase)
+            pulse_r = int(dot_r * dot_pulse)
+
+            # Glow ring with breathing opacity
+            glow_outer = pulse_r + 3
+            c.create_oval(x - glow_outer, y - glow_outer,
+                         x + glow_outer, y + glow_outer,
                          fill="", outline=col, width=1, dash=(2, 2))
-            c.create_oval(x - dot_r, y - dot_r, x + dot_r, y + dot_r,
+            c.create_oval(x - pulse_r, y - pulse_r, x + pulse_r, y + pulse_r,
                          fill=col, outline=P["border_glow"])
 
-            # Label
+            # Label with cascade fade
+            label_alpha = 0.5 + 0.5 * abs(math.sin(drop_phase + 0.5))
             dt = datetime.datetime.fromtimestamp(mtime)
-            c.create_text(x + dot_r + 6, y, text=fp.stem,
+            c.create_text(x + pulse_r + 6, y, text=fp.stem,
                          font=F_SMALL, fill=P["text"], anchor="w")
-            c.create_text(x + dot_r + 6, y + 11, text=dt.strftime("%H:%M"),
+            c.create_text(x + pulse_r + 6, y + 11, text=dt.strftime("%H:%M"),
                          font=F_PIXEL, fill=P["text_dim"], anchor="w")
 
             self._timeline_positions[fp.stem] = (x, y, dot_r + 8, fp)
@@ -7494,24 +7506,41 @@ class ShumilekHive:
                 else:
                     mx, my = mx_raw, my_raw
 
-                # Neon glow behind edge
-                glow_ec = _hex_color_scale(ec, 0.3)
+                # Neon glow behind edge with breathing pulse
+                t_edge = time.time()
+                edge_pulse = 0.3 + 0.1 * math.sin(t_edge * 2.0 + hash(edge_key) % 100)
+                glow_ec = _hex_color_scale(ec, edge_pulse)
+                glow_w = ew + 4 + int(math.sin(t_edge * 1.5 + hash(edge_key) % 50) * 1.5)
                 c.create_line(sx, sy, mx, my, tx, ty,
-                             fill=glow_ec, width=ew + 4, smooth=True)
+                             fill=glow_ec, width=max(1, glow_w), smooth=True)
                 c.create_line(sx, sy, mx, my, tx, ty,
                              fill=ec, width=ew, smooth=True)
 
+                # Shimmer sweep dot for high-importance edges
+                if edge_imp >= 0.5 and dist > 40:
+                    shimmer_frac = ((t_edge * 0.8 + hash(edge_key) % 20 * 0.1) % 1.0)
+                    shx = sx + (tx - sx) * shimmer_frac
+                    shy = sy + (ty - sy) * shimmer_frac
+                    ec_base = ec.lstrip("#")
+                    e_r = min(255, int(ec_base[:2], 16) + 40)
+                    e_g = min(255, int(ec_base[2:4], 16) + 40)
+                    e_b = min(255, int(ec_base[4:6], 16) + 40)
+                    c.create_oval(shx - 3, shy - 3, shx + 3, shy + 3,
+                                 fill=f"#{e_r:02x}{e_g:02x}{e_b:02x}", outline="")
+
                 # Directional arrow at midpoint
                 if dist > 60:
-                    # Arrow pointing src→tgt at midpoint
+                    # Arrow pointing src→tgt at midpoint with pulse
                     arr_x = mx
                     arr_y = my
                     angle = math.atan2(ty - sy, tx - sx)
                     asize = 5 + ew
-                    ax1 = arr_x - asize * math.cos(angle - 0.4)
-                    ay1 = arr_y - asize * math.sin(angle - 0.4)
-                    ax2 = arr_x - asize * math.cos(angle + 0.4)
-                    ay2 = arr_y - asize * math.sin(angle + 0.4)
+                    arr_pulse = 1.0 + 0.15 * math.sin(t_edge * 3.0 + hash(edge_key) % 30)
+                    asize_p = asize * arr_pulse
+                    ax1 = arr_x - asize_p * math.cos(angle - 0.4)
+                    ay1 = arr_y - asize_p * math.sin(angle - 0.4)
+                    ax2 = arr_x - asize_p * math.cos(angle + 0.4)
+                    ay2 = arr_y - asize_p * math.sin(angle + 0.4)
                     c.create_polygon(arr_x, arr_y, ax1, ay1, ax2, ay2,
                                     fill=ec, outline="")
 
@@ -7623,24 +7652,37 @@ class ShumilekHive:
                 c.create_oval(x - ir, y - ir, x + ir, y + ir,
                              fill="", outline=P["surface"], width=1)
 
-            # Connection count badge (top-right)
+            # Connection count badge (top-right) with pulse animation
             if conn > 0 and r >= 8:
                 badge_x = x + r - 2
                 badge_y = y - r + 2
                 badge_r = 6
-                c.create_oval(badge_x - badge_r, badge_y - badge_r,
-                             badge_x + badge_r, badge_y + badge_r,
+                badge_phase = (t * 3.0 + hash(node) % 20) % (2 * math.pi)
+                badge_pulse = 1.0 + 0.25 * math.sin(badge_phase)
+                bp_r = int(badge_r * badge_pulse)
+                c.create_oval(badge_x - bp_r, badge_y - bp_r,
+                             badge_x + bp_r, badge_y + bp_r,
                              fill=P["surface"], outline=border_c, width=1)
                 c.create_text(badge_x, badge_y, text=str(conn),
                              font=(FONT, 6), fill=P["text_bright"])
 
-            # Label with background box
+            # Label with background box and active glow
             label_y = y + r + 12
             lbl_text = node
             # Measure approximate label width
             lbl_w = len(lbl_text) * 6 + 12
             lbl_h = 12
             if is_active:
+                # Pulsing label glow aura
+                lbl_glow = 0.5 + 0.5 * abs(math.sin(t * 2.5))
+                lbl_glow_off = int(2 + lbl_glow * 2)
+                lbl_col_base = P["cyan_dim"].lstrip("#")
+                lgr = max(0, min(255, int(int(lbl_col_base[:2], 16) * 0.3 * lbl_glow)))
+                lgg = max(0, min(255, int(int(lbl_col_base[2:4], 16) * 0.3 * lbl_glow)))
+                lgb = max(0, min(255, int(int(lbl_col_base[4:6], 16) * 0.3 * lbl_glow)))
+                c.create_rectangle(x - lbl_w // 2 - lbl_glow_off, label_y - lbl_h // 2 - lbl_glow_off,
+                                  x + lbl_w // 2 + lbl_glow_off, label_y + lbl_h // 2 + lbl_glow_off,
+                                  fill=f"#{lgr:02x}{lgg:02x}{lgb:02x}", outline="")
                 c.create_rectangle(x - lbl_w // 2, label_y - lbl_h // 2,
                                   x + lbl_w // 2, label_y + lbl_h // 2,
                                   fill=P["surface"], outline=P["cyan_dim"], width=1)
@@ -7789,13 +7831,37 @@ class ShumilekHive:
             ai_py = 6
             is_live = self.pipeline.is_running
             border_col = self._graph_ai_stage_color if is_live else P["ok"]
+            t_ai = time.time()
+            # Panel glow aura (outer soft glow)
+            panel_breath = 0.5 + 0.5 * abs(math.sin(t_ai * 1.2))
+            bc_base = border_col.lstrip("#")
+            bc_r = int(bc_base[:2], 16)
+            bc_g = int(bc_base[2:4], 16)
+            bc_b = int(bc_base[4:6], 16)
+            for aura_i in range(3):
+                aura_off = (3 - aura_i) * 3
+                aura_bright = 0.04 * (3 - aura_i) * panel_breath
+                ar = max(0, min(255, int(bc_r * aura_bright)))
+                ag = max(0, min(255, int(bc_g * aura_bright)))
+                ab = max(0, min(255, int(bc_b * aura_bright)))
+                c.create_rectangle(ai_px - aura_off, ai_py - aura_off,
+                                  ai_px + ai_pw + aura_off, ai_py + ai_ph + aura_off,
+                                  fill=f"#{ar:02x}{ag:02x}{ab:02x}", outline="")
+            # Border width breathing
+            border_w = 2 + int(panel_breath * 1.5)
             c.create_rectangle(ai_px, ai_py, ai_px + ai_pw, ai_py + ai_ph,
-                              fill=P["panel"], outline=border_col, width=2)
-            # Corner accents
-            for (cx_, cy_) in [(ai_px, ai_py), (ai_px + ai_pw - 4, ai_py),
-                               (ai_px, ai_py + ai_ph - 4), (ai_px + ai_pw - 4, ai_py + ai_ph - 4)]:
+                              fill=P["panel"], outline=border_col, width=border_w)
+            # Corner accents with sequential pulse
+            ai_corners = [(ai_px, ai_py), (ai_px + ai_pw - 4, ai_py),
+                               (ai_px, ai_py + ai_ph - 4), (ai_px + ai_pw - 4, ai_py + ai_ph - 4)]
+            for ci_a, (cx_, cy_) in enumerate(ai_corners):
+                corner_phase = (t_ai * 2.0 + ci_a * 0.8) % (2 * math.pi)
+                corner_bright = 0.6 + 0.4 * abs(math.sin(corner_phase))
+                cr_v = max(0, min(255, int(bc_r * corner_bright)))
+                cg_v = max(0, min(255, int(bc_g * corner_bright)))
+                cb_v = max(0, min(255, int(bc_b * corner_bright)))
                 c.create_rectangle(cx_, cy_, cx_ + 4, cy_ + 4,
-                                  fill=border_col, outline="")
+                                  fill=f"#{cr_v:02x}{cg_v:02x}{cb_v:02x}", outline="")
             # Live indicator
             if is_live:
                 pulse_dot = abs(math.sin(time.time() * 4))
@@ -7875,17 +7941,29 @@ class ShumilekHive:
         # ── Graph minimap (bottom-left corner) ──
         self._draw_graph_minimap(c, w, h)
 
-        # ── Heat map legend (bottom-left) ──
+        # ── Heat map legend (bottom-left) with animated swatches ──
         ly = h - 28
+        t_legend = time.time()
         c.create_rectangle(6, ly - 6, 200, ly + 14, fill=P["surface"], outline=P["border"], width=1)
-        c.create_text(12, ly, text="\u25CF low", font=F_PIXEL,
-                     fill=P["amethyst_dim"], anchor="w")
-        c.create_text(60, ly, text="\u25CF mid", font=F_PIXEL,
-                     fill=P["ice"], anchor="w")
-        c.create_text(100, ly, text="\u25CF high", font=F_PIXEL,
-                     fill=P["emerald"], anchor="w")
-        c.create_text(145, ly, text="\u25CB orphan", font=F_PIXEL,
-                     fill=P["border_glow"], anchor="w")
+        # Shimmer highlight sweep across legend
+        legend_shimmer = ((t_legend * 0.6) % 1.0) * 194
+        c.create_rectangle(6 + int(legend_shimmer), ly - 5, 6 + int(legend_shimmer) + 20, ly + 13,
+                          fill=_hex_color_scale(P["border_glow"], 0.15), outline="")
+        # Breathing swatch dots — each with phase offset
+        legend_items = [
+            (12, "\u25CF low", P["amethyst_dim"], 0.0),
+            (60, "\u25CF mid", P["ice"], 0.7),
+            (100, "\u25CF high", P["emerald"], 1.4),
+            (145, "\u25CB orphan", P["border_glow"], 2.1),
+        ]
+        for lx_off, ltxt, lcol, lphase in legend_items:
+            swatch_breath = 0.6 + 0.4 * abs(math.sin(t_legend * 1.8 + lphase))
+            lc_base = lcol.lstrip("#")
+            lr = max(0, min(255, int(int(lc_base[:2], 16) * swatch_breath)))
+            lg = max(0, min(255, int(int(lc_base[2:4], 16) * swatch_breath)))
+            lb = max(0, min(255, int(int(lc_base[4:6], 16) * swatch_breath)))
+            c.create_text(lx_off, ly, text=ltxt, font=F_PIXEL,
+                         fill=f"#{lr:02x}{lg:02x}{lb:02x}", anchor="w")
 
     def _draw_graph_stats(self, c, w, h, nodes, importance, conn_count, orphans):
         """Draw graph statistics panel in bottom-right corner."""
@@ -8387,36 +8465,46 @@ class ShumilekHive:
             state = self.pipeline.node_states.get("decision", "idle")
             is_retry = state == "retry"
             loop_color = P["err"] if is_retry else P["border_glow"]
-            lw = 3 if is_retry else 2
-            # Glow behind active retry
+            t_retry = time.time()
+            lw_base = 3 if is_retry else 2
+            # Pulsing glow width when retry is active
+            retry_breath = abs(math.sin(t_retry * 2.5))
+            lw = lw_base + (int(retry_breath * 2) if is_retry else 0)
+            # Animated dash offset for marching ants effect
+            dash_off_retry = int((t_retry * 15) % 6)
+            # Glow behind active retry with breathing width
             if is_retry:
+                glow_w_retry = 6 + int(retry_breath * 3)
                 c.create_line(dx, dy + node_h // 2, dx, retry_y,
-                             fill=P["rose_dim"], width=6, dash=(3, 3))
+                             fill=P["rose_dim"], width=glow_w_retry, dash=(3, 3))
                 c.create_line(dx, retry_y, gx, retry_y,
-                             fill=P["rose_dim"], width=6, dash=(3, 3))
+                             fill=P["rose_dim"], width=glow_w_retry, dash=(3, 3))
                 c.create_line(gx, retry_y, gx, gy + node_h // 2,
-                             fill=P["rose_dim"], width=6, dash=(3, 3))
+                             fill=P["rose_dim"], width=glow_w_retry, dash=(3, 3))
             c.create_line(dx, dy + node_h // 2, dx, retry_y,
-                         fill=loop_color, width=lw, dash=(3, 3))
+                         fill=loop_color, width=lw, dash=(3, 3), dashoffset=dash_off_retry)
             c.create_line(dx, retry_y, gx, retry_y,
-                         fill=loop_color, width=lw, dash=(3, 3))
+                         fill=loop_color, width=lw, dash=(3, 3), dashoffset=dash_off_retry)
+            # Arrow head pulse for breathing effect
+            arr_pulse_retry = 1.0 + (0.3 * retry_breath if is_retry else 0.0)
+            arr_s = (int(8 * arr_pulse_retry), int(10 * arr_pulse_retry), int(4 * arr_pulse_retry))
             c.create_line(gx, retry_y, gx, gy + node_h // 2,
                          fill=loop_color, width=lw, arrow="last",
-                         arrowshape=(8, 10, 4), dash=(3, 3))
-            # Corner dots
-            c.create_oval(dx - 3, retry_y - 3, dx + 3, retry_y + 3,
-                         fill=loop_color, outline="")
-            c.create_oval(gx - 3, retry_y - 3, gx + 3, retry_y + 3,
-                         fill=loop_color, outline="")
+                         arrowshape=arr_s, dash=(3, 3), dashoffset=dash_off_retry)
+            # Corner dots with bounce animation
+            for cdx, cdy in [(dx, retry_y), (gx, retry_y)]:
+                corner_bounce = 3 + int(retry_breath * 2) if is_retry else 3
+                c.create_oval(cdx - corner_bounce, cdy - corner_bounce,
+                             cdx + corner_bounce, cdy + corner_bounce,
+                             fill=loop_color, outline="")
             # Energy dots along retry loop path when active
             if is_retry:
-                t = time.time()
                 seg1 = abs(retry_y - (dy + node_h // 2))
                 seg2 = abs(gx - dx)
                 seg3 = abs((gy + node_h // 2) - retry_y)
                 total = seg1 + seg2 + seg3
-                for phase_off in (0.0, 0.5):
-                    frac = ((t * 1.2 + phase_off) % 1.0)
+                for phase_off in (0.0, 0.33, 0.66):
+                    frac = ((t_retry * 1.2 + phase_off) % 1.0)
                     dist = frac * total
                     if dist < seg1:
                         dsx = dx
@@ -8427,12 +8515,27 @@ class ShumilekHive:
                     else:
                         dsx = gx
                         dsy = retry_y - (dist - seg1 - seg2)
+                    # Trailing fade glow behind dot
+                    dot_glow_r = 6 + int(retry_breath * 2)
+                    lc_base = loop_color.lstrip("#")
+                    dgr = max(0, min(255, int(int(lc_base[:2], 16) * 0.2)))
+                    dgg = max(0, min(255, int(int(lc_base[2:4], 16) * 0.2)))
+                    dgb = max(0, min(255, int(int(lc_base[4:6], 16) * 0.2)))
+                    c.create_oval(int(dsx) - dot_glow_r, int(dsy) - dot_glow_r,
+                                 int(dsx) + dot_glow_r, int(dsy) + dot_glow_r,
+                                 fill=f"#{dgr:02x}{dgg:02x}{dgb:02x}", outline="")
                     c.create_oval(int(dsx) - 4, int(dsy) - 4,
                                  int(dsx) + 4, int(dsy) + 4,
                                  fill=loop_color, outline=P["text_bright"])
+            # Retry label with pulse
+            label_pulse = 0.7 + 0.3 * retry_breath if is_retry else 1.0
+            lc_base2 = loop_color.lstrip("#")
+            rl_r = max(0, min(255, int(int(lc_base2[:2], 16) * label_pulse)))
+            rl_g = max(0, min(255, int(int(lc_base2[2:4], 16) * label_pulse)))
+            rl_b = max(0, min(255, int(int(lc_base2[4:6], 16) * label_pulse)))
             c.create_text((dx + gx) // 2, retry_y + 12,
                          text="RETRY LOOP (max 3x)", font=F_PIXEL,
-                         fill=loop_color)
+                         fill=f"#{rl_r:02x}{rl_g:02x}{rl_b:02x}")
 
         # User input (top)
         ux = start_x_top + node_w // 2
@@ -9207,6 +9310,7 @@ class ShumilekHive:
         line_height = 0
         max_width = w - 60
 
+        t_cloud = time.time()
         for idx, (tag, count) in enumerate(sorted_tags):
             # Font size based on frequency (10..32)
             if max_count > min_count:
@@ -9229,9 +9333,26 @@ class ShumilekHive:
             if y_cursor + text_h > h - 20:
                 break
 
-            # Draw tag pill
+            # Pill glow pulse for high-frequency tags
+            tag_phase = (t_cloud * 1.5 + idx * 0.4) % (2 * math.pi)
+            tag_glow = 0.6 + 0.4 * abs(math.sin(tag_phase))
+            outline_w = 1 if ratio < 0.5 else (1 + int(tag_glow * 1.5))
+
+            # Draw tag pill with animated outline
             c.create_rectangle(x_cursor, y_cursor, x_cursor + text_w, y_cursor + text_h,
-                              fill=P["surface"], outline=color, width=1)
+                              fill=P["surface"], outline=color, width=outline_w)
+
+            # Frequency bar indicator at bottom of pill
+            freq_bar_w = int(text_w * ratio * tag_glow)
+            if freq_bar_w > 2:
+                col_base = color.lstrip("#")
+                fb_r = max(0, min(255, int(int(col_base[:2], 16) * 0.4)))
+                fb_g = max(0, min(255, int(int(col_base[2:4], 16) * 0.4)))
+                fb_b = max(0, min(255, int(int(col_base[4:6], 16) * 0.4)))
+                c.create_rectangle(x_cursor + 1, y_cursor + text_h - 3,
+                                  x_cursor + 1 + freq_bar_w, y_cursor + text_h - 1,
+                                  fill=f"#{fb_r:02x}{fb_g:02x}{fb_b:02x}", outline="")
+
             label = f"#{tag} ({count})"
             c.create_text(x_cursor + text_w // 2, y_cursor + text_h // 2,
                          text=label, font=(FONT, font_size),
